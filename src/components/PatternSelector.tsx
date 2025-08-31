@@ -3,28 +3,29 @@
 
 import React from 'react';
 import styled from 'styled-components';
-import type { PatternSelectorProps, PatternMode } from '../types/index';
+import type {PatternMode, PatternSelectorProps} from '../types/index';
 
 const Container = styled.div`
-  padding: 1rem;
+  padding: 0.5rem;
 `;
 
 const Title = styled.h3`
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
   color: #ff6b00;
   text-align: center;
+  font-size: 1rem;
 `;
 
 const ModeSelector = styled.div`
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 0.5rem;
-  margin-bottom: 1rem;
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
 `;
 
 const ModeButton = styled.button<{ active: boolean }>`
-  padding: 0.5rem;
-  font-size: 0.8rem;
+  padding: 0.25rem;
+  font-size: 0.7rem;
   font-weight: 600;
   text-transform: uppercase;
   background: ${props => props.active ? 
@@ -47,13 +48,37 @@ const ModeButton = styled.button<{ active: boolean }>`
 `;
 
 const PatternList = styled.div`
-  max-height: 300px;
+  max-height: 200px;
   overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 107, 0, 0.5) rgba(0, 0, 0, 0.3);
+  padding-right: 0.5rem;
+  
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: linear-gradient(45deg, #ff6b00, #8a2be2);
+    border-radius: 4px;
+    box-shadow: 0 0 10px rgba(255, 107, 0, 0.5);
+  }
+  
+  &::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(45deg, #ff8533, #9944d9);
+    box-shadow: 0 0 15px rgba(255, 107, 0, 0.7);
+  }
 `;
 
 const PatternItem = styled.div<{ selected: boolean }>`
-  padding: 0.75rem;
-  margin-bottom: 0.5rem;
+  padding: 0.5rem;
+  margin-bottom: 0.25rem;
   background: ${props => props.selected ? 
     'rgba(255, 107, 0, 0.2)' : 
     'rgba(255, 255, 255, 0.03)'
@@ -72,26 +97,27 @@ const PatternItem = styled.div<{ selected: boolean }>`
 const PatternName = styled.div`
   font-weight: 600;
   color: #ffffff;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.15rem;
+  font-size: 0.9rem;
 `;
 
 const PatternType = styled.div`
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   color: #00ff88;
   text-transform: uppercase;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.15rem;
 `;
 
 const PatternDescription = styled.div`
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   color: rgba(255, 255, 255, 0.7);
-  line-height: 1.3;
+  line-height: 1.2;
 `;
 
 const PatternFreq = styled.div`
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   color: #8a2be2;
-  margin-top: 0.25rem;
+  margin-top: 0.15rem;
   font-family: 'Courier New', monospace;
 `;
 

@@ -1,7 +1,7 @@
 // Electromagnetic Beat Lab - Global Styles
 // Advanced CSS-in-JS styling with electromagnetic field aesthetics
 
-import { createGlobalStyle } from 'styled-components';
+import {createGlobalStyle} from 'styled-components';
 
 export const GlobalStyles = createGlobalStyle`
   /* Reset and Base Styles */
@@ -18,6 +18,7 @@ export const GlobalStyles = createGlobalStyle`
     color: #e0e0e0;
     background: #000000;
     overflow-x: hidden;
+    scroll-behavior: smooth;
   }
 
   body {
