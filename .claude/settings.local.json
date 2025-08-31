@@ -1,20 +1,26 @@
 {
   "permissions": {
     "allow": [
-      "Bash(yarn --version)",
-      "Bash(npm install:*)",
-      "WebSearch",
-      "WebFetch(domain:github.com)",
-      "WebFetch(domain:gist.github.com)",
-      "Read(C:\\Users\\bisho\\.npm-global/**)",
-      "Read(C:\\Users\\bisho\\.npm-global\\node_modules/**)",
-      "Read(C:\\Users\\bisho\\.npm-global\\node_modules\\@anthropic-ai/**)",
-      "Read(C:\\Users\\bisho\\.npm-global\\bin/**)",
-      "Bash(claude --version)",
-      "Bash(npm run dev:*)",
-      "Bash(git add:*)"
+      "Bash(grep:*)",
+      "Bash(ls:*)",
+      "Bash(source:*)",
+      "Bash(find:*)",
+      "Bash(mv:*)",
+      "Bash(mkdir:*)",
+      "Bash(tree:*)",
+      "Bash(ruff:*)",
+      "Bash(touch:*)",
+      "Bash(chmod:*)",
+      "Bash(cat:*)",
+      "Bash(ruff check:*)",
+      "Bash(pytest:*)",
+      "Bash(python:*)",
+      "Bash(python -m pytest:*)",
+      "Bash(python3 -m pytest:*)",
+      "WebFetch(domain:*)",
+      "Bash(gh issue view:*)",
+      "WebFetch(domain:docs.anthropic.com)"
     ],
-    "deny": [],
-    "ask": []
+    "deny": []
   }
 }
