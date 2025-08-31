@@ -14,6 +14,7 @@ from datetime import datetime
 from core.audio_engine import AudioEngine
 from core.field_simulator import FieldSimulator
 from modules.binaural import BinauralBeatGenerator
+from modules.spatial_audio import SpatialAudioProcessor
 from protocols.adhd_protocols import ADHDProtocols
 
 app = FastAPI(
@@ -35,7 +36,11 @@ app.add_middleware(
 audio_engine = AudioEngine()
 field_simulator = FieldSimulator()
 binaural_generator = BinauralBeatGenerator()
+spatial_audio = SpatialAudioProcessor()
 adhd_protocols = ADHDProtocols()
+
+# Connect spatial processor to audio engine
+audio_engine.set_spatial_processor(spatial_audio)
 
 # WebSocket connection manager
 class ConnectionManager:
@@ -75,6 +80,7 @@ async def root():
             "websocket": "/ws/{session_id}",
             "protocols": "/api/protocols",
             "presets": "/api/presets",
+            "spatial": "/api/spatial",
             "health": "/health"
         }
     }
@@ -107,6 +113,30 @@ async def get_presets():
             "alpha": "8-13 Hz",
             "beta": "13-30 Hz",
             "gamma": "30-100 Hz"
+        }
+    }
+
+@app.get("/api/spatial")
+async def get_spatial_options():
+    """Get available spatial audio effects"""
+    return {
+        "effects": {
+            "8d_audio": {
+                "name": "8D Audio",
+                "description": "Circular panning with reverb for immersive experience",
+                "parameters": {
+                    "movement_speed": {"min": 0.01, "max": 1.0, "default": 0.08},
+                    "spatial_intensity": {"min": 0.1, "max": 1.0, "default": 0.85},
+                    "reverb_enabled": {"type": "boolean", "default": True}
+                }
+            },
+            "field_spatial": {
+                "name": "EM Field Spatialization",
+                "description": "Audio positioning based on electromagnetic field data",
+                "parameters": {
+                    "field_intensity": {"min": 0.1, "max": 2.0, "default": 1.0}
+                }
+            }
         }
     }
 

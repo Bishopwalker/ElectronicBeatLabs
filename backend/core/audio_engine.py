@@ -5,18 +5,26 @@ Handles real-time audio synthesis and streaming
 
 import numpy as np
 import asyncio
-from typing import Dict, Optional
+from typing import Dict, Optional, TYPE_CHECKING
 import uuid
 from datetime import datetime
+
+if TYPE_CHECKING:
+    from modules.spatial_audio import SpatialAudioProcessor
 
 class AudioEngine:
     def __init__(self, sample_rate: int = 44100):
         self.sample_rate = sample_rate
         self.sessions: Dict[str, dict] = {}
         self.running = False
+        self.spatial_processor: Optional['SpatialAudioProcessor'] = None
         
     def is_running(self) -> bool:
         return self.running
+    
+    def set_spatial_processor(self, spatial_processor: 'SpatialAudioProcessor'):
+        """Set the spatial audio processor"""
+        self.spatial_processor = spatial_processor
     
     def start_session(self, settings: dict) -> str:
         """Start a new audio generation session"""
@@ -97,9 +105,27 @@ class AudioEngine:
             left_wave *= envelope
             right_wave *= envelope
         
+        # Apply spatial audio effects if enabled
+        if (self.spatial_processor and 
+            settings.get("spatial_enabled", False)):
+            
+            # Configure spatial processor if needed
+            if settings.get("spatial_settings"):
+                self.spatial_processor.configure_session(session_id, settings["spatial_settings"])
+            
+            # Apply 8D spatial effects
+            left_wave, right_wave = self.spatial_processor.apply_8d_effect(
+                left_wave, right_wave, session_id
+            )
+        
         # Convert to PCM format
         left_pcm = (left_wave * 32767).astype(np.int16)
         right_pcm = (right_wave * 32767).astype(np.int16)
+        
+        # Get spatial metrics if available
+        spatial_metrics = {}
+        if self.spatial_processor:
+            spatial_metrics = self.spatial_processor.get_spatial_metrics(session_id)
         
         return {
             "left": left_pcm.tolist(),
@@ -110,7 +136,8 @@ class AudioEngine:
                 "left": freq_left,
                 "right": freq_right,
                 "beat": beat_freq
-            }
+            },
+            "spatial": spatial_metrics
         }
     
     def _create_envelope(self, frame_size: int, settings: dict) -> np.ndarray:
