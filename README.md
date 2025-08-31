@@ -1,69 +1,79 @@
-# Python + React + TypeScript + Vite
+# Electromagnetic Beat Lab (EBL)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A Python + React + TypeScript application for generating binaural beats and electromagnetic field simulations.
 
-Currently, two official plugins are available:
+## Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Frontend**: Vite + React + TypeScript
+- **Backend**: FastAPI + NumPy + SciPy + PyAudio
+- **Communication**: WebSocket (audio streaming) + REST (control)
 
-## Expanding the ESLint configuration
+## Installation
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Prerequisites
+- Node.js 18+
+- Python 3.8+
+- Git
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### Setup
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+1. Clone the repository:
+```bash
+git clone https://gitlab.com/bishop8-group/bbl.git
+cd bbl
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+2. Install frontend dependencies:
+```bash
+npm install
 ```
+
+3. Install backend dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+## Development
+
+### Frontend
+```bash
+npm run dev        # Start React dev server
+npm run build      # Production build
+```
+
+### Backend
+```bash
+uvicorn backend.main:app --reload --port 8000  # Start Python server
+```
+
+### Full Stack
+```bash
+npm run dev:all    # Start both frontend and backend
+```
+
+## Project Structure
+```
+├── src/                  # React/TypeScript frontend
+├── backend/              # Python/FastAPI backend
+├── ai-context/           # Architecture documentation
+│   ├── architecture.md   # Full architecture documentation
+│   ├── backend.md        # Python implementation details
+│   ├── frontend.md       # React component details
+│   └── protocols.md      # Audio/EM protocols
+└── claude.md            # AI assistant guidance
+```
+
+## Key Features
+
+- **Binaural Beats**: Generate precise frequencies for brainwave entrainment
+- **Electromagnetic Fields**: Calculate and visualize EM field simulations
+- **Real-time Streaming**: WebSocket-based audio and field data streaming
+- **ADHD Protocols**: Scientific frequency patterns for focus enhancement
+
+## Contributing
+
+Please read the documentation in the `ai-context/` folder for detailed implementation guidelines and architecture patterns.
+
+## License
+
+Proprietary - All rights reserved
