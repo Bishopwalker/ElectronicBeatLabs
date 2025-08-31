@@ -18,30 +18,55 @@ interface SpatialAudioControlsProps {
 }
 
 const Container = styled.div`
-  padding: 1rem;
+  padding: 0.5rem;
   background: rgba(255, 255, 255, 0.02);
-  border-radius: 12px;
+  border-radius: 8px;
   border: 1px solid rgba(255, 107, 0, 0.2);
+  max-height: 250px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 107, 0, 0.5) rgba(0, 0, 0, 0.3);
+  
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: linear-gradient(45deg, #ff6b00, #8a2be2);
+    border-radius: 4px;
+    box-shadow: 0 0 10px rgba(255, 107, 0, 0.5);
+  }
+  
+  &::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(45deg, #ff8533, #9944d9);
+    box-shadow: 0 0 15px rgba(255, 107, 0, 0.7);
+  }
 `;
 
 const Title = styled.h3`
   color: #ff6b00;
-  margin-bottom: 1rem;
-  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
 `;
 
 const ControlGroup = styled.div`
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 `;
 
 const Label = styled.label`
   display: block;
   color: #e0e0e0;
-  font-size: 0.9rem;
-  margin-bottom: 0.5rem;
+  font-size: 0.8rem;
+  margin-bottom: 0.25rem;
   font-weight: 500;
 `;
 
