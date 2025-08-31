@@ -1,18 +1,13 @@
 // Electromagnetic Beat Lab - Main Component
 // Advanced binaural beats generator with electromagnetic field visualization
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import styled from 'styled-components';
-import type { 
-  PatternMode, 
-  PatternConfig, 
-  ElectromagneticBeatLabProps,
-  AppState 
-} from '../types/index';
+import type {AppState, ElectromagneticBeatLabProps, PatternMode} from '../types/index';
 
-import { useAudioEngine } from '../hooks/useAudioEngine';
-import { use8DPatterns } from '../hooks/use8DPatterns';
-import { WAVE_PATTERNS, PATTERN_PRESETS } from '../data/patterns';
+import {useAudioEngine} from '../hooks/useAudioEngine';
+import {use8DPatterns} from '../hooks/use8DPatterns';
+import {PATTERN_PRESETS, WAVE_PATTERNS} from '../data/patterns';
 
 import StarField from './StarField';
 import SpatialVisualizer from './SpatialVisualizer';
@@ -98,8 +93,31 @@ const LeftPanel = styled.div`
   grid-row: 1 / -1;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.5rem;
   overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 107, 0, 0.5) rgba(0, 0, 0, 0.3);
+  
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: linear-gradient(45deg, #ff6b00, #8a2be2);
+    border-radius: 4px;
+    box-shadow: 0 0 10px rgba(255, 107, 0, 0.5);
+  }
+  
+  &::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(45deg, #ff8533, #9944d9);
+    box-shadow: 0 0 15px rgba(255, 107, 0, 0.7);
+  }
 
   @media (max-width: 768px) {
     grid-column: 1;
@@ -132,6 +150,29 @@ const RightPanel = styled.div`
   flex-direction: column;
   gap: 1rem;
   overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 107, 0, 0.5) rgba(0, 0, 0, 0.3);
+  
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: linear-gradient(45deg, #ff6b00, #8a2be2);
+    border-radius: 4px;
+    box-shadow: 0 0 10px rgba(255, 107, 0, 0.5);
+  }
+  
+  &::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(45deg, #ff8533, #9944d9);
+    box-shadow: 0 0 15px rgba(255, 107, 0, 0.7);
+  }
 
   @media (max-width: 1200px) {
     display: none;
@@ -171,6 +212,30 @@ const TabContent = styled.div`
   min-height: 400px;
   max-height: 600px;
   overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 107, 0, 0.5) rgba(0, 0, 0, 0.3);
+  padding-right: 0.5rem;
+  
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: linear-gradient(45deg, #ff6b00, #8a2be2);
+    border-radius: 4px;
+    box-shadow: 0 0 10px rgba(255, 107, 0, 0.5);
+  }
+  
+  &::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(45deg, #ff8533, #9944d9);
+    box-shadow: 0 0 15px rgba(255, 107, 0, 0.7);
+  }
 `;
 
 const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({

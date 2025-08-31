@@ -3,26 +3,52 @@
 
 import React from 'react';
 import styled from 'styled-components';
-import type { WaveGuidePanelProps } from '../types/index';
+import type {WaveGuidePanelProps} from '../types/index';
 
 const Container = styled.div`
-  padding: 1rem;
+  padding: 0.5rem;
+  max-height: 300px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 215, 0, 0.5) rgba(0, 0, 0, 0.3);
+  
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: linear-gradient(45deg, #ffd700, #ff6b00);
+    border-radius: 4px;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+  }
+  
+  &::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(45deg, #ffe833, #ff8533);
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.7);
+  }
 `;
 
 const Title = styled.h3`
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
   color: #ffd700;
   text-align: center;
+  font-size: 1rem;
 `;
 
 const ConfigSection = styled.div`
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.75rem;
 `;
 
 const SectionTitle = styled.h4`
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   color: #ffffff;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 `;
@@ -30,8 +56,8 @@ const SectionTitle = styled.h4`
 const ParameterGroup = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
 `;
 
 const Parameter = styled.div`
@@ -46,7 +72,7 @@ const ParameterLabel = styled.label`
 `;
 
 const ParameterInput = styled.input`
-  padding: 0.5rem;
+  padding: 0.25rem;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 4px;
@@ -60,7 +86,7 @@ const ParameterInput = styled.input`
 `;
 
 const ParameterSelect = styled.select`
-  padding: 0.5rem;
+  padding: 0.25rem;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 4px;
@@ -80,7 +106,7 @@ const ParameterSelect = styled.select`
 
 const WaveGuideVisualization = styled.div`
   width: 100%;
-  height: 150px;
+  height: 100px;
   background: radial-gradient(circle at center, 
     rgba(255, 215, 0, 0.1) 0%, 
     rgba(0, 0, 0, 0.8) 100%
@@ -162,7 +188,7 @@ const GuideShape = styled.div<{
 
 const ResonanceDisplay = styled.div`
   text-align: center;
-  padding: 1rem;
+  padding: 0.5rem;
   background: rgba(255, 215, 0, 0.1);
   border: 1px solid rgba(255, 215, 0, 0.3);
   border-radius: 8px;

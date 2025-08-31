@@ -3,13 +3,36 @@
 
 import React from 'react';
 import styled from 'styled-components';
-import type { ControlTabsProps } from '../types/index';
+import type {ControlTabsProps} from '../types/index';
 
 const TabContainer = styled.div`
   display: flex;
   border-bottom: 2px solid rgba(255, 255, 255, 0.1);
   margin-bottom: 1rem;
   overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 107, 0, 0.5) rgba(0, 0, 0, 0.3);
+  
+  &::-webkit-scrollbar {
+    height: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 3px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: linear-gradient(90deg, #ff6b00, #8a2be2);
+    border-radius: 3px;
+    box-shadow: 0 0 8px rgba(255, 107, 0, 0.5);
+  }
+  
+  &::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(90deg, #ff8533, #9944d9);
+    box-shadow: 0 0 12px rgba(255, 107, 0, 0.7);
+  }
 `;
 
 const TabButton = styled.button<{ active: boolean }>`
