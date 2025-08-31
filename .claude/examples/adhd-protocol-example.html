@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADHD Protocol Demo - SMR Training</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+        h1 {
+            text-align: center;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 2.8em;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            font-size: 1.2em;
+            opacity: 0.8;
+            margin-bottom: 40px;
+        }
+        .protocol-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        .info-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 25px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .info-card h3 {
+            margin-top: 0;
+            color: #4ecdc4;
+        }
+        .stage-timeline {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 30px 0;
+        }
+        .stage {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            margin: 10px 0;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            border-left: 4px solid #4ecdc4;
+            transition: all 0.3s ease;
+        }
+        .stage.active {
+            background: rgba(78, 205, 196, 0.2);
+            border-left: 4px solid #ff6b6b;
+            transform: translateX(10px);
+        }
+        .stage-number {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 20px;
+        }
+        .stage-info {
+            flex: 1;
+        }
+        .stage-title {
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 5px;
+        }
+        .stage-details {
+            opacity: 0.8;
+            font-size: 0.9em;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            width: 0%;
+            transition: width 0.5s ease;
+            border-radius: 4px;
+        }
+        .controls {
+            text-align: center;
+            margin: 30px 0;
+        }
+        button {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+        .start-btn {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            color: white;
+        }
+        .stop-btn {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+            color: white;
+        }
+        .pause-btn {
+            background: linear-gradient(45deg, #feca57, #ff9ff3);
+            color: white;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        .current-params {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        .param-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            border: 2px solid transparent;
+            transition: border-color 0.3s ease;
+        }
+        .param-card.active {
+            border-color: #4ecdc4;
+        }
+        .param-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #4ecdc4;
+        }
+        .param-label {
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+        .benefits {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 25px;
+            border-radius: 15px;
+            margin-top: 30px;
+        }
+        .benefits h3 {
+            color: #4ecdc4;
+            margin-bottom: 15px;
+        }
+        .benefit-list {
+            list-style: none;
+            padding: 0;
+        }
+        .benefit-list li {
+            padding: 8px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+        .benefit-list li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #4ecdc4;
+            font-weight: bold;
+        }
+        .timer {
+            font-size: 3em;
+            font-weight: bold;
+            text-align: center;
+            margin: 30px 0;
+            color: #4ecdc4;
+            text-shadow: 0 0 20px rgba(78, 205, 196, 0.5);
+        }
+        .warning {
+            background: rgba(255, 107, 107, 0.2);
+            border: 1px solid rgba(255, 107, 107, 0.5);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .research-note {
+            background: rgba(69, 183, 209, 0.2);
+            border: 1px solid rgba(69, 183, 209, 0.5);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧠 ADHD Protocol Demo</h1>
+        <div class="subtitle">SMR Training - Sensorimotor Rhythm Enhancement</div>
+
+        <div class="protocol-info">
+            <div class="info-card">
+                <h3>🎯 Protocol Purpose</h3>
+                <p>SMR (Sensorimotor Rhythm) training helps improve attention, reduce hyperactivity, and enhance impulse control in ADHD individuals through targeted brainwave entrainment.</p>
+                <p><strong>Research Base:</strong> Sterman & Lubar protocols, validated in clinical studies since the 1970s.</p>
+            </div>
+            <div class="info-card">
+                <h3>⏱️ Session Details</h3>
+                <p><strong>Total Duration:</strong> 30 minutes</p>
+                <p><strong>Frequency Range:</strong> 10-14 Hz (SMR band)</p>
+                <p><strong>Recommended Usage:</strong> Daily sessions for 8-12 weeks</p>
+                <p><strong>Best Time:</strong> Morning or early afternoon</p>
+            </div>
+        </div>
+
+        <div class="research-note">
+            <strong>📚 Research Background:</strong> SMR training was pioneered by Barry Sterman and Joel Lubar in the 1970s. Clinical studies show 60-80% of ADHD participants experience significant improvement in attention and reduced hyperactivity after 40+ sessions.
+        </div>
+
+        <div class="warning">
+            <strong>⚠️ Important:</strong> This is a therapeutic tool, not a medical treatment. Consult with healthcare providers for ADHD management. Use headphones for proper binaural effect. Keep volume at comfortable levels.
+        </div>
+
+        <div class="timer" id="sessionTimer">30:00</div>
+
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressBar"></div>
+        </div>
+
+        <div class="stage-timeline">
+            <h3>📈 Protocol Stages</h3>
+            <div class="stage" data-stage="0">
+                <div class="stage-number">1</div>
+                <div class="stage-info">
+                    <div class="stage-title">Warm-up Phase (5 minutes)</div>
+                    <div class="stage-details">180 Hz base, 12 Hz beat - Gentle SMR activation</div>
+                </div>
+            </div>
+            <div class="stage" data-stage="1">
+                <div class="stage-number">2</div>
+                <div class="stage-info">
+                    <div class="stage-title">Core Training (20 minutes)</div>
+                    <div class="stage-details">200 Hz base, 14 Hz beat - Primary SMR enhancement</div>
+                </div>
+            </div>
+            <div class="stage" data-stage="2">
+                <div class="stage-number">3</div>
+                <div class="stage-info">
+                    <div class="stage-title">Cool-down Phase (5 minutes)</div>
+                    <div class="stage-details">180 Hz base, 10 Hz beat - Alpha transition</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="current-params">
+            <div class="param-card">
+                <div class="param-value" id="baseFreq">200</div>
+                <div class="param-label">Base Frequency (Hz)</div>
+            </div>
+            <div class="param-card active">
+                <div class="param-value" id="beatFreq">14</div>
+                <div class="param-label">Beat Frequency (Hz)</div>
+            </div>
+            <div class="param-card">
+                <div class="param-value" id="currentStage">Warm-up</div>
+                <div class="param-label">Current Stage</div>
+            </div>
+            <div class="param-card">
+                <div class="param-value" id="brainwaveState">SMR</div>
+                <div class="param-label">Target Brainwave</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="start-btn" onclick="startProtocol()">▶️ Start SMR Session</button>
+            <button class="pause-btn" onclick="pauseProtocol()">⏸️ Pause</button>
+            <button class="stop-btn" onclick="stopProtocol()">⏹️ Stop</button>
+        </div>
+
+        <div class="benefits">
+            <h3>🎯 Expected Benefits of SMR Training</h3>
+            <ul class="benefit-list">
+                <li><strong>Improved Attention Span:</strong> Increased ability to focus on tasks for extended periods</li>
+                <li><strong>Reduced Hyperactivity:</strong> Better impulse control and reduced fidgeting</li>
+                <li><strong>Enhanced Working Memory:</strong> Improved ability to hold and manipulate information</li>
+                <li><strong>Better Sleep Quality:</strong> More restful sleep patterns and easier sleep initiation</li>
+                <li><strong>Emotional Regulation:</strong> Reduced emotional outbursts and better mood stability</li>
+                <li><strong>Academic Performance:</strong> Improved grades and classroom behavior</li>
+                <li><strong>Long-term Benefits:</strong> Effects often persist months after training completion</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Protocol configuration based on research
+        const SMR_PROTOCOL = {
+            name: "SMR Training",
+            totalDuration: 30 * 60, // 30 minutes in seconds
+            stages: [
+                {
+                    duration: 5 * 60, // 5 minutes
+                    baseFreq: 180,
+                    beatFreq: 12,
+                    name: "Warm-up",
+                    description: "Gentle SMR activation"
+                },
+                {
+                    duration: 20 * 60, // 20 minutes
+                    baseFreq: 200,
+                    beatFreq: 14,
+                    name: "Core Training",
+                    description: "Primary SMR enhancement"
+                },
+                {
+                    duration: 5 * 60, // 5 minutes
+                    baseFreq: 180,
+                    beatFreq: 10,
+                    name: "Cool-down",
+                    description: "Alpha transition"
+                }
+            ]
+        };
+
+        let sessionState = {
+            active: false,
+            paused: false,
+            startTime: null,
+            elapsed: 0,
+            currentStage: 0,
+            timer: null
+        };
+
+        function startProtocol() {
+            if (sessionState.active && !sessionState.paused) return;
+            
+            if (sessionState.paused) {
+                // Resume
+                sessionState.paused = false;
+                sessionState.startTime = Date.now() - sessionState.elapsed * 1000;
+            } else {
+                // Start fresh
+                sessionState = {
+                    active: true,
+                    paused: false,
+                    startTime: Date.now(),
+                    elapsed: 0,
+                    currentStage: 0,
+                    timer: null
+                };
+            }
+
+            updateUI();
+            sessionState.timer = setInterval(updateSession, 100);
+            
+            // Start actual audio (would connect to your binaural beat generator here)
+            console.log("Starting SMR protocol...");
+        }
+
+        function pauseProtocol() {
+            if (!sessionState.active) return;
+            
+            sessionState.paused = !sessionState.paused;
+            
+            if (sessionState.paused) {
+                clearInterval(sessionState.timer);
+            } else {
+                sessionState.startTime = Date.now() - sessionState.elapsed * 1000;
+                sessionState.timer = setInterval(updateSession, 100);
+            }
+            
+            updateUI();
+        }
+
+        function stopProtocol() {
+            sessionState.active = false;
+            sessionState.paused = false;
+            sessionState.elapsed = 0;
+            sessionState.currentStage = 0;
+            
+            if (sessionState.timer) {
+                clearInterval(sessionState.timer);
+                sessionState.timer = null;
+            }
+            
+            updateUI();
+            console.log("SMR protocol stopped");
+        }
+
+        function updateSession() {
+            if (sessionState.paused) return;
+            
+            const now = Date.now();
+            sessionState.elapsed = (now - sessionState.startTime) / 1000;
+            
+            // Check if session is complete
+            if (sessionState.elapsed >= SMR_PROTOCOL.totalDuration) {
+                stopProtocol();
+                alert("🎉 SMR Training session complete! Great job!");
+                return;
+            }
+            
+            // Determine current stage
+            let stageStart = 0;
+            for (let i = 0; i < SMR_PROTOCOL.stages.length; i++) {
+                if (sessionState.elapsed < stageStart + SMR_PROTOCOL.stages[i].duration) {
+                    if (sessionState.currentStage !== i) {
+                        sessionState.currentStage = i;
+                        console.log(`Transitioning to stage ${i + 1}: ${SMR_PROTOCOL.stages[i].name}`);
+                    }
+                    break;
+                }
+                stageStart += SMR_PROTOCOL.stages[i].duration;
+            }
+            
+            updateUI();
+        }
+
+        function updateUI() {
+            const remaining = SMR_PROTOCOL.totalDuration - sessionState.elapsed;
+            const minutes = Math.floor(remaining / 60);
+            const seconds = Math.floor(remaining % 60);
+            
+            document.getElementById('sessionTimer').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            // Update progress bar
+            const progress = (sessionState.elapsed / SMR_PROTOCOL.totalDuration) * 100;
+            document.getElementById('progressBar').style.width = `${progress}%`;
+            
+            // Update current stage highlighting
+            document.querySelectorAll('.stage').forEach((stage, index) => {
+                stage.classList.toggle('active', index === sessionState.currentStage);
+            });
+            
+            // Update current parameters
+            if (sessionState.active && sessionState.currentStage < SMR_PROTOCOL.stages.length) {
+                const currentStageData = SMR_PROTOCOL.stages[sessionState.currentStage];
+                document.getElementById('baseFreq').textContent = currentStageData.baseFreq;
+                document.getElementById('beatFreq').textContent = currentStageData.beatFreq;
+                document.getElementById('currentStage').textContent = currentStageData.name;
+                
+                // Update brainwave state based on frequency
+                const beatFreq = currentStageData.beatFreq;
+                let state;
+                if (beatFreq < 4) state = "Delta";
+                else if (beatFreq < 8) state = "Theta";
+                else if (beatFreq < 13) state = "Alpha";
+                else if (beatFreq < 16) state = "SMR";
+                else if (beatFreq < 30) state = "Beta";
+                else state = "Gamma";
+                
+                document.getElementById('brainwaveState').textContent = state;
+            }
+            
+            // Update button states
+            const startBtn = document.querySelector('.start-btn');
+            const pauseBtn = document.querySelector('.pause-btn');
+            
+            if (sessionState.active) {
+                startBtn.textContent = sessionState.paused ? "▶️ Resume" : "▶️ Running...";
+                pauseBtn.textContent = sessionState.paused ? "▶️ Resume" : "⏸️ Pause";
+            } else {
+                startBtn.textContent = "▶️ Start SMR Session";
+                pauseBtn.textContent = "⏸️ Pause";
+            }
+        }
+
+        // Initialize UI
+        updateUI();
+
+        // Add some visual effects
+        setInterval(() => {
+            if (sessionState.active && !sessionState.paused) {
+                const timer = document.getElementById('sessionTimer');
+                timer.style.textShadow = `0 0 ${20 + Math.sin(Date.now() / 1000) * 10}px rgba(78, 205, 196, 0.8)`;
+            }
+        }, 50);
+    </script>
+</body>
+</html>

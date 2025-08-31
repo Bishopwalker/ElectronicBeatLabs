@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Electromagnetic Field Visualization - EBL</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: radial-gradient(ellipse at center, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #fff;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96c93d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 3em;
+            margin-bottom: 10px;
+            animation: rainbow 3s ease-in-out infinite alternate;
+        }
+        @keyframes rainbow {
+            0% { filter: hue-rotate(0deg); }
+            100% { filter: hue-rotate(60deg); }
+        }
+        .subtitle {
+            text-align: center;
+            font-size: 1.3em;
+            opacity: 0.8;
+            margin-bottom: 40px;
+        }
+        .visualization-container {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        .controls {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 30px;
+            height: fit-content;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .visualization {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 20px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            min-height: 600px;
+        }
+        #fieldCanvas {
+            width: 100%;
+            height: 600px;
+            border-radius: 15px;
+            cursor: crosshair;
+        }
+        .control-group {
+            margin-bottom: 25px;
+        }
+        .control-group h3 {
+            margin-bottom: 15px;
+            color: #4ecdc4;
+            font-size: 1.1em;
+        }
+        .pattern-selector {
+            display: grid;
+            gap: 10px;
+        }
+        .pattern-btn {
+            padding: 12px 15px;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        .pattern-btn:hover {
+            background: rgba(78, 205, 196, 0.2);
+            border-color: #4ecdc4;
+        }
+        .pattern-btn.active {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            border-color: #4ecdc4;
+            font-weight: bold;
+        }
+        .slider-group {
+            margin-bottom: 20px;
+        }
+        .slider-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #4ecdc4;
+            font-weight: 600;
+        }
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(78, 205, 196, 0.3);
+        }
+        .value-display {
+            text-align: right;
+            font-weight: bold;
+            color: #fff;
+        }
+        .field-info {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 20px;
+        }
+        .field-metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .metric {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .metric-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #4ecdc4;
+        }
+        .metric-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+        .sync-controls {
+            background: rgba(69, 183, 209, 0.2);
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid rgba(69, 183, 209, 0.5);
+        }
+        .sync-controls h3 {
+            color: #45b7d1;
+        }
+        .start-stop-btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+        .start-btn {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            color: white;
+        }
+        .stop-btn {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+            color: white;
+        }
+        .start-stop-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        .pattern-description {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            font-size: 0.9em;
+            line-height: 1.4;
+        }
+        .legend {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 0.9em;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        .legend-color {
+            width: 20px;
+            height: 12px;
+            border-radius: 2px;
+            margin-right: 10px;
+        }
+        @media (max-width: 768px) {
+            .visualization-container {
+                grid-template-columns: 1fr;
+            }
+            .controls {
+                order: 2;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚡ Electromagnetic Field Visualization</h1>
+        <div class="subtitle">Real-time field patterns synchronized with binaural beats</div>
+
+        <div class="visualization-container">
+            <div class="controls">
+                <div class="control-group">
+                    <h3>🌊 Field Patterns</h3>
+                    <div class="pattern-selector">
+                        <button class="pattern-btn active" data-pattern="toroidal">🔮 Toroidal Field</button>
+                        <button class="pattern-btn" data-pattern="spherical">🌐 Spherical Harmonic</button>
+                        <button class="pattern-btn" data-pattern="vortex">🌪️ Vortex Spiral</button>
+                        <button class="pattern-btn" data-pattern="wave">〰️ Standing Wave</button>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <h3>⚙️ Field Parameters</h3>
+                    
+                    <div class="slider-group">
+                        <label for="frequency">Beat Frequency: <span class="value-display" id="freqValue">4.0 Hz</span></label>
+                        <input type="range" id="frequency" min="0.5" max="50" step="0.5" value="4">
+                    </div>
+
+                    <div class="slider-group">
+                        <label for="intensity">Field Intensity: <span class="value-display" id="intensityValue">1.0</span></label>
+                        <input type="range" id="intensity" min="0.1" max="3.0" step="0.1" value="1.0">
+                    </div>
+
+                    <div class="slider-group">
+                        <label for="speed">Animation Speed: <span class="value-display" id="speedValue">1.0x</span></label>
+                        <input type="range" id="speed" min="0.1" max="3.0" step="0.1" value="1.0">
+                    </div>
+                </div>
+
+                <div class="sync-controls">
+                    <h3>🎵 Audio Synchronization</h3>
+                    <div class="slider-group">
+                        <label for="baseFreq">Base Audio: <span class="value-display" id="baseFreqValue">200 Hz</span></label>
+                        <input type="range" id="baseFreq" min="80" max="800" step="10" value="200">
+                    </div>
+                    <button class="start-stop-btn start-btn" id="syncBtn" onclick="toggleSync()">🎵 Start Synchronized Mode</button>
+                </div>
+
+                <div class="pattern-description" id="patternDesc">
+                    <strong>Toroidal Field:</strong> Rotating torus pattern that creates a stable, enclosed electromagnetic field. Often associated with enhanced focus and mental clarity. The field rotates at the beat frequency, creating a hypnotic, centering effect.
+                </div>
+
+                <div class="field-metrics">
+                    <div class="metric">
+                        <div class="metric-value" id="energyMetric">0.0</div>
+                        <div class="metric-label">Energy Density</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value" id="coherenceMetric">0.0</div>
+                        <div class="metric-label">Field Coherence</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="visualization">
+                <canvas id="fieldCanvas"></canvas>
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: linear-gradient(90deg, #ff6b6b, #ff8e8e);"></div>
+                        <span>High Intensity</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: linear-gradient(90deg, #4ecdc4, #96c93d);"></div>
+                        <span>Medium Intensity</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: linear-gradient(90deg, #45b7d1, #667eea);"></div>
+                        <span>Low Intensity</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field-info">
+            <h3>🧠 How EM Fields Synchronize with Binaural Beats</h3>
+            <p>The electromagnetic field visualization is synchronized with the binaural beat frequency to create a multi-sensory therapeutic experience. As your brain entrains to the audio frequency, the visual field patterns reinforce the desired brainwave state through:</p>
+            <ul>
+                <li><strong>Visual Entrainment:</strong> The field oscillation matches the target brainwave frequency</li>
+                <li><strong>Coherent Stimulation:</strong> Audio and visual rhythms work together for enhanced effect</li>
+                <li><strong>Pattern Recognition:</strong> Different field shapes activate various cognitive processes</li>
+                <li><strong>Meditation Enhancement:</strong> Moving patterns help maintain focus during longer sessions</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Field visualization engine
+        class EMFieldVisualizer {
+            constructor(canvas) {
+                this.canvas = canvas;
+                this.ctx = canvas.getContext('2d');
+                this.animationId = null;
+                this.startTime = Date.now();
+                
+                // Parameters
+                this.pattern = 'toroidal';
+                this.frequency = 4.0;
+                this.intensity = 1.0;
+                this.speed = 1.0;
+                this.baseAudioFreq = 200;
+                this.syncMode = false;
+                
+                // Grid setup
+                this.gridSize = 64;
+                this.fieldData = new Array(this.gridSize);
+                for (let i = 0; i < this.gridSize; i++) {
+                    this.fieldData[i] = new Array(this.gridSize);
+                }
+                
+                this.setupCanvas();
+                this.animate();
+            }
+            
+            setupCanvas() {
+                const rect = this.canvas.getBoundingClientRect();
+                this.canvas.width = rect.width * devicePixelRatio;
+                this.canvas.height = rect.height * devicePixelRatio;
+                this.ctx.scale(devicePixelRatio, devicePixelRatio);
+                this.canvas.style.width = rect.width + 'px';
+                this.canvas.style.height = rect.height + 'px';
+            }
+            
+            generateToroidalField(t) {
+                const centerX = this.gridSize / 2;
+                const centerY = this.gridSize / 2;
+                
+                for (let x = 0; x < this.gridSize; x++) {
+                    for (let y = 0; y < this.gridSize; y++) {
+                        const dx = x - centerX;
+                        const dy = y - centerY;
+                        const r = Math.sqrt(dx * dx + dy * dy);
+                        const theta = Math.atan2(dy, dx);
+                        
+                        // Toroidal field equation
+                        const majorRadius = 20;
+                        const minorRadius = 8;
+                        const toroidalDist = Math.abs(r - majorRadius);
+                        
+                        if (toroidalDist < minorRadius) {
+                            const fieldStrength = Math.cos(toroidalDist / minorRadius * Math.PI / 2);
+                            const rotation = theta + this.frequency * t * this.speed;
+                            const intensity = fieldStrength * Math.sin(rotation) * this.intensity;
+                            this.fieldData[x][y] = intensity;
+                        } else {
+                            this.fieldData[x][y] = 0;
+                        }
+                    }
+                }
+            }
+            
+            generateSphericalField(t) {
+                const centerX = this.gridSize / 2;
+                const centerY = this.gridSize / 2;
+                
+                for (let x = 0; x < this.gridSize; x++) {
+                    for (let y = 0; y < this.gridSize; y++) {
+                        const dx = x - centerX;
+                        const dy = y - centerY;
+                        const r = Math.sqrt(dx * dx + dy * dy);
+                        
+                        // Spherical harmonic field
+                        const maxRadius = this.gridSize / 2;
+                        if (r < maxRadius) {
+                            const normalizedR = r / maxRadius;
+                            const radialComponent = Math.exp(-(normalizedR * normalizedR) * 2);
+                            const timeComponent = Math.sin(this.frequency * t * this.speed);
+                            const harmonics = Math.sin(2 * this.frequency * t * this.speed) * 0.3 +
+                                           Math.sin(3 * this.frequency * t * this.speed) * 0.1;
+                            
+                            this.fieldData[x][y] = (radialComponent * (timeComponent + harmonics)) * this.intensity;
+                        } else {
+                            this.fieldData[x][y] = 0;
+                        }
+                    }
+                }
+            }
+            
+            generateVortexField(t) {
+                const centerX = this.gridSize / 2;
+                const centerY = this.gridSize / 2;
+                
+                for (let x = 0; x < this.gridSize; x++) {
+                    for (let y = 0; y < this.gridSize; y++) {
+                        const dx = x - centerX;
+                        const dy = y - centerY;
+                        const r = Math.sqrt(dx * dx + dy * dy);
+                        const theta = Math.atan2(dy, dx);
+                        
+                        // Vortex spiral pattern
+                        const spiral = theta - r * 0.1 + this.frequency * t * this.speed;
+                        const radialDecay = Math.exp(-r / 20);
+                        const pulsation = 1 + 0.5 * Math.sin(this.frequency * t * this.speed);
+                        
+                        this.fieldData[x][y] = Math.sin(spiral) * radialDecay * pulsation * this.intensity;
+                    }
+                }
+            }
+            
+            generateWaveField(t) {
+                for (let x = 0; x < this.gridSize; x++) {
+                    for (let y = 0; y < this.gridSize; y++) {
+                        const normalizedX = (x / this.gridSize - 0.5) * 4;
+                        const normalizedY = (y / this.gridSize - 0.5) * 4;
+                        
+                        // Standing wave interference pattern
+                        const waveX = Math.sin(Math.PI * normalizedX) * Math.cos(this.frequency * t * this.speed);
+                        const waveY = Math.sin(Math.PI * normalizedY) * Math.cos(this.frequency * t * this.speed + Math.PI / 4);
+                        const interference = Math.sin(normalizedX * normalizedY + this.frequency * t * this.speed) * 0.3;
+                        
+                        this.fieldData[x][y] = ((waveX + waveY) / 2 + interference) * this.intensity;
+                    }
+                }
+            }
+            
+            renderField() {
+                const width = this.canvas.clientWidth;
+                const height = this.canvas.clientHeight;
+                const cellWidth = width / this.gridSize;
+                const cellHeight = height / this.gridSize;
+                
+                this.ctx.clearRect(0, 0, width, height);
+                
+                // Calculate field metrics
+                let totalEnergy = 0;
+                let maxIntensity = 0;
+                
+                for (let x = 0; x < this.gridSize; x++) {
+                    for (let y = 0; y < this.gridSize; y++) {
+                        const intensity = this.fieldData[x][y];
+                        totalEnergy += intensity * intensity;
+                        maxIntensity = Math.max(maxIntensity, Math.abs(intensity));
+                        
+                        // Color based on field intensity
+                        const normalizedIntensity = intensity / (this.intensity + 0.1);
+                        let r, g, b, a;
+                        
+                        if (normalizedIntensity > 0) {
+                            // Positive field - warm colors
+                            const t = normalizedIntensity;
+                            r = Math.floor(255 * Math.min(1, t * 2));
+                            g = Math.floor(205 * Math.max(0, 2 * t - 1));
+                            b = Math.floor(107 * Math.max(0, 2 * t - 1));
+                            a = Math.abs(t) * 0.8;
+                        } else {
+                            // Negative field - cool colors
+                            const t = Math.abs(normalizedIntensity);
+                            r = Math.floor(69 * Math.max(0, 2 * t - 1));
+                            g = Math.floor(183 * Math.min(1, t * 2));
+                            b = Math.floor(209 * Math.min(1, t * 2));
+                            a = t * 0.8;
+                        }
+                        
+                        if (a > 0.05) {
+                            this.ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${a})`;
+                            this.ctx.fillRect(x * cellWidth, y * cellHeight, cellWidth, cellHeight);
+                        }
+                    }
+                }
+                
+                // Update metrics
+                const energy = totalEnergy / (this.gridSize * this.gridSize);
+                const coherence = maxIntensity > 0 ? energy / (maxIntensity * maxIntensity) : 0;
+                
+                document.getElementById('energyMetric').textContent = energy.toFixed(2);
+                document.getElementById('coherenceMetric').textContent = (coherence * 100).toFixed(1) + '%';
+            }
+            
+            animate() {
+                const currentTime = (Date.now() - this.startTime) / 1000;
+                
+                // Generate field data based on current pattern
+                switch (this.pattern) {
+                    case 'toroidal':
+                        this.generateToroidalField(currentTime);
+                        break;
+                    case 'spherical':
+                        this.generateSphericalField(currentTime);
+                        break;
+                    case 'vortex':
+                        this.generateVortexField(currentTime);
+                        break;
+                    case 'wave':
+                        this.generateWaveField(currentTime);
+                        break;
+                }
+                
+                this.renderField();
+                this.animationId = requestAnimationFrame(() => this.animate());
+            }
+            
+            setPattern(pattern) {
+                this.pattern = pattern;
+                this.updatePatternDescription();
+            }
+            
+            updatePatternDescription() {
+                const descriptions = {
+                    toroidal: "<strong>Toroidal Field:</strong> Rotating torus pattern that creates a stable, enclosed electromagnetic field. Often associated with enhanced focus and mental clarity. The field rotates at the beat frequency, creating a hypnotic, centering effect.",
+                    spherical: "<strong>Spherical Harmonic:</strong> Pulsating spherical waves with multiple harmonics. This pattern promotes deep meditation states and expanded awareness. The concentric waves synchronize with your brainwaves for enhanced entrainment.",
+                    vortex: "<strong>Vortex Spiral:</strong> Dynamic spiral pattern that creates a powerful focusing effect. Excellent for concentration and breaking through mental blocks. The spiral draws attention inward while maintaining alertness.",
+                    wave: "<strong>Standing Wave:</strong> Interference patterns create complex geometric formations. This pattern enhances cognitive processing and memory consolidation. The intersecting waves stimulate multiple brain regions simultaneously."
+                };
+                
+                document.getElementById('patternDesc').innerHTML = descriptions[this.pattern];
+            }
+        }
+        
+        // Initialize visualization
+        const canvas = document.getElementById('fieldCanvas');
+        const visualizer = new EMFieldVisualizer(canvas);
+        
+        // Pattern selection
+        document.querySelectorAll('.pattern-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.pattern-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                visualizer.setPattern(btn.dataset.pattern);
+            });
+        });
+        
+        // Control handlers
+        document.getElementById('frequency').addEventListener('input', (e) => {
+            visualizer.frequency = parseFloat(e.target.value);
+            document.getElementById('freqValue').textContent = e.target.value + ' Hz';
+        });
+        
+        document.getElementById('intensity').addEventListener('input', (e) => {
+            visualizer.intensity = parseFloat(e.target.value);
+            document.getElementById('intensityValue').textContent = e.target.value;
+        });
+        
+        document.getElementById('speed').addEventListener('input', (e) => {
+            visualizer.speed = parseFloat(e.target.value);
+            document.getElementById('speedValue').textContent = e.target.value + 'x';
+        });
+        
+        document.getElementById('baseFreq').addEventListener('input', (e) => {
+            visualizer.baseAudioFreq = parseInt(e.target.value);
+            document.getElementById('baseFreqValue').textContent = e.target.value + ' Hz';
+        });
+        
+        function toggleSync() {
+            const btn = document.getElementById('syncBtn');
+            if (visualizer.syncMode) {
+                visualizer.syncMode = false;
+                btn.textContent = '🎵 Start Synchronized Mode';
+                btn.className = 'start-stop-btn start-btn';
+            } else {
+                visualizer.syncMode = true;
+                btn.textContent = '⏹️ Stop Synchronized Mode';
+                btn.className = 'start-stop-btn stop-btn';
+                
+                // In a real implementation, this would start the binaural beat audio
+                console.log(`Starting synchronized mode: ${visualizer.baseAudioFreq}Hz base, ${visualizer.frequency}Hz beat`);
+            }
+        }
+        
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            visualizer.setupCanvas();
+        });
+        
+        // Initialize pattern description
+        visualizer.updatePatternDescription();
+    </script>
+</body>
+</html>
