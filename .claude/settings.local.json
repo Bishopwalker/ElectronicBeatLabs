@@ -23,7 +23,8 @@
       "WebFetch(domain:www.songpeel.com)",
       "WebFetch(domain:audioalter.com)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(dir src\\components\\*.tsx)"
     ],
     "deny": []
   }

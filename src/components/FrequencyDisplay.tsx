@@ -3,47 +3,74 @@
 
 import React from 'react';
 import styled from 'styled-components';
-import type { FrequencyDisplayProps } from '../types/index';
+import type {FrequencyDisplayProps} from '../types/index';
 
 const Container = styled.div`
-  padding: 1rem;
+  padding: 0.5rem;
+  max-height: 280px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 255, 136, 0.5) rgba(0, 0, 0, 0.3);
+  
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: linear-gradient(45deg, #00ff88, #ff6b00);
+    border-radius: 4px;
+    box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+  }
+  
+  &::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(45deg, #33ff99, #ff8533);
+    box-shadow: 0 0 15px rgba(0, 255, 136, 0.7);
+  }
 `;
 
 const Title = styled.h3`
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
   color: #00ff88;
   text-align: center;
+  font-size: 1rem;
 `;
 
 const FrequencyValue = styled.div`
   font-family: 'Courier New', monospace;
-  font-size: 2.5rem;
+  font-size: 1.8rem;
   font-weight: 700;
   text-align: center;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
   color: #00ff88;
   text-shadow: 0 0 20px rgba(0, 255, 136, 0.6);
 `;
 
 const BeatFrequency = styled.div`
   font-family: 'Courier New', monospace;
-  font-size: 1.2rem;
+  font-size: 1rem;
   text-align: center;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
   color: #ff6b00;
 `;
 
 const RangeLabel = styled.div`
   text-align: center;
-  margin-bottom: 1rem;
-  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+  padding: 0.25rem;
+  font-size: 0.85rem;
   background: rgba(255, 255, 255, 0.05);
   border-radius: 8px;
   color: #ffffff;
 `;
 
 const SliderContainer = styled.div`
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 `;
 
 const Slider = styled.input`

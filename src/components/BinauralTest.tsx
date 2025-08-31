@@ -1,25 +1,51 @@
 // Electromagnetic Beat Lab - Binaural Test Component
 // Test individual left/right frequencies
 
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import styled from 'styled-components';
-import type { BinauralTestProps } from '../types/index';
+import type {BinauralTestProps} from '../types/index';
 
 const Container = styled.div`
-  padding: 1rem;
+  padding: 0.5rem;
+  max-height: 250px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 191, 255, 0.5) rgba(0, 0, 0, 0.3);
+  
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: linear-gradient(45deg, #00bfff, #8a2be2);
+    border-radius: 4px;
+    box-shadow: 0 0 10px rgba(0, 191, 255, 0.5);
+  }
+  
+  &::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(45deg, #33ccff, #9944d9);
+    box-shadow: 0 0 15px rgba(0, 191, 255, 0.7);
+  }
 `;
 
 const Title = styled.h3`
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
   color: #00bfff;
   text-align: center;
+  font-size: 1rem;
 `;
 
 const FrequencyInputs = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  margin-bottom: 1rem;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
 `;
 
 const InputGroup = styled.div`
@@ -37,7 +63,7 @@ const Label = styled.label`
 `;
 
 const FrequencyInput = styled.input`
-  padding: 0.75rem;
+  padding: 0.4rem;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 6px;
