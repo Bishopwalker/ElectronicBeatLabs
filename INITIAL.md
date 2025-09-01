@@ -196,10 +196,21 @@ SMR_TRAINING_PROTOCOL = {
 - https://websockets.readthedocs.io/ - Python WebSockets Library
 - https://docs.python.org/3/library/asyncio.html - Python Asyncio Documentation
 
+**GitLab CI/CD**:
+- https://docs.gitlab.com/ci/ - GitLab CI/CD Documentation
+- https://docs.gitlab.com/ci/yaml/ - GitLab CI/CD YAML Reference
+- https://docs.gitlab.com/ci/pipelines/ - GitLab Pipelines Documentation
+- https://docs.gitlab.com/ci/docker/ - GitLab Docker Integration
+
 **Scientific Computing Libraries**:
 - https://numpy.org/doc/stable/ - NumPy Documentation
 - https://docs.scipy.org/doc/scipy/ - SciPy Documentation  
 - https://matplotlib.org/stable/contents.html - Matplotlib Documentation
+
+**Testing Frameworks**:
+- https://jestjs.io/docs/getting-started - Jest Testing Framework
+- https://jestjs.io/docs/tutorial-react - Jest React Testing Tutorial
+- https://cucumber.io/docs/cucumber/ - Cucumber BDD Testing Framework
 
 **React & Visualization**:
 - https://threejs.org/docs/ - Three.js Documentation
