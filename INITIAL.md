@@ -4,7 +4,9 @@
 
 **Current Location:** `.claude/INITIAL.md`
 
-Please see `.claude/INITIAL.md` for the authoritative technical specifications, frequency protocols, scientific references, and implementation details.
+Please see `.claude/INITIAL.md` for the authoritative technical specifications
+(coding standards, Ci/CD pipelines, libraries, frameworks and programming languages used, testing, designed patters etc)
+frequency protocols, scientific references, implementation details and AI behavior rules.
 
 **Quick Navigation:**
 - Technical Specifications: [.claude/INITIAL.md](.claude/INITIAL.md)
