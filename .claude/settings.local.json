@@ -23,7 +23,8 @@
       "Bash(pip install:*)",
       "Bash(cat:*)",
       "Bash(start http://localhost:5179)",
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "WebSearch"
     ],
     "deny": [],
     "ask": []
