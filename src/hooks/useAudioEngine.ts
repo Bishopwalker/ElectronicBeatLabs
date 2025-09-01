@@ -41,7 +41,7 @@ export const useAudioEngine = () => {
   // Initialize Web Audio API
   const initializeAudio = useCallback(async (): Promise<AudioContext | null> => {
     try {
-      const context = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const context = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
       
       if (context.state === 'suspended') {
         await context.resume();
@@ -195,16 +195,16 @@ export const useAudioEngine = () => {
       setElectromagnetic(field);
       
       // Update field at 10fps instead of 60fps for eyes-closed usage
-      animationRef.current = window.setTimeout(animate, 100) as any;
+      animationRef.current = window.setTimeout(animate, 100) as unknown as number;
     };
     
     // Start animation
     if (animationRef.current) {
       clearTimeout(animationRef.current);
     }
-    animationRef.current = window.setTimeout(animate, 100) as any;
+    animationRef.current = window.setTimeout(animate, 100) as unknown as number;
 
-  }, [audioState.volume, initializeAudio, createOscillator, createGainNode, calculateElectromagneticField]);
+  }, [audioState.volume, audioState.context, audioState.isPlaying, initializeAudio, createOscillator, createGainNode, calculateElectromagneticField, stopBinauralBeat]);
 
   // Stop binaural beat playback
   const stopBinauralBeat = useCallback(() => {
@@ -373,7 +373,7 @@ export const useAudioEngine = () => {
         stopBinauralBeat();
       }
     };
-  }, []);
+  }, [audioState.isPlaying, stopBinauralBeat]);
 
   return {
     audioState,
@@ -387,6 +387,6 @@ export const useAudioEngine = () => {
     generateTestTones,
     frequencySweep,
     createGammaProtocol,
-    isSupported: !!(window.AudioContext || (window as any).webkitAudioContext)
+    isSupported: !!(window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)
   };
 };
