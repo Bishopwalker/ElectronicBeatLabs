@@ -4,7 +4,7 @@
 
 **Current Location:** `.claude/CLAUDE.md`
 
-Please see `.claude/CLAUDE.md` for the authoritative development standards, testing requirements, and AI behavior rules.
+Please see `.claude/CLAUDE.md` for the authoritative development standards, testing requirements, and development guidelines.
 
 **Quick Navigation:**
 - Development Standards: [.claude/CLAUDE.md](.claude/CLAUDE.md)

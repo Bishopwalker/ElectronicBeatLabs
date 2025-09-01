@@ -1,5 +1,5 @@
 # INDEX.md
-# Claude Code Context Navigation Guide
+# Context Navigation Guide
 
 **📍 Start Here First**
 
