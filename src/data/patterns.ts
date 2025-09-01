@@ -408,7 +408,11 @@ export const PATTERN_PRESETS: PatternPreset[] = [
     category: 'adhd',
     pattern: {
       ...WAVE_PATTERNS[2],
-      adhd: ADHD_PROTOCOLS[0]
+      adhd: {
+        protocol: ADHD_PROTOCOLS[0].name,
+        duration: ADHD_PROTOCOLS[0].duration,
+        intensity: ADHD_PROTOCOLS[0].intensity
+      }
     },
     electromagnetic: {
       strength: 0.7,
