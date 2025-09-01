@@ -317,8 +317,12 @@ quality_gate:
       artifacts: true
     - job: test:backend
       artifacts: true
+    - job: sast
+      artifacts: false
+      optional: true
     - job: secret_detection
       artifacts: false
+      optional: true
   before_script:
     - apk add --no-cache jq curl
   script:
