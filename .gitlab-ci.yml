@@ -230,10 +230,14 @@ package:docker:
   services:
     - docker:24-dind
   needs: 
-    - build:frontend
-    - build:backend
-    - test:frontend:unit
-    - test:backend
+    - job: build:frontend
+      artifacts: true
+    - job: build:backend
+      artifacts: true
+    - job: test:frontend:unit
+      artifacts: false
+    - job: test:backend
+      artifacts: false
   before_script:
     - docker info
     - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
@@ -264,8 +268,10 @@ package:npm:
   stage: package
   image: node:${NODE_VERSION}
   needs: 
-    - build:frontend
-    - test:frontend:unit
+    - job: build:frontend
+      artifacts: true
+    - job: test:frontend:unit
+      artifacts: false
   script:
     # Create NPM package (if applicable)
     - npm pack
