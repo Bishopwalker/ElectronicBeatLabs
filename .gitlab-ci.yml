@@ -67,8 +67,8 @@ build:backend:
   image: python:${PYTHON_VERSION}-slim
   <<: *cache_config
   before_script:
-    # Install build dependencies for PyAudio
-    - apt-get update && apt-get install -y gcc portaudio19-dev python3-dev
+    # Install build dependencies for PyAudio and other packages
+    - apt-get update && apt-get install -y gcc g++ make portaudio19-dev python3-dev libasound2-dev libffi-dev
     # Setup Python environment - slim image has glibc for wheel compatibility
     - python -m venv backend/.venv
     - source backend/.venv/bin/activate
@@ -112,10 +112,11 @@ test:frontend:unit:
     - apt-get update && apt-get install -y chromium chromium-sandbox
     - export CHROME_BIN=/usr/bin/chromium
   script:
-    # Run Jest unit tests
-    - npm run test:ci || true  # Allow failures for now
-    # Generate coverage badge if tests pass
-    - test -d coverage && npx coverage-badges-cli --output coverage/badge.svg || true
+    # Run Jest unit tests with proper error handling
+    - npm run test:ci
+    # Generate coverage badge
+    - npm install -g coverage-badges-cli
+    - test -d coverage && coverage-badges-cli --output coverage/badge.svg || true
   coverage: '/Lines\s*:\s*(\d+\.\d+)%/'
   artifacts:
     name: "frontend-test-results-$CI_COMMIT_SHORT_SHA"
@@ -147,7 +148,7 @@ test:frontend:e2e:
     - apt-get update && apt-get install -y chromium chromium-sandbox
   script:
     # Run Cucumber BDD tests if they exist
-    - npm run test:e2e || true  # Allow failures for now
+    - if npm run test:e2e --dry-run; then npm run test:e2e; else echo "No E2E tests configured yet"; fi
   artifacts:
     name: "e2e-test-results-$CI_COMMIT_SHORT_SHA"
     paths:
@@ -170,14 +171,15 @@ test:backend:
   dependencies:
     - build:backend
   before_script:
-    # Install runtime dependencies for PyAudio
-    - apt-get update && apt-get install -y libportaudio2
+    # Install runtime dependencies for PyAudio and testing
+    - apt-get update && apt-get install -y libportaudio2 libasound2
     - source backend/.venv/bin/activate
   script:
     # Run Python tests
     - cd backend
     - source .venv/bin/activate
-    - python -m pytest --junitxml=../reports/backend-junit.xml --cov=. --cov-report=xml:../reports/backend-coverage.xml --cov-report=html:../reports/backend-coverage-html/
+    - mkdir -p ../reports
+    - python -m pytest --ignore=manual_route_test.py --junitxml=../reports/backend-junit.xml --cov=. --cov-report=xml:../reports/backend-coverage.xml --cov-report=html:../reports/backend-coverage-html/
   coverage: '/TOTAL.+?(\d+\%)$/'
   artifacts:
     name: "backend-test-results-$CI_COMMIT_SHORT_SHA"
@@ -199,20 +201,27 @@ test:integration:
   stage: test
   image: node:${NODE_VERSION}
   services:
-    - name: python:${PYTHON_VERSION}-alpine
+    - name: python:${PYTHON_VERSION}-slim
       alias: backend
+      command: ["sleep", "300"]
   needs: ["build:frontend", "build:backend"]
   dependencies:
     - build:frontend
     - build:backend
   before_script:
     # Setup both environments
-    - apt-get update && apt-get install -y python3 python3-pip chromium-browser
-    - pip3 install -r backend/requirements.txt
+    - apt-get update && apt-get install -y python3 python3-pip python3-venv chromium-browser portaudio19-dev
+    - python3 -m venv backend/.venv
+    - source backend/.venv/bin/activate
+    - pip install --upgrade pip
+    - pip install -r backend/requirements.txt
   script:
     # Start backend in background
-    - cd backend && python3 -m uvicorn main:app --host 0.0.0.0 --port 8000 &
-    - sleep 10 # Wait for backend to start
+    - cd backend
+    - source .venv/bin/activate
+    - python -m uvicorn main:app --host 0.0.0.0 --port 8000 &
+    - cd ..
+    - sleep 15 # Wait for backend to start
     # Run integration tests
     - npm run test:all
     # Health check
@@ -222,7 +231,7 @@ test:integration:
     paths:
       - reports/integration/
     expire_in: 1 week
-  allow_failure: true  # Integration tests can fail for now
+  allow_failure: true  # Integration tests can fail during development
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
@@ -337,7 +346,7 @@ quality_gate:
       artifacts: false
       optional: true
   before_script:
-    - apk add --no-cache jq curl
+    - apk add --no-cache jq curl bc
   script:
     # Check test coverage thresholds
     - |
