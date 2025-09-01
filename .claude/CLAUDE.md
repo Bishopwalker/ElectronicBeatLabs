@@ -57,3 +57,39 @@
 - **Never hallucinate libraries or functions** – only use known, verified Python packages.
 - **Always confirm file paths and module names** exist before referencing them in code or tests.
 - **Never delete or overwrite existing code** unless explicitly instructed to or if part of a task from `TASK.md`.
+- **Never act lazy or do half-ass work.** Always deliver complete, high-quality implementations.
+- **Never reduce functionality to solve a problem** without human authors permission.
+- **Never claim work is complete** without proper live testing and validation.
+
+### 💳 Payment & Identity Management
+- **Use Stripe Payment Platform** for monthly subscriptions implementation.
+- **Choose between AWS Cognito or Keycloak** for identity management and user profiles based on project requirements.
+
+### 🎵 Audio Quality Standards
+- **Priority on sound quality and variation** - this project serves users in intensive focus, meditation, lucid dreaming, or OBE states.
+- **Audio quality is paramount** over visual graphics or UI complexity.
+- **Test audio generation thoroughly** to ensure precise frequency generation and binaural beat accuracy.
+
+### 🧪 Enhanced Testing & Validation
+- **Always test each feature live** by running it in bash and reading output.
+- **Use Windows MCP server** to actually run the website when bash output isn't adequate for proper validation.
+- **Never claim completion** without live testing and proper validation.
+- **All features must have** comprehensive unit and integration tests in working order.
+- **Features must not break** existing tests or CI/CD pipeline.
+- **Test audio functionality** with actual audio generation and validation.
+
+### 📝 Git Workflow Standards
+- **Each completed feature** must be added, committed with concise commit message following project norms, and pushed to GitLab.
+- **Features that don't work** break the pipeline and are unacceptable.
+- **Commit messages** must follow existing project conventions and be descriptive but concise.
+- **No broken code** should ever be committed - all commits must maintain working state.
+
+### 📊 Monitoring & Logging Requirements
+- **Implement comprehensive logging** for all backend API calls with detailed request/response tracking.
+- **Audio engine monitoring** must include frequency generation accuracy, latency measurements, and error tracking.
+- **Performance metrics collection** for WebSocket connections, real-time audio streaming, and system resource usage.
+- **User session tracking** for debugging, analytics, and optimization purposes.
+- **Structured error logging** with stack traces, contextual information, and correlation IDs for troubleshooting.
+- **Appropriate log levels** (DEBUG, INFO, WARN, ERROR, CRITICAL) used throughout the application.
+- **Log rotation and retention** policies to manage disk space and compliance requirements.
+- **Security-conscious logging** - never log sensitive data like passwords, tokens, or personal information.

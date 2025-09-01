@@ -12,7 +12,12 @@
       "Bash(python:*)",
       "Bash(npm run dev:all:*)",
       "Bash(npm run dev:*)",
-      "Bash(uvicorn:*)"
+      "Bash(uvicorn:*)",
+      "Bash(start http://localhost:5177)",
+      "Bash(curl:*)",
+      "Bash(start C:UsersbishoIdeaProjectsebltest_audio_live.html)",
+      "Bash(start \"C:\\Users\\bisho\\IdeaProjects\\ebl\\test_audio_live.html\")",
+      "Bash(alembic init:*)"
     ],
     "deny": [],
     "ask": []

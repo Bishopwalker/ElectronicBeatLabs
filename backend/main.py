@@ -3,7 +3,7 @@ Electromagnetic Beat Lab - FastAPI Backend
 Main application entry point
 """
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 import asyncio
@@ -21,6 +21,10 @@ from protocols.adhd_protocols import ADHDProtocols
 from utils.logger import setup_logger, RequestLogger, AudioLogger
 from utils.metrics import MetricsCollector, get_metrics, CONTENT_TYPE_LATEST
 
+# Import simplified database and auth
+from database.database import init_db
+from routes.simple_routes import router as simple_router
+
 # Setup logging
 logger = setup_logger(name="ebl.main", level="DEBUG", env="development")
 request_logger = RequestLogger(logger)
@@ -28,9 +32,27 @@ audio_logger = AudioLogger(logger)
 
 app = FastAPI(
     title="Electromagnetic Beat Lab",
-    description="Real-time binaural beats and EM field generation",
-    version="1.0.0"
+    description="Real-time binaural beats and EM field generation with authentication and subscription management",
+    version="2.0.0"
 )
+
+# Include simplified auth and subscription routes
+app.include_router(simple_router, prefix="/api")
+
+# Initialize database on startup
+@app.on_event("startup")
+async def startup_event():
+    """
+    Initialize database and perform startup tasks
+    """
+    logger.info("Starting up Electromagnetic Beat Lab backend...")
+    
+    # Initialize database tables
+    init_db()
+    logger.info("Database initialized successfully")
+    
+    # Log startup completion
+    logger.info("Backend startup completed successfully")
 
 # Middleware for request logging and metrics
 @app.middleware("http")
