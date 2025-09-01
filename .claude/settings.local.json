@@ -21,7 +21,8 @@
       "Bash(npm run lint)",
       "Bash(npx eslint:*)",
       "Bash(pip install:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(start http://localhost:5179)"
     ],
     "deny": [],
     "ask": []
