@@ -34,7 +34,7 @@ stages:
 
 build:frontend:
   stage: build
-  image: node:${NODE_VERSION}-alpine
+  image: node:${NODE_VERSION}
   <<: *cache_config
   script:
     # Install dependencies
@@ -97,13 +97,13 @@ build:backend:
 
 test:frontend:unit:
   stage: test
-  image: node:${NODE_VERSION}-alpine
+  image: node:${NODE_VERSION}
   needs: ["build:frontend"]
   dependencies:
     - build:frontend
   before_script:
     # Install Chrome for testing
-    - apk add --no-cache chromium
+    - apt-get update && apt-get install -y chromium-browser
     - export CHROME_BIN=/usr/bin/chromium-browser
   script:
     # Run Jest unit tests
@@ -133,12 +133,12 @@ test:frontend:unit:
 
 test:frontend:e2e:
   stage: test
-  image: node:${NODE_VERSION}-alpine
+  image: node:${NODE_VERSION}
   needs: ["build:frontend"]
   dependencies:
     - build:frontend
   before_script:
-    - apk add --no-cache chromium
+    - apt-get update && apt-get install -y chromium-browser
   script:
     # Run Cucumber BDD tests
     - npm run test:e2e
@@ -190,7 +190,7 @@ test:backend:
 
 test:integration:
   stage: test
-  image: node:${NODE_VERSION}-alpine
+  image: node:${NODE_VERSION}
   services:
     - name: python:${PYTHON_VERSION}-alpine
       alias: backend
@@ -200,7 +200,7 @@ test:integration:
     - build:backend
   before_script:
     # Setup both environments
-    - apk add --no-cache python3 py3-pip chromium
+    - apt-get update && apt-get install -y python3 python3-pip chromium-browser
     - pip3 install -r backend/requirements.txt
   script:
     # Start backend in background
@@ -262,7 +262,7 @@ package:docker:
 
 package:npm:
   stage: package
-  image: node:${NODE_VERSION}-alpine
+  image: node:${NODE_VERSION}
   needs: 
     - build:frontend
     - test:frontend:unit
