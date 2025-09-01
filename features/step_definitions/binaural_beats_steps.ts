@@ -6,7 +6,6 @@ import ElectromagneticBeatLab from '../../src/components/ElectromagneticBeatLab'
 import React from 'react';
 
 // Shared test state
-let component: ReturnType<typeof render>;
 let mockAudioEngine: {
   isPlaying: boolean;
   leftFreq: number;
@@ -73,7 +72,7 @@ Given('I have the Electromagnetic Beat Lab application loaded', async () => {
     }
   };
   
-  component = render(React.createElement(ElectromagneticBeatLab, defaultProps));
+  render(React.createElement(ElectromagneticBeatLab, defaultProps));
   expect(screen.getByText(/Electromagnetic Beat Lab/i)).toBeInTheDocument();
 });
 
@@ -259,7 +258,7 @@ Then('I should hear beats in the {string} range', (brainwaveRange: string) => {
   }
 });
 
-Then('the electromagnetic field should show {string} characteristics', (expectedState: string) => {
+Then('the electromagnetic field should show {string} characteristics', () => {
   expect(mockElectromagneticField.state).toBe('ACTIVE');
   // Additional state-specific validations could be added here
 });

@@ -14,7 +14,15 @@ interface SpatialAudioControlsProps {
     room_scale?: number;
     hf_damping?: number;
   };
-  onChange: (settings: any) => void;
+  onChange: (settings: {
+    enabled: boolean;
+    movement_speed: number;
+    spatial_intensity: number;
+    reverb_enabled: boolean;
+    reverberance?: number;
+    room_scale?: number;
+    hf_damping?: number;
+  }) => void;
 }
 
 const Container = styled.div`

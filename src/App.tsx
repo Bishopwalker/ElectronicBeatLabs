@@ -8,7 +8,6 @@ import GlobalStyles from './styles/GlobalStyles';
 import ElectromagneticBeatLab from './components/ElectromagneticBeatLab';
 import SimpleAuth from './components/SimpleAuth';
 import UsageTrackingExample from './components/UsageTrackingExample';
-// import TimerControls from './components/TimerControls';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { muiTheme } from './theme/muiTheme';
 import { Box, Alert, Tabs, Tab, Typography } from '@mui/material';

@@ -83,7 +83,7 @@ export const useBackendAudioEngine = () => {
   const initializeAudio = useCallback(async (): Promise<AudioContext | null> => {
     try {
       if (!audioContext.current) {
-        audioContext.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        audioContext.current = new (window.AudioContext || (window as typeof window & { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
       }
       
       if (audioContext.current.state === 'suspended') {
@@ -189,7 +189,7 @@ export const useBackendAudioEngine = () => {
   }, [websocket.state.lastMessage, processAudioFrame, processFieldFrame]);
 
   // Start backend session
-  const startBackendSession = useCallback(async (config: BinauralBeatConfig & { spatial_enabled?: boolean, spatial_settings?: any }) => {
+  const startBackendSession = useCallback(async (config: BinauralBeatConfig & { spatial_enabled?: boolean, spatial_settings?: Record<string, unknown> }) => {
     try {
       // Start session via API
       const response = await api.startSession({
@@ -284,7 +284,7 @@ export const useBackendAudioEngine = () => {
   }, [sessionId, websocket, api]);
 
   // Update settings in real-time
-  const updateSettings = useCallback((settings: any) => {
+  const updateSettings = useCallback((settings: Record<string, unknown>) => {
     if (websocket.state.connected) {
       websocket.sendMessage({
         type: 'update_settings',
@@ -295,7 +295,7 @@ export const useBackendAudioEngine = () => {
 
   // Load pattern with backend integration
   const loadPattern = useCallback((pattern: PatternConfig) => {
-    const config: BinauralBeatConfig & { spatial_enabled?: boolean, spatial_settings?: any } = {
+    const config: BinauralBeatConfig & { spatial_enabled?: boolean, spatial_settings?: Record<string, unknown> } = {
       leftFreq: pattern.frequencies.carrier,
       rightFreq: pattern.frequencies.carrier + pattern.frequencies.beat,
       beatFreq: pattern.frequencies.beat,
@@ -346,7 +346,7 @@ export const useBackendAudioEngine = () => {
   }, [updateSettings]);
 
   // Update spatial settings
-  const updateSpatialSettings = useCallback((spatialSettings: any) => {
+  const updateSpatialSettings = useCallback((spatialSettings: Record<string, unknown>) => {
     updateSettings({
       spatial_settings: spatialSettings
     });
@@ -372,6 +372,6 @@ export const useBackendAudioEngine = () => {
     updateSpatialSettings,
     loadPattern,
     updateSettings,
-    isSupported: !!(window.AudioContext || (window as any).webkitAudioContext)
+    isSupported: !!(window.AudioContext || (window as typeof window & { webkitAudioContext: typeof AudioContext }).webkitAudioContext)
   };
 };

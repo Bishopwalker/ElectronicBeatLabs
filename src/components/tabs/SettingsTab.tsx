@@ -40,7 +40,15 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
   audioEngine,
   onStateChange
 }) => {
-  const handleSpatialSettingsChange = (spatialSettings: any) => {
+  const handleSpatialSettingsChange = (spatialSettings: {
+    enabled: boolean;
+    movement_speed: number;
+    spatial_intensity: number;
+    reverb_enabled: boolean;
+    reverberance?: number;
+    room_scale?: number;
+    hf_damping?: number;
+  }) => {
     // Update spatial audio settings in app state
     onStateChange({
       spatialAudio: {

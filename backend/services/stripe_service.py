@@ -25,7 +25,7 @@ class StripeService:
     
     def __init__(self):
         self.webhook_secret = os.getenv("STRIPE_WEBHOOK_SECRET")
-        self.premium_price = int(os.getenv("PREMIUM_PRICE", 399))  # $3.99 in cents
+        self.premium_price = int(os.getenv("PREMIUM_PRICE", "399"))  # $3.99 in cents
     
     async def create_customer(self, user: User) -> str:
         """
@@ -34,7 +34,7 @@ class StripeService:
         try:
             customer = stripe.Customer.create(
                 email=user.email,
-                name=user.full_name,
+                name=user.name or user.email,
                 metadata={
                     "user_id": user.id,
                     "app": "electromagnetic_beat_lab"
@@ -340,3 +340,7 @@ class StripeService:
         
         # You might want to send an email notification here
         # or update the user's subscription status
+
+
+# Global service instance
+stripe_service = StripeService()

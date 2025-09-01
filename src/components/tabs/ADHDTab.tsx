@@ -4,7 +4,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { ADHD_PROTOCOLS } from '../../data/patterns';
-import type { AppState, AudioEngineState, Pattern8D } from '../../types';
+import type { AppState, AudioEngineState, Pattern8D, ADHDProtocol } from '../../types';
 
 const Container = styled.div`
   padding: 1rem 0;
@@ -63,7 +63,7 @@ interface ADHDTabProps {
 const ADHDTab: React.FC<ADHDTabProps> = ({
   audioEngine
 }) => {
-  const handleProtocolSelect = (protocol: any) => {
+  const handleProtocolSelect = (protocol: ADHDProtocol) => {
     audioEngine.createGammaProtocol(protocol.gammaFreq, protocol.duration);
   };
 

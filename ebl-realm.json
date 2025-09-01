@@ -1,0 +1,283 @@
+{
+  "realm": "ebl-realm",
+  "displayName": "Electromagnetic Beat Lab",
+  "displayNameHtml": "<div class=\"kc-logo-text\"><span>Electromagnetic Beat Lab</span></div>",
+  "enabled": true,
+  "userManagedAccessAllowed": false,
+  "registrationAllowed": true,
+  "registrationEmailAsUsername": true,
+  "rememberMe": true,
+  "verifyEmail": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "bruteForceProtected": true,
+  "permanentLockout": false,
+  "maxFailureWaitSeconds": 900,
+  "minimumQuickLoginWaitSeconds": 60,
+  "waitIncrementSeconds": 60,
+  "quickLoginCheckMilliSeconds": 1000,
+  "maxDeltaTimeSeconds": 43200,
+  "failureFactor": 30,
+  "defaultRole": {
+    "name": "default-roles-ebl-realm",
+    "description": "${role_default-roles}",
+    "composite": true,
+    "composites": {
+      "realm": ["offline_access", "uma_authorization", "ebl-user"]
+    }
+  },
+  "requiredCredentials": ["password"],
+  "passwordPolicy": "length(8) and digits(1) and lowerCase(1) and upperCase(1)",
+  "otpPolicyType": "totp",
+  "otpPolicyAlgorithm": "HmacSHA1",
+  "otpPolicyInitialCounter": 0,
+  "otpPolicyDigits": 6,
+  "otpPolicyLookAheadWindow": 1,
+  "otpPolicyPeriod": 30,
+  "clients": [
+    {
+      "clientId": "ebl-app",
+      "name": "Electromagnetic Beat Lab Application",
+      "description": "Main React application for EBL timer and audio features",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "attributes": {
+        "oauth2.device.authorization.grant.enabled": false,
+        "oidc.ciba.grant.enabled": false,
+        "post.logout.redirect.uris": "http://localhost:5173/*##http://localhost:3000/*##https://ebl.yourdomain.com/*",
+        "pkce.code.challenge.method": "S256"
+      },
+      "authenticationFlowBindingOverrides": {},
+      "fullScopeAllowed": true,
+      "nodeReRegistrationTimeout": -1,
+      "protocolMappers": [
+        {
+          "name": "ebl-subscription-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "userinfo.token.claim": "true",
+            "user.attribute": "subscription_status",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "subscription_status",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "name": "ebl-premium-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "userinfo.token.claim": "true",
+            "user.attribute": "is_premium",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "is_premium",
+            "jsonType.label": "boolean"
+          }
+        }
+      ],
+      "defaultClientScopes": [
+        "web-origins",
+        "profile",
+        "roles",
+        "email"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access",
+        "microprofile-jwt"
+      ],
+      "access": {
+        "view": true,
+        "configure": true,
+        "manage": true
+      },
+      "redirectUris": [
+        "http://localhost:5173/*",
+        "http://localhost:3000/*",
+        "https://ebl.yourdomain.com/*"
+      ],
+      "webOrigins": [
+        "http://localhost:5173",
+        "http://localhost:3000", 
+        "https://ebl.yourdomain.com"
+      ]
+    }
+  ],
+  "roles": {
+    "realm": [
+      {
+        "name": "ebl-user",
+        "description": "Basic EBL user with access to free features",
+        "composite": false,
+        "clientRole": false,
+        "containerId": "ebl-realm",
+        "attributes": {}
+      },
+      {
+        "name": "ebl-premium",
+        "description": "Premium EBL subscriber with access to all features",
+        "composite": false,
+        "clientRole": false,
+        "containerId": "ebl-realm",
+        "attributes": {}
+      },
+      {
+        "name": "ebl-admin",
+        "description": "EBL administrator with full system access",
+        "composite": false,
+        "clientRole": false,
+        "containerId": "ebl-realm",
+        "attributes": {}
+      },
+      {
+        "name": "offline_access",
+        "description": "${role_offline-access}",
+        "composite": false,
+        "clientRole": false,
+        "containerId": "ebl-realm"
+      },
+      {
+        "name": "uma_authorization",
+        "description": "${role_uma_authorization}",
+        "composite": false,
+        "clientRole": false,
+        "containerId": "ebl-realm"
+      }
+    ]
+  },
+  "groups": [
+    {
+      "name": "free-users",
+      "path": "/free-users",
+      "realmRoles": ["ebl-user"],
+      "clientRoles": {},
+      "subGroups": []
+    },
+    {
+      "name": "premium-users", 
+      "path": "/premium-users",
+      "realmRoles": ["ebl-user", "ebl-premium"],
+      "clientRoles": {},
+      "subGroups": []
+    }
+  ],
+  "clientScopes": [
+    {
+      "name": "ebl-subscription",
+      "description": "EBL subscription and premium status information",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false",
+        "consent.screen.text": ""
+      },
+      "protocolMappers": [
+        {
+          "name": "subscription-status",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "userinfo.token.claim": "true",
+            "user.attribute": "subscription_status",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "subscription_status",
+            "jsonType.label": "String"
+          }
+        }
+      ]
+    }
+  ],
+  "defaultDefaultClientScopes": [
+    "role_list",
+    "profile", 
+    "email",
+    "ebl-subscription"
+  ],
+  "browserSecurityHeaders": {
+    "contentSecurityPolicyReportOnly": "",
+    "xContentTypeOptions": "nosniff",
+    "xRobotsTag": "none",
+    "xFrameOptions": "SAMEORIGIN",
+    "contentSecurityPolicy": "frame-src 'self'; frame-ancestors 'self'; object-src 'none';",
+    "xXSSProtection": "1; mode=block",
+    "strictTransportSecurity": "max-age=31536000; includeSubDomains"
+  },
+  "smtpServer": {},
+  "loginTheme": "keycloak",
+  "accountTheme": "keycloak.v2",
+  "adminTheme": "keycloak",
+  "emailTheme": "keycloak",
+  "eventsEnabled": true,
+  "eventsListeners": ["jboss-logging"],
+  "enabledEventTypes": [
+    "LOGIN",
+    "LOGIN_ERROR", 
+    "REGISTER",
+    "REGISTER_ERROR",
+    "LOGOUT",
+    "CODE_TO_TOKEN",
+    "CLIENT_LOGIN",
+    "REFRESH_TOKEN"
+  ],
+  "adminEventsEnabled": true,
+  "adminEventsDetailsEnabled": true,
+  "identityProviders": [],
+  "identityProviderMappers": [],
+  "internationalizationEnabled": false,
+  "supportedLocales": [],
+  "authenticationFlows": [
+    {
+      "alias": "browser",
+      "description": "browser based authentication",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": true,
+      "authenticationExecutions": [
+        {
+          "authenticator": "auth-cookie",
+          "authenticatorFlow": false,
+          "requirement": "ALTERNATIVE",
+          "priority": 10,
+          "userSetupAllowed": false,
+          "autheticatorFlow": false
+        },
+        {
+          "authenticator": "auth-spnego",
+          "authenticatorFlow": false,
+          "requirement": "DISABLED",
+          "priority": 20,
+          "userSetupAllowed": false,
+          "autheticatorFlow": false
+        },
+        {
+          "authenticator": "identity-provider-redirector",
+          "authenticatorFlow": false,
+          "requirement": "ALTERNATIVE",
+          "priority": 25,
+          "userSetupAllowed": false,
+          "autheticatorFlow": false
+        },
+        {
+          "authenticatorFlow": true,
+          "requirement": "ALTERNATIVE",
+          "priority": 30,
+          "flowAlias": "forms",
+          "userSetupAllowed": false,
+          "autheticatorFlow": true
+        }
+      ]
+    }
+  ]
+}

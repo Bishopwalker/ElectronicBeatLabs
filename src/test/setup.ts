@@ -14,7 +14,7 @@ global.WebSocket = jest.fn().mockImplementation(() => ({
   addEventListener: jest.fn(),
   removeEventListener: jest.fn(),
   readyState: WebSocket.CONNECTING
-})) as any;
+})) as unknown as typeof WebSocket;
 
 // Mock Audio API
 global.AudioContext = jest.fn().mockImplementation(() => ({
@@ -31,7 +31,7 @@ global.AudioContext = jest.fn().mockImplementation(() => ({
   }),
   destination: {},
   currentTime: 0
-})) as any;
+})) as unknown as typeof AudioContext;
 
 // Mock window.matchMedia
 Object.defineProperty(window, 'matchMedia', {

@@ -1,6 +1,14 @@
+### 🚨 CRITICAL RULE - NO EXCEPTIONS
+**🛑 NEVER COMMIT WITHOUT FULL VERIFICATION 🛑**
+- **MANDATORY: Test everything live before committing** - run backend with bash, start frontend, verify app works
+- **MANDATORY: Verify CI/CD pipeline passes** - check GitLab pipeline status before pushing
+- **MANDATORY: Run all tests and ensure they pass** - unit tests, integration tests, build tests
+- **MANDATORY: Verify app actually works** - click buttons, test features, read bash output
+- **FAILURE TO DO THIS IS UNACCEPTABLE** - broken commits waste everyone's time
+
 ### 🔄 Project Awareness & Context
 - **Always read `PLANNING.md`** at the start of a new conversation to understand the project's architecture, goals, style, and constraints.
-- **Check `TASK.md`** before starting a new task. If the task isn’t listed, add it with a brief description and today's date.
+- **Check `TASK.md`** before starting a new task. If the task isn't listed, add it with a brief description and today's date.
 - **Use consistent naming conventions, file structure, and architecture patterns** as described in `PLANNING.md`.
 - **Use venv_linux** (the virtual environment) whenever executing Python commands, including for unit tests.
 
@@ -103,4 +111,4 @@
 - **Appropriate log levels** (DEBUG, INFO, WARN, ERROR, CRITICAL) used throughout the application.
 - **Log rotation and retention** policies to manage disk space and compliance requirements.
 - **Security-conscious logging** - never log sensitive data like passwords, tokens, or personal information.
-- Always verify Ci/CD pipeline either via script of windows MCP server and ensure it basses before you submit a feature
+- **ABSOLUTE REQUIREMENT: FULL VERIFICATION BEFORE ANY COMMIT/PUSH** - test live app, run tests, verify CI/CD pipeline
