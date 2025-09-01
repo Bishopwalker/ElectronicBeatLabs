@@ -110,45 +110,75 @@ export const useAudioEngine = () => {
 
   // Start binaural beat playback
   const startBinauralBeat = useCallback(async (config: BinauralBeatConfig) => {
-    const context = await initializeAudio();
-    if (!context) return;
+    try {
+      // Stop any existing audio first
+      if (audioState.isPlaying) {
+        stopBinauralBeat();
+        // Wait for cleanup
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
 
-    // Create oscillators
-    const oscL = createOscillator(context, config.leftFreq, config.waveform);
-    const oscR = createOscillator(context, config.rightFreq, config.waveform);
+      const context = audioState.context || await initializeAudio();
+      if (!context) {
+        console.error('Failed to initialize audio context');
+        return;
+      }
 
-    // Create gain nodes
-    const gainL = createGainNode(context, config.amplitude * audioState.volume);
-    const gainR = createGainNode(context, config.amplitude * audioState.volume);
+      // Ensure context is running
+      if (context.state === 'suspended') {
+        await context.resume();
+      }
 
-    // Create stereo panner for spatial audio
-    const pannerL = context.createStereoPanner();
-    const pannerR = context.createStereoPanner();
-    pannerL.pan.setValueAtTime(-1, context.currentTime); // Full left
-    pannerR.pan.setValueAtTime(1, context.currentTime);  // Full right
+      // Create oscillators
+      const oscL = createOscillator(context, config.leftFreq, config.waveform);
+      const oscR = createOscillator(context, config.rightFreq, config.waveform);
 
-    // Connect audio graph
-    oscL.connect(gainL).connect(pannerL).connect(context.destination);
-    oscR.connect(gainR).connect(pannerR).connect(context.destination);
+      // Create gain nodes
+      const gainL = createGainNode(context, config.amplitude * audioState.volume);
+      const gainR = createGainNode(context, config.amplitude * audioState.volume);
 
-    // Start oscillators
-    oscL.start();
-    oscR.start();
+      // Create stereo panner for spatial audio
+      const pannerL = context.createStereoPanner();
+      const pannerR = context.createStereoPanner();
+      pannerL.pan.setValueAtTime(-1, context.currentTime); // Full left
+      pannerR.pan.setValueAtTime(1, context.currentTime);  // Full right
 
-    // Update state
-    setAudioState(prev => ({
-      ...prev,
-      isPlaying: true,
-      leftFreq: config.leftFreq,
-      rightFreq: config.rightFreq,
-      beatFreq: config.beatFreq,
-      waveform: config.waveform as 'sine' | 'square' | 'triangle' | 'sawtooth',
-      gainL,
-      gainR,
-      oscillatorL: oscL,
-      oscillatorR: oscR,
-      context
-    }));
+      // Connect audio graph
+      oscL.connect(gainL).connect(pannerL).connect(context.destination);
+      oscR.connect(gainR).connect(pannerR).connect(context.destination);
+
+      // Add error handling for oscillators
+      oscL.addEventListener('ended', () => {
+        console.log('Left oscillator ended');
+      });
+      
+      oscR.addEventListener('ended', () => {
+        console.log('Right oscillator ended');
+      });
+
+      // Start oscillators
+      oscL.start(context.currentTime);
+      oscR.start(context.currentTime);
+
+      console.log(`Starting binaural beat: ${config.leftFreq}Hz (L) / ${config.rightFreq}Hz (R) = ${config.beatFreq}Hz beat`);
+
+      // Update state
+      setAudioState(prev => ({
+        ...prev,
+        isPlaying: true,
+        leftFreq: config.leftFreq,
+        rightFreq: config.rightFreq,
+        beatFreq: config.beatFreq,
+        waveform: config.waveform as 'sine' | 'square' | 'triangle' | 'sawtooth',
+        gainL,
+        gainR,
+        oscillatorL: oscL,
+        oscillatorR: oscR,
+        context
+      }));
+    } catch (error) {
+      console.error('Error starting binaural beat:', error);
+    }
 
     // Start electromagnetic field animation at reduced rate for performance
     startTimeRef.current = Date.now();
@@ -164,55 +194,57 @@ export const useAudioEngine = () => {
       
       setElectromagnetic(field);
       
-      if (audioState.isPlaying) {
-        // Update field at 10fps instead of 60fps for eyes-closed usage
-        animationRef.current = window.setTimeout(animate, 100) as any;
-      }
+      // Update field at 10fps instead of 60fps for eyes-closed usage
+      animationRef.current = window.setTimeout(animate, 100) as any;
     };
     
+    // Start animation
+    if (animationRef.current) {
+      clearTimeout(animationRef.current);
+    }
     animationRef.current = window.setTimeout(animate, 100) as any;
 
   }, [audioState.volume, initializeAudio, createOscillator, createGainNode, calculateElectromagneticField]);
 
   // Stop binaural beat playback
   const stopBinauralBeat = useCallback(() => {
-    if (audioState.oscillatorL) {
-      audioState.oscillatorL.stop();
-      audioState.oscillatorL.disconnect();
-    }
-    
-    if (audioState.oscillatorR) {
-      audioState.oscillatorR.stop();
-      audioState.oscillatorR.disconnect();
-    }
+    try {
+      if (audioState.oscillatorL) {
+        audioState.oscillatorL.stop();
+        audioState.oscillatorL.disconnect();
+      }
+      
+      if (audioState.oscillatorR) {
+        audioState.oscillatorR.stop();
+        audioState.oscillatorR.disconnect();
+      }
 
-    if (audioState.context && audioState.context.state !== 'closed') {
-      audioState.context.close();
+      if (animationRef.current) {
+        clearTimeout(animationRef.current);
+      }
+
+      setAudioState(prev => ({
+        ...prev,
+        isPlaying: false,
+        gainL: null,
+        gainR: null,
+        oscillatorL: null,
+        oscillatorR: null,
+        context: prev.context // Keep context alive for reuse
+      }));
+
+      setElectromagnetic({
+        strength: 0,
+        frequency: 0,
+        phase: 0,
+        coherence: 0,
+        resonance: 0,
+        state: 'INACTIVE',
+        stability: 0
+      });
+    } catch (error) {
+      console.error('Error stopping binaural beat:', error);
     }
-
-    if (animationRef.current) {
-      clearTimeout(animationRef.current);
-    }
-
-    setAudioState(prev => ({
-      ...prev,
-      isPlaying: false,
-      gainL: null,
-      gainR: null,
-      oscillatorL: null,
-      oscillatorR: null,
-      context: null
-    }));
-
-    setElectromagnetic({
-      strength: 0,
-      frequency: 0,
-      phase: 0,
-      coherence: 0,
-      resonance: 0,
-      state: 'INACTIVE',
-      stability: 0
-    });
   }, [audioState]);
 
   // Update frequency
@@ -270,12 +302,8 @@ export const useAudioEngine = () => {
       waveform: 'sine'
     };
 
-    if (audioState.isPlaying) {
-      stopBinauralBeat();
-    }
-    
     startBinauralBeat(config);
-  }, [audioState.isPlaying, startBinauralBeat, stopBinauralBeat]);
+  }, [startBinauralBeat]);
 
   // Generate binaural test tones
   const generateTestTones = useCallback((leftFreq: number, rightFreq: number, duration: number = 5000) => {
@@ -341,9 +369,11 @@ export const useAudioEngine = () => {
       if (animationRef.current) {
         clearTimeout(animationRef.current);
       }
-      stopBinauralBeat();
+      if (audioState.isPlaying) {
+        stopBinauralBeat();
+      }
     };
-  }, [stopBinauralBeat]);
+  }, []);
 
   return {
     audioState,

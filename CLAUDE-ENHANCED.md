@@ -5,6 +5,8 @@ This file provides comprehensive, domain-specific guidance for implementing the 
 ## 🎯 Project Overview
 
 Building a real-time binaural beat generator with 8D spatial audio processing, electromagnetic field visualization, and WebSocket streaming between React frontend and Python backend.
+We Must have a responsive UI which works equally well on mobile devices as well as desktops.
+This should be intended to be used either while on another screen working or with eyes closed meditating.
 
 ## 🏗️ Architecture
 
@@ -108,7 +110,7 @@ from typing import Literal
 PatternType = Literal["circle", "figure8", "spiral", "vortex", "pendulum"]
 
 class SpatialAudioProcessor:
-    """Apply HRTF-based 8D movement patterns to audio."""
+    """Apply HRTF-based 8D movement patterns to audio, ."""
     
     def __init__(self):
         self.azimuth = 0.0      # Horizontal angle
@@ -287,7 +289,7 @@ class AudioStreamManager:
 ## 🎨 Frontend Audio Implementation
 
 ### 1. Web Audio Context Setup
-
+ 
 ```typescript
 // src/audio/AudioEngine.ts
 export class AudioEngine {

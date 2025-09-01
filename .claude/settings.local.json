@@ -10,7 +10,9 @@
       "Bash(npm test:*)",
       "Bash(git push:*)",
       "Bash(python:*)",
-      "Bash(npm run dev:all:*)"
+      "Bash(npm run dev:all:*)",
+      "Bash(npm run dev:*)",
+      "Bash(uvicorn:*)"
     ],
     "deny": [],
     "ask": []
