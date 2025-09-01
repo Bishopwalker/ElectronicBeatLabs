@@ -3,6 +3,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import SpatialAudioControls from '../SpatialAudioControls';
+import type { AppState, AudioEngineState, Pattern8D } from '../../types';
 
 const Container = styled.div`
   padding: 1rem 0;
@@ -28,10 +29,10 @@ const SectionTitle = styled.h4`
 `;
 
 interface SettingsTabProps {
-  appState: any;
-  audioEngine: any;
-  patterns8D: any;
-  onStateChange: (state: any) => void;
+  appState: AppState;
+  audioEngine: AudioEngineState;
+  patterns8D: Pattern8D[];
+  onStateChange: (state: Partial<AppState>) => void;
 }
 
 const SettingsTab: React.FC<SettingsTabProps> = ({
@@ -41,13 +42,12 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
 }) => {
   const handleSpatialSettingsChange = (spatialSettings: any) => {
     // Update spatial audio settings in app state
-    onStateChange((prev: any) => ({
-      ...prev,
+    onStateChange({
       spatialAudio: {
-        ...prev.spatialAudio,
+        ...appState.spatialAudio,
         ...spatialSettings
       }
-    }));
+    });
 
     // Update backend settings if connected
     if (audioEngine.updateSpatialSettings) {
@@ -57,13 +57,12 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
 
   /*
   const handleSystemSettingChange = (key: string, value: any) => {
-    onStateChange((prev: any) => ({
-      ...prev,
+    onStateChange({
       systemSettings: {
-        ...prev.systemSettings,
+        ...appState.systemSettings,
         [key]: value
       }
-    }));
+    });
   };
   */
 

@@ -6,10 +6,10 @@ import { useState, useCallback } from 'react';
 interface BackendState {
   loading: boolean;
   error: string | null;
-  data: any;
+  data: Record<string, unknown> | null;
 }
 
-interface APIResponse<T = any> {
+interface APIResponse<T = Record<string, unknown>> {
   data?: T;
   error?: string;
   status: number;
@@ -22,7 +22,7 @@ export const useBackendAPI = (baseUrl: string = 'http://localhost:8000') => {
     data: null
   });
 
-  const request = useCallback(async <T = any>(
+  const request = useCallback(async <T = Record<string, unknown>>(
     endpoint: string, 
     options: RequestInit = {}
   ): Promise<APIResponse<T>> => {
@@ -68,7 +68,7 @@ export const useBackendAPI = (baseUrl: string = 'http://localhost:8000') => {
     return request('/api/spatial');
   }, [request]);
 
-  const startSession = useCallback((settings: any) => {
+  const startSession = useCallback((settings: Record<string, unknown>) => {
     return request('/api/session/start', {
       method: 'POST',
       body: JSON.stringify(settings)

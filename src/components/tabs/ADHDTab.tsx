@@ -4,6 +4,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { ADHD_PROTOCOLS } from '../../data/patterns';
+import type { AppState, AudioEngineState, Pattern8D } from '../../types';
 
 const Container = styled.div`
   padding: 1rem 0;
@@ -53,10 +54,10 @@ const Effectiveness = styled.div`
 `;
 
 interface ADHDTabProps {
-  appState: any;
-  audioEngine: any;
-  patterns8D: any;
-  onStateChange: (state: any) => void;
+  appState: AppState;
+  audioEngine: AudioEngineState;
+  patterns8D: Pattern8D[];
+  onStateChange: (state: Partial<AppState>) => void;
 }
 
 const ADHDTab: React.FC<ADHDTabProps> = ({

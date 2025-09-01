@@ -1,10 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+// import keycloak, { initKeycloak } from '../services/keycloak';
 
 interface User {
   email: string;
   is_premium: boolean;
   oauth_provider: string;
   stripe_customer_id?: string;
+  name?: string;
 }
 
 interface UsageInfo {
@@ -19,11 +21,13 @@ interface AuthContextType {
   usage: UsageInfo | null;
   loading: boolean;
   requiresLogin: boolean;
-  login: (provider: string, token: string) => Promise<void>;
+  login: () => Promise<void>;
   logout: () => void;
   recordUsage: (minutes: number) => Promise<void>;
   refreshUsage: () => Promise<void>;
   canUseApp: () => boolean;
+  isSubscribed: boolean;
+  keycloakReady: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -45,6 +49,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [usage, setUsage] = useState<UsageInfo | null>(null);
   const [loading, setLoading] = useState(false);
   const [requiresLogin, setRequiresLogin] = useState(false);
+  // const [keycloakReady, setKeycloakReady] = useState(false);
 
   // Check for saved user and load anonymous usage on app start
   useEffect(() => {

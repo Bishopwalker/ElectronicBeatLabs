@@ -188,7 +188,7 @@ class SimpleAuthService:
 
 # Keycloak Configuration
 KEYCLOAK_SERVER_URL = os.getenv("KEYCLOAK_SERVER_URL", "http://localhost:8080")
-KEYCLOAK_REALM = os.getenv("KEYCLOAK_REALM", "ebl")
+KEYCLOAK_REALM = os.getenv("KEYCLOAK_REALM", "ebl-realm")
 KEYCLOAK_CLIENT_ID = os.getenv("KEYCLOAK_CLIENT_ID", "ebl-app")
 
 security = HTTPBearer()
