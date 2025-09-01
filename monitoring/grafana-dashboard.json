@@ -1,0 +1,200 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "Electromagnetic Beat Lab - Production Monitoring",
+    "tags": ["ebl", "audio", "monitoring"],
+    "style": "dark",
+    "timezone": "browser",
+    "editable": true,
+    "hideControls": false,
+    "graphTooltip": 1,
+    "panels": [
+      {
+        "id": 1,
+        "title": "System Overview",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "ebl_active_sessions",
+            "legendFormat": "Active Sessions"
+          },
+          {
+            "expr": "ebl_websocket_connections",
+            "legendFormat": "WebSocket Connections"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "yellow", "value": 10},
+                {"color": "red", "value": 50}
+              ]
+            }
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+      },
+      {
+        "id": 2,
+        "title": "System Performance",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "ebl_cpu_usage_percent",
+            "legendFormat": "CPU Usage %"
+          },
+          {
+            "expr": "ebl_memory_usage_mb",
+            "legendFormat": "Memory Usage MB"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            }
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+      },
+      {
+        "id": 3,
+        "title": "Request Rate",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "rate(ebl_requests_total[5m])",
+            "legendFormat": "Requests/sec - {{method}} {{endpoint}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8}
+      },
+      {
+        "id": 4,
+        "title": "Request Duration",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(ebl_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "95th percentile"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(ebl_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "50th percentile"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8}
+      },
+      {
+        "id": 5,
+        "title": "Audio Processing",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "ebl_audio_frequency_hz",
+            "legendFormat": "Frequency - {{channel}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "hertz"
+          }
+        },
+        "gridPos": {"h": 8, "w": 8, "x": 0, "y": 16}
+      },
+      {
+        "id": 6,
+        "title": "Audio Latency",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(ebl_audio_latency_ms_bucket[5m]))",
+            "legendFormat": "95th percentile"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms"
+          }
+        },
+        "gridPos": {"h": 8, "w": 8, "x": 8, "y": 16}
+      },
+      {
+        "id": 7,
+        "title": "Buffer Size",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "ebl_audio_buffer_size_bytes",
+            "legendFormat": "Buffer Size"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "bytes"
+          }
+        },
+        "gridPos": {"h": 8, "w": 8, "x": 16, "y": 16}
+      },
+      {
+        "id": 8,
+        "title": "Pattern Usage",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "rate(ebl_pattern_changes_total[5m])",
+            "legendFormat": "Pattern Changes/sec - {{pattern_name}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 24}
+      },
+      {
+        "id": 9,
+        "title": "Session Duration",
+        "type": "histogram",
+        "targets": [
+          {
+            "expr": "ebl_session_duration_seconds_bucket",
+            "legendFormat": "Session Duration"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s"
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 24}
+      },
+      {
+        "id": 10,
+        "title": "Errors",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "rate(ebl_errors_total[5m])",
+            "legendFormat": "Errors/sec - {{error_type}} ({{component}})"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "fixedColor": "red",
+              "mode": "fixed"
+            }
+          }
+        },
+        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 32}
+      }
+    ],
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "refresh": "5s"
+  }
+}

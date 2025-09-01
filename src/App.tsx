@@ -1,7 +1,6 @@
 // Electromagnetic Beat Lab - Main App Component
 // Entry point for the electromagnetic wave generator application
 
-import React from 'react';
 import { ThemeProvider as StyledThemeProvider } from 'styled-components';
 import { ThemeProvider as MuiThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';

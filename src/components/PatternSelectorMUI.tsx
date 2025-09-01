@@ -28,18 +28,18 @@ const PatternSelectorMUI: React.FC<PatternSelectorProps> = ({
 }) => {
   const modes: PatternMode[] = ['AUTO', 'MANUAL', 'SYNC', 'FLOW'];
   
-  const getModeColor = (m: PatternMode) => {
+  const getModeColor = (m: PatternMode): 'inherit' | 'primary' | 'secondary' | 'success' | 'error' | 'info' | 'warning' => {
     switch (m) {
       case 'AUTO': return 'primary';
       case 'MANUAL': return 'secondary';
       case 'SYNC': return 'success';
       case 'FLOW': return 'info';
-      default: return 'default';
+      default: return 'inherit';
     }
   };
 
   return (
-    <Card sx={{ 
+    <Card sx={{
       maxHeight: 400,
       overflow: 'hidden',
       display: 'flex',
@@ -51,9 +51,9 @@ const PatternSelectorMUI: React.FC<PatternSelectorProps> = ({
         <Typography variant="h4" align="center" color="primary" gutterBottom>
           Pattern Selector
         </Typography>
-        
-        <ButtonGroup 
-          fullWidth 
+
+        <ButtonGroup
+          fullWidth
           size="small"
           sx={{ mb: 1 }}
         >
@@ -63,7 +63,7 @@ const PatternSelectorMUI: React.FC<PatternSelectorProps> = ({
               variant={mode === m ? 'contained' : 'outlined'}
               color={getModeColor(m)}
               onClick={() => onModeChange(m)}
-              sx={{ 
+              sx={{
                 fontSize: '0.7rem',
                 py: 0.5,
                 ...(mode === m && {
@@ -79,8 +79,8 @@ const PatternSelectorMUI: React.FC<PatternSelectorProps> = ({
           ))}
         </ButtonGroup>
       </CardContent>
-      
-      <Box sx={{ 
+
+      <Box sx={{
         flex: 1,
         overflow: 'auto',
         px: 1.5,
@@ -104,12 +104,12 @@ const PatternSelectorMUI: React.FC<PatternSelectorProps> = ({
                 elevation={0}
                 sx={{
                   width: '100%',
-                  background: selected?.id === pattern.id 
-                    ? 'rgba(255, 107, 0, 0.2)' 
+                  background: selected === pattern.id
+                    ? 'rgba(255, 107, 0, 0.2)'
                     : 'rgba(255, 255, 255, 0.03)',
                   border: '1px solid',
-                  borderColor: selected?.id === pattern.id 
-                    ? '#ff6b00' 
+                  borderColor: selected === pattern.id
+                    ? '#ff6b00'
                     : 'rgba(255, 255, 255, 0.05)',
                   transition: 'all 0.3s ease',
                   '&:hover': {
@@ -119,7 +119,7 @@ const PatternSelectorMUI: React.FC<PatternSelectorProps> = ({
                 }}
               >
                 <ListItemButton
-                  onClick={() => onSelect(pattern)}
+                  onClick={() => onSelect(pattern.id)}
                   sx={{ py: 0.75, px: 1 }}
                 >
                   <ListItemText
@@ -131,22 +131,22 @@ const PatternSelectorMUI: React.FC<PatternSelectorProps> = ({
                     secondary={
                       <Stack spacing={0.5}>
                         <Stack direction="row" spacing={0.5} alignItems="center">
-                          <Chip 
-                            label={pattern.type} 
+                          <Chip
+                            label={pattern.type}
                             size="small"
                             color="success"
-                            sx={{ 
+                            sx={{
                               height: 18,
                               fontSize: '0.65rem',
                               textTransform: 'uppercase',
                             }}
                           />
-                          <Typography 
-                            variant="caption" 
+                          <Typography
+                            variant="caption"
                             color="secondary"
                             sx={{ fontFamily: 'monospace' }}
                           >
-                            {pattern.frequency.toFixed(1)} Hz
+                            {pattern.frequencies.beat.toFixed(1)} Hz
                           </Typography>
                         </Stack>
                         <Typography variant="caption" color="text.secondary">

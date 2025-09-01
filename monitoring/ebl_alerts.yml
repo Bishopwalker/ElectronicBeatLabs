@@ -1,0 +1,84 @@
+# Electromagnetic Beat Lab - Alert Rules
+
+groups:
+  - name: ebl_alerts
+    rules:
+      # High error rate
+      - alert: HighErrorRate
+        expr: rate(ebl_errors_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value }} errors per second"
+
+      # High CPU usage
+      - alert: HighCPUUsage
+        expr: ebl_cpu_usage_percent > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is {{ $value }}%"
+
+      # High memory usage
+      - alert: HighMemoryUsage
+        expr: ebl_memory_usage_mb > 1024
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is {{ $value }}MB"
+
+      # Audio latency too high
+      - alert: HighAudioLatency
+        expr: histogram_quantile(0.95, rate(ebl_audio_latency_ms_bucket[5m])) > 100
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High audio latency detected"
+          description: "95th percentile latency is {{ $value }}ms"
+
+      # Request duration too high
+      - alert: HighRequestDuration
+        expr: histogram_quantile(0.95, rate(ebl_request_duration_seconds_bucket[5m])) > 1
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High request duration"
+          description: "95th percentile request duration is {{ $value }}s"
+
+      # Too many active sessions (potential resource exhaustion)
+      - alert: TooManySessions
+        expr: ebl_active_sessions > 100
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High number of active sessions"
+          description: "{{ $value }} active sessions detected"
+
+      # Audio buffer size growing (potential memory leak)
+      - alert: GrowingAudioBuffer
+        expr: increase(ebl_audio_buffer_size_bytes[10m]) > 10485760  # 10MB
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Audio buffer size growing"
+          description: "Audio buffer increased by {{ $value }} bytes"
+
+      # WebSocket connection issues
+      - alert: WebSocketConnectionDrops
+        expr: rate(ebl_websocket_connections[1m]) < -0.5
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "WebSocket connections dropping"
+          description: "WebSocket disconnection rate: {{ $value }} per second"

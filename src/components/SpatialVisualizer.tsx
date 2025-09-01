@@ -3,7 +3,7 @@
 
 import React, { useEffect, useRef, useCallback } from 'react';
 import styled from 'styled-components';
-import type { SpatialVisualizerProps, Position3D } from '../types/index';
+import type { SpatialVisualizerProps } from '../types/index';
 
 const Container = styled.div`
   width: 100%;
@@ -24,7 +24,7 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
   size = 400
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number | undefined>();
   const timeRef = useRef<number>(0);
 
   // Render electromagnetic field pattern

@@ -71,7 +71,7 @@ export const useBackendAudioEngine = () => {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [backendConnected, setBackendConnected] = useState(false);
 
-  const audioBuffer = useRef<Float32Array[]>([]);
+  // const audioBuffer = useRef<Float32Array[]>([]);
   const audioSource = useRef<AudioBufferSourceNode | null>(null);
   const audioContext = useRef<AudioContext | null>(null);
 

@@ -42,7 +42,7 @@ const Header = styled.header`
   left: 0;
   right: 0;
   z-index: 100;
-  padding: 1rem 2rem;
+  padding: 0.25rem 0.5rem;
   display: flex;
   justify-content: between;
   align-items: center;
@@ -59,22 +59,22 @@ const Title = styled.h1`
 
 const StatusBar = styled.div`
   display: flex;
-  gap: 1rem;
+  gap: 0.25rem;
   align-items: center;
-  font-size: 0.9rem;
+  font-size: 0.75rem;
 `;
 
 const MainInterface = styled.div`
   position: absolute;
-  top: 80px;
+  top: 40px;
   left: 0;
   right: 0;
   bottom: 0;
   display: grid;
-  grid-template-columns: 320px 1fr 280px;
+  grid-template-columns: 280px 1fr 260px;
   grid-template-rows: auto 1fr auto;
-  gap: 1rem;
-  padding: 1rem;
+  gap: 0.25rem;
+  padding: 0.25rem;
   overflow: hidden;
 
   @media (max-width: 1200px) {
@@ -93,7 +93,7 @@ const LeftPanel = styled.div`
   grid-row: 1 / -1;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.25rem;
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
@@ -148,7 +148,7 @@ const RightPanel = styled.div`
   grid-row: 1 / -1;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.25rem;
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
@@ -193,9 +193,9 @@ const VisualizationContainer = styled.div`
 
 const ControlsContainer = styled.div`
   position: absolute;
-  bottom: 1rem;
-  left: 1rem;
-  right: 1rem;
+  bottom: 0.25rem;
+  left: 0.25rem;
+  right: 0.25rem;
   z-index: 50;
 
   @media (max-width: 768px) {
@@ -240,8 +240,7 @@ const TabContent = styled.div`
 
 const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
   initialPattern,
-  autoStart = false,
-  fullscreen = false
+  autoStart = false
 }) => {
   // State management
   const [appState, setAppState] = useState<AppState>({
@@ -434,8 +433,6 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
   const renderTabContent = () => {
     const activeTabConfig = tabs.find(tab => tab.id === appState.activeTab);
     if (!activeTabConfig) return null;
-
-    const TabComponent = activeTabConfig.component;
     
     const commonProps = {
       appState,
@@ -498,7 +495,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
         <LeftPanel>
           <PatternSelectorMUI
             patterns={WAVE_PATTERNS}
-            selected={appState.currentPattern || null}
+            selected={appState.currentPattern?.id || null}
             mode={appState.mode}
             onSelect={handlePatternSelect}
             onModeChange={handleModeChange}
@@ -506,9 +503,10 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
 
           <FrequencyDisplayMUI
             frequency={appState.frequency}
-            beatFrequency={appState.frequency}
+            beatFreq={appState.frequency}
+            target={appState.currentPattern?.frequencies.carrier || 440}
+            range={appState.currentPattern?.frequencies.range || 'alpha'}
             onChange={handleFrequencyChange}
-            rangeLabel={appState.currentPattern?.frequencies.range || 'alpha'}
           />
 
           <MainControlsMUI
@@ -520,12 +518,9 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
           />
 
           <BinauralTestMUI
-            leftFrequency={audioEngine.audioState.leftFreq || 440}
-            rightFrequency={audioEngine.audioState.rightFreq || 444}
-            onLeftChange={(freq) => audioEngine.updateFrequency(freq, audioEngine.audioState.rightFreq)}
-            onRightChange={(freq) => audioEngine.updateFrequency(audioEngine.audioState.leftFreq, freq)}
-            onTest={() => handlePlay()}
-            isPlaying={appState.isPlaying}
+            leftFreq={audioEngine.audioState.leftFreq || 440}
+            rightFreq={audioEngine.audioState.rightFreq || 444}
+            onFrequencyChange={(left, right) => audioEngine.updateFrequency(left, right)}
           />
         </LeftPanel>
 

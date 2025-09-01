@@ -3,13 +3,12 @@
 
 import React, { useState } from 'react';
 import {
-  Box,
   Card,
   CardContent,
   Typography,
   TextField,
   Button,
-  Grid,
+  Box,
   Stack,
   Paper,
   Chip,
@@ -22,21 +21,19 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import type { BinauralTestProps } from '../types/index';
 
 const BinauralTestMUI: React.FC<BinauralTestProps> = ({
-  leftFrequency,
-  rightFrequency,
-  onLeftChange,
-  onRightChange,
-  onTest,
-  isPlaying
+  leftFreq,
+  rightFreq,
+  onFrequencyChange
 }) => {
-  const [localLeft, setLocalLeft] = useState(leftFrequency.toString());
-  const [localRight, setLocalRight] = useState(rightFrequency.toString());
+  const [localLeft, setLocalLeft] = useState(leftFreq.toString());
+  const [localRight, setLocalRight] = useState(rightFreq.toString());
+  const [isPlaying, setIsPlaying] = useState(false);
 
   const handleLeftChange = (value: string) => {
     setLocalLeft(value);
     const freq = parseFloat(value);
     if (!isNaN(freq) && freq >= 20 && freq <= 20000) {
-      onLeftChange(freq);
+      onFrequencyChange(freq, rightFreq);
     }
   };
 
@@ -44,24 +41,27 @@ const BinauralTestMUI: React.FC<BinauralTestProps> = ({
     setLocalRight(value);
     const freq = parseFloat(value);
     if (!isNaN(freq) && freq >= 20 && freq <= 20000) {
-      onRightChange(freq);
+      onFrequencyChange(leftFreq, freq);
     }
   };
 
-  const beatFrequency = Math.abs(leftFrequency - rightFrequency);
+  const handleTest = () => {
+    setIsPlaying(!isPlaying);
+  };
+
+  const beatFrequency = Math.abs(leftFreq - rightFreq);
 
   const handleReset = () => {
     const defaultLeft = 440;
     const defaultRight = 444;
     setLocalLeft(defaultLeft.toString());
     setLocalRight(defaultRight.toString());
-    onLeftChange(defaultLeft);
-    onRightChange(defaultRight);
+    onFrequencyChange(defaultLeft, defaultRight);
   };
 
   return (
     <Card sx={{ 
-      maxHeight: 250,
+      maxHeight: 160,
       overflow: 'auto',
       background: 'rgba(0, 191, 255, 0.05)',
       borderColor: 'rgba(0, 191, 255, 0.3)',
@@ -77,21 +77,21 @@ const BinauralTestMUI: React.FC<BinauralTestProps> = ({
         borderRadius: '4px',
       },
     }}>
-      <CardContent sx={{ p: 1.5 }}>
-        <Stack direction="row" alignItems="center" justifyContent="center" spacing={1} mb={1}>
+      <CardContent sx={{ p: 0.75 }}>
+        <Stack direction="row" alignItems="center" justifyContent="center" spacing={0.5} mb={0.5}>
           <HeadphonesIcon color="info" />
-          <Typography variant="h4" align="center" color="info">
+          <Typography variant="subtitle1" align="center" color="info">
             Binaural Test
           </Typography>
         </Stack>
         
-        <Stack spacing={2}>
-          <Grid container spacing={1}>
-            <Grid item xs={6}>
+        <Stack spacing={0.75}>
+          <Stack direction="row" spacing={0.5}>
+            <Box flex={1}>
               <Paper
                 elevation={0}
                 sx={{
-                  p: 1,
+                  p: 0.5,
                   background: 'rgba(255, 255, 255, 0.03)',
                   border: '1px solid rgba(255, 255, 255, 0.1)',
                 }}
@@ -113,7 +113,7 @@ const BinauralTestMUI: React.FC<BinauralTestProps> = ({
                   }}
                   sx={{
                     '& input': {
-                      fontSize: '1rem',
+                      fontSize: '0.875rem',
                       fontWeight: 600,
                     }
                   }}
@@ -127,13 +127,13 @@ const BinauralTestMUI: React.FC<BinauralTestProps> = ({
                   Hz
                 </Typography>
               </Paper>
-            </Grid>
+            </Box>
             
-            <Grid item xs={6}>
+            <Box flex={1}>
               <Paper
                 elevation={0}
                 sx={{
-                  p: 1,
+                  p: 0.5,
                   background: 'rgba(255, 255, 255, 0.03)',
                   border: '1px solid rgba(255, 255, 255, 0.1)',
                 }}
@@ -155,7 +155,7 @@ const BinauralTestMUI: React.FC<BinauralTestProps> = ({
                   }}
                   sx={{
                     '& input': {
-                      fontSize: '1rem',
+                      fontSize: '0.875rem',
                       fontWeight: 600,
                     }
                   }}
@@ -169,8 +169,8 @@ const BinauralTestMUI: React.FC<BinauralTestProps> = ({
                   Hz
                 </Typography>
               </Paper>
-            </Grid>
-          </Grid>
+            </Box>
+          </Stack>
           
           <Paper
             elevation={0}
@@ -185,7 +185,7 @@ const BinauralTestMUI: React.FC<BinauralTestProps> = ({
               Binaural Beat Frequency
             </Typography>
             <Typography 
-              variant="h5" 
+              variant="h6" 
               color="info"
               sx={{ fontFamily: 'monospace', fontWeight: 700 }}
             >
@@ -193,11 +193,11 @@ const BinauralTestMUI: React.FC<BinauralTestProps> = ({
             </Typography>
           </Paper>
           
-          <Stack direction="row" spacing={1}>
+          <Stack direction="row" spacing={0.5}>
             <Button
               variant="contained"
               color={isPlaying ? "error" : "info"}
-              onClick={onTest}
+              onClick={handleTest}
               startIcon={isPlaying ? <StopIcon /> : <PlayArrowIcon />}
               fullWidth
               size="small"
