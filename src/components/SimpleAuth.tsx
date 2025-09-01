@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Box, Button, Card, CardContent, Typography, Alert, CircularProgress } from '@mui/material';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 
 export const SimpleAuth: React.FC = () => {
   const { user, usage, requiresLogin } = useAuth();
