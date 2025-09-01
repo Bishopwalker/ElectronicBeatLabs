@@ -24,6 +24,7 @@ from utils.metrics import MetricsCollector, get_metrics, CONTENT_TYPE_LATEST
 # Import simplified database and auth
 from database.database import init_db
 from routes.simple_routes import router as simple_router
+from routes.timer import router as timer_router
 
 # Setup logging
 logger = setup_logger(name="ebl.main", level="DEBUG", env="development")
@@ -38,6 +39,7 @@ app = FastAPI(
 
 # Include simplified auth and subscription routes
 app.include_router(simple_router, prefix="/api")
+app.include_router(timer_router, prefix="/api")
 
 # Initialize database on startup
 @app.on_event("startup")

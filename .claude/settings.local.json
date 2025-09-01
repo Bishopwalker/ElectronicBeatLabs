@@ -17,7 +17,9 @@
       "Bash(curl:*)",
       "Bash(start C:UsersbishoIdeaProjectsebltest_audio_live.html)",
       "Bash(start \"C:\\Users\\bisho\\IdeaProjects\\ebl\\test_audio_live.html\")",
-      "Bash(alembic init:*)"
+      "Bash(alembic init:*)",
+      "Bash(npm run lint)",
+      "Bash(npx eslint:*)"
     ],
     "deny": [],
     "ask": []

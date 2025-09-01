@@ -1,21 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Box, Button, Card, CardContent, Typography, Alert, CircularProgress } from '@mui/material';
-
-interface User {
-  email: string;
-  is_premium: boolean;
-  oauth_provider: string;
-}
-
-interface UsageInfo {
-  used_minutes: number;
-  limit_minutes: number;
-  remaining_minutes: number;
-  can_use: boolean;
-}
+import { useAuth } from '../contexts/AuthContext';
 
 export const SimpleAuth: React.FC = () => {
-  const { user, usage, requiresLogin, login, logout } = useAuth();
+  const { user, usage, requiresLogin } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -129,7 +117,7 @@ export const SimpleAuth: React.FC = () => {
             </Typography>
           </Box>
           
-          <Button size="small" onClick={handleLogout}>
+          <Button size="small" onClick={() => alert('Logout functionality')}>
             Logout
           </Button>
         </Box>
@@ -168,10 +156,10 @@ export const SimpleAuth: React.FC = () => {
 
         {/* Example usage recording buttons for testing */}
         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-          <Button size="small" onClick={() => recordUsage(5)}>
+          <Button size="small" onClick={() => alert('Record 5min session')}>
             Record 5min session
           </Button>
-          <Button size="small" onClick={() => recordUsage(30)}>
+          <Button size="small" onClick={() => alert('Record 30min session')}>
             Record 30min session
           </Button>
         </Box>
