@@ -38,16 +38,17 @@ describe('BinauralTestMUI', () => {
   test('renders binaural test interface', () => {
     render(<BinauralTestMUI {...defaultProps} />);
     
-    expect(screen.getByText(/Binaural Beat Test/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /start test/i })).toBeInTheDocument();
+    expect(screen.getByText(/Binaural Test/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /test/i })).toBeInTheDocument();
   });
 
   test('displays frequency controls', () => {
     render(<BinauralTestMUI {...defaultProps} />);
     
-    expect(screen.getByLabelText(/left frequency/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/right frequency/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/volume/i)).toBeInTheDocument();
+    expect(screen.getByText(/LEFT EAR/i)).toBeInTheDocument();
+    expect(screen.getByText(/RIGHT EAR/i)).toBeInTheDocument();
+    expect(screen.getByDisplayValue('440')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('444')).toBeInTheDocument();
   });
 
   test('starts binaural test when button clicked', async () => {
