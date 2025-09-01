@@ -24,6 +24,7 @@ pydantic-settings==2.7.1
 
 # CORS and security
 python-jose[cryptography]==3.3.0
+pyjwt==2.10.1
 passlib[bcrypt]==1.7.4
 python-dotenv==1.0.1
 

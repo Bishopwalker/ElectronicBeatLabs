@@ -6,7 +6,7 @@ Test timer endpoints with authentication
 import requests
 import json
 import jwt
-import datetime
+from datetime import datetime, timedelta, UTC
 
 BASE_URL = "http://localhost:8001"
 
@@ -16,7 +16,7 @@ def create_test_token():
         "iss": "test-issuer",
         "sub": "test-user@example.com", 
         "aud": "ebl-app",
-        "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=1),
+        "exp": datetime.now(UTC) + timedelta(hours=1),
         "email": "test-user@example.com",
         "name": "Test User"
     }
