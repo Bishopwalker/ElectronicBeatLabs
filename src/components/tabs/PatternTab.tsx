@@ -3,7 +3,7 @@
 
 import React from 'react';
 import styled from 'styled-components';
-import type { PatternConfig, PatternPreset } from '../../types/index';
+import type { PatternConfig, PatternPreset, AppState, AudioEngineState, Pattern8D } from '../../types/index';
 
 const Container = styled.div`
   padding: 1rem 0;
@@ -111,10 +111,10 @@ const ADHDIndicator = styled.div`
 interface PatternTabProps {
   patterns: PatternConfig[];
   presets: PatternPreset[];
-  appState: any;
-  audioEngine: any;
-  patterns8D: any;
-  onStateChange: (state: any) => void;
+  appState: AppState;
+  audioEngine: AudioEngineState;
+  patterns8D: Pattern8D[];
+  onStateChange: (state: Partial<AppState>) => void;
   onPatternSelect: (patternId: string) => void;
 }
 

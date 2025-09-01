@@ -77,7 +77,7 @@ export const useUsageTracking = () => {
     return () => {
       endSession();
     };
-  }, []);
+  }, [endSession]);
 
   return {
     startSession,

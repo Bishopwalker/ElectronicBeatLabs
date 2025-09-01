@@ -1,14 +1,32 @@
 import { Given, When, Then } from '@cucumber/cucumber';
 import { expect } from '@jest/globals';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ElectromagneticBeatLab from '../../src/components/ElectromagneticBeatLab';
 import React from 'react';
 
 // Shared test state
-let component: any;
-let mockAudioEngine: any;
-let mockElectromagneticField: any;
+let component: ReturnType<typeof render>;
+let mockAudioEngine: {
+  isPlaying: boolean;
+  leftFreq: number;
+  rightFreq: number;
+  beatFreq: number;
+  volume: number;
+  startAudio: jest.Mock;
+  stopAudio: jest.Mock;
+  setVolume: jest.Mock;
+  setFrequencies: jest.Mock;
+  setWaveform: jest.Mock;
+  error: null | Error;
+};
+let mockElectromagneticField: {
+  strength: number;
+  frequency: number;
+  coherence: number;
+  state: string;
+  stability: number;
+};
 
 // Mock setup
 beforeAll(() => {
@@ -55,7 +73,7 @@ Given('I have the Electromagnetic Beat Lab application loaded', async () => {
     }
   };
   
-  component = render(<ElectromagneticBeatLab {...defaultProps} />);
+  component = render(React.createElement(ElectromagneticBeatLab, defaultProps));
   expect(screen.getByText(/Electromagnetic Beat Lab/i)).toBeInTheDocument();
 });
 

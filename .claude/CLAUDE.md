@@ -103,3 +103,4 @@
 - **Appropriate log levels** (DEBUG, INFO, WARN, ERROR, CRITICAL) used throughout the application.
 - **Log rotation and retention** policies to manage disk space and compliance requirements.
 - **Security-conscious logging** - never log sensitive data like passwords, tokens, or personal information.
+- Always verify Ci/CD pipeline either via script of windows MCP server and ensure it basses before you submit a feature

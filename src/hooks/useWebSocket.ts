@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 
 interface WebSocketMessage {
   type: string;
-  data?: any;
+  data?: Record<string, unknown>;
   timestamp?: string;
 }
 

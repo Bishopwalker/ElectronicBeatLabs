@@ -1,6 +1,6 @@
 import { Given, When, Then } from '@cucumber/cucumber';
 import { expect } from '@jest/globals';
-import { screen, fireEvent, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 // Mock pattern data
@@ -43,10 +43,23 @@ const mockPatterns = {
   }
 };
 
-let selectedPattern: any = null;
+type PatternType = {
+  id: string;
+  name: string;
+  description: string;
+  frequency: number;
+  leftFreq: number;
+  rightFreq: number;
+  duration: number;
+  category: string;
+  fadeIn: number;
+  fadeOut: number;
+  customizations?: { volume: number; customFreq: number };
+};
+
+let selectedPattern: PatternType | null = null;
 let currentMode: string = 'AUTO';
-let patternStartTime: number = 0;
-let mockPatternLibrary: any[] = Object.values(mockPatterns);
+const mockPatternLibrary: PatternType[] = Object.values(mockPatterns);
 
 Given('the pattern library is available', () => {
   expect(mockPatternLibrary.length).toBeGreaterThan(0);
