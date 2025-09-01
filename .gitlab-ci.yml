@@ -229,10 +229,11 @@ package:docker:
   image: docker:24-dind
   services:
     - docker:24-dind
-  needs: ["test:frontend:unit", "test:backend"]
-  dependencies:
+  needs: 
     - build:frontend
     - build:backend
+    - test:frontend:unit
+    - test:backend
   before_script:
     - docker info
     - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
