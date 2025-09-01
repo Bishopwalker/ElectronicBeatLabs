@@ -25,7 +25,8 @@
       "Bash(start http://localhost:5179)",
       "Bash(taskkill:*)",
       "WebSearch",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(npx cucumber-js:*)"
     ],
     "deny": [],
     "ask": []
