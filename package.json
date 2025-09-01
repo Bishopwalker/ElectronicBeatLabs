@@ -19,7 +19,13 @@
     "cucumber": "cucumber-js",
     "test:e2e": "cucumber-js --require-module ts-node/register",
     "test:all": "npm run test && npm run test:e2e",
-    "test:full": "npm run test:coverage && npm run test:e2e && npm run backend:test"
+    "test:full": "npm run test:coverage && npm run test:e2e && npm run backend:test",
+    "deploy:frontend": "bash scripts/deploy-frontend.sh",
+    "deploy:frontend:staging": "bash scripts/deploy-frontend.sh staging",
+    "deploy:backend": "bash scripts/deploy-backend.sh",
+    "deploy:backend:staging": "bash scripts/deploy-backend.sh staging",
+    "deploy:all": "npm run deploy:frontend && npm run deploy:backend",
+    "deploy:all:staging": "npm run deploy:frontend:staging && npm run deploy:backend:staging"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

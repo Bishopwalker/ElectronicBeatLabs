@@ -71,9 +71,13 @@ yarn-error.log*
 Thumbs.db
 .DS_Store
 
-# CI/CD
+# CI/CD and Infrastructure
 .gitlab-ci.yml
+.gitlab-ci-deploy.yml
 .github/
+infrastructure/
+scripts/deploy-*.sh
+.last-deployment-*.json
 
 # Monitoring (separate deployment)
 monitoring/
