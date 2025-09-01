@@ -7,7 +7,11 @@ import os
 import requests
 from datetime import datetime
 from sqlalchemy.orm import Session
+from fastapi import HTTPException, Depends, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from jose import JWTError, jwt
 from database.models import User
+from database.database import get_db
 import stripe
 from dotenv import load_dotenv
 
@@ -173,3 +177,69 @@ class SimpleAuthService:
         
         db.add(usage)
         db.commit()
+
+
+# JWT Configuration
+SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-secret-key-here")
+ALGORITHM = "HS256"
+
+security = HTTPBearer()
+
+
+def create_access_token(data: dict):
+    """Create JWT access token"""
+    to_encode = data.copy()
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+
+def decode_access_token(token: str):
+    """Decode JWT access token"""
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload
+    except JWTError:
+        return None
+
+
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db)
+):
+    """
+    Dependency to get current authenticated user from JWT token.
+    
+    Args:
+        credentials: HTTP Authorization header with Bearer token
+        db: Database session
+        
+    Returns:
+        User object if authenticated
+        
+    Raises:
+        HTTPException: If token is invalid or user not found
+    """
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    
+    try:
+        payload = decode_access_token(credentials.credentials)
+        if payload is None:
+            raise credentials_exception
+            
+        email: str = payload.get("sub")
+        if email is None:
+            raise credentials_exception
+            
+    except JWTError:
+        raise credentials_exception
+    
+    # Get user from database
+    user = db.query(User).filter(User.email == email).first()
+    if user is None:
+        raise credentials_exception
+        
+    return user

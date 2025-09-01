@@ -1,3 +1,458 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="jest tests" tests="0" failures="0" errors="0" time="721.494">
+<testsuites name="jest tests" tests="74" failures="22" errors="0" time="12.561">
+  <testsuite name="API Tests" errors="0" failures="0" skipped="0" timestamp="2025-09-01T05:15:40" time="1.866" tests="12">
+    <testcase classname="API Tests" name="should fetch pattern presets" time="0.01">
+    </testcase>
+    <testcase classname="API Tests" name="should create binaural beat session" time="0.003">
+    </testcase>
+    <testcase classname="API Tests" name="should update frequency during session" time="0.001">
+    </testcase>
+    <testcase classname="API Tests" name="should get electromagnetic field data" time="0.001">
+    </testcase>
+    <testcase classname="API Tests" name="should handle API errors gracefully" time="0.001">
+    </testcase>
+    <testcase classname="API Tests" name="should handle 404 responses" time="0">
+    </testcase>
+    <testcase classname="API Tests" name="should handle server errors (500)" time="0">
+    </testcase>
+    <testcase classname="API Tests" name="should validate request data" time="0.001">
+    </testcase>
+    <testcase classname="API Tests" name="should get system status" time="0.001">
+    </testcase>
+    <testcase classname="API Tests" name="should handle concurrent requests" time="0.001">
+    </testcase>
+    <testcase classname="API Tests" name="should support request timeouts" time="0.001">
+    </testcase>
+    <testcase classname="API Tests" name="should handle authentication if required" time="0.002">
+    </testcase>
+  </testsuite>
+  <testsuite name="Frequencies Tests" errors="0" failures="0" skipped="0" timestamp="2025-09-01T05:15:40" time="1.974" tests="11">
+    <testcase classname="Frequencies Tests" name="should have valid frequency ranges" time="0.012">
+    </testcase>
+    <testcase classname="Frequencies Tests" name="should calculate binaural beat correctly" time="0.001">
+    </testcase>
+    <testcase classname="Frequencies Tests" name="should support theta frequency range (4-8Hz)" time="0.002">
+    </testcase>
+    <testcase classname="Frequencies Tests" name="should support alpha frequency range (8-13Hz)" time="0.001">
+    </testcase>
+    <testcase classname="Frequencies Tests" name="should support beta frequency range (13-30Hz)" time="0.001">
+    </testcase>
+    <testcase classname="Frequencies Tests" name="should support gamma frequency range (30Hz+)" time="0.001">
+    </testcase>
+    <testcase classname="Frequencies Tests" name="should calculate wavelength correctly" time="0.007">
+    </testcase>
+    <testcase classname="Frequencies Tests" name="should validate carrier frequencies are audible" time="0.001">
+    </testcase>
+    <testcase classname="Frequencies Tests" name="should ensure beat frequencies are in effective range" time="0.002">
+    </testcase>
+    <testcase classname="Frequencies Tests" name="should calculate frequency sweep correctly" time="0.002">
+    </testcase>
+    <testcase classname="Frequencies Tests" name="should handle ADHD gamma protocol frequencies" time="0.001">
+    </testcase>
+  </testsuite>
+  <testsuite name="WebSocket Tests" errors="0" failures="12" skipped="0" timestamp="2025-09-01T05:15:40" time="2.057" tests="12">
+    <testcase classname="WebSocket Tests" name="should establish WebSocket connection" time="0.007">
+      <failure>TypeError: Cannot read properties of undefined (reading &apos;CONNECTING&apos;)
+    at new MockWebSocket (C:\Users\bisho\IdeaProjects\ebl\src\__tests__\websocket.test.ts:8:41)
+    at Object.&lt;anonymous&gt; (C:\Users\bisho\IdeaProjects\ebl\src\__tests__\websocket.test.ts:56:21)
+    at Promise.finally.completed (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1556:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1496:10)
+    at _callCircusHook (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:975:40)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at _runTest (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:940:5)
+    at _runTestsForDescribeBlock (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:839:13)
+    at _runTestsForDescribeBlock (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:829:11)
+    at run (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:757:3)
+    at runAndTransformResultsToJestFormat (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1917:21)
+    at jestAdapter (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\runner.js:101:19)
+    at runTestInternal (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:275:16)
+    at runTest (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:343:7)
+    at Object.worker (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:497:12)</failure>
+    </testcase>
+    <testcase classname="WebSocket Tests" name="should send frequency update message" time="0.001">
+      <failure>TypeError: Cannot read properties of undefined (reading &apos;CONNECTING&apos;)
+    at new MockWebSocket (C:\Users\bisho\IdeaProjects\ebl\src\__tests__\websocket.test.ts:8:41)
+    at Object.&lt;anonymous&gt; (C:\Users\bisho\IdeaProjects\ebl\src\__tests__\websocket.test.ts:56:21)
+    at Promise.finally.completed (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1556:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1496:10)
+    at _callCircusHook (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:975:40)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at _runTest (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:940:5)
+    at _runTestsForDescribeBlock (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:839:13)
+    at _runTestsForDescribeBlock (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:829:11)
+    at run (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:757:3)
+    at runAndTransformResultsToJestFormat (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1917:21)
+    at jestAdapter (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\runner.js:101:19)
+    at runTestInternal (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:275:16)
+    at runTest (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:343:7)
+    at Object.worker (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:497:12)</failure>
+    </testcase>
+    <testcase classname="WebSocket Tests" name="should send pattern selection message" time="0.001">
+      <failure>TypeError: Cannot read properties of undefined (reading &apos;CONNECTING&apos;)
+    at new MockWebSocket (C:\Users\bisho\IdeaProjects\ebl\src\__tests__\websocket.test.ts:8:41)
+    at Object.&lt;anonymous&gt; (C:\Users\bisho\IdeaProjects\ebl\src\__tests__\websocket.test.ts:56:21)
+    at Promise.finally.completed (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1556:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1496:10)
+    at _callCircusHook (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:975:40)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at _runTest (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:940:5)
+    at _runTestsForDescribeBlock (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:839:13)
+    at _runTestsForDescribeBlock (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:829:11)
+    at run (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:757:3)
+    at runAndTransformResultsToJestFormat (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1917:21)
+    at jestAdapter (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\runner.js:101:19)
+    at runTestInternal (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:275:16)
+    at runTest (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:343:7)
+    at Object.worker (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:497:12)</failure>
+    </testcase>
+    <testcase classname="WebSocket Tests" name="should handle audio stream data" time="0.001">
+      <failure>TypeError: Cannot read properties of undefined (reading &apos;CONNECTING&apos;)
+    at new MockWebSocket (C:\Users\bisho\IdeaProjects\ebl\src\__tests__\websocket.test.ts:8:41)
+    at Object.&lt;anonymous&gt; (C:\Users\bisho\IdeaProjects\ebl\src\__tests__\websocket.test.ts:56:21)
+    at Promise.finally.completed (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1556:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1496:10)
+    at _callCircusHook (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:975:40)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at _runTest (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:940:5)
+    at _runTestsForDescribeBlock (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:839:13)
+    at _runTestsForDescribeBlock (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:829:11)
+    at run (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:757:3)
+    at runAndTransformResultsToJestFormat (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1917:21)
+    at jestAdapter (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\runner.js:101:19)
+    at runTestInternal (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:275:16)
+    at runTest (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:343:7)
+    at Object.worker (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:497:12)</failure>
+    </testcase>
+    <testcase classname="WebSocket Tests" name="should handle electromagnetic field data" time="0.001">
+      <failure>TypeError: Cannot read properties of undefined (reading &apos;CONNECTING&apos;)
+    at new MockWebSocket (C:\Users\bisho\IdeaProjects\ebl\src\__tests__\websocket.test.ts:8:41)
+    at Object.&lt;anonymous&gt; (C:\Users\bisho\IdeaProjects\ebl\src\__tests__\websocket.test.ts:56:21)
+    at Promise.finally.completed (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1556:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1496:10)
+    at _callCircusHook (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:975:40)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at _runTest (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:940:5)
+    at _runTestsForDescribeBlock (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:839:13)
+    at _runTestsForDescribeBlock (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:829:11)
+    at run (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:757:3)
+    at runAndTransformResultsToJestFormat (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1917:21)
+    at jestAdapter (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\runner.js:101:19)
+    at runTestInternal (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:275:16)
+    at runTest (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:343:7)
+    at Object.worker (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:497:12)</failure>
+    </testcase>
+    <testcase classname="WebSocket Tests" name="should handle connection errors" time="0.001">
+      <failure>TypeError: Cannot read properties of undefined (reading &apos;CONNECTING&apos;)
+    at new MockWebSocket (C:\Users\bisho\IdeaProjects\ebl\src\__tests__\websocket.test.ts:8:41)
+    at Object.&lt;anonymous&gt; (C:\Users\bisho\IdeaProjects\ebl\src\__tests__\websocket.test.ts:56:21)
+    at Promise.finally.completed (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1556:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1496:10)
+    at _callCircusHook (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:975:40)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at _runTest (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:940:5)
+    at _runTestsForDescribeBlock (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:839:13)
+    at _runTestsForDescribeBlock (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:829:11)
+    at run (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:757:3)
+    at runAndTransformResultsToJestFormat (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1917:21)
+    at jestAdapter (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\runner.js:101:19)
+    at runTestInternal (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:275:16)
+    at runTest (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:343:7)
+    at Object.worker (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:497:12)</failure>
+    </testcase>
+    <testcase classname="WebSocket Tests" name="should handle connection close" time="0.001">
+      <failure>TypeError: Cannot read properties of undefined (reading &apos;CONNECTING&apos;)
+    at new MockWebSocket (C:\Users\bisho\IdeaProjects\ebl\src\__tests__\websocket.test.ts:8:41)
+    at Object.&lt;anonymous&gt; (C:\Users\bisho\IdeaProjects\ebl\src\__tests__\websocket.test.ts:56:21)
+    at Promise.finally.completed (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1556:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1496:10)
+    at _callCircusHook (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:975:40)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at _runTest (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:940:5)
+    at _runTestsForDescribeBlock (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:839:13)
+    at _runTestsForDescribeBlock (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:829:11)
+    at run (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:757:3)
+    at runAndTransformResultsToJestFormat (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1917:21)
+    at jestAdapter (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\runner.js:101:19)
+    at runTestInternal (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:275:16)
+    at runTest (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:343:7)
+    at Object.worker (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:497:12)</failure>
+    </testcase>
+    <testcase classname="WebSocket Tests" name="should reconnect after connection loss" time="0">
+      <failure>TypeError: Cannot read properties of undefined (reading &apos;CONNECTING&apos;)
+    at new MockWebSocket (C:\Users\bisho\IdeaProjects\ebl\src\__tests__\websocket.test.ts:8:41)
+    at Object.&lt;anonymous&gt; (C:\Users\bisho\IdeaProjects\ebl\src\__tests__\websocket.test.ts:56:21)
+    at Promise.finally.completed (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1556:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1496:10)
+    at _callCircusHook (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:975:40)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at _runTest (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:940:5)
+    at _runTestsForDescribeBlock (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:839:13)
+    at _runTestsForDescribeBlock (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:829:11)
+    at run (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:757:3)
+    at runAndTransformResultsToJestFormat (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1917:21)
+    at jestAdapter (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\runner.js:101:19)
+    at runTestInternal (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:275:16)
+    at runTest (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:343:7)
+    at Object.worker (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:497:12)</failure>
+    </testcase>
+    <testcase classname="WebSocket Tests" name="should handle real-time frequency updates" time="0">
+      <failure>TypeError: Cannot read properties of undefined (reading &apos;CONNECTING&apos;)
+    at new MockWebSocket (C:\Users\bisho\IdeaProjects\ebl\src\__tests__\websocket.test.ts:8:41)
+    at Object.&lt;anonymous&gt; (C:\Users\bisho\IdeaProjects\ebl\src\__tests__\websocket.test.ts:56:21)
+    at Promise.finally.completed (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1556:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1496:10)
+    at _callCircusHook (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:975:40)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at _runTest (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:940:5)
+    at _runTestsForDescribeBlock (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:839:13)
+    at _runTestsForDescribeBlock (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:829:11)
+    at run (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:757:3)
+    at runAndTransformResultsToJestFormat (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1917:21)
+    at jestAdapter (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\runner.js:101:19)
+    at runTestInternal (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:275:16)
+    at runTest (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:343:7)
+    at Object.worker (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:497:12)</failure>
+    </testcase>
+    <testcase classname="WebSocket Tests" name="should batch multiple updates efficiently" time="0">
+      <failure>TypeError: Cannot read properties of undefined (reading &apos;CONNECTING&apos;)
+    at new MockWebSocket (C:\Users\bisho\IdeaProjects\ebl\src\__tests__\websocket.test.ts:8:41)
+    at Object.&lt;anonymous&gt; (C:\Users\bisho\IdeaProjects\ebl\src\__tests__\websocket.test.ts:56:21)
+    at Promise.finally.completed (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1556:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1496:10)
+    at _callCircusHook (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:975:40)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at _runTest (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:940:5)
+    at _runTestsForDescribeBlock (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:839:13)
+    at _runTestsForDescribeBlock (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:829:11)
+    at run (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:757:3)
+    at runAndTransformResultsToJestFormat (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1917:21)
+    at jestAdapter (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\runner.js:101:19)
+    at runTestInternal (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:275:16)
+    at runTest (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:343:7)
+    at Object.worker (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:497:12)</failure>
+    </testcase>
+    <testcase classname="WebSocket Tests" name="should handle large data payloads" time="0">
+      <failure>TypeError: Cannot read properties of undefined (reading &apos;CONNECTING&apos;)
+    at new MockWebSocket (C:\Users\bisho\IdeaProjects\ebl\src\__tests__\websocket.test.ts:8:41)
+    at Object.&lt;anonymous&gt; (C:\Users\bisho\IdeaProjects\ebl\src\__tests__\websocket.test.ts:56:21)
+    at Promise.finally.completed (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1556:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1496:10)
+    at _callCircusHook (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:975:40)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at _runTest (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:940:5)
+    at _runTestsForDescribeBlock (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:839:13)
+    at _runTestsForDescribeBlock (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:829:11)
+    at run (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:757:3)
+    at runAndTransformResultsToJestFormat (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1917:21)
+    at jestAdapter (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\runner.js:101:19)
+    at runTestInternal (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:275:16)
+    at runTest (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:343:7)
+    at Object.worker (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:497:12)</failure>
+    </testcase>
+    <testcase classname="WebSocket Tests" name="should maintain connection heartbeat" time="0.001">
+      <failure>TypeError: Cannot read properties of undefined (reading &apos;CONNECTING&apos;)
+    at new MockWebSocket (C:\Users\bisho\IdeaProjects\ebl\src\__tests__\websocket.test.ts:8:41)
+    at Object.&lt;anonymous&gt; (C:\Users\bisho\IdeaProjects\ebl\src\__tests__\websocket.test.ts:56:21)
+    at Promise.finally.completed (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1556:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1496:10)
+    at _callCircusHook (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:975:40)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at _runTest (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:940:5)
+    at _runTestsForDescribeBlock (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:839:13)
+    at _runTestsForDescribeBlock (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:829:11)
+    at run (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:757:3)
+    at runAndTransformResultsToJestFormat (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1917:21)
+    at jestAdapter (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\runner.js:101:19)
+    at runTestInternal (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:275:16)
+    at runTest (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:343:7)
+    at Object.worker (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:497:12)</failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="use8DPatterns - 8D Pattern Tests" errors="0" failures="0" skipped="0" timestamp="2025-09-01T05:15:40" time="2.659" tests="10">
+    <testcase classname="use8DPatterns - 8D Pattern Tests" name="should initialize with default patterns" time="0.052">
+    </testcase>
+    <testcase classname="use8DPatterns - 8D Pattern Tests" name="should create toroidal pattern correctly" time="0.066">
+    </testcase>
+    <testcase classname="use8DPatterns - 8D Pattern Tests" name="should create vortex pattern correctly" time="0.035">
+    </testcase>
+    <testcase classname="use8DPatterns - 8D Pattern Tests" name="should start animation correctly" time="0.02">
+    </testcase>
+    <testcase classname="use8DPatterns - 8D Pattern Tests" name="should stop animation correctly" time="0.15">
+    </testcase>
+    <testcase classname="use8DPatterns - 8D Pattern Tests" name="should get pattern by ID" time="0.098">
+    </testcase>
+    <testcase classname="use8DPatterns - 8D Pattern Tests" name="should calculate field strength correctly" time="0.012">
+    </testcase>
+    <testcase classname="use8DPatterns - 8D Pattern Tests" name="should create custom pattern" time="0.031">
+    </testcase>
+    <testcase classname="use8DPatterns - 8D Pattern Tests" name="should morph between patterns" time="0.065">
+    </testcase>
+    <testcase classname="use8DPatterns - 8D Pattern Tests" name="should handle animation progress updates" time="0.2">
+    </testcase>
+  </testsuite>
+  <testsuite name="useAudioEngine" errors="0" failures="4" skipped="0" timestamp="2025-09-01T05:15:40" time="7.331" tests="7">
+    <testcase classname="useAudioEngine" name="initializes with default state" time="0.052">
+    </testcase>
+    <testcase classname="useAudioEngine" name="starts binaural beat with config" time="0.128">
+      <failure>Error: expect(received).toBe(expected) // Object.is equality
+
+Expected: true
+Received: false
+    at C:\Users\bisho\IdeaProjects\ebl\src\hooks\__tests__\useAudioEngine.test.ts:86:49
+    at Generator.next (&lt;anonymous&gt;)
+    at fulfilled (C:\Users\bisho\IdeaProjects\ebl\src\hooks\__tests__\useAudioEngine.test.ts:5:58)</failure>
+    </testcase>
+    <testcase classname="useAudioEngine" name="stops binaural beat" time="0.017">
+    </testcase>
+    <testcase classname="useAudioEngine" name="updates frequency" time="0.011">
+      <failure>Error: expect(received).toBe(expected) // Object.is equality
+
+Expected: 300
+Received: 440
+    at C:\Users\bisho\IdeaProjects\ebl\src\hooks\__tests__\useAudioEngine.test.ts:135:48
+    at Generator.next (&lt;anonymous&gt;)
+    at fulfilled (C:\Users\bisho\IdeaProjects\ebl\src\hooks\__tests__\useAudioEngine.test.ts:5:58)</failure>
+    </testcase>
+    <testcase classname="useAudioEngine" name="updates volume" time="0.011">
+    </testcase>
+    <testcase classname="useAudioEngine" name="generates test tones" time="0.013">
+      <failure>Error: expect(received).toBe(expected) // Object.is equality
+
+Expected: true
+Received: false
+    at C:\Users\bisho\IdeaProjects\ebl\src\hooks\__tests__\useAudioEngine.test.ts:169:49
+    at Generator.next (&lt;anonymous&gt;)
+    at fulfilled (C:\Users\bisho\IdeaProjects\ebl\src\hooks\__tests__\useAudioEngine.test.ts:5:58)</failure>
+    </testcase>
+    <testcase classname="useAudioEngine" name="creates gamma protocol" time="0.011">
+      <failure>Error: expect(received).toBe(expected) // Object.is equality
+
+Expected: true
+Received: false
+    at C:\Users\bisho\IdeaProjects\ebl\src\hooks\__tests__\useAudioEngine.test.ts:188:49
+    at Generator.next (&lt;anonymous&gt;)
+    at fulfilled (C:\Users\bisho\IdeaProjects\ebl\src\hooks\__tests__\useAudioEngine.test.ts:5:58)</failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="useAudioEngine - Critical Audio Tests" errors="0" failures="1" skipped="0" timestamp="2025-09-01T05:15:40" time="7.435" tests="7">
+    <testcase classname="useAudioEngine - Critical Audio Tests" name="should initialize with correct default state" time="0.052">
+    </testcase>
+    <testcase classname="useAudioEngine - Critical Audio Tests" name="should start binaural beat correctly" time="0.113">
+    </testcase>
+    <testcase classname="useAudioEngine - Critical Audio Tests" name="should stop binaural beat correctly" time="0.017">
+    </testcase>
+    <testcase classname="useAudioEngine - Critical Audio Tests" name="should update frequency correctly" time="0.008">
+    </testcase>
+    <testcase classname="useAudioEngine - Critical Audio Tests" name="should calculate electromagnetic field correctly" time="0.176">
+      <failure>Error: expect(received).toBe(expected) // Object.is equality
+
+Expected: 4
+Received: 0
+    at C:\Users\bisho\IdeaProjects\ebl\src\__tests__\audioEngine.test.ts:142:54
+    at Generator.next (&lt;anonymous&gt;)
+    at fulfilled (C:\Users\bisho\IdeaProjects\ebl\src\__tests__\audioEngine.test.ts:7:58)</failure>
+    </testcase>
+    <testcase classname="useAudioEngine - Critical Audio Tests" name="should handle volume changes" time="0.007">
+    </testcase>
+    <testcase classname="useAudioEngine - Critical Audio Tests" name="should load pattern correctly" time="0.005">
+    </testcase>
+  </testsuite>
+  <testsuite name="Controls Tests" errors="0" failures="5" skipped="0" timestamp="2025-09-01T05:15:40" time="7.594" tests="15">
+    <testcase classname="Controls Tests Audio Engine Controls" name="should start and stop binaural beats" time="0.137">
+    </testcase>
+    <testcase classname="Controls Tests Audio Engine Controls" name="should update frequency correctly" time="0.01">
+    </testcase>
+    <testcase classname="Controls Tests Audio Engine Controls" name="should update volume correctly" time="0.007">
+    </testcase>
+    <testcase classname="Controls Tests Audio Engine Controls" name="should update waveform correctly" time="0.007">
+    </testcase>
+    <testcase classname="Controls Tests Audio Engine Controls" name="should generate test tones" time="0.007">
+    </testcase>
+    <testcase classname="Controls Tests Audio Engine Controls" name="should perform frequency sweep" time="0.006">
+      <failure>TypeError: audioState.oscillatorL.frequency.linearRampToValueAtTime is not a function
+    at Object.frequencySweep (C:\Users\bisho\IdeaProjects\ebl\src\hooks\useAudioEngine.ts:348:38)
+    at C:\Users\bisho\IdeaProjects\ebl\src\__tests__\controls.test.tsx:166:24
+    at C:\Users\bisho\IdeaProjects\ebl\node_modules\@testing-library\react\dist\act-compat.js:48:24
+    at process.env.NODE_ENV.exports.act (C:\Users\bisho\IdeaProjects\ebl\node_modules\react\cjs\react.development.js:790:22)
+    at C:\Users\bisho\IdeaProjects\ebl\node_modules\@testing-library\react\dist\act-compat.js:47:25
+    at C:\Users\bisho\IdeaProjects\ebl\src\__tests__\controls.test.tsx:165:10
+    at Generator.next (&lt;anonymous&gt;)
+    at fulfilled (C:\Users\bisho\IdeaProjects\ebl\src\__tests__\controls.test.tsx:7:58)</failure>
+    </testcase>
+    <testcase classname="Controls Tests Audio Engine Controls" name="should create gamma protocol for ADHD" time="0.006">
+    </testcase>
+    <testcase classname="Controls Tests Control State Management" name="should maintain consistent state during operations" time="0.125">
+      <failure>Error: expect(received).toBe(expected) // Object.is equality
+
+Expected: true
+Received: false
+    at C:\Users\bisho\IdeaProjects\ebl\src\__tests__\controls.test.tsx:218:51
+    at Generator.next (&lt;anonymous&gt;)
+    at fulfilled (C:\Users\bisho\IdeaProjects\ebl\src\__tests__\controls.test.tsx:7:58)</failure>
+    </testcase>
+    <testcase classname="Controls Tests Control State Management" name="should handle rapid control changes" time="0.016">
+    </testcase>
+    <testcase classname="Controls Tests Control State Management" name="should validate frequency ranges" time="0.004">
+      <failure>Error: expect(received).toBe(expected) // Object.is equality
+
+Expected: 20
+Received: 440
+    at C:\Users\bisho\IdeaProjects\ebl\src\__tests__\controls.test.tsx:265:50
+    at Generator.next (&lt;anonymous&gt;)
+    at C:\Users\bisho\IdeaProjects\ebl\src\__tests__\controls.test.tsx:10:71
+    at new Promise (&lt;anonymous&gt;)
+    at __awaiter (C:\Users\bisho\IdeaProjects\ebl\src\__tests__\controls.test.tsx:6:12)
+    at Object.&lt;anonymous&gt; (C:\Users\bisho\IdeaProjects\ebl\src\__tests__\controls.test.tsx:249:55)
+    at Promise.finally.completed (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1556:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1496:10)
+    at _callCircusTest (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1006:40)
+    at _runTest (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:946:3)
+    at _runTestsForDescribeBlock (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:839:13)
+    at _runTestsForDescribeBlock (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:829:11)
+    at _runTestsForDescribeBlock (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:829:11)
+    at run (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:757:3)
+    at runAndTransformResultsToJestFormat (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1917:21)
+    at jestAdapter (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\runner.js:101:19)
+    at runTestInternal (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:275:16)
+    at runTest (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:343:7)
+    at Object.worker (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:497:12)</failure>
+    </testcase>
+    <testcase classname="Controls Tests Control State Management" name="should validate volume ranges" time="0.003">
+    </testcase>
+    <testcase classname="Controls Tests Error Handling in Controls" name="should handle audio context errors gracefully" time="0.041">
+    </testcase>
+    <testcase classname="Controls Tests Error Handling in Controls" name="should handle oscillator creation errors" time="0.012">
+    </testcase>
+    <testcase classname="Controls Tests Performance and Optimization" name="should debounce rapid frequency updates" time="0.01">
+      <failure>Error: expect(received).toBe(expected) // Object.is equality
+
+Expected: 449
+Received: 440
+    at C:\Users\bisho\IdeaProjects\ebl\src\__tests__\controls.test.tsx:377:50
+    at Generator.next (&lt;anonymous&gt;)
+    at fulfilled (C:\Users\bisho\IdeaProjects\ebl\src\__tests__\controls.test.tsx:7:58)</failure>
+    </testcase>
+    <testcase classname="Controls Tests Performance and Optimization" name="should clean up resources properly" time="0.012">
+      <failure>Error: expect(received).toBe(expected) // Object.is equality
+
+Expected: true
+Received: false
+    at C:\Users\bisho\IdeaProjects\ebl\src\__tests__\controls.test.tsx:396:51
+    at Generator.next (&lt;anonymous&gt;)
+    at fulfilled (C:\Users\bisho\IdeaProjects\ebl\src\__tests__\controls.test.tsx:7:58)</failure>
+    </testcase>
+  </testsuite>
 </testsuites>
