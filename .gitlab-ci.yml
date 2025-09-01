@@ -66,6 +66,8 @@ build:backend:
   image: python:${PYTHON_VERSION}-slim
   <<: *cache_config
   before_script:
+    # Install build dependencies for PyAudio
+    - apt-get update && apt-get install -y gcc portaudio19-dev python3-dev
     # Setup Python environment - slim image has glibc for wheel compatibility
     - python -m venv backend/.venv
     - source backend/.venv/bin/activate
@@ -167,6 +169,8 @@ test:backend:
   dependencies:
     - build:backend
   before_script:
+    # Install runtime dependencies for PyAudio
+    - apt-get update && apt-get install -y libportaudio2
     - source backend/.venv/bin/activate
   script:
     # Run Python tests
