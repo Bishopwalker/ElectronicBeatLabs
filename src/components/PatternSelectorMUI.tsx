@@ -17,7 +17,7 @@ import {
   Stack,
   Paper,
 } from '@mui/material';
-import type { PatternSelectorProps, PatternMode } from '../types/index';
+import type { PatternSelectorProps, PatternMode } from '../types';
 
 const PatternSelectorMUI: React.FC<PatternSelectorProps> = ({
   patterns,

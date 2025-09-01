@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">50% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>6/12</span>
+                <span class='fraction'>0/12</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">50% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>6/12</span>
+                <span class='fraction'>0/12</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line medium'></div>
+    <div class='status-line low'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -164,13 +164,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -197,7 +194,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -231,11 +231,11 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -257,14 +257,14 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span></td><td class="text"><pre class="prettyprint lang-js">// Electromagnetic Beat Lab - Control Tabs Component
+<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// Electromagnetic Beat Lab - Control Tabs Component
 // Tab navigation for different control panels
 &nbsp;
 import React from 'react';
-import styled from 'styled-components';
+<span class="cstat-no" title="statement not covered" >import styled from 'styled-components';</span>
 import type {ControlTabsProps} from '../types/index';
 &nbsp;
-const TabContainer = styled.div`
+const TabContainer = <span class="cstat-no" title="statement not covered" >styled.div`</span>
   display: flex;
   border-bottom: 2px solid rgba(255, 255, 255, 0.1);
   margin-bottom: 1rem;
@@ -294,7 +294,7 @@ const TabContainer = styled.div`
   }
 `;
 &nbsp;
-const TabButton = styled.button&lt;{ active: boolean }&gt;`
+const TabButton = <span class="cstat-no" title="statement not covered" >styled.button&lt;{ active: boolean }&gt;`</span>
   padding: 0.75rem 1.5rem;
   background: transparent;
   border: none;
@@ -328,11 +328,11 @@ const TabButton = styled.button&lt;{ active: boolean }&gt;`
   }
 `;
 &nbsp;
-const TabIcon = styled.span`
+const TabIcon = <span class="cstat-no" title="statement not covered" >styled.span`</span>
   font-size: 1rem;
 `;
 &nbsp;
-const ControlTabs: React.FC&lt;ControlTabsProps&gt; = <span class="fstat-no" title="function not covered" >({</span>
+const ControlTabs: React.FC&lt;ControlTabsProps&gt; = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >({</span></span>
   tabs,
   activeTab,
   onTabChange
@@ -354,14 +354,14 @@ const ControlTabs: React.FC&lt;ControlTabsProps&gt; = <span class="fstat-no" tit
   );
 };
 &nbsp;
-export default ControlTabs;</pre></td></tr></table></pre>
+<span class="cstat-no" title="statement not covered" >export default ControlTabs;</span></pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
             </div><!-- /wrapper -->
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-09-01T15:32:46.121Z
+                at 2025-09-01T19:00:28.430Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
