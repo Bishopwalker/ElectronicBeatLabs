@@ -2,11 +2,28 @@
 
 A Python + React + TypeScript application for generating binaural beats and electromagnetic field simulations.
 
+## 📚 Documentation Structure
+
+**Quick Start for Developers:**
+1. **[.claude/INDEX.md](.claude/INDEX.md)** - Navigation guide (START HERE)
+2. **[.claude/CLAUDE.md](.claude/CLAUDE.md)** - Development standards & rules
+3. **[.claude/INITIAL.md](.claude/INITIAL.md)** - Technical specifications & protocols
+4. **[PLANNING.md](PLANNING.md)** - Architecture & development workflow
+5. **[TASK.md](TASK.md)** - Current sprint work & task tracking
+
+**AI Assistant Context:**
+- **[.claude/VALIDATION.md](.claude/VALIDATION.md)** - Quality checklists
+- **[.claude/RAG_CONTEXT.md](.claude/RAG_CONTEXT.md)** - Code discovery patterns
+- **[.claude/INFRASTRUCTURE.md](.claude/INFRASTRUCTURE.md)** - Environment & deployment
+
 ## Tech Stack
 
-- **Frontend**: Vite + React + TypeScript
-- **Backend**: FastAPI + NumPy + SciPy + PyAudio
+- **Frontend**: Vite + React + TypeScript + Material-UI
+- **Backend**: FastAPI + NumPy + SciPy + PyAudio  
 - **Communication**: WebSocket (audio streaming) + REST (control)
+- **Authentication**: Keycloak or AWS Cognito
+- **Payments**: Stripe Payment Platform
+- **Deployment**: AWS (ECS, S3, CloudFront) + Docker
 
 ## Installation
 
