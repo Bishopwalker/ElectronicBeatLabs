@@ -30,8 +30,8 @@ const mockAudioContext = {
   close: jest.fn()
 };
 
-global.AudioContext = jest.fn(() => mockAudioContext) as any;
-(global as any).webkitAudioContext = global.AudioContext;
+global.AudioContext = jest.fn(() => mockAudioContext) as jest.MockedClass<typeof AudioContext>;
+(global as unknown as { webkitAudioContext: jest.MockedClass<typeof AudioContext> }).webkitAudioContext = global.AudioContext;
 
 describe('useAudioEngine - Critical Audio Tests', () => {
   beforeEach(() => {

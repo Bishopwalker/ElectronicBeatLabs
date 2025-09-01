@@ -34,19 +34,19 @@ class MockWebSocket {
   }
 
   // Simulate receiving a message
-  simulateMessage(data: any) {
+  simulateMessage(data: Record<string, unknown>) {
     if (this.onmessage && this.readyState === WebSocket.OPEN) {
       this.onmessage({
         data: JSON.stringify(data),
         type: 'message',
         target: this
-      } as any);
+      } as MessageEvent);
     }
   }
 }
 
 // Mock WebSocket globally
-global.WebSocket = MockWebSocket as any;
+global.WebSocket = MockWebSocket as typeof WebSocket;
 
 describe('WebSocket Tests', () => {
   let mockWebSocket: MockWebSocket;
@@ -202,7 +202,7 @@ describe('WebSocket Tests', () => {
   });
 
   it('should batch multiple updates efficiently', () => {
-    const messages: any[] = [];
+    const messages: Record<string, unknown>[] = [];
     
     mockWebSocket.onmessage = (event) => {
       const data = JSON.parse(event.data);

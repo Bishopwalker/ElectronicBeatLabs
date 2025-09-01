@@ -1,8 +1,6 @@
 // Controls Test Suite
 // Test main controls, patterns, frequency adjustments
 
-import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
 import { renderHook, act } from '@testing-library/react';
 import { useAudioEngine } from '../hooks/useAudioEngine';
 
@@ -32,8 +30,8 @@ const mockAudioContext = {
   close: jest.fn()
 };
 
-global.AudioContext = jest.fn(() => mockAudioContext) as any;
-(global as any).webkitAudioContext = global.AudioContext;
+global.AudioContext = jest.fn(() => mockAudioContext) as jest.MockedClass<typeof AudioContext>;
+(global as unknown as { webkitAudioContext: jest.MockedClass<typeof AudioContext> }).webkitAudioContext = global.AudioContext;
 
 describe('Controls Tests', () => {
   beforeEach(() => {
@@ -296,7 +294,7 @@ describe('Controls Tests', () => {
       // Mock failed audio context
       global.AudioContext = jest.fn(() => {
         throw new Error('Audio not supported');
-      }) as any;
+      }) as jest.MockedClass<typeof AudioContext>;
 
       const { result } = renderHook(() => useAudioEngine());
       
@@ -325,7 +323,7 @@ describe('Controls Tests', () => {
         })
       };
 
-      global.AudioContext = jest.fn(() => failingContext) as any;
+      global.AudioContext = jest.fn(() => failingContext) as jest.MockedClass<typeof AudioContext>;
 
       const { result } = renderHook(() => useAudioEngine());
       
@@ -361,7 +359,7 @@ describe('Controls Tests', () => {
         await result.current.startBinauralBeat(config);
       });
 
-      const setValueAtTimeSpy = jest.spyOn(
+      jest.spyOn(
         mockAudioContext.createOscillator().frequency,
         'setValueAtTime'
       );

@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Box, Button, Typography, Alert } from '@mui/material';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { useUsageTracking } from '../hooks/useUsageTracking';
 
 /**
@@ -13,7 +13,8 @@ export const UsageTrackingExample: React.FC = () => {
 
   // Auto-start session when component mounts (if user can use the app)
   useEffect(() => {
-    if (canUseApp() && !isSessionActive) {
+    const userCanUse = canUseApp();
+    if (userCanUse && !isSessionActive) {
       startSession();
     }
     
@@ -23,7 +24,7 @@ export const UsageTrackingExample: React.FC = () => {
         endSession();
       }
     };
-  }, [canUseApp(), isSessionActive]);
+  }, [canUseApp, endSession, startSession, isSessionActive]);
 
   return (
     <Box sx={{ p: 2, maxWidth: 400, mx: 'auto' }}>

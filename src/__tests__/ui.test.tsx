@@ -32,8 +32,8 @@ const mockAudioContext = {
   close: jest.fn()
 };
 
-global.AudioContext = jest.fn(() => mockAudioContext) as any;
-(global as any).webkitAudioContext = global.AudioContext;
+global.AudioContext = jest.fn(() => mockAudioContext) as jest.MockedClass<typeof AudioContext>;
+(global as unknown as { webkitAudioContext: jest.MockedClass<typeof AudioContext> }).webkitAudioContext = global.AudioContext;
 
 describe('UI Components Tests', () => {
   beforeEach(() => {
@@ -165,7 +165,6 @@ describe('UI Components Tests', () => {
     it('should handle disabled button interactions', () => {
       render(<SimpleAudioTest />);
       
-      const startButton = screen.getByText('Start 4Hz Beat');
       const stopButton = screen.getByText('Stop Audio');
       
       // Initially stop button should be disabled
@@ -208,7 +207,7 @@ describe('UI Components Tests', () => {
       // Mock failed AudioContext
       global.AudioContext = jest.fn(() => {
         throw new Error('Audio not supported');
-      }) as any;
+      }) as jest.MockedClass<typeof AudioContext>;
 
       render(<SimpleAudioTest />);
       
