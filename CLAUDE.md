@@ -13,4 +13,4 @@ Please see `.claude/CLAUDE.md` for the authoritative development standards, test
 - Context Navigation: [.claude/INDEX.md](.claude/INDEX.md)
 
 ---
-*This redirect file was created during context engineering optimization on 2025-01-13*
+*This redirect file was created during context engineering optimization on 2025-08-01*
