@@ -3,7 +3,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import SpatialAudioControls from '../SpatialAudioControls';
-import type { AppState, AudioEngineState, Pattern8D } from '../../types';
+import type { AppState, AudioEngine, Pattern8D } from '../../types';
 
 const Container = styled.div`
   padding: 1rem 0;
@@ -30,7 +30,7 @@ const SectionTitle = styled.h4`
 
 interface SettingsTabProps {
   appState: AppState;
-  audioEngine: AudioEngineState;
+  audioEngine: AudioEngine;
   patterns8D: Pattern8D[];
   onStateChange: (state: Partial<AppState>) => void;
 }
@@ -59,7 +59,11 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
 
     // Update backend settings if connected
     if (audioEngine.updateSpatialSettings) {
-      audioEngine.updateSpatialSettings(spatialSettings);
+      const fullSpatialConfig = {
+        ...appState.spatialAudio,
+        ...spatialSettings
+      };
+      audioEngine.updateSpatialSettings(fullSpatialConfig);
     }
   };
 
