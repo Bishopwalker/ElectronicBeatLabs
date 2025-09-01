@@ -173,7 +173,8 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
     if (!ctx) return;
 
     renderPattern(ctx, canvas.width, canvas.height);
-    animationRef.current = requestAnimationFrame(animate);
+    // Reduce to 15fps for eyes-closed usage
+    animationRef.current = window.setTimeout(animate, 66) as any;
   }, [renderPattern]);
 
   // Initialize canvas and start animation
@@ -184,11 +185,11 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
     canvas.width = size;
     canvas.height = size;
 
-    animationRef.current = requestAnimationFrame(animate);
+    animationRef.current = window.setTimeout(animate, 66) as any;
 
     return () => {
       if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
+        clearTimeout(animationRef.current);
       }
     };
   }, [animate, size]);

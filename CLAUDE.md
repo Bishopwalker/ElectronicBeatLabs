@@ -2,7 +2,10 @@
 # Electromagnetic Beat Lab - Quick Start
 
 This file provides quick guidance for Claude Code. **For detailed architecture and implementation instructions, see `ai-context/` folder.**
-
+## NEVER'S
+- **Never** assume missing context. Ask questions if uncertain.
+- **Never** hallucinate libraries or functions. Only use known, verified Python packages.
+- **Never** remove functionality to solve a problem without the authors permission
 ## Tech Stack
 - **Frontend**: Vite + React + TypeScript
 - **Backend**: FastAPI + NumPy + SciPy + PyAudio
