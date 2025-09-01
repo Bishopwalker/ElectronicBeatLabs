@@ -35,7 +35,7 @@ export const useAudioEngine = () => {
     stability: 0
   });
 
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number | undefined>();
   const startTimeRef = useRef<number>(0);
 
   // Initialize Web Audio API
@@ -58,7 +58,7 @@ export const useAudioEngine = () => {
   const createOscillator = useCallback((
     context: AudioContext,
     frequency: number,
-    waveform: OscillatorType
+    waveform: 'sine' | 'square' | 'triangle' | 'sawtooth'
   ): OscillatorNode => {
     const oscillator = context.createOscillator();
     oscillator.type = waveform;
@@ -142,7 +142,7 @@ export const useAudioEngine = () => {
       leftFreq: config.leftFreq,
       rightFreq: config.rightFreq,
       beatFreq: config.beatFreq,
-      waveform: config.waveform,
+      waveform: config.waveform as 'sine' | 'square' | 'triangle' | 'sawtooth',
       gainL,
       gainR,
       oscillatorL: oscL,
@@ -247,7 +247,7 @@ export const useAudioEngine = () => {
   }, [audioState]);
 
   // Update waveform
-  const updateWaveform = useCallback((waveform: OscillatorType) => {
+  const updateWaveform = useCallback((waveform: 'sine' | 'square' | 'triangle' | 'sawtooth') => {
     if (audioState.oscillatorL && audioState.oscillatorR) {
       audioState.oscillatorL.type = waveform;
       audioState.oscillatorR.type = waveform;

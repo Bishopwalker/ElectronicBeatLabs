@@ -95,13 +95,13 @@ export const GlobalStyles = createGlobalStyle`
   /* Typography */
   h1, h2, h3, h4, h5, h6 {
     font-weight: 600;
-    margin-bottom: 0.5em;
+    margin-bottom: 0.25em;
     color: #ffffff;
     text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
   }
 
   h1 {
-    font-size: 2.5rem;
+    font-size: 1.8rem;
     background: linear-gradient(45deg, #ff6b00, #00ff88, #8a2be2);
     background-size: 300% 300%;
     -webkit-background-clip: text;
@@ -111,13 +111,13 @@ export const GlobalStyles = createGlobalStyle`
   }
 
   h2 {
-    font-size: 2rem;
+    font-size: 1.5rem;
     color: #00ff88;
     text-shadow: 0 0 15px rgba(0, 255, 136, 0.6);
   }
 
   h3 {
-    font-size: 1.5rem;
+    font-size: 1.2rem;
     color: #ff6b00;
     text-shadow: 0 0 10px rgba(255, 107, 0, 0.5);
   }
@@ -137,7 +137,7 @@ export const GlobalStyles = createGlobalStyle`
     color: #ffffff;
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 8px;
-    padding: 0.75rem;
+    padding: 0.5rem;
     transition: all 0.3s ease;
   }
 
@@ -205,8 +205,8 @@ export const GlobalStyles = createGlobalStyle`
     background: rgba(255, 255, 255, 0.02);
     backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 16px;
-    padding: 1.5rem;
+    border-radius: 12px;
+    padding: 0.75rem;
     box-shadow: 
       0 8px 32px rgba(0, 0, 0, 0.3),
       inset 0 1px 0 rgba(255, 255, 255, 0.1);
@@ -242,8 +242,8 @@ export const GlobalStyles = createGlobalStyle`
     background: rgba(0, 0, 0, 0.4);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 107, 0, 0.3);
-    border-radius: 12px;
-    padding: 1rem;
+    border-radius: 8px;
+    padding: 0.5rem;
     box-shadow: 
       0 4px 16px rgba(255, 107, 0, 0.2),
       inset 0 1px 0 rgba(255, 107, 0, 0.1);
@@ -252,7 +252,7 @@ export const GlobalStyles = createGlobalStyle`
   /* Frequency Display Styling */
   .frequency-display {
     font-family: 'Courier New', monospace;
-    font-size: 2rem;
+    font-size: 1.5rem;
     font-weight: 700;
     color: #00ff88;
     text-shadow: 
@@ -328,11 +328,11 @@ export const GlobalStyles = createGlobalStyle`
   .tab-container {
     display: flex;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    margin-bottom: 1rem;
+    margin-bottom: 0.5rem;
   }
 
   .tab-button {
-    padding: 0.75rem 1.5rem;
+    padding: 0.5rem 1rem;
     background: transparent;
     border: none;
     border-bottom: 2px solid transparent;
@@ -358,7 +358,7 @@ export const GlobalStyles = createGlobalStyle`
   /* Slider Styling */
   .slider-container {
     position: relative;
-    margin: 1rem 0;
+    margin: 0.5rem 0;
   }
 
   .slider {
@@ -414,7 +414,7 @@ export const GlobalStyles = createGlobalStyle`
   /* Pattern Visualization */
   .pattern-visualization {
     width: 100%;
-    height: 300px;
+    height: 200px;
     background: radial-gradient(circle at center, 
       rgba(0, 0, 0, 0.8) 0%, 
       rgba(0, 0, 0, 0.95) 100%
@@ -447,16 +447,16 @@ export const GlobalStyles = createGlobalStyle`
     }
 
     h1 {
-      font-size: 2rem;
+      font-size: 1.5rem;
     }
 
     .glass-panel {
-      padding: 1rem;
-      border-radius: 12px;
+      padding: 0.5rem;
+      border-radius: 8px;
     }
 
     .control-panel {
-      padding: 0.75rem;
+      padding: 0.5rem;
     }
 
     .tab-button {
@@ -475,7 +475,7 @@ export const GlobalStyles = createGlobalStyle`
     }
 
     .glass-panel {
-      padding: 0.75rem;
+      padding: 0.5rem;
       border-radius: 8px;
     }
 

@@ -39,7 +39,7 @@ const StarField: React.FC<StarFieldProps> = ({
   twinkle = true
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number | undefined>();
   const starsRef = useRef<Star[]>([]);
   const mouseRef = useRef({ x: 0, y: 0 });
 

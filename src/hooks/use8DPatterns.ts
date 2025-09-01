@@ -5,7 +5,6 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import type { 
   Pattern8D, 
   Position3D, 
-  ElectromagneticField,
   WavePattern 
 } from '../types/index';
 
@@ -16,7 +15,7 @@ export const use8DPatterns = () => {
   const [animationProgress, setAnimationProgress] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
 
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number | undefined>();
   const startTimeRef = useRef<number>(0);
   const patternIndexRef = useRef<number>(0);
 

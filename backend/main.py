@@ -3,11 +3,13 @@ Electromagnetic Beat Lab - FastAPI Backend
 Main application entry point
 """
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 import asyncio
 import json
+import time
+import psutil
 from typing import Dict, List
 from datetime import datetime
 
@@ -16,12 +18,49 @@ from core.field_simulator import FieldSimulator
 from modules.binaural import BinauralBeatGenerator
 from modules.spatial_audio import SpatialAudioProcessor
 from protocols.adhd_protocols import ADHDProtocols
+from utils.logger import setup_logger, RequestLogger, AudioLogger
+from utils.metrics import MetricsCollector, get_metrics, CONTENT_TYPE_LATEST
+
+# Setup logging
+logger = setup_logger(name="ebl.main", level="DEBUG", env="development")
+request_logger = RequestLogger(logger)
+audio_logger = AudioLogger(logger)
 
 app = FastAPI(
     title="Electromagnetic Beat Lab",
     description="Real-time binaural beats and EM field generation",
     version="1.0.0"
 )
+
+# Middleware for request logging and metrics
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start_time = time.time()
+    
+    # Log request start
+    logger.debug(f"Incoming request: {request.method} {request.url.path}")
+    
+    response = await call_next(request)
+    
+    # Calculate duration
+    duration = time.time() - start_time
+    
+    # Log request completion
+    request_logger.log_request({
+        'method': request.method,
+        'path': request.url.path,
+        'status': response.status_code
+    }, duration)
+    
+    # Track metrics
+    MetricsCollector.track_request(
+        method=request.method,
+        endpoint=request.url.path,
+        status=response.status_code,
+        duration=duration
+    )
+    
+    return response
 
 # CORS configuration for React frontend
 app.add_middleware(
@@ -56,14 +95,32 @@ class ConnectionManager:
             "start_time": datetime.now(),
             "settings": {}
         }
+        
+        # Log connection and update metrics
+        logger.info(f"WebSocket connected - Session: {session_id}")
+        MetricsCollector.track_websocket_connection(True)
+        MetricsCollector.track_session(True)
 
     def disconnect(self, websocket: WebSocket, session_id: str):
-        self.active_connections.remove(websocket)
+        if websocket in self.active_connections:
+            self.active_connections.remove(websocket)
         if session_id in self.sessions:
+            session_start = self.sessions[session_id]["start_time"]
+            duration = (datetime.now() - session_start).total_seconds()
             del self.sessions[session_id]
+            
+            # Log disconnection and update metrics
+            logger.info(f"WebSocket disconnected - Session: {session_id}, Duration: {duration:.1f}s")
+            MetricsCollector.track_websocket_connection(False)
+            MetricsCollector.track_session(False)
 
     async def send_data(self, websocket: WebSocket, data: dict):
-        await websocket.send_json(data)
+        try:
+            await websocket.send_json(data)
+            MetricsCollector.track_websocket_message("sent", data.get("type", "unknown"))
+        except Exception as e:
+            logger.error(f"Failed to send WebSocket message: {e}")
+            MetricsCollector.track_error("websocket_send", "connection_manager")
 
     async def broadcast(self, data: dict):
         for connection in self.active_connections:
@@ -87,11 +144,23 @@ async def root():
 
 @app.get("/health")
 async def health_check():
+    # Update system metrics
+    cpu_percent = psutil.cpu_percent()
+    memory = psutil.virtual_memory()
+    MetricsCollector.update_system_metrics(cpu_percent, memory.used / 1024 / 1024)
+    
+    logger.debug(f"Health check - CPU: {cpu_percent}%, Memory: {memory.percent}%")
+    
     return {
         "status": "healthy",
         "audio_engine": audio_engine.is_running(),
         "field_simulator": field_simulator.is_running(),
-        "active_sessions": len(manager.active_connections)
+        "active_sessions": len(manager.active_connections),
+        "system": {
+            "cpu_percent": cpu_percent,
+            "memory_percent": memory.percent,
+            "memory_used_mb": memory.used / 1024 / 1024
+        }
     }
 
 @app.get("/api/protocols")
@@ -115,6 +184,12 @@ async def get_presets():
             "gamma": "30-100 Hz"
         }
     }
+
+@app.get("/metrics")
+async def metrics():
+    """Prometheus metrics endpoint"""
+    logger.debug("Metrics requested")
+    return Response(content=get_metrics(), media_type=CONTENT_TYPE_LATEST)
 
 @app.get("/api/spatial")
 async def get_spatial_options():

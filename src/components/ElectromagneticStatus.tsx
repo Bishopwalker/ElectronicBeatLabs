@@ -78,8 +78,7 @@ const CoherenceLevel = styled.div<{ level: number }>`
 `;
 
 const ElectromagneticStatus: React.FC<ElectromagneticStatusProps> = ({
-  field,
-  status
+  field
 }) => {
   const getStateLabel = (state: string) => {
     switch (state) {

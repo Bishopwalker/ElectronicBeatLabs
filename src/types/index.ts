@@ -1,7 +1,7 @@
 // Electromagnetic Beat Lab - Type Definitions
 // Complete TypeScript interfaces for the electromagnetic wave beat generator
 
-export type PatternMode = 'AUTO' | 'MANUAL' | 'OFF' | 'CUSTOM';
+export type PatternMode = 'AUTO' | 'MANUAL' | 'OFF' | 'CUSTOM' | 'SYNC' | 'FLOW';
 
 export type WavePattern = 
   | 'toroidal'

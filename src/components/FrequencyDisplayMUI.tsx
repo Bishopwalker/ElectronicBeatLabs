@@ -12,13 +12,14 @@ import {
   Stack,
   Chip,
 } from '@mui/material';
-import type { FrequencyDisplayProps } from '../types/index';
+import type { FrequencyDisplayProps, FrequencyRange } from '../types/index';
 
 const FrequencyDisplayMUI: React.FC<FrequencyDisplayProps> = ({
   frequency,
-  beatFrequency,
-  onChange,
-  rangeLabel
+  beatFreq,
+  target,
+  range,
+  onChange
 }) => {
   const handleChange = (_: Event, value: number | number[]) => {
     onChange(value as number);
@@ -30,6 +31,17 @@ const FrequencyDisplayMUI: React.FC<FrequencyDisplayProps> = ({
     if (freq < 13) return '#00ff88'; // Alpha
     if (freq < 30) return '#ffd700'; // Beta
     return '#ff6b00'; // Gamma
+  };
+
+  const getRangeLabel = (range: FrequencyRange) => {
+    switch (range) {
+      case 'delta': return 'Delta (0.5-4 Hz)';
+      case 'theta': return 'Theta (4-8 Hz)';
+      case 'alpha': return 'Alpha (8-13 Hz)';
+      case 'beta': return 'Beta (13-30 Hz)';
+      case 'gamma': return 'Gamma (30+ Hz)';
+      default: return 'Unknown';
+    }
   };
 
   return (
@@ -70,8 +82,8 @@ const FrequencyDisplayMUI: React.FC<FrequencyDisplayProps> = ({
               sx={{ 
                 fontFamily: 'monospace',
                 fontWeight: 700,
-                color: getFrequencyColor(beatFrequency),
-                textShadow: `0 0 20px ${getFrequencyColor(beatFrequency)}66`,
+                color: getFrequencyColor(beatFreq),
+                textShadow: `0 0 20px ${getFrequencyColor(beatFreq)}66`,
                 fontSize: '1.8rem',
               }}
             >
@@ -82,21 +94,26 @@ const FrequencyDisplayMUI: React.FC<FrequencyDisplayProps> = ({
               color="primary"
               sx={{ fontFamily: 'monospace', mt: 1 }}
             >
-              Beat: {beatFrequency.toFixed(1)} Hz
+              Beat: {beatFreq.toFixed(1)} Hz
+            </Typography>
+            <Typography 
+              variant="body2" 
+              color="secondary"
+              sx={{ fontFamily: 'monospace', mt: 0.5 }}
+            >
+              Target: {target.toFixed(1)} Hz
             </Typography>
           </Paper>
           
-          {rangeLabel && (
-            <Chip
-              label={rangeLabel}
-              size="small"
-              sx={{ 
-                alignSelf: 'center',
-                background: 'rgba(255, 255, 255, 0.05)',
-                borderColor: 'rgba(255, 255, 255, 0.2)',
-              }}
-            />
-          )}
+          <Chip
+            label={getRangeLabel(range)}
+            size="small"
+            sx={{ 
+              alignSelf: 'center',
+              background: 'rgba(255, 255, 255, 0.05)',
+              borderColor: 'rgba(255, 255, 255, 0.2)',
+            }}
+          />
           
           <Box>
             <Slider
