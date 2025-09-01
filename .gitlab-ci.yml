@@ -25,7 +25,7 @@ stages:
         - backend/requirements.txt
     paths:
       - node_modules/
-      - backend/.venv/
+      - backend/venv/
       - .pip-cache/
     policy: pull-push
 
@@ -70,13 +70,13 @@ build:backend:
     # Install build dependencies for PyAudio and other packages
     - apt-get update && apt-get install -y gcc g++ make portaudio19-dev python3-dev libasound2-dev libffi-dev
     # Setup Python environment - slim image has glibc for wheel compatibility
-    - python -m venv backend/.venv
-    - source backend/.venv/bin/activate
+    - python -m venv backend/venv
+    - source backend/venv/bin/activate
     - pip install --upgrade pip
     - pip install --cache-dir .pip-cache -r backend/requirements.txt
   script:
     # Validate Python code
-    - source backend/.venv/bin/activate
+    - source backend/venv/bin/activate
     - cd backend
     - python -m py_compile main.py
     - python -c "import main; print('Backend validation successful')"
@@ -183,11 +183,11 @@ test:backend:
   before_script:
     # Install runtime dependencies for PyAudio and testing
     - apt-get update && apt-get install -y libportaudio2 libasound2
-    - source backend/.venv/bin/activate
+    - source backend/venv/bin/activate
   script:
     # Run Python tests
     - cd backend
-    - source .venv/bin/activate
+    - source venv/bin/activate
     - mkdir -p ../reports
     - python -m pytest --ignore=manual_route_test.py --junitxml=../reports/backend-junit.xml --cov=. --cov-report=xml:../reports/backend-coverage.xml --cov-report=html:../reports/backend-coverage-html/
   coverage: '/TOTAL.+?(\d+\%)$/'
@@ -219,20 +219,25 @@ test:integration:
     - build:frontend
     - build:backend
   before_script:
-    # Setup both environments
-    - apt-get update && apt-get install -y python3 python3-pip python3-venv portaudio19-dev wget gnupg2
+    # Setup Chrome for frontend testing
+    - apt-get update && apt-get install -y wget gnupg2 software-properties-common
     - wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
     - echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list
     - apt-get update && apt-get install -y google-chrome-stable
     - export CHROME_BIN=/usr/bin/google-chrome
-    - python3 -m venv backend/.venv
-    - source backend/.venv/bin/activate
+    - export CHROME_PATH=/usr/bin/google-chrome
+    # Setup Python backend environment
+    - apt-get install -y python3 python3-pip python3-venv portaudio19-dev
+    - cd backend
+    - python3 -m venv venv
+    - source venv/bin/activate
     - pip install --upgrade pip
-    - pip install -r backend/requirements.txt
+    - pip install -r requirements.txt
+    - cd ..
   script:
     # Start backend in background
     - cd backend
-    - source .venv/bin/activate
+    - source venv/bin/activate
     - python -m uvicorn main:app --host 0.0.0.0 --port 8000 &
     - cd ..
     - sleep 15 # Wait for backend to start
