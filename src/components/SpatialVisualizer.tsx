@@ -24,7 +24,7 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
   size = 400
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationRef = useRef<number | undefined>();
+  const animationRef = useRef<number | undefined>(undefined);
   const timeRef = useRef<number>(0);
 
   // Render electromagnetic field pattern
@@ -52,7 +52,7 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
         renderSpiralField(ctx, electromagnetic, time);
         break;
       default:
-        renderDefaultField(ctx, electromagnetic, time);
+        renderDefaultField(ctx, electromagnetic);
     }
 
     // Draw pattern path
@@ -143,7 +143,7 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
   };
 
   // Render default electromagnetic field
-  const renderDefaultField = (ctx: CanvasRenderingContext2D, field: any, time: number) => {
+  const renderDefaultField = (ctx: CanvasRenderingContext2D, field: any) => {
     const fieldStrength = field.strength;
     const gridSize = 20;
     

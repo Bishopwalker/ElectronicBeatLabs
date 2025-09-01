@@ -35,7 +35,7 @@ export const useAudioEngine = () => {
     stability: 0
   });
 
-  const animationRef = useRef<number | undefined>();
+  const animationRef = useRef<number | undefined>(undefined);
   const startTimeRef = useRef<number>(0);
 
   // Initialize Web Audio API

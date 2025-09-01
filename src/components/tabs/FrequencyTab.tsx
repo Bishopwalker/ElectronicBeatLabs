@@ -15,10 +15,7 @@ interface FrequencyTabProps {
   onFrequencyChange: (freq: number) => void;
 }
 
-const FrequencyTab: React.FC<FrequencyTabProps> = ({
-  appState,
-  onFrequencyChange
-}) => {
+const FrequencyTab: React.FC<FrequencyTabProps> = () => {
   return (
     <Container>
       <h4>Advanced Frequency Controls</h4>

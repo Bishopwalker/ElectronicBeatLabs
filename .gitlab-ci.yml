@@ -1,24 +1,364 @@
-# You can override the included template(s) by including variable overrides
-# SAST customization: https://docs.gitlab.com/ee/user/application_security/sast/#customizing-the-sast-settings
-# Secret Detection customization: https://docs.gitlab.com/user/application_security/secret_detection/pipeline/configure
-# Dependency Scanning customization: https://docs.gitlab.com/ee/user/application_security/dependency_scanning/#customizing-the-dependency-scanning-settings
-# Container Scanning customization: https://docs.gitlab.com/ee/user/application_security/container_scanning/#customizing-the-container-scanning-settings
-# Note that environment variables can be set in several places
-# See https://docs.gitlab.com/ee/ci/variables/#cicd-variable-precedence
-
-stages:
-  - test
-  - secret-detection
-
-sast:
-  stage: test
+# Electromagnetic Beat Lab - GitLab CI/CD Pipeline
+# Build → Test → Package → Security → Quality Gate
 
 variables:
+  NODE_VERSION: "20"
+  PYTHON_VERSION: "3.11"
+  DOCKER_DRIVER: overlay2
   SECRET_DETECTION_ENABLED: 'true'
 
+# Define pipeline stages
+stages:
+  - build
+  - test
+  - package
+  - security
+  - quality-gate
+
+# Cache configuration for faster builds
+.cache_template: &cache_config
+  cache:
+    key: 
+      files:
+        - package-lock.json
+        - backend/requirements.txt
+    paths:
+      - node_modules/
+      - backend/.venv/
+      - .pip-cache/
+    policy: pull-push
+
+# ==========================================
+# BUILD STAGE
+# ==========================================
+
+build:frontend:
+  stage: build
+  image: node:${NODE_VERSION}-alpine
+  <<: *cache_config
+  script:
+    # Install dependencies
+    - npm ci --prefer-offline --no-audit
+    # Type check
+    - npm run build
+    # Verify build artifacts
+    - ls -la dist/
+  artifacts:
+    name: "frontend-build-$CI_COMMIT_SHORT_SHA"
+    paths:
+      - dist/
+      - node_modules/
+    expire_in: 1 hour
+    reports:
+      dotenv: build.env
+  rules:
+    - changes:
+        - "src/**/*"
+        - "package*.json"
+        - "tsconfig.json"
+        - "vite.config.ts"
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+build:backend:
+  stage: build
+  image: python:${PYTHON_VERSION}-alpine
+  <<: *cache_config
+  before_script:
+    # Setup Python environment
+    - apk add --no-cache gcc musl-dev libffi-dev
+    - python -m venv backend/.venv
+    - source backend/.venv/bin/activate
+    - pip install --upgrade pip
+    - pip install --cache-dir .pip-cache -r backend/requirements.txt
+  script:
+    # Validate Python code
+    - source backend/.venv/bin/activate
+    - cd backend
+    - python -m py_compile main.py
+    - python -c "import main; print('Backend validation successful')"
+    # Create deployment package info
+    - echo "BACKEND_VERSION=$(python --version)" >> ../build.env
+  artifacts:
+    name: "backend-build-$CI_COMMIT_SHORT_SHA"
+    paths:
+      - backend/
+      - build.env
+    expire_in: 1 hour
+  rules:
+    - changes:
+        - "backend/**/*"
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+# ==========================================
+# TEST STAGE
+# ==========================================
+
+test:frontend:unit:
+  stage: test
+  image: node:${NODE_VERSION}-alpine
+  needs: ["build:frontend"]
+  dependencies:
+    - build:frontend
+  before_script:
+    # Install Chrome for testing
+    - apk add --no-cache chromium
+    - export CHROME_BIN=/usr/bin/chromium-browser
+  script:
+    # Run Jest unit tests
+    - npm run test:ci
+    # Generate coverage badge
+    - npx coverage-badges-cli --output coverage/badge.svg
+  coverage: '/Lines\s*:\s*(\d+\.\d+)%/'
+  artifacts:
+    name: "frontend-test-results-$CI_COMMIT_SHORT_SHA"
+    paths:
+      - coverage/
+    reports:
+      junit: coverage/junit.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage/cobertura-coverage.xml
+    expire_in: 1 week
+  rules:
+    - changes:
+        - "src/**/*"
+        - "package*.json"
+        - "jest.config.js"
+        - "**/*.test.*"
+        - "**/*.spec.*"
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+test:frontend:e2e:
+  stage: test
+  image: node:${NODE_VERSION}-alpine
+  needs: ["build:frontend"]
+  dependencies:
+    - build:frontend
+  before_script:
+    - apk add --no-cache chromium
+  script:
+    # Run Cucumber BDD tests
+    - npm run test:e2e
+  artifacts:
+    name: "e2e-test-results-$CI_COMMIT_SHORT_SHA"
+    paths:
+      - reports/
+    reports:
+      junit: reports/cucumber_report.xml
+    expire_in: 1 week
+  rules:
+    - changes:
+        - "features/**/*"
+        - "src/**/*"
+        - "cucumber.js"
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+test:backend:
+  stage: test
+  image: python:${PYTHON_VERSION}-alpine
+  needs: ["build:backend"]
+  dependencies:
+    - build:backend
+  before_script:
+    - apk add --no-cache gcc musl-dev libffi-dev
+    - source backend/.venv/bin/activate
+  script:
+    # Run Python tests
+    - cd backend
+    - source .venv/bin/activate
+    - python -m pytest --junitxml=../reports/backend-junit.xml --cov=. --cov-report=xml:../reports/backend-coverage.xml --cov-report=html:../reports/backend-coverage-html/
+  coverage: '/TOTAL.+?(\d+\%)$/'
+  artifacts:
+    name: "backend-test-results-$CI_COMMIT_SHORT_SHA"
+    paths:
+      - reports/
+    reports:
+      junit: reports/backend-junit.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: reports/backend-coverage.xml
+    expire_in: 1 week
+  rules:
+    - changes:
+        - "backend/**/*"
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+test:integration:
+  stage: test
+  image: node:${NODE_VERSION}-alpine
+  services:
+    - name: python:${PYTHON_VERSION}-alpine
+      alias: backend
+  needs: ["build:frontend", "build:backend"]
+  dependencies:
+    - build:frontend
+    - build:backend
+  before_script:
+    # Setup both environments
+    - apk add --no-cache python3 py3-pip chromium
+    - pip3 install -r backend/requirements.txt
+  script:
+    # Start backend in background
+    - cd backend && python3 -m uvicorn main:app --host 0.0.0.0 --port 8000 &
+    - sleep 10 # Wait for backend to start
+    # Run integration tests
+    - npm run test:all
+    # Health check
+    - curl -f http://localhost:8000/health || exit 1
+  artifacts:
+    name: "integration-test-results-$CI_COMMIT_SHORT_SHA"
+    paths:
+      - reports/integration/
+    expire_in: 1 week
+  allow_failure: true
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+# ==========================================
+# PACKAGE STAGE
+# ==========================================
+
+package:docker:
+  stage: package
+  image: docker:24-dind
+  services:
+    - docker:24-dind
+  needs: ["test:frontend:unit", "test:backend"]
+  dependencies:
+    - build:frontend
+    - build:backend
+  before_script:
+    - docker info
+    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+  script:
+    # Build multi-stage Docker image
+    - |
+      docker build \
+        --build-arg NODE_VERSION=${NODE_VERSION} \
+        --build-arg PYTHON_VERSION=${PYTHON_VERSION} \
+        --tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA \
+        --tag $CI_REGISTRY_IMAGE:latest \
+        .
+    # Push to registry
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
+    - docker push $CI_REGISTRY_IMAGE:latest
+    # Generate image metadata
+    - docker inspect $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA > docker-metadata.json
+  artifacts:
+    name: "docker-package-$CI_COMMIT_SHORT_SHA"
+    paths:
+      - docker-metadata.json
+    expire_in: 1 week
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+package:npm:
+  stage: package
+  image: node:${NODE_VERSION}-alpine
+  needs: ["test:frontend:unit"]
+  dependencies:
+    - build:frontend
+  script:
+    # Create NPM package (if applicable)
+    - npm pack
+    # Create release notes
+    - echo "# Release $CI_COMMIT_SHORT_SHA" > RELEASE_NOTES.md
+    - echo "" >> RELEASE_NOTES.md
+    - echo "## Changes" >> RELEASE_NOTES.md
+    - git log --oneline -10 >> RELEASE_NOTES.md
+  artifacts:
+    name: "npm-package-$CI_COMMIT_SHORT_SHA"
+    paths:
+      - "*.tgz"
+      - RELEASE_NOTES.md
+    expire_in: 1 week
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_COMMIT_TAG
+
+# ==========================================
+# SECURITY STAGE
+# ==========================================
+
+sast:
+  stage: security
+  needs: ["build:frontend", "build:backend"]
+
 secret_detection:
-  stage: secret-detection
+  stage: security
+
+container_scanning:
+  stage: security
+  needs: ["package:docker"]
+  dependencies:
+    - package:docker
+
+dependency_scanning:
+  stage: security
+  needs: ["build:frontend", "build:backend"]
+
+# ==========================================
+# QUALITY GATE STAGE
+# ==========================================
+
+quality_gate:
+  stage: quality-gate
+  image: alpine:latest
+  needs: 
+    - job: test:frontend:unit
+      artifacts: true
+    - job: test:backend
+      artifacts: true
+    - job: sast
+      artifacts: false
+    - job: secret_detection
+      artifacts: false
+  before_script:
+    - apk add --no-cache jq curl
+  script:
+    # Check test coverage thresholds
+    - |
+      FRONTEND_COVERAGE=$(grep -o 'Lines.*[0-9.]*%' coverage/lcov-report/index.html | grep -o '[0-9.]*' | head -1 || echo "0")
+      BACKEND_COVERAGE=$(grep -o 'TOTAL.*[0-9]*%' reports/backend-coverage.xml | grep -o '[0-9]*' | tail -1 || echo "0")
+      
+      echo "Frontend Coverage: ${FRONTEND_COVERAGE}%"
+      echo "Backend Coverage: ${BACKEND_COVERAGE}%"
+      
+      # Set minimum thresholds
+      MIN_FRONTEND_COVERAGE=80
+      MIN_BACKEND_COVERAGE=75
+      
+      # Check thresholds
+      if (( $(echo "$FRONTEND_COVERAGE < $MIN_FRONTEND_COVERAGE" | bc -l) )); then
+        echo "❌ Frontend coverage ${FRONTEND_COVERAGE}% below threshold ${MIN_FRONTEND_COVERAGE}%"
+        exit 1
+      fi
+      
+      if (( $(echo "$BACKEND_COVERAGE < $MIN_BACKEND_COVERAGE" | bc -l) )); then
+        echo "❌ Backend coverage ${BACKEND_COVERAGE}% below threshold ${MIN_BACKEND_COVERAGE}%"
+        exit 1
+      fi
+      
+      echo "✅ All quality gates passed!"
+      echo "✅ Frontend coverage: ${FRONTEND_COVERAGE}% (≥${MIN_FRONTEND_COVERAGE}%)"
+      echo "✅ Backend coverage: ${BACKEND_COVERAGE}% (≥${MIN_BACKEND_COVERAGE}%)"
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+# ==========================================
+# INCLUDE SECURITY TEMPLATES
+# ==========================================
 
 include:
   - template: Security/SAST.gitlab-ci.yml
   - template: Security/Secret-Detection.gitlab-ci.yml
+  - template: Security/Container-Scanning.gitlab-ci.yml
+  - template: Security/Dependency-Scanning.gitlab-ci.yml
