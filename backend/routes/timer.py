@@ -8,10 +8,10 @@ from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from typing import List, Dict, Any
 import logging
 
-from ..services.timer_service import timer_service
-from ..services.simple_auth import get_current_user, User
-from ..services.stripe_service import stripe_service
-from ..schemas.timer_schemas import (
+from services.timer_service import timer_service
+from services.simple_auth import get_current_user, User
+from services.stripe_service import stripe_service
+from schemas.timer_schemas import (
     TimerPreset, CreatePresetRequest, TimerControlRequest, 
     TimerStatusResponse, TimerSession
 )

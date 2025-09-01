@@ -113,7 +113,15 @@ export const useAudioEngine = () => {
     try {
       // Stop any existing audio first
       if (audioState.isPlaying) {
-        stopBinauralBeat();
+        // Inline stop logic to avoid circular dependency
+        if (audioState.oscillatorL) {
+          audioState.oscillatorL.stop();
+          audioState.oscillatorL.disconnect();
+        }
+        if (audioState.oscillatorR) {
+          audioState.oscillatorR.stop();
+          audioState.oscillatorR.disconnect();
+        }
         // Wait for cleanup
         await new Promise(resolve => setTimeout(resolve, 100));
       }
@@ -204,7 +212,7 @@ export const useAudioEngine = () => {
     }
     animationRef.current = window.setTimeout(animate, 100) as unknown as number;
 
-  }, [audioState.volume, audioState.context, audioState.isPlaying, initializeAudio, createOscillator, createGainNode, calculateElectromagneticField, stopBinauralBeat]);
+  }, [audioState.volume, audioState.context, audioState.isPlaying, audioState.oscillatorL, audioState.oscillatorR, initializeAudio, createOscillator, createGainNode, calculateElectromagneticField]);
 
   // Stop binaural beat playback
   const stopBinauralBeat = useCallback(() => {

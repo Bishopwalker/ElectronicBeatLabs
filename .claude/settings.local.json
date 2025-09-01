@@ -19,7 +19,8 @@
       "Bash(start \"C:\\Users\\bisho\\IdeaProjects\\ebl\\test_audio_live.html\")",
       "Bash(alembic init:*)",
       "Bash(npm run lint)",
-      "Bash(npx eslint:*)"
+      "Bash(npx eslint:*)",
+      "Bash(pip install:*)"
     ],
     "deny": [],
     "ask": []

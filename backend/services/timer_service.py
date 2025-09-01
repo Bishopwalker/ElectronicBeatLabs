@@ -12,7 +12,7 @@ from fastapi import HTTPException
 import json
 import logging
 
-from ..schemas.timer_schemas import (
+from schemas.timer_schemas import (
     TimerPreset, TimerSession, FrequencyTransition, TimerStatusResponse,
     FREE_PRESETS, PREMIUM_PRESETS, FrequencyType
 )
