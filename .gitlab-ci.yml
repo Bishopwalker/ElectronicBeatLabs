@@ -37,8 +37,9 @@ build:frontend:
   image: node:${NODE_VERSION}
   <<: *cache_config
   script:
-    # Install dependencies
-    - npm ci --prefer-offline --no-audit
+    # Fix rollup dependency issue on Linux
+    - rm -rf node_modules package-lock.json
+    - npm install --no-audit
     # Type check
     - npm run build
     # Verify build artifacts
