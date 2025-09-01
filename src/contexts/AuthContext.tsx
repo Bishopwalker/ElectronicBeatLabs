@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 
 interface User {
   email: string;
@@ -48,20 +48,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Check for saved user and load anonymous usage on app start
   useEffect(() => {
-    const savedUser = localStorage.getItem('ebl_user');
-    if (savedUser) {
-      try {
-        const userData = JSON.parse(savedUser);
-        setUser(userData);
-        refreshUsageForUser(userData.email);
-      } catch (err) {
-        console.error('Failed to load saved user:', err);
-        localStorage.removeItem('ebl_user');
+    const initializeAuth = async () => {
+      const savedUser = localStorage.getItem('ebl_user');
+      if (savedUser) {
+        try {
+          const userData = JSON.parse(savedUser);
+          setUser(userData);
+          await refreshUsageForUser(userData.email);
+        } catch (err) {
+          console.error('Failed to load saved user:', err);
+          localStorage.removeItem('ebl_user');
+        }
+      } else {
+        // Load anonymous usage for this IP
+        await refreshAnonymousUsage();
       }
-    } else {
-      // Load anonymous usage for this IP
-      refreshAnonymousUsage();
-    }
+    };
+    
+    initializeAuth();
   }, []);
 
   const login = async (provider: string, token: string) => {
@@ -84,7 +88,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       // Load usage info for free users
       if (!userData.is_premium) {
-        await refreshUsage(userData.email);
+        await refreshUsageForUser(userData.email);
       }
       
     } catch (error) {

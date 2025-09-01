@@ -8,9 +8,11 @@ import GlobalStyles from './styles/GlobalStyles';
 import ElectromagneticBeatLab from './components/ElectromagneticBeatLab';
 import SimpleAuth from './components/SimpleAuth';
 import UsageTrackingExample from './components/UsageTrackingExample';
+// import TimerControls from './components/TimerControls';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { muiTheme } from './theme/muiTheme';
-import { Box, Alert } from '@mui/material';
+import { Box, Alert, Tabs, Tab, Typography } from '@mui/material';
+import React from 'react';
 
 // Styled Components theme configuration
 const styledTheme = {
@@ -36,6 +38,7 @@ const styledTheme = {
 // Main app content component
 const AppContent = () => {
   const { user, canUseApp, requiresLogin, usage } = useAuth();
+  const [activeTab, setActiveTab] = React.useState(0);
 
   // If anonymous usage limit reached, require login
   if (!user && requiresLogin) {
@@ -83,10 +86,42 @@ const AppContent = () => {
         <UsageTrackingExample />
       </Box>
       
-      <ElectromagneticBeatLab
-        autoStart={false}
-        fullscreen={true}
-      />
+      {/* Main app with tabs */}
+      <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+        <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'rgba(0,0,0,0.8)' }}>
+          <Tabs 
+            value={activeTab} 
+            onChange={(_, newValue) => setActiveTab(newValue)}
+            centered
+            sx={{ 
+              '& .MuiTab-root': { 
+                color: 'white',
+                '&.Mui-selected': { color: '#ff6b00' }
+              },
+              '& .MuiTabs-indicator': { 
+                backgroundColor: '#ff6b00' 
+              }
+            }}
+          >
+            <Tab label="Live Audio Generator" />
+            <Tab label="Timer Presets" />
+          </Tabs>
+        </Box>
+        
+        <Box sx={{ p: 0 }}>
+          {activeTab === 0 && (
+            <ElectromagneticBeatLab
+              autoStart={false}
+              fullscreen={true}
+            />
+          )}
+          {activeTab === 1 && (
+            <Box sx={{ p: 4, minHeight: 'calc(100vh - 64px)' }}>
+              <Typography variant="h4">Timer Controls (Coming Soon)</Typography>
+            </Box>
+          )}
+        </Box>
+      </Box>
     </>
   );
 };
