@@ -165,10 +165,10 @@ export const useBackendAudioEngine = () => {
       
       switch (message.type) {
         case 'frame':
-          if (message.data?.audio) {
+          if (message.data?.audio && message.data.audio.left && message.data.audio.right) {
             processAudioFrame(message.data.audio);
           }
-          if (message.data?.field) {
+          if (message.data?.field && message.data.field.field && message.data.field.grid_size) {
             processFieldFrame(message.data.field);
           }
           break;

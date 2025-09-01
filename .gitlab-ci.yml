@@ -65,8 +65,8 @@ build:backend:
   image: python:${PYTHON_VERSION}-alpine
   <<: *cache_config
   before_script:
-    # Setup Python environment
-    - apk add --no-cache gcc musl-dev libffi-dev
+    # Setup Python environment with C++ compiler for numpy
+    - apk add --no-cache gcc g++ musl-dev libffi-dev gfortran openblas-dev
     - python -m venv backend/.venv
     - source backend/.venv/bin/activate
     - pip install --upgrade pip

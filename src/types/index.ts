@@ -82,6 +82,12 @@ export interface AudioEngineState {
   context: AudioContext | null;
 }
 
+export interface WebSocketState {
+  connected: boolean;
+  connecting: boolean;
+  error?: string;
+}
+
 export interface AudioEngine {
   audioState: AudioEngineState;
   electromagnetic: ElectromagneticField;
@@ -91,10 +97,14 @@ export interface AudioEngine {
   updateVolume: (volume: number) => void;
   updateWaveform: (waveform: 'sine' | 'square' | 'triangle' | 'sawtooth') => void;
   loadPattern: (pattern: PatternConfig) => void;
-  generateTestTones: (frequencies: number[]) => void;
+  generateTestTones: (leftFreq: number, rightFreq: number, duration?: number) => void;
   frequencySweep: (startFreq: number, endFreq: number, duration: number) => void;
   createGammaProtocol: (protocol: ADHDProtocol) => void;
   isSupported: boolean;
+  updateSpatialSettings?: (settings: SpatialAudioConfig) => void;
+  backendConnected?: boolean;
+  sessionId?: string | null;
+  websocketState?: WebSocketState;
 }
 
 export interface Pattern8D {
@@ -208,6 +218,12 @@ export interface SpatialAudioConfig {
   spatialWidth: number;
   elevation: number;
   azimuth: number;
+  movement_speed?: number;
+  spatial_intensity?: number;
+  reverb_enabled?: boolean;
+  reverberance?: number;
+  room_scale?: number;
+  hf_damping?: number;
 }
 
 export interface VisualizationSettings {

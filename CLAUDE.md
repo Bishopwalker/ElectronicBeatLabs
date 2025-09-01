@@ -90,3 +90,4 @@ npm run dev:all    # Start both frontend and backend
 
 ---
 **⚠️ Always reference `.claude/` folder for detailed implementation guidance**
+- rEMIND clAUDE TO COMPACT CONVERSATION UNLESS ABSOLUTELY NEEDED TO CONTINUE, claude solve this issue abou ttoken usage( CHOOSE AN OPTIMAL STRAGATEGY FOR TOKEN USAGE)

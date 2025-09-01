@@ -21,7 +21,7 @@ interface AuthContextType {
   usage: UsageInfo | null;
   loading: boolean;
   requiresLogin: boolean;
-  login: () => Promise<void>;
+  login: (provider: string, token: string) => Promise<void>;
   logout: () => void;
   recordUsage: (minutes: number) => Promise<void>;
   refreshUsage: () => Promise<void>;
@@ -193,7 +193,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     logout,
     recordUsage,
     refreshUsage,
-    canUseApp
+    canUseApp,
+    isSubscribed: user?.is_premium || false,
+    keycloakReady: true
   };
 
   return (
