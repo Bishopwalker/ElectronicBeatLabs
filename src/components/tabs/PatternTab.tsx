@@ -3,7 +3,7 @@
 
 import React from 'react';
 import styled from 'styled-components';
-import type { PatternConfig, PatternPreset, AppState, AudioEngineState, Pattern8D } from '../../types/index';
+import type { PatternConfig, PatternPreset, AppState, AudioEngine, Pattern8D } from '../../types/index';
 
 const Container = styled.div`
   padding: 1rem 0;
@@ -112,7 +112,7 @@ interface PatternTabProps {
   patterns: PatternConfig[];
   presets: PatternPreset[];
   appState: AppState;
-  audioEngine: AudioEngineState;
+  audioEngine: AudioEngine;
   patterns8D: Pattern8D[];
   onStateChange: (state: Partial<AppState>) => void;
   onPatternSelect: (patternId: string) => void;

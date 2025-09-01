@@ -82,6 +82,21 @@ export interface AudioEngineState {
   context: AudioContext | null;
 }
 
+export interface AudioEngine {
+  audioState: AudioEngineState;
+  electromagnetic: ElectromagneticField;
+  startBinauralBeat: (config: BinauralBeatConfig) => Promise<void>;
+  stopBinauralBeat: () => void;
+  updateFrequency: (left: number, right: number) => void;
+  updateVolume: (volume: number) => void;
+  updateWaveform: (waveform: 'sine' | 'square' | 'triangle' | 'sawtooth') => void;
+  loadPattern: (pattern: PatternConfig) => void;
+  generateTestTones: (frequencies: number[]) => void;
+  frequencySweep: (startFreq: number, endFreq: number, duration: number) => void;
+  createGammaProtocol: (protocol: ADHDProtocol) => void;
+  isSupported: boolean;
+}
+
 export interface Pattern8D {
   id: string;
   name: string;

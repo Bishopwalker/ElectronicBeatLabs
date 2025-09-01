@@ -234,7 +234,7 @@ async def delete_timer_preset(
 
 
 @router.get("/subscription-benefits")
-async def get_subscription_benefits():
+def get_subscription_benefits():
     """
     Get detailed subscription benefits for timer features.
     """
