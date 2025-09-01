@@ -22,7 +22,8 @@
       "Bash(npx eslint:*)",
       "Bash(pip install:*)",
       "Bash(cat:*)",
-      "Bash(start http://localhost:5179)"
+      "Bash(start http://localhost:5179)",
+      "Bash(taskkill:*)"
     ],
     "deny": [],
     "ask": []

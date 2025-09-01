@@ -30,8 +30,8 @@ const mockAudioContext = {
   close: jest.fn()
 };
 
-global.AudioContext = jest.fn(() => mockAudioContext) as jest.MockedClass<typeof AudioContext>;
-(global as unknown as { webkitAudioContext: jest.MockedClass<typeof AudioContext> }).webkitAudioContext = global.AudioContext;
+global.AudioContext = jest.fn(() => mockAudioContext) as jest.Mock;
+(global as unknown as { webkitAudioContext: jest.Mock }).webkitAudioContext = global.AudioContext;
 
 describe('Controls Tests', () => {
   beforeEach(() => {
@@ -294,7 +294,7 @@ describe('Controls Tests', () => {
       // Mock failed audio context
       global.AudioContext = jest.fn(() => {
         throw new Error('Audio not supported');
-      }) as jest.MockedClass<typeof AudioContext>;
+      }) as jest.Mock;
 
       const { result } = renderHook(() => useAudioEngine());
       
@@ -323,7 +323,7 @@ describe('Controls Tests', () => {
         })
       };
 
-      global.AudioContext = jest.fn(() => failingContext) as jest.MockedClass<typeof AudioContext>;
+      global.AudioContext = jest.fn(() => failingContext) as jest.Mock;
 
       const { result } = renderHook(() => useAudioEngine());
       
