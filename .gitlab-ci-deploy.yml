@@ -234,7 +234,7 @@ rollback:frontend:production:
     # Could use S3 versioning or previous build artifacts
   environment:
     name: production
-    action: rollback
+    action: stop
   when: manual
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
@@ -275,7 +275,7 @@ rollback:backend:production:
         --task-definition "${TASK_FAMILY}:${PREVIOUS_REVISION}"
   environment:
     name: production
-    action: rollback
+    action: stop
   when: manual
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
