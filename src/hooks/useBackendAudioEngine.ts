@@ -165,11 +165,11 @@ export const useBackendAudioEngine = () => {
       
       switch (message.type) {
         case 'frame':
-          if (message.data?.audio && message.data.audio.left && message.data.audio.right) {
-            processAudioFrame(message.data.audio);
+          if (message.data?.audio && typeof message.data.audio === 'object' && message.data.audio !== null && 'left' in message.data.audio && 'right' in message.data.audio) {
+            processAudioFrame(message.data.audio as BackendAudioFrame);
           }
-          if (message.data?.field && message.data.field.field && message.data.field.grid_size) {
-            processFieldFrame(message.data.field);
+          if (message.data?.field && typeof message.data.field === 'object' && message.data.field !== null && 'field' in message.data.field && 'grid_size' in message.data.field) {
+            processFieldFrame(message.data.field as BackendFieldFrame);
           }
           break;
           
@@ -200,7 +200,7 @@ export const useBackendAudioEngine = () => {
         spatial_settings: config.spatial_settings || {}
       });
 
-      if (response.data?.session_id) {
+      if (response.data?.session_id && typeof response.data.session_id === 'string') {
         const newSessionId = response.data.session_id;
         setSessionId(newSessionId);
         
