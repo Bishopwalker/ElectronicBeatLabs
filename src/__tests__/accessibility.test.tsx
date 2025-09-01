@@ -13,7 +13,7 @@ expect.extend(toHaveNoViolations);
 // Mock styled-components
 jest.mock('styled-components', () => ({
   __esModule: true,
-  default: (component: any) => (props: any) => React.createElement(component, props),
+  default: (component: React.ComponentType<unknown>) => (props: Record<string, unknown>) => React.createElement(component, props),
   createGlobalStyle: () => () => null,
 }));
 

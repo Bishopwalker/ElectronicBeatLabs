@@ -1,25 +1,62 @@
 import { setWorldConstructor, World, IWorldOptions } from '@cucumber/cucumber';
-import { render, RenderResult } from '@testing-library/react';
-import React from 'react';
+import { RenderResult } from '@testing-library/react';
+
+interface MockAudioEngine {
+  isPlaying: boolean;
+  leftFreq: number;
+  rightFreq: number;
+  beatFreq: number;
+  volume: number;
+  waveform: string;
+  startAudio: jest.Mock;
+  stopAudio: jest.Mock;
+  setVolume: jest.Mock;
+  setFrequencies: jest.Mock;
+  setWaveform: jest.Mock;
+  error: string | null;
+}
+
+interface MockElectromagneticField {
+  strength: number;
+  frequency: number;
+  coherence: number;
+  resonance: number;
+  state: string;
+  stability: number;
+  phase: number;
+}
+
+interface PatternData {
+  id: string;
+  name: string;
+  description: string;
+  frequency: number;
+  leftFreq: number;
+  rightFreq: number;
+  duration: number;
+  category: string;
+  fadeIn: number;
+  fadeOut: number;
+}
 
 export interface CustomWorld extends World {
   component?: RenderResult;
-  mockAudioEngine?: any;
-  mockElectromagneticField?: any;
-  selectedPattern?: any;
+  mockAudioEngine?: MockAudioEngine;
+  mockElectromagneticField?: MockElectromagneticField;
+  selectedPattern?: PatternData;
   currentMode?: string;
-  patternLibrary?: any[];
-  testData?: any;
+  patternLibrary?: PatternData[];
+  testData?: Record<string, unknown>;
 }
 
 export class CustomWorldConstructor extends World implements CustomWorld {
   component?: RenderResult;
-  mockAudioEngine?: any;
-  mockElectromagneticField?: any;
-  selectedPattern?: any;
+  mockAudioEngine?: MockAudioEngine;
+  mockElectromagneticField?: MockElectromagneticField;
+  selectedPattern?: PatternData;
   currentMode?: string = 'AUTO';
-  patternLibrary?: any[];
-  testData?: any = {};
+  patternLibrary?: PatternData[];
+  testData?: Record<string, unknown> = {};
 
   constructor(options: IWorldOptions) {
     super(options);
@@ -142,11 +179,11 @@ export class CustomWorldConstructor extends World implements CustomWorld {
     };
 
     // Mock AudioContext constructor
-    (global as any).AudioContext = jest.fn(() => mockAudioContext);
-    (global as any).webkitAudioContext = jest.fn(() => mockAudioContext);
+    (global as unknown as { AudioContext: jest.Mock }).AudioContext = jest.fn(() => mockAudioContext);
+    (global as unknown as { webkitAudioContext: jest.Mock }).webkitAudioContext = jest.fn(() => mockAudioContext);
 
     // Mock WebSocket
-    (global as any).WebSocket = jest.fn().mockImplementation(() => ({
+    (global as unknown as { WebSocket: jest.Mock }).WebSocket = jest.fn().mockImplementation(() => ({
       send: jest.fn(),
       close: jest.fn(),
       addEventListener: jest.fn(),
@@ -155,7 +192,7 @@ export class CustomWorldConstructor extends World implements CustomWorld {
     }));
 
     // Mock fetch for API calls
-    (global as any).fetch = jest.fn(() =>
+    (global as unknown as { fetch: jest.Mock }).fetch = jest.fn(() =>
       Promise.resolve({
         ok: true,
         json: () => Promise.resolve({}),
@@ -169,7 +206,7 @@ export class CustomWorldConstructor extends World implements CustomWorld {
       removeItem: jest.fn(),
       clear: jest.fn(),
     };
-    (global as any).localStorage = localStorageMock;
+    (global as unknown as { localStorage: typeof localStorageMock }).localStorage = localStorageMock;
 
     // Mock window.matchMedia
     Object.defineProperty(window, 'matchMedia', {
@@ -188,11 +225,11 @@ export class CustomWorldConstructor extends World implements CustomWorld {
   }
 
   // Utility methods for test scenarios
-  updateAudioEngine(updates: Partial<any>) {
+  updateAudioEngine(updates: Partial<MockAudioEngine>) {
     this.mockAudioEngine = { ...this.mockAudioEngine, ...updates };
   }
 
-  updateElectromagneticField(updates: Partial<any>) {
+  updateElectromagneticField(updates: Partial<MockElectromagneticField>) {
     this.mockElectromagneticField = { ...this.mockElectromagneticField, ...updates };
   }
 
@@ -204,8 +241,10 @@ export class CustomWorldConstructor extends World implements CustomWorld {
     return this.patternLibrary?.find(pattern => pattern.name === name);
   }
 
-  setTestData(key: string, value: any) {
-    this.testData[key] = value;
+  setTestData(key: string, value: unknown) {
+    if (this.testData) {
+      this.testData[key] = value;
+    }
   }
 
   getTestData(key: string) {

@@ -1,44 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import React, { useState, useEffect, type ReactNode } from 'react';
+import { AuthContext, type User, type UsageInfo, type AuthContextType } from './auth';
 // import keycloak, { initKeycloak } from '../services/keycloak';
-
-interface User {
-  email: string;
-  is_premium: boolean;
-  oauth_provider: string;
-  stripe_customer_id?: string;
-  name?: string;
-}
-
-interface UsageInfo {
-  used_minutes: number;
-  limit_minutes: number;
-  remaining_minutes: number;
-  can_use: boolean;
-}
-
-interface AuthContextType {
-  user: User | null;
-  usage: UsageInfo | null;
-  loading: boolean;
-  requiresLogin: boolean;
-  login: (provider: string, token: string) => Promise<void>;
-  logout: () => void;
-  recordUsage: (minutes: number) => Promise<void>;
-  refreshUsage: () => Promise<void>;
-  canUseApp: () => boolean;
-  isSubscribed: boolean;
-  keycloakReady: boolean;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
 
 interface AuthProviderProps {
   children: ReactNode;
