@@ -6,7 +6,8 @@ export default {
     format: [
       '@cucumber/pretty-formatter',
       'json:reports/cucumber_report.json',
-      'html:reports/cucumber_report.html'
+      'html:reports/cucumber_report.html',
+      '@cucumber/junit-xml-formatter:reports/cucumber_report.xml'
     ],
     formatOptions: {
       snippetInterface: 'async-await'
