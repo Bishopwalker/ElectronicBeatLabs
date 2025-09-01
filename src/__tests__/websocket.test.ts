@@ -40,7 +40,7 @@ class MockWebSocket {
         data: JSON.stringify(data),
         type: 'message',
         target: this
-      } as MessageEvent);
+      } as unknown as MessageEvent);
     }
   }
 }
