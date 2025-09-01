@@ -9,7 +9,6 @@ import {
   InputLabel, 
   Select, 
   MenuItem, 
-  Grid, 
   Card, 
   CardContent, 
   LinearProgress, 
@@ -59,7 +58,7 @@ interface TimerStatus {
 }
 
 const TimerControls: React.FC = () => {
-  const { user, isSubscribed } = useAuth();
+  const { user } = useAuth();
   const [presets, setPresets] = useState<TimerPreset[]>([]);
   const [selectedPresetId, setSelectedPresetId] = useState<string>('');
   const [timerStatus, setTimerStatus] = useState<TimerStatus | null>(null);
