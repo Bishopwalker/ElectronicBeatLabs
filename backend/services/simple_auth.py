@@ -6,7 +6,7 @@ Just handles Google, Facebook, GitHub OAuth and Stripe customer creation
 import os
 import requests
 import logging
-from datetime import datetime
+from datetime import datetime, UTC
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, Depends, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -74,7 +74,7 @@ class SimpleAuthService:
         
         if user:
             # Update last login
-            user.last_login = datetime.utcnow()
+            user.last_login = datetime.now(UTC)
             db.commit()
             return user
         
@@ -106,7 +106,7 @@ class SimpleAuthService:
         from database.models import UsageRecord
         
         # Get current month
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         year_month = f"{now.year}-{now.month:02d}"
         
         # Check monthly usage for this IP
@@ -131,7 +131,7 @@ class SimpleAuthService:
         from database.models import UsageRecord
         
         # Get current month
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         year_month = f"{now.year}-{now.month:02d}"
         
         # Check monthly usage for this email
@@ -155,7 +155,7 @@ class SimpleAuthService:
         """Record usage for anonymous IP address"""
         from database.models import UsageRecord
         
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         year_month = f"{now.year}-{now.month:02d}"
         
         usage = UsageRecord(
@@ -172,7 +172,7 @@ class SimpleAuthService:
         """Record usage for logged in user"""
         from database.models import UsageRecord
         
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         year_month = f"{now.year}-{now.month:02d}"
         
         usage = UsageRecord(
