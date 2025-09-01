@@ -1,11 +1,15 @@
 // WebSocket Test Suite
 // Test real-time communication between frontend and backend
 
-import { WebSocket } from 'ws';
+// WebSocket constants
+const WS_CONNECTING = 0;
+const WS_OPEN = 1;
+const WS_CLOSING = 2;
+const WS_CLOSED = 3;
 
 // Mock WebSocket
 class MockWebSocket {
-  public readyState: number = WebSocket.CONNECTING;
+  public readyState: number = WS_CONNECTING;
   public onopen: ((event: Event) => void) | null = null;
   public onmessage: ((event: MessageEvent) => void) | null = null;
   public onerror: ((event: Event) => void) | null = null;
@@ -14,7 +18,7 @@ class MockWebSocket {
   constructor(public url: string) {
     // Simulate connection opening
     setTimeout(() => {
-      this.readyState = WebSocket.OPEN;
+      this.readyState = WS_OPEN;
       if (this.onopen) {
         this.onopen(new Event('open'));
       }
@@ -27,7 +31,7 @@ class MockWebSocket {
   }
 
   close(code?: number, reason?: string) {
-    this.readyState = WebSocket.CLOSED;
+    this.readyState = WS_CLOSED;
     if (this.onclose) {
       this.onclose(new CloseEvent('close', { code, reason }));
     }
@@ -35,7 +39,7 @@ class MockWebSocket {
 
   // Simulate receiving a message
   simulateMessage(data: Record<string, unknown>) {
-    if (this.onmessage && this.readyState === WebSocket.OPEN) {
+    if (this.onmessage && this.readyState === WS_OPEN) {
       this.onmessage({
         data: JSON.stringify(data),
         type: 'message',
@@ -46,7 +50,11 @@ class MockWebSocket {
 }
 
 // Mock WebSocket globally
-global.WebSocket = MockWebSocket as typeof WebSocket;
+(global as any).WebSocket = MockWebSocket;
+(global as any).WebSocket.CONNECTING = WS_CONNECTING;
+(global as any).WebSocket.OPEN = WS_OPEN;
+(global as any).WebSocket.CLOSING = WS_CLOSING;
+(global as any).WebSocket.CLOSED = WS_CLOSED;
 
 describe('WebSocket Tests', () => {
   let mockWebSocket: MockWebSocket;
@@ -64,7 +72,7 @@ describe('WebSocket Tests', () => {
 
   it('should establish WebSocket connection', (done) => {
     mockWebSocket.onopen = () => {
-      expect(mockWebSocket.readyState).toBe(WebSocket.OPEN);
+      expect(mockWebSocket.readyState).toBe(WS_OPEN);
       done();
     };
   });
@@ -151,7 +159,7 @@ describe('WebSocket Tests', () => {
   it('should handle connection close', (done) => {
     mockWebSocket.onclose = (event) => {
       expect(event.type).toBe('close');
-      expect(mockWebSocket.readyState).toBe(WebSocket.CLOSED);
+      expect(mockWebSocket.readyState).toBe(WS_CLOSED);
       done();
     };
 
