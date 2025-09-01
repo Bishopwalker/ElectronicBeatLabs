@@ -18,6 +18,7 @@ import WaveGuidePanelMUI from './WaveGuidePanelMUI';
 import MainControlsMUI from './MainControlsMUI';
 import ControlTabs from './ControlTabs';
 import BinauralTestMUI from './BinauralTestMUI';
+import SimpleAudioTest from './SimpleAudioTest';
 
 // Tab Components
 import FrequencyTab from './tabs/FrequencyTab';
@@ -613,6 +614,9 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
           />
         </RightPanel>
       </MainInterface>
+      
+      {/* Simple Audio Test - for debugging */}
+      <SimpleAudioTest />
     </Container>
   );
 };
