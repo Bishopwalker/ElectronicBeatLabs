@@ -3,7 +3,7 @@
 
 import React, { useEffect, useRef, useCallback } from 'react';
 import styled from 'styled-components';
-import type { SpatialVisualizerProps } from '../types/index';
+import type { SpatialVisualizerProps, ElectromagneticField } from '../types/index';
 
 const Container = styled.div`
   width: 100%;
@@ -80,7 +80,7 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
   }, [pattern, electromagnetic]);
 
   // Render toroidal electromagnetic field
-  const renderToroidalField = (ctx: CanvasRenderingContext2D, field: any, time: number) => {
+  const renderToroidalField = (ctx: CanvasRenderingContext2D, field: ElectromagneticField, time: number) => {
     const radius = 100;
     const fieldStrength = field.strength;
     
@@ -101,7 +101,7 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
   };
 
   // Render vortex electromagnetic field
-  const renderVortexField = (ctx: CanvasRenderingContext2D, field: any, time: number) => {
+  const renderVortexField = (ctx: CanvasRenderingContext2D, field: ElectromagneticField, time: number) => {
     const fieldStrength = field.strength;
     
     for (let r = 20; r < 150; r += 20) {
@@ -121,7 +121,7 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
   };
 
   // Render spiral electromagnetic field
-  const renderSpiralField = (ctx: CanvasRenderingContext2D, field: any, time: number) => {
+  const renderSpiralField = (ctx: CanvasRenderingContext2D, field: ElectromagneticField, time: number) => {
     const fieldStrength = field.strength;
     
     ctx.strokeStyle = `rgba(0, 191, 255, ${fieldStrength})`;
@@ -143,7 +143,7 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
   };
 
   // Render default electromagnetic field
-  const renderDefaultField = (ctx: CanvasRenderingContext2D, field: any) => {
+  const renderDefaultField = (ctx: CanvasRenderingContext2D, field: ElectromagneticField) => {
     const fieldStrength = field.strength;
     const gridSize = 20;
     
@@ -174,7 +174,7 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
 
     renderPattern(ctx, canvas.width, canvas.height);
     // Reduce to 15fps for eyes-closed usage
-    animationRef.current = window.setTimeout(animate, 66) as any;
+    animationRef.current = window.setTimeout(animate, 66);
   }, [renderPattern]);
 
   // Initialize canvas and start animation
@@ -185,7 +185,7 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
     canvas.width = size;
     canvas.height = size;
 
-    animationRef.current = window.setTimeout(animate, 66) as any;
+    animationRef.current = window.setTimeout(animate, 66);
 
     return () => {
       if (animationRef.current) {

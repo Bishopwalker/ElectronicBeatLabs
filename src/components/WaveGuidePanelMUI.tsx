@@ -16,7 +16,7 @@ import {
   InputLabel,
   Chip,
 } from '@mui/material';
-import type { WaveGuidePanelProps } from '../types/index';
+import type { WaveGuidePanelProps, WaveGuideConfig } from '../types/index';
 
 const WaveGuidePanelMUI: React.FC<WaveGuidePanelProps> = ({
   config,
@@ -25,14 +25,14 @@ const WaveGuidePanelMUI: React.FC<WaveGuidePanelProps> = ({
   const handleTypeChange = (value: string) => {
     onChange({
       ...config,
-      type: value as any
+      type: value as WaveGuideConfig['type']
     });
   };
 
   const handleMaterialChange = (value: string) => {
     onChange({
       ...config,
-      material: value as any
+      material: value as WaveGuideConfig['material']
     });
   };
 
@@ -64,7 +64,7 @@ const WaveGuidePanelMUI: React.FC<WaveGuidePanelProps> = ({
   };
 
   const getShapeStyle = () => {
-    const baseStyle: any = {
+    const baseStyle: React.CSSProperties = {
       border: `2px solid ${getMaterialColor(config.material)}`,
       boxShadow: `0 0 15px ${getMaterialColor(config.material)}66`,
       transition: 'all 0.3s ease',

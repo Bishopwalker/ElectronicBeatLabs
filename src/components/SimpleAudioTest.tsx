@@ -55,7 +55,7 @@ const SimpleAudioTest: React.FC = () => {
 
   const startTest = async () => {
     try {
-      const context = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const context = new (window.AudioContext || (window as typeof window & { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
       
       if (context.state === 'suspended') {
         await context.resume();

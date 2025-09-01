@@ -3,7 +3,7 @@
 
 import React from 'react';
 import styled from 'styled-components';
-import type {WaveGuidePanelProps} from '../types/index';
+import type { WaveGuidePanelProps, WaveGuideConfig } from '../types/index';
 
 const Container = styled.div`
   padding: 0.5rem;
@@ -221,14 +221,14 @@ const WaveGuidePanel: React.FC<WaveGuidePanelProps> = ({
   const handleTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     onChange({
       ...config,
-      type: e.target.value as any
+      type: e.target.value as WaveGuideConfig['type']
     });
   };
 
   const handleMaterialChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     onChange({
       ...config,
-      material: e.target.value as any
+      material: e.target.value as WaveGuideConfig['material']
     });
   };
 

@@ -259,7 +259,7 @@ const StarField: React.FC<StarFieldProps> = ({
     renderStars(canvas, ctx);
 
     // Use setTimeout instead of requestAnimationFrame for lower frame rate
-    animationRef.current = window.setTimeout(animate, 66) as any;
+    animationRef.current = window.setTimeout(animate, 66);
   }, [initializeStars, updateStars, renderStars]);
 
   // Handle mouse movement

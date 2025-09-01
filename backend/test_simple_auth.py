@@ -187,30 +187,34 @@ if __name__ == "__main__":
     Base.metadata.create_all(bind=engine)
     
     try:
-        print("🧪 Testing usage tracking...")
-        test_usage_tracking(None)
-        print("✅ Usage tracking test passed")
+        print("Testing anonymous usage tracking...")
+        test_anonymous_usage_tracking(None)
+        print("PASS: Anonymous usage tracking test")
         
-        print("🧪 Testing usage limits...")
-        test_usage_limits(None)
-        print("✅ Usage limits test passed")
+        print("Testing usage limits...")
+        test_anonymous_usage_limits(None)
+        print("PASS: Usage limits test")
         
-        print("🧪 Testing subscription plans...")
+        print("Testing user usage tracking...")
+        test_user_usage_tracking(None)
+        print("PASS: User usage tracking test")
+        
+        print("Testing subscription plans...")
         test_subscription_plans()
-        print("✅ Subscription plans test passed")
+        print("PASS: Subscription plans test")
         
-        print("🧪 Testing webhook logging...")
+        print("Testing webhook logging...")
         test_webhook_event_logging(None)
-        print("✅ Webhook logging test passed")
+        print("PASS: Webhook logging test")
         
-        print("🧪 Testing user creation...")
+        print("Testing user creation...")
         test_user_creation(None)
-        print("✅ User creation test passed")
+        print("PASS: User creation test")
         
-        print("\n🎉 All tests passed!")
+        print("\nALL TESTS PASSED!")
         
     except Exception as e:
-        print(f"❌ Test failed: {e}")
+        print(f"FAIL: Test failed: {e}")
         sys.exit(1)
     finally:
         # Cleanup

@@ -31,7 +31,7 @@ if ('performance' in window && 'measure' in window.performance) {
 }
 
 // Check for Web Audio API support
-if (!window.AudioContext && !(window as any).webkitAudioContext) {
+if (!window.AudioContext && !(window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext) {
   console.warn('Web Audio API not supported. Some features may not work.');
 }
 

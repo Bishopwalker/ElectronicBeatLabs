@@ -21,7 +21,7 @@ export const SimpleAuth: React.FC = () => {
       // 2. Send to backend for verification
       // await login('google', googleToken);
       
-    } catch (err) {
+    } catch {
       setError('Login failed');
     } finally {
       setLoading(false);
@@ -35,7 +35,7 @@ export const SimpleAuth: React.FC = () => {
     try {
       alert('GitHub OAuth integration needed - add your GitHub Client ID to backend .env');
       // await login('github', githubToken);
-    } catch (err) {
+    } catch {
       setError('Login failed');
     } finally {
       setLoading(false);

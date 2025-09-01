@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
 /**
@@ -23,7 +23,7 @@ export const useUsageTracking = () => {
     }, 5 * 60 * 1000); // 5 minutes
   };
 
-  const endSession = async () => {
+  const endSession = useCallback(async () => {
     if (!sessionStartRef.current) return; // No session to end
     
     // Clear interval
@@ -49,7 +49,7 @@ export const useUsageTracking = () => {
     }
     
     sessionStartRef.current = null;
-  };
+  }, [recordUsage]);
 
   const recordPartialUsage = async () => {
     if (!sessionStartRef.current) return;

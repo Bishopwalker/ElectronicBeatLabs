@@ -281,11 +281,11 @@ export const use8DPatterns = () => {
       
       if (isAnimating) {
         // Reduce to 20fps for eyes-closed usage
-        animationRef.current = window.setTimeout(animate, 50) as any;
+        animationRef.current = window.setTimeout(animate, 50);
       }
     };
 
-    animationRef.current = window.setTimeout(animate, 50) as any;
+    animationRef.current = window.setTimeout(animate, 50);
   }, [isAnimating]);
 
   // Stop pattern animation

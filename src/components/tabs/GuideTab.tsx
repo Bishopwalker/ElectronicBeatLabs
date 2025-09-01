@@ -4,6 +4,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { PATTERN_EXPLANATIONS } from '../../data/patterns';
+import type { AppState, AudioEngineState, Pattern8D } from '../../types';
 
 const Container = styled.div`
   padding: 1rem 0;
@@ -60,10 +61,10 @@ const InstructionItem = styled.li`
 `;
 
 interface GuideTabProps {
-  appState: any;
-  audioEngine: any;
-  patterns8D: any;
-  onStateChange: (state: any) => void;
+  appState: AppState;
+  audioEngine: AudioEngineState;
+  patterns8D: Pattern8D[];
+  onStateChange: (state: Partial<AppState>) => void;
 }
 
 const GuideTab: React.FC<GuideTabProps> = () => {

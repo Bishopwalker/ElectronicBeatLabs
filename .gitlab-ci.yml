@@ -317,8 +317,6 @@ quality_gate:
       artifacts: true
     - job: test:backend
       artifacts: true
-    - job: sast
-      artifacts: false
     - job: secret_detection
       artifacts: false
   before_script:
