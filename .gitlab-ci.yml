@@ -79,7 +79,10 @@ build:backend:
     - python -m py_compile main.py
     - python -c "import main; print('Backend validation successful')"
     # Create deployment package info
-    - echo "BACKEND_VERSION=$(python --version)" >> ../build.env
+    - cd ..
+    - echo "BACKEND_VERSION=$(python --version)" > build.env
+    - echo "BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> build.env
+    - echo "COMMIT_SHA=$CI_COMMIT_SHORT_SHA" >> build.env
   artifacts:
     name: "backend-build-$CI_COMMIT_SHORT_SHA"
     paths:
