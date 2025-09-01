@@ -11,7 +11,7 @@ A Python + React + TypeScript application for generating binaural beats and elec
 4. **[PLANNING.md](PLANNING.md)** - Architecture & development workflow
 5. **[TASK.md](TASK.md)** - Current sprint work & task tracking
 
-**AI Assistant Context:**
+**Development Context:**
 - **[.claude/VALIDATION.md](.claude/VALIDATION.md)** - Quality checklists
 - **[.claude/RAG_CONTEXT.md](.claude/RAG_CONTEXT.md)** - Code discovery patterns
 - **[.claude/INFRASTRUCTURE.md](.claude/INFRASTRUCTURE.md)** - Environment & deployment
