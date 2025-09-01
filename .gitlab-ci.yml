@@ -234,9 +234,6 @@ package:docker:
     - build:backend
     - test:frontend:unit
     - test:backend
-  dependencies:
-    - build:frontend
-    - build:backend
   before_script:
     - docker info
     - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
@@ -266,9 +263,9 @@ package:docker:
 package:npm:
   stage: package
   image: node:${NODE_VERSION}-alpine
-  needs: ["test:frontend:unit"]
-  dependencies:
+  needs: 
     - build:frontend
+    - test:frontend:unit
   script:
     # Create NPM package (if applicable)
     - npm pack
