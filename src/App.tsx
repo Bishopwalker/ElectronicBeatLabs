@@ -2,12 +2,15 @@
 // Entry point for the electromagnetic wave generator application
 
 import React from 'react';
-import { ThemeProvider } from 'styled-components';
+import { ThemeProvider as StyledThemeProvider } from 'styled-components';
+import { ThemeProvider as MuiThemeProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
 import GlobalStyles from './styles/GlobalStyles';
 import ElectromagneticBeatLab from './components/ElectromagneticBeatLab';
+import { muiTheme } from './theme/muiTheme';
 
-// Theme configuration
-const theme = {
+// Styled Components theme configuration
+const styledTheme = {
   colors: {
     primary: '#ff6b00',
     secondary: '#00ff88',
@@ -29,13 +32,16 @@ const theme = {
 
 function App() {
   return (
-    <ThemeProvider theme={theme}>
-      <GlobalStyles />
-      <ElectromagneticBeatLab
-        autoStart={false}
-        fullscreen={true}
-      />
-    </ThemeProvider>
+    <MuiThemeProvider theme={muiTheme}>
+      <StyledThemeProvider theme={styledTheme}>
+        <CssBaseline />
+        <GlobalStyles />
+        <ElectromagneticBeatLab
+          autoStart={false}
+          fullscreen={true}
+        />
+      </StyledThemeProvider>
+    </MuiThemeProvider>
   );
 }
 

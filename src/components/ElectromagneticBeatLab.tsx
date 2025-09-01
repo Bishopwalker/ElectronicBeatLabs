@@ -11,13 +11,13 @@ import {PATTERN_PRESETS, WAVE_PATTERNS} from '../data/patterns';
 
 import StarField from './StarField';
 import SpatialVisualizer from './SpatialVisualizer';
-import FrequencyDisplay from './FrequencyDisplay';
-import PatternSelector from './PatternSelector';
+import FrequencyDisplayMUI from './FrequencyDisplayMUI';
+import PatternSelectorMUI from './PatternSelectorMUI';
 import ElectromagneticStatus from './ElectromagneticStatus';
-import WaveGuidePanel from './WaveGuidePanel';
-import MainControls from './MainControls';
+import WaveGuidePanelMUI from './WaveGuidePanelMUI';
+import MainControlsMUI from './MainControlsMUI';
 import ControlTabs from './ControlTabs';
-import BinauralTest from './BinauralTest';
+import BinauralTestMUI from './BinauralTestMUI';
 
 // Tab Components
 import FrequencyTab from './tabs/FrequencyTab';
@@ -496,45 +496,37 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
       <MainInterface>
         {/* Left Panel - Controls and Pattern Selection */}
         <LeftPanel>
-          <div className="glass-panel">
-            <PatternSelector
-              patterns={WAVE_PATTERNS}
-              selected={appState.currentPattern?.id || null}
-              mode={appState.mode}
-              onSelect={handlePatternSelect}
-              onModeChange={handleModeChange}
-            />
-          </div>
+          <PatternSelectorMUI
+            patterns={WAVE_PATTERNS}
+            selected={appState.currentPattern || null}
+            mode={appState.mode}
+            onSelect={handlePatternSelect}
+            onModeChange={handleModeChange}
+          />
 
-          <div className="glass-panel">
-            <FrequencyDisplay
-              frequency={appState.frequency}
-              beatFreq={appState.frequency}
-              target={appState.currentPattern?.frequencies.beat || 0}
-              range={appState.currentPattern?.frequencies.range || 'alpha'}
-              onChange={handleFrequencyChange}
-            />
-          </div>
+          <FrequencyDisplayMUI
+            frequency={appState.frequency}
+            beatFrequency={appState.frequency}
+            onChange={handleFrequencyChange}
+            rangeLabel={appState.currentPattern?.frequencies.range || 'alpha'}
+          />
 
-          <div className="glass-panel">
-            <MainControls
-              isPlaying={appState.isPlaying}
-              volume={appState.volume}
-              onPlay={handlePlay}
-              onStop={handleStop}
-              onVolumeChange={handleVolumeChange}
-            />
-          </div>
+          <MainControlsMUI
+            isPlaying={appState.isPlaying}
+            volume={appState.volume}
+            onPlay={handlePlay}
+            onStop={handleStop}
+            onVolumeChange={handleVolumeChange}
+          />
 
-          <div className="glass-panel">
-            <BinauralTest
-              leftFreq={audioEngine.audioState.leftFreq}
-              rightFreq={audioEngine.audioState.rightFreq}
-              onFrequencyChange={(left, right) => 
-                audioEngine.updateFrequency(left, right)
-              }
-            />
-          </div>
+          <BinauralTestMUI
+            leftFrequency={audioEngine.audioState.leftFreq || 440}
+            rightFrequency={audioEngine.audioState.rightFreq || 444}
+            onLeftChange={(freq) => audioEngine.updateFrequency(freq, audioEngine.audioState.rightFreq)}
+            onRightChange={(freq) => audioEngine.updateFrequency(audioEngine.audioState.leftFreq, freq)}
+            onTest={() => handlePlay()}
+            isPlaying={appState.isPlaying}
+          />
         </LeftPanel>
 
         {/* Center Panel - Main Visualization */}
@@ -566,21 +558,19 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
 
         {/* Right Panel - Wave Guide and Advanced Controls */}
         <RightPanel>
-          <div className="glass-panel">
-            <WaveGuidePanel
-              config={{
-                type: 'toroidal',
-                dimensions: { width: 200, height: 200, depth: 100 },
-                material: 'copper',
-                resonance: appState.frequency,
-                impedance: 377
-              }}
-              onChange={(config) => {
-                // Handle wave guide configuration change
-                console.log('Wave guide config changed:', config);
-              }}
-            />
-          </div>
+          <WaveGuidePanelMUI
+            config={{
+              type: 'toroidal',
+              dimensions: { width: 200, height: 200, depth: 100 },
+              material: 'copper',
+              resonance: appState.frequency,
+              impedance: 377
+            }}
+            onChange={(config) => {
+              // Handle wave guide configuration change
+              console.log('Wave guide config changed:', config);
+            }}
+          />
         </RightPanel>
       </MainInterface>
     </Container>
