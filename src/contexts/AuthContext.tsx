@@ -1,4 +1,4 @@
-import React, { useState, useEffect, type ReactNode } from 'react';
+import React, { useState, useEffect, useContext, type ReactNode } from 'react';
 import { AuthContext, type User, type UsageInfo, type AuthContextType } from './auth';
 // import keycloak, { initKeycloak } from '../services/keycloak';
 
@@ -165,6 +165,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       {children}
     </AuthContext.Provider>
   );
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };
 
 export default AuthProvider;
