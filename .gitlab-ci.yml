@@ -63,11 +63,10 @@ build:frontend:
 
 build:backend:
   stage: build
-  image: python:${PYTHON_VERSION}-alpine
+  image: python:${PYTHON_VERSION}-slim
   <<: *cache_config
   before_script:
-    # Setup Python environment with C++ compiler for numpy
-    - apk add --no-cache gcc g++ musl-dev libffi-dev gfortran openblas-dev
+    # Setup Python environment - slim image has glibc for wheel compatibility
     - python -m venv backend/.venv
     - source backend/.venv/bin/activate
     - pip install --upgrade pip
@@ -163,12 +162,11 @@ test:frontend:e2e:
 
 test:backend:
   stage: test
-  image: python:${PYTHON_VERSION}-alpine
+  image: python:${PYTHON_VERSION}-slim
   needs: ["build:backend"]
   dependencies:
     - build:backend
   before_script:
-    - apk add --no-cache gcc musl-dev libffi-dev
     - source backend/.venv/bin/activate
   script:
     # Run Python tests
