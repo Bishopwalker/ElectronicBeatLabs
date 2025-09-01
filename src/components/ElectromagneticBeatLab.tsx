@@ -481,11 +481,18 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
     const activeTabConfig = tabs.find(tab => tab.id === appState.activeTab);
     if (!activeTabConfig) return null;
     
+    const handleStateChange = (partialState: Partial<AppState>) => {
+      setAppState(prevState => ({
+        ...prevState,
+        ...partialState
+      }));
+    };
+
     const commonProps = {
       appState,
       audioEngine,
-      patterns8D,
-      onStateChange: setAppState
+      patterns8D: patterns8D.patterns,
+      onStateChange: handleStateChange
     };
 
     switch (appState.activeTab) {

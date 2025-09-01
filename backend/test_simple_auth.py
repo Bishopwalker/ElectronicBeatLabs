@@ -186,16 +186,31 @@ if __name__ == "__main__":
     # Setup test database
     Base.metadata.create_all(bind=engine)
     
+    def clean_database():
+        """Clean all data from database tables"""
+        db = TestingSessionLocal()
+        try:
+            # Delete all records from all tables
+            db.query(UsageRecord).delete()
+            db.query(WebhookEvent).delete() 
+            db.query(User).delete()
+            db.commit()
+        finally:
+            db.close()
+
     try:
         print("Testing anonymous usage tracking...")
+        clean_database()
         test_anonymous_usage_tracking(None)
         print("PASS: Anonymous usage tracking test")
         
         print("Testing usage limits...")
+        clean_database()
         test_anonymous_usage_limits(None)
         print("PASS: Usage limits test")
         
         print("Testing user usage tracking...")
+        clean_database()
         test_user_usage_tracking(None)
         print("PASS: User usage tracking test")
         
@@ -220,4 +235,8 @@ if __name__ == "__main__":
         # Cleanup
         Base.metadata.drop_all(bind=engine)
         if os.path.exists("test.db"):
-            os.remove("test.db")
+            try:
+                os.remove("test.db")
+            except PermissionError:
+                print("Warning: Could not remove test.db (file in use)")
+                pass

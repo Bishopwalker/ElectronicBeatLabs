@@ -7,7 +7,8 @@ import type {
   BinauralBeatConfig, 
   ElectromagneticField,
   ElectromagneticFieldState,
-  PatternConfig 
+  PatternConfig,
+  ADHDProtocol 
 } from '../types/index';
 
 export const useAudioEngine = () => {
@@ -354,21 +355,21 @@ export const useAudioEngine = () => {
   }, [audioState]);
 
   // Create gamma wave protocol for ADHD
-  const createGammaProtocol = useCallback((frequency: number = 40, duration: number = 1200000) => {
+  const createGammaProtocol = useCallback((protocol: ADHDProtocol) => {
     const config: BinauralBeatConfig = {
       leftFreq: 200,
-      rightFreq: 200 + frequency,
-      beatFreq: frequency,
-      amplitude: 0.4,
+      rightFreq: 200 + protocol.gammaFreq,
+      beatFreq: protocol.gammaFreq,
+      amplitude: protocol.intensity / 100, // Convert percentage to amplitude
       waveform: 'sine'
     };
 
     startBinauralBeat(config);
 
-    // Auto-stop after duration (20 minutes default)
+    // Auto-stop after protocol duration
     setTimeout(() => {
       stopBinauralBeat();
-    }, duration);
+    }, protocol.duration * 60 * 1000); // Convert minutes to milliseconds
   }, [startBinauralBeat, stopBinauralBeat]);
 
   // Cleanup on unmount
