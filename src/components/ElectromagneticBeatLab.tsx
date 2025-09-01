@@ -34,6 +34,12 @@ const Container = styled.div`
   position: relative;
   overflow: hidden;
   background: transparent;
+  box-sizing: border-box;
+  
+  /* Prevent zoom issues */
+  * {
+    box-sizing: border-box;
+  }
 `;
 
 const Header = styled.header`
@@ -44,17 +50,43 @@ const Header = styled.header`
   z-index: 100;
   padding: 0.25rem 0.5rem;
   display: flex;
-  justify-content: between;
+  justify-content: space-between;
   align-items: center;
   backdrop-filter: blur(10px);
   background: rgba(0, 0, 0, 0.2);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  min-height: 40px;
+  
+  /* Handle zoom levels */
+  @media (max-zoom: 200%) {
+    padding: 0.2rem 0.4rem;
+    min-height: 35px;
+  }
+  
+  @media (max-zoom: 300%) {
+    padding: 0.1rem 0.3rem;
+    min-height: 30px;
+    font-size: 0.9rem;
+  }
 `;
 
 const Title = styled.h1`
   font-size: 2rem;
   font-weight: 700;
   margin: 0;
+  
+  /* Handle zoom levels */
+  @media (max-zoom: 200%) {
+    font-size: 1.6rem;
+  }
+  
+  @media (max-zoom: 300%) {
+    font-size: 1.3rem;
+  }
+  
+  @media (max-width: 768px) {
+    font-size: 1.5rem;
+  }
 `;
 
 const StatusBar = styled.div`
@@ -71,20 +103,23 @@ const MainInterface = styled.div`
   right: 0;
   bottom: 0;
   display: grid;
-  grid-template-columns: 280px 1fr 260px;
+  grid-template-columns: minmax(280px, 25%) 1fr minmax(260px, 25%);
   grid-template-rows: auto 1fr auto;
-  gap: 0.25rem;
-  padding: 0.25rem;
+  gap: 0.5rem;
+  padding: 0.5rem;
   overflow: hidden;
 
-  @media (max-width: 1200px) {
-    grid-template-columns: 300px 1fr;
+  /* Handle zoom and small screens */
+  @media (max-width: 1200px), (max-zoom: 150%) {
+    grid-template-columns: minmax(250px, 30%) 1fr;
     grid-template-rows: auto 1fr auto;
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 768px), (max-zoom: 200%) {
     grid-template-columns: 1fr;
     grid-template-rows: auto auto 1fr auto;
+    gap: 0.25rem;
+    padding: 0.25rem;
   }
 `;
 
@@ -93,36 +128,36 @@ const LeftPanel = styled.div`
   grid-row: 1 / -1;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.5rem;
   overflow-y: auto;
   overflow-x: hidden;
+  min-width: 0; /* Allow shrinking */
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 107, 0, 0.5) rgba(0, 0, 0, 0.3);
   
   &::-webkit-scrollbar {
-    width: 8px;
+    width: 6px;
   }
   
   &::-webkit-scrollbar-track {
     background: rgba(0, 0, 0, 0.3);
-    border-radius: 4px;
+    border-radius: 3px;
   }
   
   &::-webkit-scrollbar-thumb {
     background: linear-gradient(45deg, #ff6b00, #8a2be2);
-    border-radius: 4px;
-    box-shadow: 0 0 10px rgba(255, 107, 0, 0.5);
+    border-radius: 3px;
+    box-shadow: 0 0 5px rgba(255, 107, 0, 0.5);
   }
   
   &::-webkit-scrollbar-thumb:hover {
     background: linear-gradient(45deg, #ff8533, #9944d9);
-    box-shadow: 0 0 15px rgba(255, 107, 0, 0.7);
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 768px), (max-zoom: 200%) {
     grid-column: 1;
     grid-row: 1;
-    max-height: 300px;
+    max-height: 40vh;
   }
 `;
 
@@ -131,15 +166,18 @@ const CenterPanel = styled.div`
   grid-row: 1 / -1;
   position: relative;
   overflow: hidden;
+  min-width: 0; /* Allow shrinking */
+  min-height: 300px;
 
-  @media (max-width: 1200px) {
+  @media (max-width: 1200px), (max-zoom: 150%) {
     grid-column: 2;
     grid-row: 1 / -1;
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 768px), (max-zoom: 200%) {
     grid-column: 1;
     grid-row: 3;
+    min-height: 250px;
   }
 `;
 
@@ -148,33 +186,33 @@ const RightPanel = styled.div`
   grid-row: 1 / -1;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.5rem;
   overflow-y: auto;
   overflow-x: hidden;
+  min-width: 0; /* Allow shrinking */
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 107, 0, 0.5) rgba(0, 0, 0, 0.3);
   
   &::-webkit-scrollbar {
-    width: 8px;
+    width: 6px;
   }
   
   &::-webkit-scrollbar-track {
     background: rgba(0, 0, 0, 0.3);
-    border-radius: 4px;
+    border-radius: 3px;
   }
   
   &::-webkit-scrollbar-thumb {
     background: linear-gradient(45deg, #ff6b00, #8a2be2);
-    border-radius: 4px;
-    box-shadow: 0 0 10px rgba(255, 107, 0, 0.5);
+    border-radius: 3px;
+    box-shadow: 0 0 5px rgba(255, 107, 0, 0.5);
   }
   
   &::-webkit-scrollbar-thumb:hover {
     background: linear-gradient(45deg, #ff8533, #9944d9);
-    box-shadow: 0 0 15px rgba(255, 107, 0, 0.7);
   }
 
-  @media (max-width: 1200px) {
+  @media (max-width: 1200px), (max-zoom: 150%) {
     display: none;
   }
 `;
@@ -198,7 +236,7 @@ const ControlsContainer = styled.div`
   right: 0.25rem;
   z-index: 50;
 
-  @media (max-width: 768px) {
+  @media (max-width: 768px), (max-zoom: 200%) {
     grid-column: 1;
     grid-row: 4;
     position: relative;
@@ -209,7 +247,7 @@ const ControlsContainer = styled.div`
 `;
 
 const TabContent = styled.div`
-  min-height: 400px;
+  min-height: 300px;
   max-height: 600px;
   overflow-y: auto;
   overflow-x: hidden;
@@ -235,6 +273,13 @@ const TabContent = styled.div`
   &::-webkit-scrollbar-thumb:hover {
     background: linear-gradient(45deg, #ff8533, #9944d9);
     box-shadow: 0 0 15px rgba(255, 107, 0, 0.7);
+  }
+
+  /* Handle extreme zoom levels */
+  @media (max-zoom: 300%) {
+    min-height: 200px;
+    max-height: 400px;
+    font-size: 0.8rem;
   }
 `;
 
