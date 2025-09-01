@@ -110,38 +110,44 @@ describe('WebSocket Tests', () => {
     expect(sendSpy).toHaveBeenCalledWith(JSON.stringify(patternData));
   });
 
-  it('should handle audio stream data', () => {
+  it('should handle audio stream data', (done) => {
     const messageHandler = jest.fn();
     mockWebSocket.onmessage = messageHandler;
 
-    const audioData = {
-      type: 'audio_stream',
-      samples: new Array(512).fill(0).map(() => Math.random() * 2 - 1),
-      sampleRate: 44100,
-      timestamp: Date.now()
-    };
+    mockWebSocket.onopen = () => {
+      const audioData = {
+        type: 'audio_stream',
+        samples: new Array(512).fill(0).map(() => Math.random() * 2 - 1),
+        sampleRate: 44100,
+        timestamp: Date.now()
+      };
 
-    mockWebSocket.simulateMessage(audioData);
-    
-    expect(messageHandler).toHaveBeenCalled();
+      mockWebSocket.simulateMessage(audioData);
+      
+      expect(messageHandler).toHaveBeenCalled();
+      done();
+    };
   });
 
-  it('should handle electromagnetic field data', () => {
+  it('should handle electromagnetic field data', (done) => {
     const messageHandler = jest.fn();
     mockWebSocket.onmessage = messageHandler;
 
-    const fieldData = {
-      type: 'electromagnetic_field',
-      strength: 0.8,
-      frequency: 4,
-      phase: 120,
-      coherence: 0.9,
-      state: 'ACTIVE'
-    };
+    mockWebSocket.onopen = () => {
+      const fieldData = {
+        type: 'electromagnetic_field',
+        strength: 0.8,
+        frequency: 4,
+        phase: 120,
+        coherence: 0.9,
+        state: 'ACTIVE'
+      };
 
-    mockWebSocket.simulateMessage(fieldData);
-    
-    expect(messageHandler).toHaveBeenCalled();
+      mockWebSocket.simulateMessage(fieldData);
+      
+      expect(messageHandler).toHaveBeenCalled();
+      done();
+    };
   });
 
   it('should handle connection errors', (done) => {
@@ -186,7 +192,7 @@ describe('WebSocket Tests', () => {
     expect(connectionCount).toBe(2);
   });
 
-  it('should handle real-time frequency updates', () => {
+  it('should handle real-time frequency updates', (done) => {
     const frequencies: number[] = [];
     
     mockWebSocket.onmessage = (event) => {
@@ -196,20 +202,23 @@ describe('WebSocket Tests', () => {
       }
     };
 
-    // Simulate real-time frequency changes
-    for (let i = 1; i <= 10; i++) {
-      mockWebSocket.simulateMessage({
-        type: 'frequency_update',
-        beatFreq: i * 0.5
-      });
-    }
+    mockWebSocket.onopen = () => {
+      // Simulate real-time frequency changes
+      for (let i = 1; i <= 10; i++) {
+        mockWebSocket.simulateMessage({
+          type: 'frequency_update',
+          beatFreq: i * 0.5
+        });
+      }
 
-    expect(frequencies).toHaveLength(10);
-    expect(frequencies[0]).toBe(0.5);
-    expect(frequencies[9]).toBe(5);
+      expect(frequencies).toHaveLength(10);
+      expect(frequencies[0]).toBe(0.5);
+      expect(frequencies[9]).toBe(5);
+      done();
+    };
   });
 
-  it('should batch multiple updates efficiently', () => {
+  it('should batch multiple updates efficiently', (done) => {
     const messages: Record<string, unknown>[] = [];
     
     mockWebSocket.onmessage = (event) => {
@@ -217,20 +226,23 @@ describe('WebSocket Tests', () => {
       messages.push(data);
     };
 
-    // Simulate batched updates
-    const batchData = {
-      type: 'batch_update',
-      updates: [
-        { type: 'frequency', value: 4 },
-        { type: 'volume', value: 0.5 },
-        { type: 'pattern', value: 'vortex-focus' }
-      ]
+    mockWebSocket.onopen = () => {
+      // Simulate batched updates
+      const batchData = {
+        type: 'batch_update',
+        updates: [
+          { type: 'frequency', value: 4 },
+          { type: 'volume', value: 0.5 },
+          { type: 'pattern', value: 'vortex-focus' }
+        ]
+      };
+
+      mockWebSocket.simulateMessage(batchData);
+
+      expect(messages).toHaveLength(1);
+      expect(messages[0].updates).toHaveLength(3);
+      done();
     };
-
-    mockWebSocket.simulateMessage(batchData);
-
-    expect(messages).toHaveLength(1);
-    expect(messages[0].updates).toHaveLength(3);
   });
 
   it('should handle large data payloads', () => {
@@ -250,7 +262,7 @@ describe('WebSocket Tests', () => {
     expect(sendSpy).toHaveBeenCalled();
   });
 
-  it('should maintain connection heartbeat', async () => {
+  it('should maintain connection heartbeat', (done) => {
     let heartbeatCount = 0;
     
     mockWebSocket.onmessage = (event) => {
@@ -262,11 +274,14 @@ describe('WebSocket Tests', () => {
       }
     };
 
-    // Simulate heartbeat pings
-    for (let i = 0; i < 5; i++) {
-      mockWebSocket.simulateMessage({ type: 'ping', timestamp: Date.now() });
-    }
+    mockWebSocket.onopen = () => {
+      // Simulate heartbeat pings
+      for (let i = 0; i < 5; i++) {
+        mockWebSocket.simulateMessage({ type: 'ping', timestamp: Date.now() });
+      }
 
-    expect(heartbeatCount).toBe(5);
+      expect(heartbeatCount).toBe(5);
+      done();
+    };
   });
 });

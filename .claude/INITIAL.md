@@ -118,3 +118,5 @@
 4. **WebSocket connection limits**: Browser limits concurrent connections
 5. **Audio latency**: Buffer sizes affect both latency and stability
 6. **React strict mode**: Effects run twice in development, handle audio cleanup properly
+7. **NEVER WRITE** **Completed by:** Claude or Anthorpic or anything that isn't fucking the author of the project..
+8. **NEVER FORGET**: Check project for nay mentions of authored by Claude or Anthropic AI or anything close, only author is author!!!!!!!!!

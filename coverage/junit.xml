@@ -1,23 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="jest tests" tests="57" failures="7" errors="0" time="13.333">
-  <testsuite name="API Tests" errors="0" failures="0" skipped="0" timestamp="2025-09-01T19:00:12" time="2.499" tests="12">
-    <testcase classname="API Tests" name="should fetch pattern presets" time="0.014">
+<testsuites name="jest tests" tests="57" failures="0" errors="0" time="4.171">
+  <testsuite name="API Tests" errors="0" failures="0" skipped="0" timestamp="2025-09-01T19:49:34" time="0.982" tests="12">
+    <testcase classname="API Tests" name="should fetch pattern presets" time="0.01">
     </testcase>
-    <testcase classname="API Tests" name="should create binaural beat session" time="0.004">
+    <testcase classname="API Tests" name="should create binaural beat session" time="0.003">
     </testcase>
-    <testcase classname="API Tests" name="should update frequency during session" time="0.001">
+    <testcase classname="API Tests" name="should update frequency during session" time="0.003">
     </testcase>
-    <testcase classname="API Tests" name="should get electromagnetic field data" time="0.002">
+    <testcase classname="API Tests" name="should get electromagnetic field data" time="0.001">
     </testcase>
-    <testcase classname="API Tests" name="should handle API errors gracefully" time="0.001">
+    <testcase classname="API Tests" name="should handle API errors gracefully" time="0.002">
     </testcase>
-    <testcase classname="API Tests" name="should handle 404 responses" time="0">
+    <testcase classname="API Tests" name="should handle 404 responses" time="0.001">
     </testcase>
-    <testcase classname="API Tests" name="should handle server errors (500)" time="0">
+    <testcase classname="API Tests" name="should handle server errors (500)" time="0.001">
     </testcase>
-    <testcase classname="API Tests" name="should validate request data" time="0">
+    <testcase classname="API Tests" name="should validate request data" time="0.001">
     </testcase>
-    <testcase classname="API Tests" name="should get system status" time="0.001">
+    <testcase classname="API Tests" name="should get system status" time="0.002">
     </testcase>
     <testcase classname="API Tests" name="should handle concurrent requests" time="0.003">
     </testcase>
@@ -26,277 +26,105 @@
     <testcase classname="API Tests" name="should handle authentication if required" time="0.001">
     </testcase>
   </testsuite>
-  <testsuite name="Frequencies Tests" errors="0" failures="0" skipped="0" timestamp="2025-09-01T19:00:12" time="2.611" tests="11">
-    <testcase classname="Frequencies Tests" name="should have valid frequency ranges" time="0.074">
+  <testsuite name="Frequencies Tests" errors="0" failures="0" skipped="0" timestamp="2025-09-01T19:49:34" time="0.998" tests="11">
+    <testcase classname="Frequencies Tests" name="should have valid frequency ranges" time="0.022">
     </testcase>
-    <testcase classname="Frequencies Tests" name="should calculate binaural beat correctly" time="0.011">
+    <testcase classname="Frequencies Tests" name="should calculate binaural beat correctly" time="0.001">
     </testcase>
     <testcase classname="Frequencies Tests" name="should support theta frequency range (4-8Hz)" time="0.001">
     </testcase>
-    <testcase classname="Frequencies Tests" name="should support alpha frequency range (8-13Hz)" time="0.002">
+    <testcase classname="Frequencies Tests" name="should support alpha frequency range (8-13Hz)" time="0.001">
     </testcase>
-    <testcase classname="Frequencies Tests" name="should support beta frequency range (13-30Hz)" time="0.001">
+    <testcase classname="Frequencies Tests" name="should support beta frequency range (13-30Hz)" time="0">
     </testcase>
     <testcase classname="Frequencies Tests" name="should support gamma frequency range (30Hz+)" time="0.001">
     </testcase>
-    <testcase classname="Frequencies Tests" name="should calculate wavelength correctly" time="0.012">
+    <testcase classname="Frequencies Tests" name="should calculate wavelength correctly" time="0.001">
     </testcase>
-    <testcase classname="Frequencies Tests" name="should validate carrier frequencies are audible" time="0.01">
+    <testcase classname="Frequencies Tests" name="should validate carrier frequencies are audible" time="0.002">
     </testcase>
-    <testcase classname="Frequencies Tests" name="should ensure beat frequencies are in effective range" time="0.003">
+    <testcase classname="Frequencies Tests" name="should ensure beat frequencies are in effective range" time="0.002">
     </testcase>
-    <testcase classname="Frequencies Tests" name="should calculate frequency sweep correctly" time="0.002">
+    <testcase classname="Frequencies Tests" name="should calculate frequency sweep correctly" time="0.003">
     </testcase>
-    <testcase classname="Frequencies Tests" name="should handle ADHD gamma protocol frequencies" time="0">
+    <testcase classname="Frequencies Tests" name="should handle ADHD gamma protocol frequencies" time="0.001">
     </testcase>
   </testsuite>
-  <testsuite name="WebSocket Tests" errors="0" failures="5" skipped="0" timestamp="2025-09-01T19:00:12" time="2.842" tests="12">
-    <testcase classname="WebSocket Tests" name="should establish WebSocket connection" time="0.035">
+  <testsuite name="PipelineTest" errors="0" failures="0" skipped="0" timestamp="2025-09-01T19:49:34" time="1.082" tests="5">
+    <testcase classname="PipelineTest" name="renders pipeline test component" time="0.082">
     </testcase>
-    <testcase classname="WebSocket Tests" name="should send frequency update message" time="0.125">
+    <testcase classname="PipelineTest" name="displays pipeline ID" time="0.007">
     </testcase>
-    <testcase classname="WebSocket Tests" name="should send pattern selection message" time="0.003">
+    <testcase classname="PipelineTest" name="shows trigger time" time="0.004">
     </testcase>
-    <testcase classname="WebSocket Tests" name="should handle audio stream data" time="0.004">
-      <failure>Error: expect(jest.fn()).toHaveBeenCalled()
-
-Expected number of calls: &gt;= 1
-Received number of calls:    0
-    at Object.&lt;anonymous&gt; (C:\Users\bisho\IdeaProjects\ebl\src\__tests__\websocket.test.ts:126:28)
-    at Promise.finally.completed (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1556:28)
-    at new Promise (&lt;anonymous&gt;)
-    at callAsyncCircusFn (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1496:10)
-    at _callCircusTest (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1006:40)
-    at _runTest (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:946:3)
-    at _runTestsForDescribeBlock (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:839:13)
-    at _runTestsForDescribeBlock (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:829:11)
-    at run (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:757:3)
-    at runAndTransformResultsToJestFormat (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1917:21)
-    at jestAdapter (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\runner.js:101:19)
-    at runTestInternal (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:275:16)
-    at runTest (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:343:7)
-    at Object.worker (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:497:12)</failure>
+    <testcase classname="PipelineTest" name="displays success status" time="0.004">
     </testcase>
-    <testcase classname="WebSocket Tests" name="should handle electromagnetic field data" time="0.001">
-      <failure>Error: expect(jest.fn()).toHaveBeenCalled()
-
-Expected number of calls: &gt;= 1
-Received number of calls:    0
-    at Object.&lt;anonymous&gt; (C:\Users\bisho\IdeaProjects\ebl\src\__tests__\websocket.test.ts:144:28)
-    at Promise.finally.completed (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1556:28)
-    at new Promise (&lt;anonymous&gt;)
-    at callAsyncCircusFn (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1496:10)
-    at _callCircusTest (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1006:40)
-    at _runTest (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:946:3)
-    at _runTestsForDescribeBlock (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:839:13)
-    at _runTestsForDescribeBlock (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:829:11)
-    at run (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:757:3)
-    at runAndTransformResultsToJestFormat (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1917:21)
-    at jestAdapter (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\runner.js:101:19)
-    at runTestInternal (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:275:16)
-    at runTest (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:343:7)
-    at Object.worker (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:497:12)</failure>
+    <testcase classname="PipelineTest" name="renders with default props" time="0.008">
+    </testcase>
+  </testsuite>
+  <testsuite name="WebSocket Tests" errors="0" failures="0" skipped="0" timestamp="2025-09-01T19:49:34" time="1.159" tests="12">
+    <testcase classname="WebSocket Tests" name="should establish WebSocket connection" time="0.037">
+    </testcase>
+    <testcase classname="WebSocket Tests" name="should send frequency update message" time="0.066">
+    </testcase>
+    <testcase classname="WebSocket Tests" name="should send pattern selection message" time="0.002">
+    </testcase>
+    <testcase classname="WebSocket Tests" name="should handle audio stream data" time="0.022">
+    </testcase>
+    <testcase classname="WebSocket Tests" name="should handle electromagnetic field data" time="0.015">
     </testcase>
     <testcase classname="WebSocket Tests" name="should handle connection errors" time="0.001">
     </testcase>
-    <testcase classname="WebSocket Tests" name="should handle connection close" time="0.003">
+    <testcase classname="WebSocket Tests" name="should handle connection close" time="0.001">
     </testcase>
-    <testcase classname="WebSocket Tests" name="should reconnect after connection loss" time="0.001">
+    <testcase classname="WebSocket Tests" name="should reconnect after connection loss" time="0">
     </testcase>
-    <testcase classname="WebSocket Tests" name="should handle real-time frequency updates" time="0.047">
-      <failure>Error: expect(received).toHaveLength(expected)
-
-Expected length: 10
-Received length: 0
-Received array:  []
-    at Object.&lt;anonymous&gt; (C:\Users\bisho\IdeaProjects\ebl\src\__tests__\websocket.test.ts:207:25)
-    at Promise.finally.completed (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1556:28)
-    at new Promise (&lt;anonymous&gt;)
-    at callAsyncCircusFn (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1496:10)
-    at _callCircusTest (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1006:40)
-    at _runTest (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:946:3)
-    at _runTestsForDescribeBlock (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:839:13)
-    at _runTestsForDescribeBlock (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:829:11)
-    at run (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:757:3)
-    at runAndTransformResultsToJestFormat (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1917:21)
-    at jestAdapter (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\runner.js:101:19)
-    at runTestInternal (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:275:16)
-    at runTest (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:343:7)
-    at Object.worker (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:497:12)</failure>
+    <testcase classname="WebSocket Tests" name="should handle real-time frequency updates" time="0.014">
     </testcase>
-    <testcase classname="WebSocket Tests" name="should batch multiple updates efficiently" time="0.001">
-      <failure>Error: expect(received).toHaveLength(expected)
-
-Expected length: 1
-Received length: 0
-Received array:  []
-    at Object.&lt;anonymous&gt; (C:\Users\bisho\IdeaProjects\ebl\src\__tests__\websocket.test.ts:232:22)
-    at Promise.finally.completed (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1556:28)
-    at new Promise (&lt;anonymous&gt;)
-    at callAsyncCircusFn (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1496:10)
-    at _callCircusTest (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1006:40)
-    at _runTest (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:946:3)
-    at _runTestsForDescribeBlock (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:839:13)
-    at _runTestsForDescribeBlock (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:829:11)
-    at run (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:757:3)
-    at runAndTransformResultsToJestFormat (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1917:21)
-    at jestAdapter (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\runner.js:101:19)
-    at runTestInternal (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:275:16)
-    at runTest (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:343:7)
-    at Object.worker (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:497:12)</failure>
+    <testcase classname="WebSocket Tests" name="should batch multiple updates efficiently" time="0.016">
     </testcase>
-    <testcase classname="WebSocket Tests" name="should handle large data payloads" time="0.132">
+    <testcase classname="WebSocket Tests" name="should handle large data payloads" time="0.016">
     </testcase>
-    <testcase classname="WebSocket Tests" name="should maintain connection heartbeat" time="0.002">
-      <failure>Error: expect(received).toBe(expected) // Object.is equality
-
-Expected: 5
-Received: 0
-    at Object.&lt;anonymous&gt; (C:\Users\bisho\IdeaProjects\ebl\src\__tests__\websocket.test.ts:270:28)
-    at Generator.next (&lt;anonymous&gt;)
-    at C:\Users\bisho\IdeaProjects\ebl\src\__tests__\websocket.test.ts:9:71
-    at new Promise (&lt;anonymous&gt;)
-    at __awaiter (C:\Users\bisho\IdeaProjects\ebl\src\__tests__\websocket.test.ts:5:12)
-    at Object.&lt;anonymous&gt; (C:\Users\bisho\IdeaProjects\ebl\src\__tests__\websocket.test.ts:253:57)
-    at Promise.finally.completed (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1556:28)
-    at new Promise (&lt;anonymous&gt;)
-    at callAsyncCircusFn (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1496:10)
-    at _callCircusTest (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1006:40)
-    at _runTest (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:946:3)
-    at _runTestsForDescribeBlock (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:839:13)
-    at _runTestsForDescribeBlock (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:829:11)
-    at run (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:757:3)
-    at runAndTransformResultsToJestFormat (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1917:21)
-    at jestAdapter (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\runner.js:101:19)
-    at runTestInternal (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:275:16)
-    at runTest (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:343:7)
-    at Object.worker (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:497:12)</failure>
+    <testcase classname="WebSocket Tests" name="should maintain connection heartbeat" time="0.019">
     </testcase>
   </testsuite>
-  <testsuite name="use8DPatterns - 8D Pattern Tests" errors="0" failures="0" skipped="0" timestamp="2025-09-01T19:00:12" time="2.866" tests="10">
-    <testcase classname="use8DPatterns - 8D Pattern Tests" name="should initialize with default patterns" time="0.066">
+  <testsuite name="use8DPatterns - 8D Pattern Tests" errors="0" failures="0" skipped="0" timestamp="2025-09-01T19:49:34" time="1.22" tests="10">
+    <testcase classname="use8DPatterns - 8D Pattern Tests" name="should initialize with default patterns" time="0.05">
     </testcase>
-    <testcase classname="use8DPatterns - 8D Pattern Tests" name="should create toroidal pattern correctly" time="0.022">
+    <testcase classname="use8DPatterns - 8D Pattern Tests" name="should create toroidal pattern correctly" time="0.014">
     </testcase>
-    <testcase classname="use8DPatterns - 8D Pattern Tests" name="should create vortex pattern correctly" time="0.022">
+    <testcase classname="use8DPatterns - 8D Pattern Tests" name="should create vortex pattern correctly" time="0.011">
     </testcase>
-    <testcase classname="use8DPatterns - 8D Pattern Tests" name="should start animation correctly" time="0.016">
+    <testcase classname="use8DPatterns - 8D Pattern Tests" name="should start animation correctly" time="0.008">
     </testcase>
-    <testcase classname="use8DPatterns - 8D Pattern Tests" name="should stop animation correctly" time="0.013">
+    <testcase classname="use8DPatterns - 8D Pattern Tests" name="should stop animation correctly" time="0.007">
     </testcase>
-    <testcase classname="use8DPatterns - 8D Pattern Tests" name="should get pattern by ID" time="0.013">
+    <testcase classname="use8DPatterns - 8D Pattern Tests" name="should get pattern by ID" time="0.01">
     </testcase>
-    <testcase classname="use8DPatterns - 8D Pattern Tests" name="should calculate field strength correctly" time="0.013">
+    <testcase classname="use8DPatterns - 8D Pattern Tests" name="should calculate field strength correctly" time="0.009">
     </testcase>
-    <testcase classname="use8DPatterns - 8D Pattern Tests" name="should create custom pattern" time="0.013">
+    <testcase classname="use8DPatterns - 8D Pattern Tests" name="should create custom pattern" time="0.009">
     </testcase>
-    <testcase classname="use8DPatterns - 8D Pattern Tests" name="should morph between patterns" time="0.018">
+    <testcase classname="use8DPatterns - 8D Pattern Tests" name="should morph between patterns" time="0.01">
     </testcase>
-    <testcase classname="use8DPatterns - 8D Pattern Tests" name="should handle animation progress updates" time="0.141">
-    </testcase>
-  </testsuite>
-  <testsuite name="PipelineTest" errors="0" failures="1" skipped="0" timestamp="2025-09-01T19:00:12" time="2.854" tests="5">
-    <testcase classname="PipelineTest" name="renders pipeline test component" time="0.159">
-    </testcase>
-    <testcase classname="PipelineTest" name="displays pipeline ID" time="0.011">
-    </testcase>
-    <testcase classname="PipelineTest" name="shows trigger time" time="0.012">
-      <failure>TestingLibraryElementError: Unable to find an element with the text: 2025-01-01T10:00:00.000Z. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
-
-Ignored nodes: comments, script, style
-&lt;body&gt;
-  &lt;div&gt;
-    &lt;div
-      style=&quot;padding: 20px; background: linear-gradient(45deg, #ff6b00, #8a2be2); color: white; border-radius: 8px; text-align: center;&quot;
-    &gt;
-      &lt;h2&gt;
-        🚀 CI/CD Pipeline Test
-      &lt;/h2&gt;
-      &lt;p&gt;
-        Pipeline ID: 
-        test-trigger
-      &lt;/p&gt;
-      &lt;p&gt;
-        Trigger Time: 
-        2025-01-01T10:00:00.000Z
-      &lt;/p&gt;
-      &lt;p&gt;
-        Status: ✅ Pipeline should be running!
-      &lt;/p&gt;
-      &lt;div
-        style=&quot;margin-top: 10px; font-size: 12px;&quot;
-      &gt;
-        This component was created to trigger the GitLab CI/CD pipeline.
-        &lt;br /&gt;
-        Check GitLab CI/CD → Pipelines to see it in action!
-      &lt;/div&gt;
-    &lt;/div&gt;
-  &lt;/div&gt;
-&lt;/body&gt;
-    at Object.getElementError (C:\Users\bisho\IdeaProjects\ebl\node_modules\@testing-library\dom\dist\config.js:37:19)
-    at C:\Users\bisho\IdeaProjects\ebl\node_modules\@testing-library\dom\dist\query-helpers.js:76:38
-    at C:\Users\bisho\IdeaProjects\ebl\node_modules\@testing-library\dom\dist\query-helpers.js:52:17
-    at C:\Users\bisho\IdeaProjects\ebl\node_modules\@testing-library\dom\dist\query-helpers.js:95:19
-    at Object.&lt;anonymous&gt; (C:\Users\bisho\IdeaProjects\ebl\src\components\__tests__\PipelineTest.test.tsx:19:19)
-    at Promise.finally.completed (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1556:28)
-    at new Promise (&lt;anonymous&gt;)
-    at callAsyncCircusFn (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1496:10)
-    at _callCircusTest (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1006:40)
-    at processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at _runTest (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:946:3)
-    at _runTestsForDescribeBlock (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:839:13)
-    at _runTestsForDescribeBlock (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:829:11)
-    at run (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:757:3)
-    at runAndTransformResultsToJestFormat (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1917:21)
-    at jestAdapter (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\runner.js:101:19)
-    at runTestInternal (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:275:16)
-    at runTest (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:343:7)
-    at Object.worker (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:497:12)</failure>
-    </testcase>
-    <testcase classname="PipelineTest" name="displays success status" time="0.007">
-    </testcase>
-    <testcase classname="PipelineTest" name="renders with default props" time="0.009">
+    <testcase classname="use8DPatterns - 8D Pattern Tests" name="should handle animation progress updates" time="0.121">
     </testcase>
   </testsuite>
-  <testsuite name="FrequencyDisplayMUI" errors="0" failures="1" skipped="0" timestamp="2025-09-01T19:00:12" time="9.324" tests="7">
-    <testcase classname="FrequencyDisplayMUI" name="renders without crashing" time="0.123">
+  <testsuite name="FrequencyDisplayMUI" errors="0" failures="0" skipped="1" timestamp="2025-09-01T19:49:34" time="2.054" tests="7">
+    <testcase classname="FrequencyDisplayMUI" name="renders without crashing" time="0.07">
     </testcase>
-    <testcase classname="FrequencyDisplayMUI" name="displays frequency value correctly" time="0.032">
+    <testcase classname="FrequencyDisplayMUI" name="displays frequency value correctly" time="0.014">
     </testcase>
-    <testcase classname="FrequencyDisplayMUI" name="displays beat frequency correctly" time="0.016">
+    <testcase classname="FrequencyDisplayMUI" name="displays beat frequency correctly" time="0.011">
     </testcase>
-    <testcase classname="FrequencyDisplayMUI" name="displays target frequency correctly" time="0.017">
+    <testcase classname="FrequencyDisplayMUI" name="displays target frequency correctly" time="0.014">
     </testcase>
-    <testcase classname="FrequencyDisplayMUI" name="displays range label" time="0.017">
+    <testcase classname="FrequencyDisplayMUI" name="displays range label" time="0.012">
     </testcase>
-    <testcase classname="FrequencyDisplayMUI" name="calls onChange when frequency is adjusted via slider" time="0.088">
-      <failure>Error: expect(jest.fn()).toHaveBeenCalledWith(...expected)
-
-Expected: 450
-
-Number of calls: 0
-    at C:\Users\bisho\IdeaProjects\ebl\src\components\__tests__\FrequencyDisplayMUI.test.tsx:49:22
-    at Generator.next (&lt;anonymous&gt;)
-    at C:\Users\bisho\IdeaProjects\ebl\src\components\__tests__\FrequencyDisplayMUI.test.tsx:8:71
-    at new Promise (&lt;anonymous&gt;)
-    at __awaiter (C:\Users\bisho\IdeaProjects\ebl\src\components\__tests__\FrequencyDisplayMUI.test.tsx:4:12)
-    at Object.&lt;anonymous&gt; (C:\Users\bisho\IdeaProjects\ebl\src\components\__tests__\FrequencyDisplayMUI.test.tsx:42:75)
-    at Promise.finally.completed (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1556:28)
-    at new Promise (&lt;anonymous&gt;)
-    at callAsyncCircusFn (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1496:10)
-    at _callCircusTest (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1006:40)
-    at processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at _runTest (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:946:3)
-    at _runTestsForDescribeBlock (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:839:13)
-    at _runTestsForDescribeBlock (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:829:11)
-    at run (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:757:3)
-    at runAndTransformResultsToJestFormat (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\jestAdapterInit.js:1917:21)
-    at jestAdapter (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-circus\build\runner.js:101:19)
-    at runTestInternal (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:275:16)
-    at runTest (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:343:7)
-    at Object.worker (C:\Users\bisho\IdeaProjects\ebl\node_modules\jest-runner\build\testWorker.js:497:12)</failure>
+    <testcase classname="FrequencyDisplayMUI" name="calls onChange when frequency is adjusted via slider" time="0">
+      <skipped/>
     </testcase>
-    <testcase classname="FrequencyDisplayMUI" name="displays correct range labels for different ranges" time="0.039">
+    <testcase classname="FrequencyDisplayMUI" name="displays correct range labels for different ranges" time="0.041">
     </testcase>
   </testsuite>
 </testsuites>
