@@ -55,6 +55,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
     }
   };
 
+  /*
   const handleSystemSettingChange = (key: string, value: any) => {
     onStateChange((prev: any) => ({
       ...prev,
@@ -64,6 +65,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
       }
     }));
   };
+  */
 
   return (
     <Container>

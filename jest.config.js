@@ -29,9 +29,18 @@ export default {
     '!src/main.tsx',
     '!src/vite-env.d.ts'
   ],
-  coverageReporters: ['text', 'lcov', 'html'],
+  coverageReporters: ['text', 'lcov', 'html', 'cobertura'],
   coverageDirectory: 'coverage',
   verbose: true,
   testTimeout: 10000,
-  extensionsToTreatAsEsm: ['.ts', '.tsx']
+  extensionsToTreatAsEsm: ['.ts', '.tsx'],
+  reporters: [
+    'default',
+    ['jest-junit', {
+      outputDirectory: 'coverage',
+      outputName: 'junit.xml',
+      classNameTemplate: '{classname}',
+      titleTemplate: '{title}'
+    }]
+  ]
 };

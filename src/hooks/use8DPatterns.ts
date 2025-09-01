@@ -15,7 +15,7 @@ export const use8DPatterns = () => {
   const [animationProgress, setAnimationProgress] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
 
-  const animationRef = useRef<number | undefined>();
+  const animationRef = useRef<number | undefined>(undefined);
   const startTimeRef = useRef<number>(0);
   const patternIndexRef = useRef<number>(0);
 

@@ -39,7 +39,7 @@ const StarField: React.FC<StarFieldProps> = ({
   twinkle = true
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationRef = useRef<number | undefined>();
+  const animationRef = useRef<number | undefined>(undefined);
   const starsRef = useRef<Star[]>([]);
   const mouseRef = useRef({ x: 0, y: 0 });
 
@@ -142,7 +142,7 @@ const StarField: React.FC<StarFieldProps> = ({
     ctx.fillStyle = 'rgba(0, 0, 0, 0.02)';
     ctx.fillRect(0, 0, width, height);
 
-    starsRef.current.forEach((star, index) => {
+    starsRef.current.forEach((star) => {
       // Project 3D position to 2D
       const scale = 200 / (star.z + 200);
       const x2d = star.x * scale + centerX;
@@ -240,7 +240,7 @@ const StarField: React.FC<StarFieldProps> = ({
   }, []);
 
   // Animation loop
-  const animate = useCallback((timestamp: number) => {
+  const animate = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 

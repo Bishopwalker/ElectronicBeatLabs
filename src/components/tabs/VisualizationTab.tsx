@@ -14,9 +14,7 @@ interface VisualizationTabProps {
   onStateChange: (state: any) => void;
 }
 
-const VisualizationTab: React.FC<VisualizationTabProps> = ({
-  appState
-}) => {
+const VisualizationTab: React.FC<VisualizationTabProps> = () => {
   return (
     <Container>
       <h4>Visualization Settings</h4>
