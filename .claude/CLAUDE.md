@@ -84,6 +84,16 @@
 - **Commit messages** must follow existing project conventions and be descriptive but concise.
 - **No broken code** should ever be committed - all commits must maintain working state.
 
+### 🔧 Code Quality & CI/CD Standards
+- **Always ensure CI/CD pipeline works** - run tests and build before committing.
+- **Fix all SonarCube issues** before pushing - address code smells, vulnerabilities, and bugs.
+- **Remove unused imports** - clean up all unnecessary import statements.
+- **Remove unused files and scripts** - delete any temporary or test files created during development.
+- **Follow project formatting standards** - use IDE settings, ESLint, Prettier, Black, or project-specific formatters.
+- **Code must pass linting** - no ESLint errors, TypeScript errors, or Python linting issues.
+- **Zero warnings policy** - address all compiler warnings and static analysis issues.
+- **Clean commit history** - ensure each commit represents a complete, working feature.
+
 ### 📊 Monitoring & Logging Requirements
 - **Implement comprehensive logging** for all backend API calls with detailed request/response tracking.
 - **Audio engine monitoring** must include frequency generation accuracy, latency measurements, and error tracking.
