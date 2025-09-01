@@ -1,10 +1,10 @@
-# /push
+# /commit
 
 Stages all changes, creates a concise commit message, and pushes to the remote repository in one operation.
 
 ## Usage
 ```
-/push
+/commit
 ```
 
 ## Steps
