@@ -20,7 +20,8 @@
       "Bash(alembic init:*)",
       "Bash(npm run lint)",
       "Bash(npx eslint:*)",
-      "Bash(pip install:*)"
+      "Bash(pip install:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []
