@@ -280,18 +280,19 @@ export const use8DPatterns = () => {
       setCurrentPosition(pattern.path[index] || { x: 0, y: 0, z: 0 });
       
       if (isAnimating) {
-        animationRef.current = requestAnimationFrame(animate);
+        // Reduce to 20fps for eyes-closed usage
+        animationRef.current = window.setTimeout(animate, 50) as any;
       }
     };
 
-    animationRef.current = requestAnimationFrame(animate);
+    animationRef.current = window.setTimeout(animate, 50) as any;
   }, [isAnimating]);
 
   // Stop pattern animation
   const stopAnimation = useCallback(() => {
     setIsAnimating(false);
     if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current);
+      clearTimeout(animationRef.current);
     }
   }, []);
 

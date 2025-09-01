@@ -33,8 +33,8 @@ interface Star {
 }
 
 const StarField: React.FC<StarFieldProps> = ({
-  density = 100,
-  speed = 1,
+  density = 25, // Reduced from 100 to 25 stars
+  speed = 0.3, // Reduced speed for less CPU usage
   color = '#ffffff',
   twinkle = true
 }) => {
@@ -254,11 +254,12 @@ const StarField: React.FC<StarFieldProps> = ({
       initializeStars(canvas);
     }
 
-    // Update and render
-    updateStars(canvas, 16.67); // Assume 60fps
+    // Update and render at 15fps instead of 60fps for performance
+    updateStars(canvas, 66.67); // 15fps timing
     renderStars(canvas, ctx);
 
-    animationRef.current = requestAnimationFrame(animate);
+    // Use setTimeout instead of requestAnimationFrame for lower frame rate
+    animationRef.current = window.setTimeout(animate, 66) as any;
   }, [initializeStars, updateStars, renderStars]);
 
   // Handle mouse movement
@@ -300,7 +301,7 @@ const StarField: React.FC<StarFieldProps> = ({
 
     return () => {
       if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
+        clearTimeout(animationRef.current);
       }
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('resize', handleResize);

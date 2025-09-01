@@ -150,7 +150,7 @@ export const useAudioEngine = () => {
       context
     }));
 
-    // Start electromagnetic field animation
+    // Start electromagnetic field animation at reduced rate for performance
     startTimeRef.current = Date.now();
     
     const animate = () => {
@@ -165,11 +165,12 @@ export const useAudioEngine = () => {
       setElectromagnetic(field);
       
       if (audioState.isPlaying) {
-        animationRef.current = requestAnimationFrame(animate);
+        // Update field at 10fps instead of 60fps for eyes-closed usage
+        animationRef.current = window.setTimeout(animate, 100) as any;
       }
     };
     
-    animationRef.current = requestAnimationFrame(animate);
+    animationRef.current = window.setTimeout(animate, 100) as any;
 
   }, [audioState.volume, initializeAudio, createOscillator, createGainNode, calculateElectromagneticField]);
 
@@ -190,7 +191,7 @@ export const useAudioEngine = () => {
     }
 
     if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current);
+      clearTimeout(animationRef.current);
     }
 
     setAudioState(prev => ({
@@ -338,7 +339,7 @@ export const useAudioEngine = () => {
   useEffect(() => {
     return () => {
       if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
+        clearTimeout(animationRef.current);
       }
       stopBinauralBeat();
     };
