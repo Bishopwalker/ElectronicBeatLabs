@@ -1,6 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Box, Typography, Alert, Button, FormControl, InputLabel, Select, MenuItem, Grid, Card, CardContent, LinearProgress, Chip } from '@mui/material';
+import { 
+  Box, 
+  Typography, 
+  Alert, 
+  Button, 
+  FormControl, 
+  InputLabel, 
+  Select, 
+  MenuItem, 
+  Grid, 
+  Card, 
+  CardContent, 
+  LinearProgress, 
+  Chip,
+  CircularProgress
+} from '@mui/material';
 
 interface FrequencyTransition {
   duration_minutes: number;
@@ -49,118 +64,134 @@ const TimerControls: React.FC = () => {
   const [selectedPresetId, setSelectedPresetId] = useState<string>('');
   const [timerStatus, setTimerStatus] = useState<TimerStatus | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string>('');
-  const [showUpgrade, setShowUpgrade] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
+  // Load presets on component mount
   useEffect(() => {
     loadPresets();
-    checkTimerStatus();
+  }, [user]);
+
+  // Poll for timer status when active
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
     
-    // Poll timer status every 5 seconds when session is active
-    const interval = setInterval(() => {
-      if (timerStatus?.session?.is_active) {
-        checkTimerStatus();
-      }
-    }, 5000);
-    
-    return () => clearInterval(interval);
-  }, []);
+    if (timerStatus?.session?.is_active) {
+      interval = setInterval(loadTimerStatus, 5000); // Poll every 5 seconds
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [timerStatus?.session?.is_active]);
 
   const loadPresets = async () => {
+    if (!user) return;
+    
     try {
-      const response = await fetch('/api/timer/presets', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+      setLoading(true);
+      setError(null);
       
+      const response = await fetch('/api/timer/presets', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token') || 'dummy'}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
       if (response.ok) {
         const data = await response.json();
-        setPresets(data.filter((item: any) => item.id)); // Filter out promotion messages
-      }
-    } catch (err) {
-      console.error('Error loading presets:', err);
-    }
-  };
-
-  const checkTimerStatus = async () => {
-    try {
-      const response = await fetch('/api/timer/status', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      
-      if (response.ok) {
-        const status = await response.json();
-        setTimerStatus(status);
-      }
-    } catch (err) {
-      console.error('Error checking timer status:', err);
-    }
-  };
-
-  const startTimer = async () => {
-    if (!selectedPresetId) {
-      setError('Please select a timer preset');
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-
-    try {
-      const response = await fetch('/api/timer/start', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          action: 'start',
-          preset_id: selectedPresetId
-        })
-      });
-
-      const data = await response.json();
-      
-      if (response.ok) {
-        setTimerStatus(data);
-      } else if (response.status === 403 && data.upgrade_message) {
-        setError(data.upgrade_message);
-        setShowUpgrade(true);
+        setPresets(data.filter((item: any) => item.type !== 'subscription_promotion'));
       } else {
-        setError(data.detail || 'Error starting timer');
+        setError('Failed to load timer presets');
       }
     } catch (err) {
-      setError('Network error starting timer');
+      setError('Error loading presets');
+      console.error('Error loading presets:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const controlTimer = async (action: string) => {
-    setLoading(true);
+  const loadTimerStatus = async () => {
+    if (!user) return;
     
     try {
-      const response = await fetch('/api/timer/control', {
-        method: 'POST',
+      const response = await fetch('/api/timer/status', {
+        method: 'GET',
         headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token') || 'dummy'}`,
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify({ action })
       });
 
       if (response.ok) {
-        const data = await response.json();
-        setTimerStatus(data);
-      } else {
-        const error = await response.json();
-        setError(error.detail || `Error ${action}ing timer`);
+        const status = await response.json();
+        setTimerStatus(status);
       }
     } catch (err) {
-      setError(`Network error ${action}ing timer`);
+      console.error('Error loading timer status:', err);
+    }
+  };
+
+  const startTimer = async () => {
+    if (!selectedPresetId || !user) return;
+    
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await fetch('/api/timer/start', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token') || 'dummy'}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          preset_id: selectedPresetId
+        }),
+      });
+
+      if (response.ok) {
+        const status = await response.json();
+        setTimerStatus(status);
+      } else {
+        const errorData = await response.json();
+        if (errorData.detail?.includes('subscription')) {
+          setError('Premium subscription required for this preset');
+        } else {
+          setError('Failed to start timer');
+        }
+      }
+    } catch (err) {
+      setError('Error starting timer');
+      console.error('Error starting timer:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const controlTimer = async (action: 'pause' | 'resume' | 'stop') => {
+    if (!user) return;
+    
+    try {
+      setLoading(true);
+      
+      const response = await fetch('/api/timer/control', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token') || 'dummy'}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action }),
+      });
+
+      if (response.ok) {
+        const status = await response.json();
+        setTimerStatus(status);
+      }
+    } catch (err) {
+      console.error(`Error ${action} timer:`, err);
     } finally {
       setLoading(false);
     }
@@ -168,36 +199,36 @@ const TimerControls: React.FC = () => {
 
   const formatTime = (minutes: number): string => {
     const hrs = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`;
+    const mins = Math.floor(minutes % 60);
+    const secs = Math.floor((minutes % 1) * 60);
+    
+    if (hrs > 0) {
+      return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const getFrequencyColor = (type: string): string => {
-    switch (type.toLowerCase()) {
-      case 'delta': return '#4A90E2'; // Blue
-      case 'theta': return '#50C878'; // Green
-      case 'alpha': return '#FFD700'; // Gold
-      case 'beta': return '#FF6B35';  // Orange
-      case 'gamma': return '#FF1744'; // Red
-      default: return '#9E9E9E';
-    }
-  };
+  if (!user) {
+    return (
+      <Box p={3}>
+        <Alert severity="info">
+          Please log in to access timer functionality
+        </Alert>
+      </Box>
+    );
+  }
 
   return (
-    <Box sx={{ p: 3, bgcolor: 'grey.900', borderRadius: 2, color: 'white', maxWidth: 600, mx: 'auto' }}>
-      <Typography variant="h5" sx={{ mb: 3, textAlign: 'center', fontWeight: 'bold' }}>
-        Timer Controls
-      </Typography>
-      
+    <Box p={3}>
       {error && (
-        <Alert severity={showUpgrade ? "info" : "error"} sx={{ mb: 2 }}>
-          <Typography variant="body2">{error}</Typography>
-          {showUpgrade && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+          {error.includes('subscription') && (
             <Button 
-              onClick={() => window.location.href = '/subscription'}
-              variant="contained"
-              size="small"
-              sx={{ mt: 1 }}
+              variant="outlined" 
+              size="small" 
+              sx={{ ml: 2 }}
+              onClick={() => window.open('/subscription/plans', '_blank')}
             >
               Upgrade Now
             </Button>
@@ -206,174 +237,136 @@ const TimerControls: React.FC = () => {
       )}
 
       {/* Preset Selection */}
-      <div className=\"mb-6\">
-        <label className=\"block text-sm font-medium mb-2\">Select Timer Preset:</label>
-        <select 
-          value={selectedPresetId} 
-          onChange={(e) => setSelectedPresetId(e.target.value)}
-          className=\"w-full p-3 bg-gray-800 border border-gray-600 rounded text-white\"
-          disabled={timerStatus?.session?.is_active}
-        >
-          <option value=\"\">Choose a preset...</option>
-          {presets.map((preset) => (
-            <option 
-              key={preset.id} 
-              value={preset.id}
-              disabled={!preset.available}
-            >
-              {preset.name} ({formatTime(preset.total_duration)})
-              {preset.is_premium && !isSubscribed ? ' 🔒' : ''}
-            </option>
-          ))}
-        </select>
-        
-        {selectedPresetId && (
-          <div className=\"mt-2 p-3 bg-gray-800 rounded\">
-            {(() => {
-              const preset = presets.find(p => p.id === selectedPresetId);
-              return preset ? (
-                <div>
-                  <p className=\"text-sm text-gray-300\">{preset.description}</p>
-                  <div className=\"mt-2 flex flex-wrap gap-1\">
-                    {preset.tags.map(tag => (
-                      <span key={tag} className=\"px-2 py-1 bg-gray-700 rounded text-xs\">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                  {preset.is_premium && !isSubscribed && (
-                    <p className=\"text-yellow-400 text-sm mt-2\">⭐ Premium Feature</p>
-                  )}
-                </div>
-              ) : null;
-            })()}
-          </div>
-        )}
-      </div>
-
-      {/* Timer Status Display */}
-      {timerStatus?.session && (
-        <div className=\"mb-6 p-4 bg-gray-800 rounded\">
-          <h3 className=\"font-semibold mb-3\">Current Session</h3>
+      <Card sx={{ mb: 3, bgcolor: 'rgba(0,0,0,0.3)' }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom color="primary">
+            Select Timer Preset
+          </Typography>
           
-          {timerStatus.current_transition && (
-            <div className=\"mb-4\">
-              <div className=\"flex items-center justify-between mb-2\">
-                <span 
-                  className=\"px-3 py-1 rounded text-sm font-medium\"
-                  style={{ 
-                    backgroundColor: getFrequencyColor(timerStatus.current_transition.frequency_type),
-                    color: 'white'
-                  }}
-                >
-                  {timerStatus.current_transition.frequency_type.toUpperCase()} - {timerStatus.current_transition.frequency_hz}Hz
-                </span>
-                <span className=\"text-sm text-gray-400\">
-                  {formatTime(timerStatus.time_remaining_current)} remaining
-                </span>
-              </div>
-              <p className=\"text-sm text-gray-300\">{timerStatus.current_transition.description}</p>
-              
-              {/* Progress bar */}
-              <div className=\"mt-2 w-full bg-gray-700 rounded-full h-2\">
-                <div 
-                  className=\"h-2 rounded-full transition-all duration-1000\"
-                  style={{ 
-                    width: `${Math.max(0, Math.min(100, ((timerStatus.current_transition.duration_minutes - timerStatus.time_remaining_current) / timerStatus.current_transition.duration_minutes) * 100))}%`,
-                    backgroundColor: getFrequencyColor(timerStatus.current_transition.frequency_type)
-                  }}
-                />
-              </div>
-            </div>
-          )}
-
-          {timerStatus.next_transition && (
-            <div className=\"mb-4 p-3 bg-gray-700 rounded\">
-              <p className=\"text-sm text-gray-400 mb-1\">Next:</p>
-              <span 
-                className=\"px-2 py-1 rounded text-xs\"
-                style={{ 
-                  backgroundColor: getFrequencyColor(timerStatus.next_transition.frequency_type),
-                  color: 'white'
-                }}
-              >
-                {timerStatus.next_transition.frequency_type.toUpperCase()} - {timerStatus.next_transition.frequency_hz}Hz
-              </span>
-              <p className=\"text-xs text-gray-400 mt-1\">{timerStatus.next_transition.description}</p>
-            </div>
-          )}
-
-          <div className=\"text-center text-lg font-mono\">
-            Total Remaining: {formatTime(timerStatus.time_remaining_total)}
-          </div>
-
-          {timerStatus.session.is_paused && (
-            <div className=\"mt-2 text-center text-yellow-400 text-sm\">⏸️ PAUSED</div>
-          )}
-        </div>
-      )}
-
-      {/* Control Buttons */}
-      <div className=\"flex gap-3 justify-center\">
-        {!timerStatus?.session?.is_active ? (
-          <button
-            onClick={startTimer}
-            disabled={loading || !selectedPresetId}
-            className=\"px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded font-medium\"
-          >
-            {loading ? 'Starting...' : 'Start Timer'}
-          </button>
-        ) : (
-          <>
-            {timerStatus.session.is_paused ? (
-              <button
-                onClick={() => controlTimer('resume')}
-                disabled={loading}
-                className=\"px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 rounded font-medium\"
-              >
-                Resume
-              </button>
-            ) : (
-              <button
-                onClick={() => controlTimer('pause')}
-                disabled={loading}
-                className=\"px-6 py-3 bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-600 rounded font-medium\"
-              >
-                Pause
-              </button>
-            )}
-            
-            <button
-              onClick={() => controlTimer('stop')}
-              disabled={loading}
-              className=\"px-6 py-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 rounded font-medium\"
+          <FormControl fullWidth sx={{ mb: 2 }}>
+            <InputLabel>Choose Preset</InputLabel>
+            <Select
+              value={selectedPresetId}
+              onChange={(e) => setSelectedPresetId(e.target.value)}
+              disabled={loading || timerStatus?.session?.is_active}
             >
-              Stop
-            </button>
-          </>
-        )}
-      </div>
+              {presets.map((preset) => (
+                <MenuItem 
+                  key={preset.id} 
+                  value={preset.id}
+                  disabled={!preset.available}
+                >
+                  <Box>
+                    <Typography variant="body2">
+                      {preset.name}
+                      {preset.is_premium && <Chip label="Premium" size="small" color="warning" sx={{ ml: 1 }} />}
+                    </Typography>
+                    <Typography variant="caption" color="textSecondary">
+                      {preset.description} ({preset.total_duration} min)
+                    </Typography>
+                  </Box>
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
 
-      {/* Subscription Promotion for Free Users */}
-      {!isSubscribed && (
-        <div className=\"mt-6 p-4 bg-gradient-to-r from-blue-900 to-purple-900 rounded border border-blue-400\">
-          <h4 className=\"font-semibold mb-2\">🚀 Unlock Premium Timer Features</h4>
-          <ul className=\"text-sm space-y-1 mb-3\">
-            <li>• 5+ Advanced Timer Presets</li>
-            <li>• Unlimited Custom Sequences</li>
-            <li>• Gamma Wave Protocols</li>
-            <li>• Extended 8-hour Sessions</li>
-            <li>• Lucid Dream Sequences</li>
-          </ul>
-          <button 
-            onClick={() => window.location.href = '/subscription'}
-            className=\"px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded text-sm font-medium\"
+          <Button
+            variant="contained"
+            fullWidth
+            onClick={startTimer}
+            disabled={!selectedPresetId || loading || timerStatus?.session?.is_active}
           >
-            Upgrade Now
-          </button>
-        </div>
+            {loading ? <CircularProgress size={20} /> : 'Start Timer Session'}
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Active Session */}
+      {timerStatus?.session && (
+        <Card sx={{ bgcolor: 'rgba(0,0,0,0.3)' }}>
+          <CardContent>
+            <Typography variant="h6" gutterBottom color="primary">
+              Active Session
+            </Typography>
+
+            {timerStatus.current_transition && (
+              <Box mb={3}>
+                <Typography variant="subtitle1" gutterBottom>
+                  Current: {timerStatus.current_transition.description}
+                </Typography>
+                <Typography variant="body2" color="textSecondary" gutterBottom>
+                  {timerStatus.current_transition.frequency_hz}Hz • 
+                  {timerStatus.current_transition.frequency_type} waves
+                </Typography>
+                
+                <Box mb={2}>
+                  <Typography variant="caption">
+                    Time Remaining: {formatTime(timerStatus.time_remaining_current)}
+                  </Typography>
+                  <LinearProgress
+                    variant="determinate"
+                    value={Math.max(0, Math.min(100, 
+                      (1 - timerStatus.time_remaining_current / timerStatus.current_transition.duration_minutes) * 100
+                    ))}
+                    sx={{ mt: 1 }}
+                  />
+                </Box>
+              </Box>
+            )}
+
+            {timerStatus.next_transition && (
+              <Box mb={2}>
+                <Typography variant="body2" color="textSecondary">
+                  Next: {timerStatus.next_transition.description}
+                </Typography>
+              </Box>
+            )}
+
+            <Typography variant="body2" gutterBottom>
+              Total Time Remaining: {formatTime(timerStatus.time_remaining_total)}
+            </Typography>
+
+            <Box mt={2} display="flex" gap={2}>
+              {timerStatus.session.is_paused ? (
+                <Button
+                  variant="contained"
+                  color="success"
+                  onClick={() => controlTimer('resume')}
+                  disabled={loading}
+                >
+                  Resume
+                </Button>
+              ) : (
+                <Button
+                  variant="contained"
+                  color="warning"
+                  onClick={() => controlTimer('pause')}
+                  disabled={loading}
+                >
+                  Pause
+                </Button>
+              )}
+              
+              <Button
+                variant="contained"
+                color="error"
+                onClick={() => controlTimer('stop')}
+                disabled={loading}
+              >
+                Stop
+              </Button>
+            </Box>
+          </CardContent>
+        </Card>
       )}
-    </div>
+
+      {/* Loading state for presets */}
+      {loading && !timerStatus && (
+        <Box display="flex" justifyContent="center" mt={3}>
+          <CircularProgress />
+        </Box>
+      )}
+    </Box>
   );
 };
 

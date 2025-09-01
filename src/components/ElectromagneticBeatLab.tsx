@@ -24,6 +24,7 @@ import QuickStartGuide from './QuickStartGuide';
 // Tab Components
 import FrequencyTab from './tabs/FrequencyTab';
 import PatternTab from './tabs/PatternTab';
+import TimerTab from './tabs/TimerTab';
 import VisualizationTab from './tabs/VisualizationTab';
 import ADHDTab from './tabs/ADHDTab';
 import YouTubeTab from './tabs/YouTubeTab';
@@ -469,6 +470,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
   const tabs = [
     { id: 'patterns', label: 'Patterns', icon: '🌀', component: PatternTab, enabled: true },
     { id: 'frequency', label: 'Frequency', icon: '📊', component: FrequencyTab, enabled: true },
+    { id: 'timer', label: 'Timer', icon: '⏰', component: TimerTab, enabled: true },
     { id: 'visualization', label: 'Visual', icon: '🎨', component: VisualizationTab, enabled: true },
     { id: 'adhd', label: 'ADHD', icon: '⚡', component: ADHDTab, enabled: true },
     { id: 'youtube', label: 'YouTube', icon: '📺', component: YouTubeTab, enabled: true },
@@ -512,6 +514,8 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
             onFrequencyChange={handleFrequencyChange}
           />
         );
+      case 'timer':
+        return <TimerTab {...commonProps} />;
       case 'visualization':
         return <VisualizationTab {...commonProps} />;
       case 'adhd':
