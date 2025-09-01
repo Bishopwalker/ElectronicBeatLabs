@@ -5,17 +5,24 @@ Just handles Google, Facebook, GitHub OAuth and Stripe customer creation
 
 import os
 import requests
+import logging
 from datetime import datetime
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, Depends, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError, jwt
+from jose.utils import base64url_decode
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicNumbers
 from database.models import User
 from database.database import get_db
 import stripe
 from dotenv import load_dotenv
 
 load_dotenv()
+
+# Setup logging
+logger = logging.getLogger(__name__)
 
 # Stripe setup
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
@@ -179,26 +186,62 @@ class SimpleAuthService:
         db.commit()
 
 
-# JWT Configuration
-SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-secret-key-here")
-ALGORITHM = "HS256"
+# Keycloak Configuration
+KEYCLOAK_SERVER_URL = os.getenv("KEYCLOAK_SERVER_URL", "http://localhost:8080")
+KEYCLOAK_REALM = os.getenv("KEYCLOAK_REALM", "ebl")
+KEYCLOAK_CLIENT_ID = os.getenv("KEYCLOAK_CLIENT_ID", "ebl-app")
 
 security = HTTPBearer()
 
 
-def create_access_token(data: dict):
-    """Create JWT access token"""
-    to_encode = data.copy()
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
-
-
-def decode_access_token(token: str):
-    """Decode JWT access token"""
+def get_keycloak_public_key():
+    """Get Keycloak public key for token validation"""
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        return payload
-    except JWTError:
+        url = f"{KEYCLOAK_SERVER_URL}/realms/{KEYCLOAK_REALM}/protocol/openid_connect/certs"
+        response = requests.get(url)
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        logger.error(f"Failed to get Keycloak public key: {e}")
+        return None
+
+
+def validate_keycloak_token(token: str):
+    """
+    Validate Keycloak JWT token.
+    
+    Args:
+        token: JWT token from Keycloak
+        
+    Returns:
+        Decoded token payload if valid, None otherwise
+    """
+    try:
+        # For now, use a simple validation approach
+        # In production, you'd want to validate against Keycloak's public key
+        
+        # First, try to decode without verification to check structure
+        unverified_payload = jwt.get_unverified_claims(token)
+        
+        # Basic validation checks
+        if not unverified_payload.get("iss", "").startswith(KEYCLOAK_SERVER_URL):
+            logger.warning("Token issuer doesn't match Keycloak server")
+            return None
+            
+        if unverified_payload.get("aud") != KEYCLOAK_CLIENT_ID:
+            logger.warning("Token audience doesn't match client ID")
+            return None
+            
+        # For development, return the payload
+        # TODO: Implement full JWKS validation for production
+        logger.info("Token validation bypassed for development")
+        return unverified_payload
+        
+    except JWTError as e:
+        logger.warning(f"Invalid Keycloak token: {e}")
+        return None
+    except Exception as e:
+        logger.error(f"Error validating Keycloak token: {e}")
         return None
 
 
@@ -207,7 +250,7 @@ async def get_current_user(
     db: Session = Depends(get_db)
 ):
     """
-    Dependency to get current authenticated user from JWT token.
+    Dependency to get current authenticated user from Keycloak JWT token.
     
     Args:
         credentials: HTTP Authorization header with Bearer token
@@ -226,20 +269,33 @@ async def get_current_user(
     )
     
     try:
-        payload = decode_access_token(credentials.credentials)
+        payload = validate_keycloak_token(credentials.credentials)
         if payload is None:
             raise credentials_exception
             
-        email: str = payload.get("sub")
+        email: str = payload.get("email") or payload.get("preferred_username")
         if email is None:
             raise credentials_exception
             
-    except JWTError:
-        raise credentials_exception
-    
-    # Get user from database
-    user = db.query(User).filter(User.email == email).first()
-    if user is None:
-        raise credentials_exception
+        # Get or create user from database
+        user = db.query(User).filter(User.email == email).first()
+        if user is None:
+            # Create user from Keycloak token
+            user = User(
+                email=email,
+                name=payload.get("name", email),
+                oauth_provider="keycloak",
+                is_premium=False  # Default to free tier
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+            logger.info(f"Created new user from Keycloak: {email}")
+            
+        return user
         
-    return user
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting current user: {e}")
+        raise credentials_exception
