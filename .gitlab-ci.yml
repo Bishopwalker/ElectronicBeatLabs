@@ -74,10 +74,12 @@ build:backend:
   <<: *cache_config
   before_script:
     # Install build dependencies for PyAudio and other packages
-    - apt-get update && apt-get install -y gcc g++ make portaudio19-dev python3-dev libasound2-dev libffi-dev
+    - apt-get update && apt-get install -y gcc g++ make portaudio19-dev python3-dev libasound2-dev libffi-dev python3-venv
     # Setup Python environment - slim image has glibc for wheel compatibility
-    - python -m venv backend/venv
-    - . backend/venv/bin/activate
+    - python3 -m venv backend/venv || (echo "venv creation failed" && exit 1)
+    - ls -la backend/venv/bin/ || (echo "venv bin directory not created" && exit 1)
+    - . backend/venv/bin/activate || (echo "venv activation failed" && exit 1)
+    - which python3 && python3 --version
     - pip install --upgrade pip
     - pip install --cache-dir .pip-cache -r backend/requirements.txt
   script:
@@ -236,10 +238,10 @@ test:integration:
     # Setup Python backend environment
     - apt-get install -y python3 python3-pip python3-venv portaudio19-dev
     - cd backend
-    - python3 -m venv venv
-    - ls -la venv/bin/  # Debug: verify venv creation
-    - . venv/bin/activate  # Use . instead of source for better compatibility
-    - which python3  # Debug: confirm we're using venv python
+    - python3 -m venv venv || (echo "venv creation failed" && exit 1)
+    - ls -la venv/bin/ || (echo "venv bin directory not created" && exit 1)
+    - . venv/bin/activate || (echo "venv activation failed" && exit 1)
+    - which python3 && python3 --version  # Debug: confirm we're using venv python
     - pip install --upgrade pip
     - pip install -r requirements.txt
     - cd ..
