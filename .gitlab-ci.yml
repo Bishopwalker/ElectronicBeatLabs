@@ -238,10 +238,17 @@ test:integration:
     # Setup Python backend environment
     - apt-get install -y python3 python3-pip python3-venv portaudio19-dev
     - cd backend
-    - python3 -m venv venv || (echo "venv creation failed" && exit 1)
-    - ls -la venv/bin/ || (echo "venv bin directory not created" && exit 1)
+    - pwd && ls -la  # Debug: show current directory
+    - df -h  # Debug: check disk space
+    - python3 -c "import venv; print('venv module available')"  # Test venv module
+    - python3 -m venv --help  # Test venv command works
+    - python3 -m venv venv --verbose || (echo "venv creation failed with verbose output" && exit 1)
+    - ls -la  # Debug: show what was created
+    - ls -la venv/ || echo "venv directory not created"
+    - ls -la venv/bin/ || echo "venv/bin directory not created"
+    - test -f venv/bin/python3 && echo "python3 exists" || echo "python3 missing"
     - . venv/bin/activate || (echo "venv activation failed" && exit 1)
-    - which python3 && python3 --version  # Debug: confirm we're using venv python
+    - which python3 && python3 --version
     - pip install --upgrade pip
     - pip install -r requirements.txt
     - cd ..
