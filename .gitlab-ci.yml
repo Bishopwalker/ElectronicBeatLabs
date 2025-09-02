@@ -183,11 +183,11 @@ test:backend:
   before_script:
     # Install runtime dependencies for PyAudio and testing
     - apt-get update && apt-get install -y libportaudio2 libasound2
-    - source backend/venv/bin/activate
+    - . backend/venv/bin/activate
   script:
     # Run Python tests
     - cd backend
-    - source venv/bin/activate
+    - . venv/bin/activate
     - mkdir -p ../reports
     - python -m pytest --ignore=manual_route_test.py --junitxml=../reports/backend-junit.xml --cov=. --cov-report=xml:../reports/backend-coverage.xml --cov-report=html:../reports/backend-coverage-html/
   coverage: '/TOTAL.+?(\d+\%)$/'
@@ -230,14 +230,16 @@ test:integration:
     - apt-get install -y python3 python3-pip python3-venv portaudio19-dev
     - cd backend
     - python3 -m venv venv
-    - source venv/bin/activate
+    - ls -la venv/bin/  # Debug: verify venv creation
+    - . venv/bin/activate  # Use . instead of source for better compatibility
+    - which python3  # Debug: confirm we're using venv python
     - pip install --upgrade pip
     - pip install -r requirements.txt
     - cd ..
   script:
     # Start backend in background
     - cd backend
-    - source venv/bin/activate
+    - . venv/bin/activate
     - python -m uvicorn main:app --host 0.0.0.0 --port 8000 &
     - cd ..
     - sleep 15 # Wait for backend to start
