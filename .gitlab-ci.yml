@@ -71,12 +71,12 @@ build:backend:
     - apt-get update && apt-get install -y gcc g++ make portaudio19-dev python3-dev libasound2-dev libffi-dev
     # Setup Python environment - slim image has glibc for wheel compatibility
     - python -m venv backend/venv
-    - source backend/venv/bin/activate
+    - . backend/venv/bin/activate
     - pip install --upgrade pip
     - pip install --cache-dir .pip-cache -r backend/requirements.txt
   script:
     # Validate Python code
-    - source backend/venv/bin/activate
+    - . backend/venv/bin/activate
     - cd backend
     - python -m py_compile main.py
     - python -c "import main; print('Backend validation successful')"
