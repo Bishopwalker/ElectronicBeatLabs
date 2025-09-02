@@ -45,11 +45,17 @@ build:frontend:
     - npm run build
     # Verify build artifacts
     - ls -la dist/
+    # Create build environment file for dotenv reports
+    - echo "FRONTEND_VERSION=$(node --version)" > build.env
+    - echo "BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> build.env
+    - echo "COMMIT_SHA=$CI_COMMIT_SHORT_SHA" >> build.env
+    - cat build.env  # Debug: show what was created
   artifacts:
     name: "frontend-build-$CI_COMMIT_SHORT_SHA"
     paths:
       - dist/
       - node_modules/
+      - build.env
     expire_in: 1 hour
     reports:
       dotenv: build.env
@@ -82,9 +88,10 @@ build:backend:
     - python -c "import main; print('Backend validation successful')"
     # Create deployment package info
     - cd ..
-    - echo "BACKEND_VERSION=$(python --version)" > build.env
+    - echo "BACKEND_VERSION=$(python3 --version)" > build.env
     - echo "BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> build.env
     - echo "COMMIT_SHA=$CI_COMMIT_SHORT_SHA" >> build.env
+    - cat build.env  # Debug: show what was created
   artifacts:
     name: "backend-build-$CI_COMMIT_SHORT_SHA"
     paths:
