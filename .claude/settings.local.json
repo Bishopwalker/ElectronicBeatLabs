@@ -26,7 +26,13 @@
       "Bash(taskkill:*)",
       "WebSearch",
       "Bash(find:*)",
-      "Bash(npx cucumber-js:*)"
+      "Bash(npx cucumber-js:*)",
+      "Read(C:\\c\\Users\\bisho\\IdeaProjects\\ebl/**)",
+      "Read(C:\\c\\Users\\bisho\\IdeaProjects\\ebl/**)",
+      "Read(C:\\c\\Users\\bisho\\IdeaProjects\\ebl/**)",
+      "Read(C:\\c\\Users\\bisho\\IdeaProjects\\ebl/**)",
+      "Read(C:\\c\\Users\\bisho\\IdeaProjects\\ebl/**)",
+      "Bash(sed:*)"
     ],
     "deny": [],
     "ask": []

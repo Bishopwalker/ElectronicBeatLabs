@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EBL - Audio Engine Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .control-group {
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        input, select {
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+        }
+        button {
+            background: #28a745;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .stop-button {
+            background: #dc3545;
+        }
+        .stop-button:hover {
+            background: #c82333;
+        }
+        .status {
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .status.playing {
+            background: rgba(40, 167, 69, 0.2);
+            border: 2px solid #28a745;
+        }
+        .status.stopped {
+            background: rgba(220, 53, 69, 0.2);
+            border: 2px solid #dc3545;
+        }
+        .metrics {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .protocol-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .protocol-buttons button {
+            margin-bottom: 0;
+            background: #6c63ff;
+        }
+        .protocol-buttons button:hover {
+            background: #5a52d5;
+        }
+        .note {
+            background: rgba(255, 193, 7, 0.2);
+            border: 1px solid #ffc107;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            color: #ffc107;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 EBL Audio Engine Test</h1>
+        
+        <div class="note">
+            <strong>Note:</strong> This is a test of the Web Audio API implementation. 
+            You'll need to click a button to start audio due to browser autoplay policies.
+        </div>
+        
+        <div id="status" class="status stopped">
+            Audio Engine: Stopped
+        </div>
+
+        <div class="control-group">
+            <h3>Manual Controls</h3>
+            <label for="baseFreq">Base Frequency (Hz):</label>
+            <input type="number" id="baseFreq" value="200" min="20" max="2000" step="1">
+            
+            <label for="beatFreq">Beat Frequency (Hz):</label>
+            <input type="number" id="beatFreq" value="4" min="0.1" max="100" step="0.1">
+            
+            <label for="volume">Volume:</label>
+            <input type="range" id="volume" value="30" min="0" max="100" step="1">
+            <span id="volumeValue">30%</span>
+            
+            <label for="waveform">Waveform:</label>
+            <select id="waveform">
+                <option value="sine">Sine</option>
+                <option value="square">Square</option>
+                <option value="triangle">Triangle</option>
+                <option value="sawtooth">Sawtooth</option>
+            </select>
+            
+            <button id="startBtn" onclick="startAudio()">Start Binaural Beat</button>
+            <button id="stopBtn" class="stop-button" onclick="stopAudio()" disabled>Stop Audio</button>
+        </div>
+
+        <div class="control-group">
+            <h3>ADHD Treatment Protocols</h3>
+            <div class="protocol-buttons">
+                <button onclick="loadProtocol('focus')">Focus (SMR)</button>
+                <button onclick="loadProtocol('calm')">Calm (Alpha)</button>
+                <button onclick="loadProtocol('deep_focus')">Deep Focus (Gamma)</button>
+                <button onclick="loadProtocol('meditation')">Meditation (Theta)</button>
+            </div>
+        </div>
+
+        <div class="metrics" id="metrics">
+            <h3>Audio Metrics</h3>
+            <div id="metricsContent">Click start to see audio metrics...</div>
+        </div>
+    </div>
+
+    <script>
+        let audioContext = null;
+        let oscillatorL = null;
+        let oscillatorR = null;
+        let gainNodeL = null;
+        let gainNodeR = null;
+        let isPlaying = false;
+        let metricsInterval = null;
+
+        // Update volume display
+        document.getElementById('volume').addEventListener('input', function() {
+            document.getElementById('volumeValue').textContent = this.value + '%';
+        });
+
+        async function initAudioContext() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            
+            if (audioContext.state === 'suspended') {
+                await audioContext.resume();
+            }
+            
+            return audioContext;
+        }
+
+        async function startAudio() {
+            try {
+                await stopAudio(); // Stop any existing audio
+                
+                const context = await initAudioContext();
+                const baseFreq = parseFloat(document.getElementById('baseFreq').value);
+                const beatFreq = parseFloat(document.getElementById('beatFreq').value);
+                const volume = parseFloat(document.getElementById('volume').value) / 100;
+                const waveform = document.getElementById('waveform').value;
+                
+                // Calculate left and right frequencies
+                const freqLeft = baseFreq;
+                const freqRight = baseFreq + beatFreq;
+                
+                // Create oscillators
+                oscillatorL = context.createOscillator();
+                oscillatorR = context.createOscillator();
+                
+                oscillatorL.type = waveform;
+                oscillatorR.type = waveform;
+                oscillatorL.frequency.setValueAtTime(freqLeft, context.currentTime);
+                oscillatorR.frequency.setValueAtTime(freqRight, context.currentTime);
+                
+                // Create gain nodes
+                gainNodeL = context.createGain();
+                gainNodeR = context.createGain();
+                gainNodeL.gain.setValueAtTime(volume, context.currentTime);
+                gainNodeR.gain.setValueAtTime(volume, context.currentTime);
+                
+                // Create channel merger for proper stereo separation
+                const merger = context.createChannelMerger(2);
+                
+                // Connect left oscillator to left channel only
+                oscillatorL.connect(gainNodeL);
+                gainNodeL.connect(merger, 0, 0);
+                
+                // Connect right oscillator to right channel only
+                oscillatorR.connect(gainNodeR);
+                gainNodeR.connect(merger, 0, 1);
+                
+                // Connect to destination
+                merger.connect(context.destination);
+                
+                // Start oscillators
+                oscillatorL.start(context.currentTime);
+                oscillatorR.start(context.currentTime);
+                
+                isPlaying = true;
+                updateUI();
+                startMetrics();
+                
+                console.log(`Started binaural beat: ${freqLeft}Hz (L) / ${freqRight}Hz (R) = ${beatFreq}Hz beat`);
+                
+            } catch (error) {
+                console.error('Error starting audio:', error);
+                alert('Error starting audio: ' + error.message);
+            }
+        }
+
+        async function stopAudio() {
+            try {
+                if (oscillatorL) {
+                    oscillatorL.stop();
+                    oscillatorL.disconnect();
+                    oscillatorL = null;
+                }
+                
+                if (oscillatorR) {
+                    oscillatorR.stop();
+                    oscillatorR.disconnect();
+                    oscillatorR = null;
+                }
+                
+                if (gainNodeL) {
+                    gainNodeL.disconnect();
+                    gainNodeL = null;
+                }
+                
+                if (gainNodeR) {
+                    gainNodeR.disconnect();
+                    gainNodeR = null;
+                }
+                
+                isPlaying = false;
+                updateUI();
+                stopMetrics();
+                
+                console.log('Audio stopped');
+                
+            } catch (error) {
+                console.error('Error stopping audio:', error);
+            }
+        }
+
+        function updateUI() {
+            const statusDiv = document.getElementById('status');
+            const startBtn = document.getElementById('startBtn');
+            const stopBtn = document.getElementById('stopBtn');
+            
+            if (isPlaying) {
+                statusDiv.textContent = 'Audio Engine: Playing';
+                statusDiv.className = 'status playing';
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+            } else {
+                statusDiv.textContent = 'Audio Engine: Stopped';
+                statusDiv.className = 'status stopped';
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+            }
+        }
+
+        function startMetrics() {
+            metricsInterval = setInterval(() => {
+                if (isPlaying && audioContext) {
+                    const baseFreq = parseFloat(document.getElementById('baseFreq').value);
+                    const beatFreq = parseFloat(document.getElementById('beatFreq').value);
+                    const volume = parseFloat(document.getElementById('volume').value);
+                    
+                    const metricsHTML = `
+                        <h3>Audio Metrics</h3>
+                        <p><strong>Left Frequency:</strong> ${baseFreq}Hz</p>
+                        <p><strong>Right Frequency:</strong> ${baseFreq + beatFreq}Hz</p>
+                        <p><strong>Beat Frequency:</strong> ${beatFreq}Hz</p>
+                        <p><strong>Volume:</strong> ${volume}%</p>
+                        <p><strong>Sample Rate:</strong> ${audioContext.sampleRate}Hz</p>
+                        <p><strong>Audio Context State:</strong> ${audioContext.state}</p>
+                        <p><strong>Waveform:</strong> ${document.getElementById('waveform').value}</p>
+                    `;
+                    
+                    document.getElementById('metricsContent').innerHTML = metricsHTML;
+                }
+            }, 1000);
+        }
+
+        function stopMetrics() {
+            if (metricsInterval) {
+                clearInterval(metricsInterval);
+                metricsInterval = null;
+            }
+            document.getElementById('metricsContent').innerHTML = 'Click start to see audio metrics...';
+        }
+
+        async function loadProtocol(protocolType) {
+            const protocols = {
+                'focus': { baseFreq: 200, beatFreq: 14, desc: 'SMR training for attention and focus' },
+                'calm': { baseFreq: 150, beatFreq: 8, desc: 'Alpha waves for relaxation and calm focus' },
+                'deep_focus': { baseFreq: 100, beatFreq: 40, desc: 'Gamma waves for deep concentration' },
+                'meditation': { baseFreq: 80, beatFreq: 6, desc: 'Theta waves for meditation and creativity' }
+            };
+            
+            const protocol = protocols[protocolType];
+            if (protocol) {
+                document.getElementById('baseFreq').value = protocol.baseFreq;
+                document.getElementById('beatFreq').value = protocol.beatFreq;
+                
+                alert(`Loaded ${protocolType.toUpperCase()} Protocol:\n${protocol.desc}\nBase: ${protocol.baseFreq}Hz, Beat: ${protocol.beatFreq}Hz`);
+                
+                // Auto-start the protocol
+                await startAudio();
+            }
+        }
+
+        // Update volume in real-time if playing
+        document.getElementById('volume').addEventListener('input', function() {
+            if (isPlaying && gainNodeL && gainNodeR && audioContext) {
+                const volume = parseFloat(this.value) / 100;
+                const now = audioContext.currentTime;
+                gainNodeL.gain.setValueAtTime(volume, now);
+                gainNodeR.gain.setValueAtTime(volume, now);
+            }
+        });
+
+        // Update frequency in real-time if playing
+        document.getElementById('baseFreq').addEventListener('input', updateFrequency);
+        document.getElementById('beatFreq').addEventListener('input', updateFrequency);
+
+        function updateFrequency() {
+            if (isPlaying && oscillatorL && oscillatorR && audioContext) {
+                const baseFreq = parseFloat(document.getElementById('baseFreq').value);
+                const beatFreq = parseFloat(document.getElementById('beatFreq').value);
+                const now = audioContext.currentTime;
+                
+                oscillatorL.frequency.setValueAtTime(baseFreq, now);
+                oscillatorR.frequency.setValueAtTime(baseFreq + beatFreq, now);
+            }
+        }
+
+        // Initialize UI
+        updateUI();
+    </script>
+</body>
+</html>

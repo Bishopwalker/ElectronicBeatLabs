@@ -9,9 +9,9 @@ import os
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from database.database import Base, get_db
-from database.models import User, UsageRecord, WebhookEvent
-from routes.simple_routes import router
+from backend.database.database import Base, get_db
+from backend.database.models import User, UsageRecord, WebhookEvent
+from backend.routes.simple_routes import router
 from fastapi import FastAPI
 
 # Create test app
@@ -126,7 +126,7 @@ def test_subscription_plans():
 
 def test_webhook_event_logging(setup_db):
     """Test webhook event logging"""
-    from database.models import WebhookEvent
+    from backend.database.models import WebhookEvent
     
     db = TestingSessionLocal()
     
@@ -154,7 +154,7 @@ def test_webhook_event_logging(setup_db):
 
 def test_user_creation(setup_db):
     """Test user model creation"""
-    from database.models import User
+    from backend.database.models import User
     
     db = TestingSessionLocal()
     

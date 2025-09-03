@@ -146,15 +146,19 @@ export const useAudioEngine = () => {
       const gainL = createGainNode(context, config.amplitude * audioState.volume);
       const gainR = createGainNode(context, config.amplitude * audioState.volume);
 
-      // Create stereo panner for spatial audio
-      const pannerL = context.createStereoPanner();
-      const pannerR = context.createStereoPanner();
-      pannerL.pan.setValueAtTime(-1, context.currentTime); // Full left
-      pannerR.pan.setValueAtTime(1, context.currentTime);  // Full right
+      // Create channel merger for proper stereo separation
+      const merger = context.createChannelMerger(2);
 
-      // Connect audio graph
-      oscL.connect(gainL).connect(pannerL).connect(context.destination);
-      oscR.connect(gainR).connect(pannerR).connect(context.destination);
+      // Connect left oscillator to left channel only
+      oscL.connect(gainL);
+      gainL.connect(merger, 0, 0); // Connect to left output channel
+
+      // Connect right oscillator to right channel only  
+      oscR.connect(gainR);
+      gainR.connect(merger, 0, 1); // Connect to right output channel
+
+      // Connect merged output to destination
+      merger.connect(context.destination);
 
       // Add error handling for oscillators
       oscL.addEventListener('ended', () => {
@@ -213,7 +217,7 @@ export const useAudioEngine = () => {
     }
     animationRef.current = window.setTimeout(animate, 100) as unknown as number;
 
-  }, [audioState.volume, audioState.context, audioState.isPlaying, audioState.oscillatorL, audioState.oscillatorR, initializeAudio, createOscillator, createGainNode, calculateElectromagneticField]);
+  }, [audioState.volume, audioState.context, audioState.isPlaying, initializeAudio, connectWebSocket, sendWebSocketMessage, calculateElectromagneticField]);
 
   // Stop binaural beat playback
   const stopBinauralBeat = useCallback(() => {

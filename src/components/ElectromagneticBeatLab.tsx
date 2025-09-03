@@ -5,8 +5,7 @@ import React, {useCallback, useEffect, useState} from 'react';
 import styled from 'styled-components';
 import type {AppState, ElectromagneticBeatLabProps, PatternMode} from '../types/index';
 
-import {useAudioEngine} from '../hooks/useAudioEngine';
-import {use8DPatterns} from '../hooks/use8DPatterns';
+import {useMasterAudioControl} from '../hooks/useMasterAudioControl';
 import {PATTERN_PRESETS, WAVE_PATTERNS} from '../data/patterns';
 
 import StarField from './StarField';
@@ -17,10 +16,8 @@ import ElectromagneticStatus from './ElectromagneticStatus';
 import WaveGuidePanelMUI from './WaveGuidePanelMUI';
 import MainControlsMUI from './MainControlsMUI';
 import ControlTabs from './ControlTabs';
-import BinauralTestMUI from './BinauralTestMUI';
-import SimpleAudioTest from './SimpleAudioTest';
-import QuickStartGuide from './QuickStartGuide';
-
+import MasterStopControl from './MasterStopControl';
+import BinauralTestMUI   from "./BinauralTestMUI.tsx";
 // Tab Components
 import FrequencyTab from './tabs/FrequencyTab';
 import PatternTab from './tabs/PatternTab';
@@ -369,9 +366,10 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
     activeTab: 'patterns'
   });
 
-  // Hooks
-  const audioEngine = useAudioEngine();
-  const patterns8D = use8DPatterns();
+  // Master audio control - consolidates all audio systems
+  const masterAudio = useMasterAudioControl();
+  const audioEngine = masterAudio.engines.audioEngine;
+  const patterns8D = masterAudio.engines.patternsEngine;
 
   // Initialize with pattern
   useEffect(() => {
@@ -422,10 +420,9 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
     setAppState(prev => ({ ...prev, mode }));
     
     if (mode === 'OFF') {
-      audioEngine.stopBinauralBeat();
-      patterns8D.stopAnimation();
+      masterAudio.masterStop();
     }
-  }, [audioEngine, patterns8D]);
+  }, [masterAudio]);
 
   // Handle frequency change
   const handleFrequencyChange = useCallback((frequency: number) => {
@@ -454,12 +451,11 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
         patterns8D.startAnimation(pattern8D);
       }
     }
-  }, [audioEngine, patterns8D, appState.currentPattern, appState.isPlaying]);
+  }, [masterAudio, appState.currentPattern, appState.isPlaying]);
 
   const handleStop = useCallback(() => {
-    audioEngine.stopBinauralBeat();
-    patterns8D.stopAnimation();
-  }, [audioEngine, patterns8D]);
+    masterAudio.masterStop();
+  }, [masterAudio]);
 
   // Handle tab change
   const handleTabChange = useCallback((tabId: string) => {
@@ -538,7 +534,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
 
       {/* Header */}
       <Header>
-        <Title>Electromagnetic Beat Lab</Title>
+        <Title>Bishop's Electromagnetic Beat Lab</Title>
         <StatusBar>
           <ElectromagneticStatus 
             field={appState.electromagnetic}
@@ -551,6 +547,14 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
       <MainInterface>
         {/* Left Panel - Controls and Pattern Selection */}
         <LeftPanel>
+          <MasterStopControl
+            activeStatus={masterAudio.activeStatus}
+            onMasterStop={masterAudio.masterStop}
+            onMasterStart={masterAudio.quickStart}
+            frequencies={masterAudio.frequencies}
+            volume={masterAudio.volume}
+          />
+
           <PatternSelectorMUI
             patterns={WAVE_PATTERNS}
             selected={appState.currentPattern?.id || null}
@@ -627,11 +631,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
         </RightPanel>
       </MainInterface>
       
-      {/* Simple Audio Test - for debugging */}
-      <SimpleAudioTest />
-      
-      {/* Quick Start Guide */}
-      <QuickStartGuide />
+      {/* All audio controls now consolidated in MasterStopControl above */}
     </Container>
   );
 };

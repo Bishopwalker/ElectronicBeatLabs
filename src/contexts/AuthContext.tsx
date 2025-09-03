@@ -136,6 +136,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const canUseApp = (): boolean => {
+    // Admin users can always use
+    if (user && user.is_admin) return true;
+    
     // Premium users can always use
     if (user && user.is_premium) return true;
     
@@ -146,17 +149,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return usage.can_use;
   };
 
+  const loginAsAdmin = () => {
+    const adminUser: User = {
+      email: 'admin@ebl.dev',
+      is_premium: true,
+      is_admin: true,
+      oauth_provider: 'dev',
+      name: 'Admin User'
+    };
+    
+    setUser(adminUser);
+    setUsage(null); // Admins don't need usage tracking
+    setRequiresLogin(false);
+    localStorage.setItem('ebl_user', JSON.stringify(adminUser));
+    
+    console.log('🔑 Logged in as admin with full access');
+  };
+
   const value: AuthContextType = {
     user,
     usage,
     loading,
     requiresLogin,
     login,
+    loginAsAdmin,
     logout,
     recordUsage,
     refreshUsage,
     canUseApp,
     isSubscribed: user?.is_premium || false,
+    isAdmin: user?.is_admin || false,
     keycloakReady: true
   };
 
