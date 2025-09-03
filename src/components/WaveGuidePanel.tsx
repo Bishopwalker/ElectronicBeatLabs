@@ -2,233 +2,83 @@
 // Advanced wave guide configuration and visualization
 
 import React from 'react';
-import styled from 'styled-components';
+import { 
+  Box, 
+  Typography, 
+  Grid, 
+  TextField, 
+  Select, 
+  MenuItem, 
+  FormControl, 
+  InputLabel,
+  Paper
+} from '@mui/material';
 import type { WaveGuidePanelProps, WaveGuideConfig } from '../types/index';
 
-const Container = styled.div`
-  padding: 0.5rem;
-  max-height: 300px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 215, 0, 0.5) rgba(0, 0, 0, 0.3);
-  
-  &::-webkit-scrollbar {
-    width: 8px;
+const getMaterialColor = (material: string) => {
+  switch (material) {
+    case 'copper': return '#CD7F32';
+    case 'silver': return '#C0C0C0';
+    case 'gold': return '#FFD700';
+    case 'plasma': return '#FF00FF';
+    default: return '#ffffff';
   }
-  
-  &::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 4px;
+};
+
+const getShapeStyles = (type: string, width: number, height: number) => {
+  switch (type) {
+    case 'toroidal':
+      return {
+        width: Math.min(width * 0.3, 80),
+        height: Math.min(height * 0.3, 80),
+        borderRadius: '50%',
+        boxShadow: 'inset 0 0 20px rgba(255, 215, 0, 0.3), 0 0 20px rgba(255, 215, 0, 0.2)'
+      };
+    case 'circular':
+      return {
+        width: Math.min(width * 0.4, 100),
+        height: Math.min(height * 0.4, 100),
+        borderRadius: '50%',
+        boxShadow: '0 0 15px rgba(255, 215, 0, 0.3)'
+      };
+    case 'elliptical':
+      return {
+        width: Math.min(width * 0.4, 120),
+        height: Math.min(height * 0.3, 60),
+        borderRadius: '50%',
+        boxShadow: '0 0 15px rgba(255, 215, 0, 0.3)'
+      };
+    case 'linear':
+      return {
+        width: Math.min(width * 0.6, 150),
+        height: Math.min(height * 0.2, 20),
+        borderRadius: 1,
+        boxShadow: '0 0 15px rgba(255, 215, 0, 0.3)'
+      };
+    default:
+      return {
+        width: 60,
+        height: 60,
+        borderRadius: 2
+      };
   }
-  
-  &::-webkit-scrollbar-thumb {
-    background: linear-gradient(45deg, #ffd700, #ff6b00);
-    border-radius: 4px;
-    box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
-  }
-  
-  &::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(45deg, #ffe833, #ff8533);
-    box-shadow: 0 0 15px rgba(255, 215, 0, 0.7);
-  }
-`;
-
-const Title = styled.h3`
-  margin-bottom: 0.5rem;
-  color: #ffd700;
-  text-align: center;
-  font-size: 1rem;
-`;
-
-const ConfigSection = styled.div`
-  margin-bottom: 0.75rem;
-`;
-
-const SectionTitle = styled.h4`
-  font-size: 0.8rem;
-  color: #ffffff;
-  margin-bottom: 0.5rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-`;
-
-const ParameterGroup = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.25rem;
-  margin-bottom: 0.5rem;
-`;
-
-const Parameter = styled.div`
-  display: flex;
-  flex-direction: column;
-`;
-
-const ParameterLabel = styled.label`
-  font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.7);
-  margin-bottom: 0.25rem;
-`;
-
-const ParameterInput = styled.input`
-  padding: 0.25rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-  color: #ffffff;
-  font-size: 0.8rem;
-  
-  &:focus {
-    border-color: #ffd700;
-    box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2);
-  }
-`;
-
-const ParameterSelect = styled.select`
-  padding: 0.25rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-  color: #ffffff;
-  font-size: 0.8rem;
-  
-  option {
-    background: #1a1a1a;
-    color: #ffffff;
-  }
-  
-  &:focus {
-    border-color: #ffd700;
-    box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2);
-  }
-`;
-
-const WaveGuideVisualization = styled.div`
-  width: 100%;
-  height: 100px;
-  background: radial-gradient(circle at center, 
-    rgba(255, 215, 0, 0.1) 0%, 
-    rgba(0, 0, 0, 0.8) 100%
-  );
-  border: 1px solid rgba(255, 215, 0, 0.3);
-  border-radius: 8px;
-  position: relative;
-  overflow: hidden;
-  margin-bottom: 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`;
-
-const GuideShape = styled.div<{ 
-  type: string; 
-  width: number; 
-  height: number; 
-  material: string 
-}>`
-  border: 2px solid ${props => {
-    switch (props.material) {
-      case 'copper': return '#CD7F32';
-      case 'silver': return '#C0C0C0';
-      case 'gold': return '#FFD700';
-      case 'plasma': return '#FF00FF';
-      default: return '#ffffff';
-    }
-  }};
-  
-  ${props => {
-    switch (props.type) {
-      case 'toroidal':
-        return `
-          width: ${Math.min(props.width * 0.3, 80)}px;
-          height: ${Math.min(props.height * 0.3, 80)}px;
-          border-radius: 50%;
-          box-shadow: 
-            inset 0 0 20px rgba(255, 215, 0, 0.3),
-            0 0 20px rgba(255, 215, 0, 0.2);
-        `;
-      case 'circular':
-        return `
-          width: ${Math.min(props.width * 0.4, 100)}px;
-          height: ${Math.min(props.height * 0.4, 100)}px;
-          border-radius: 50%;
-          box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
-        `;
-      case 'elliptical':
-        return `
-          width: ${Math.min(props.width * 0.4, 120)}px;
-          height: ${Math.min(props.height * 0.3, 60)}px;
-          border-radius: 50%;
-          box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
-        `;
-      case 'linear':
-        return `
-          width: ${Math.min(props.width * 0.6, 150)}px;
-          height: ${Math.min(props.height * 0.2, 20)}px;
-          border-radius: 4px;
-          box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
-        `;
-      default:
-        return `
-          width: 60px;
-          height: 60px;
-          border-radius: 8px;
-        `;
-    }
-  }}
-  
-  background: ${props => {
-    switch (props.material) {
-      case 'plasma': return 'radial-gradient(circle, rgba(255, 0, 255, 0.2), transparent)';
-      default: return 'transparent';
-    }
-  }};
-`;
-
-const ResonanceDisplay = styled.div`
-  text-align: center;
-  padding: 0.5rem;
-  background: rgba(255, 215, 0, 0.1);
-  border: 1px solid rgba(255, 215, 0, 0.3);
-  border-radius: 8px;
-  margin-bottom: 1rem;
-`;
-
-const ResonanceLabel = styled.div`
-  font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.7);
-  margin-bottom: 0.25rem;
-`;
-
-const ResonanceValue = styled.div`
-  font-family: 'Courier New', monospace;
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: #ffd700;
-`;
-
-const ImpedanceDisplay = styled.div`
-  font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.6);
-  text-align: center;
-`;
+};
 
 const WaveGuidePanel: React.FC<WaveGuidePanelProps> = ({
   config,
   onChange
 }) => {
-  const handleTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleTypeChange = (value: string) => {
     onChange({
       ...config,
-      type: e.target.value as WaveGuideConfig['type']
+      type: value as WaveGuideConfig['type']
     });
   };
 
-  const handleMaterialChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleMaterialChange = (value: string) => {
     onChange({
       ...config,
-      material: e.target.value as WaveGuideConfig['material']
+      material: value as WaveGuideConfig['material']
     });
   };
 
@@ -242,90 +92,263 @@ const WaveGuidePanel: React.FC<WaveGuidePanelProps> = ({
     });
   };
 
-  const handleResonanceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleResonanceChange = (value: string) => {
     onChange({
       ...config,
-      resonance: parseFloat(e.target.value) || 0
+      resonance: parseFloat(value) || 0
     });
   };
 
+  const shapeStyles = getShapeStyles(config.type, config.dimensions.width, config.dimensions.height);
+  const materialColor = getMaterialColor(config.material);
+
   return (
-    <Container>
-      <Title>Wave Guide</Title>
+    <Box 
+      sx={{ 
+        p: 0.5, 
+        maxHeight: 300, 
+        overflowY: 'auto',
+        overflowX: 'hidden'
+      }}
+    >
+      <Typography 
+        variant="h6" 
+        component="h3" 
+        sx={{ 
+          mb: 0.5, 
+          color: '#ffd700', 
+          textAlign: 'center', 
+          fontSize: '1rem' 
+        }}
+      >
+        Wave Guide
+      </Typography>
       
-      <ConfigSection>
-        <SectionTitle>Configuration</SectionTitle>
+      <Box sx={{ mb: 1 }}>
+        <Typography 
+          variant="h6" 
+          component="h4" 
+          sx={{ 
+            fontSize: '0.8rem', 
+            color: '#ffffff', 
+            mb: 0.5, 
+            textTransform: 'uppercase', 
+            letterSpacing: '0.5px' 
+          }}
+        >
+          Configuration
+        </Typography>
         
-        <ParameterGroup>
-          <Parameter>
-            <ParameterLabel>Type</ParameterLabel>
-            <ParameterSelect value={config.type} onChange={handleTypeChange}>
-              <option value="toroidal">Toroidal</option>
-              <option value="circular">Circular</option>
-              <option value="elliptical">Elliptical</option>
-              <option value="linear">Linear</option>
-            </ParameterSelect>
-          </Parameter>
+        <Grid container spacing={0.5} sx={{ mb: 0.5 }}>
+          <Grid item xs={6}>
+            <FormControl size="small" fullWidth>
+              <InputLabel sx={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.8rem' }}>
+                Type
+              </InputLabel>
+              <Select
+                value={config.type}
+                onChange={(e) => handleTypeChange(e.target.value)}
+                sx={{
+                  fontSize: '0.8rem',
+                  color: '#ffffff',
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: 'rgba(255, 255, 255, 0.1)'
+                  },
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#ffd700'
+                  },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#ffd700'
+                  },
+                  background: 'rgba(255, 255, 255, 0.05)'
+                }}
+              >
+                <MenuItem value="toroidal">Toroidal</MenuItem>
+                <MenuItem value="circular">Circular</MenuItem>
+                <MenuItem value="elliptical">Elliptical</MenuItem>
+                <MenuItem value="linear">Linear</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
           
-          <Parameter>
-            <ParameterLabel>Material</ParameterLabel>
-            <ParameterSelect value={config.material} onChange={handleMaterialChange}>
-              <option value="copper">Copper</option>
-              <option value="silver">Silver</option>
-              <option value="gold">Gold</option>
-              <option value="plasma">Plasma</option>
-            </ParameterSelect>
-          </Parameter>
-        </ParameterGroup>
+          <Grid item xs={6}>
+            <FormControl size="small" fullWidth>
+              <InputLabel sx={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.8rem' }}>
+                Material
+              </InputLabel>
+              <Select
+                value={config.material}
+                onChange={(e) => handleMaterialChange(e.target.value)}
+                sx={{
+                  fontSize: '0.8rem',
+                  color: '#ffffff',
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: 'rgba(255, 255, 255, 0.1)'
+                  },
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#ffd700'
+                  },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#ffd700'
+                  },
+                  background: 'rgba(255, 255, 255, 0.05)'
+                }}
+              >
+                <MenuItem value="copper">Copper</MenuItem>
+                <MenuItem value="silver">Silver</MenuItem>
+                <MenuItem value="gold">Gold</MenuItem>
+                <MenuItem value="plasma">Plasma</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+        </Grid>
         
-        <ParameterGroup>
-          <Parameter>
-            <ParameterLabel>Width (mm)</ParameterLabel>
-            <ParameterInput
+        <Grid container spacing={0.5} sx={{ mb: 0.5 }}>
+          <Grid item xs={6}>
+            <TextField
+              label="Width (mm)"
               type="number"
+              size="small"
+              fullWidth
               value={config.dimensions.width}
               onChange={(e) => handleDimensionChange('width', e.target.value)}
+              InputLabelProps={{
+                sx: { color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.8rem' }
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  fontSize: '0.8rem',
+                  color: '#ffffff',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  '& fieldset': {
+                    borderColor: 'rgba(255, 255, 255, 0.1)'
+                  },
+                  '&:hover fieldset': {
+                    borderColor: '#ffd700'
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#ffd700'
+                  }
+                }
+              }}
             />
-          </Parameter>
+          </Grid>
           
-          <Parameter>
-            <ParameterLabel>Height (mm)</ParameterLabel>
-            <ParameterInput
+          <Grid item xs={6}>
+            <TextField
+              label="Height (mm)"
               type="number"
+              size="small"
+              fullWidth
               value={config.dimensions.height}
               onChange={(e) => handleDimensionChange('height', e.target.value)}
+              InputLabelProps={{
+                sx: { color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.8rem' }
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  fontSize: '0.8rem',
+                  color: '#ffffff',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  '& fieldset': {
+                    borderColor: 'rgba(255, 255, 255, 0.1)'
+                  },
+                  '&:hover fieldset': {
+                    borderColor: '#ffd700'
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#ffd700'
+                  }
+                }
+              }}
             />
-          </Parameter>
-        </ParameterGroup>
+          </Grid>
+        </Grid>
         
-        <Parameter>
-          <ParameterLabel>Resonance (Hz)</ParameterLabel>
-          <ParameterInput
-            type="number"
-            step="0.1"
-            value={config.resonance}
-            onChange={handleResonanceChange}
-          />
-        </Parameter>
-      </ConfigSection>
-      
-      <WaveGuideVisualization>
-        <GuideShape
-          type={config.type}
-          width={config.dimensions.width}
-          height={config.dimensions.height}
-          material={config.material}
+        <TextField
+          label="Resonance (Hz)"
+          type="number"
+          size="small"
+          fullWidth
+          inputProps={{ step: 0.1 }}
+          value={config.resonance}
+          onChange={(e) => handleResonanceChange(e.target.value)}
+          InputLabelProps={{
+            sx: { color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.8rem' }
+          }}
+          sx={{
+            '& .MuiOutlinedInput-root': {
+              fontSize: '0.8rem',
+              color: '#ffffff',
+              background: 'rgba(255, 255, 255, 0.05)',
+              '& fieldset': {
+                borderColor: 'rgba(255, 255, 255, 0.1)'
+              },
+              '&:hover fieldset': {
+                borderColor: '#ffd700'
+              },
+              '&.Mui-focused fieldset': {
+                borderColor: '#ffd700'
+              }
+            }
+          }}
         />
-      </WaveGuideVisualization>
+      </Box>
       
-      <ResonanceDisplay>
-        <ResonanceLabel>Resonant Frequency</ResonanceLabel>
-        <ResonanceValue>{config.resonance.toFixed(1)} Hz</ResonanceValue>
-        <ImpedanceDisplay>
+      <Box
+        sx={{
+          width: '100%',
+          height: 100,
+          background: 'radial-gradient(circle at center, rgba(255, 215, 0, 0.1) 0%, rgba(0, 0, 0, 0.8) 100%)',
+          border: '1px solid rgba(255, 215, 0, 0.3)',
+          borderRadius: 2,
+          position: 'relative',
+          overflow: 'hidden',
+          mb: 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      >
+        <Box
+          sx={{
+            border: `2px solid ${materialColor}`,
+            background: config.material === 'plasma' 
+              ? 'radial-gradient(circle, rgba(255, 0, 255, 0.2), transparent)' 
+              : 'transparent',
+            ...shapeStyles
+          }}
+        />
+      </Box>
+      
+      <Paper
+        sx={{
+          textAlign: 'center',
+          p: 0.5,
+          background: 'rgba(255, 215, 0, 0.1)',
+          border: '1px solid rgba(255, 215, 0, 0.3)',
+          borderRadius: 2,
+          mb: 1
+        }}
+      >
+        <Typography sx={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.7)', mb: 0.25 }}>
+          Resonant Frequency
+        </Typography>
+        <Typography 
+          sx={{ 
+            fontFamily: 'Courier New, monospace', 
+            fontSize: '1.2rem', 
+            fontWeight: 700, 
+            color: '#ffd700' 
+          }}
+        >
+          {config.resonance.toFixed(1)} Hz
+        </Typography>
+        <Typography sx={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.6)' }}>
           Impedance: {config.impedance}Ω
-        </ImpedanceDisplay>
-      </ResonanceDisplay>
-    </Container>
+        </Typography>
+      </Paper>
+    </Box>
   );
 };
 

@@ -32,7 +32,11 @@
       "Read(C:\\c\\Users\\bisho\\IdeaProjects\\ebl/**)",
       "Read(C:\\c\\Users\\bisho\\IdeaProjects\\ebl/**)",
       "Read(C:\\c\\Users\\bisho\\IdeaProjects\\ebl/**)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(start http://localhost:5173)",
+      "Bash(start http://localhost:5174)",
+      "Bash(start http://localhost:5175)",
+      "Bash(start http://localhost:5176)"
     ],
     "deny": [],
     "ask": []

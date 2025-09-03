@@ -2,7 +2,15 @@
 // 8D audio effects and spatial positioning controls
 
 import React from 'react';
-import styled from 'styled-components';
+import { 
+  Box, 
+  Typography, 
+  Slider, 
+  Switch, 
+  FormControlLabel, 
+  Button, 
+  Paper 
+} from '@mui/material';
 
 interface SpatialAudioControlsProps {
   settings: {
@@ -25,148 +33,6 @@ interface SpatialAudioControlsProps {
   }) => void;
 }
 
-const Container = styled.div`
-  padding: 0.5rem;
-  background: rgba(255, 255, 255, 0.02);
-  border-radius: 8px;
-  border: 1px solid rgba(255, 107, 0, 0.2);
-  max-height: 250px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 107, 0, 0.5) rgba(0, 0, 0, 0.3);
-  
-  &::-webkit-scrollbar {
-    width: 8px;
-  }
-  
-  &::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 4px;
-  }
-  
-  &::-webkit-scrollbar-thumb {
-    background: linear-gradient(45deg, #ff6b00, #8a2be2);
-    border-radius: 4px;
-    box-shadow: 0 0 10px rgba(255, 107, 0, 0.5);
-  }
-  
-  &::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(45deg, #ff8533, #9944d9);
-    box-shadow: 0 0 15px rgba(255, 107, 0, 0.7);
-  }
-`;
-
-const Title = styled.h3`
-  color: #ff6b00;
-  margin-bottom: 0.5rem;
-  font-size: 1rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-`;
-
-const ControlGroup = styled.div`
-  margin-bottom: 0.5rem;
-`;
-
-const Label = styled.label`
-  display: block;
-  color: #e0e0e0;
-  font-size: 0.8rem;
-  margin-bottom: 0.25rem;
-  font-weight: 500;
-`;
-
-const Slider = styled.input.attrs({ type: 'range' })`
-  width: 100%;
-  height: 6px;
-  background: linear-gradient(90deg, rgba(255, 107, 0, 0.3), rgba(0, 255, 136, 0.3));
-  outline: none;
-  border-radius: 3px;
-  
-  &::-webkit-slider-thumb {
-    appearance: none;
-    width: 18px;
-    height: 18px;
-    background: linear-gradient(45deg, #ff6b00, #00ff88);
-    border-radius: 50%;
-    cursor: pointer;
-    border: 2px solid #fff;
-    box-shadow: 0 0 10px rgba(255, 107, 0, 0.5);
-    transition: all 0.3s ease;
-  }
-  
-  &::-webkit-slider-thumb:hover {
-    transform: scale(1.2);
-    box-shadow: 0 0 15px rgba(255, 107, 0, 0.7);
-  }
-`;
-
-const Toggle = styled.div<{ checked: boolean }>`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-  
-  input {
-    display: none;
-  }
-  
-  .toggle-switch {
-    width: 50px;
-    height: 24px;
-    background: ${props => props.checked ? 'linear-gradient(45deg, #ff6b00, #8a2be2)' : '#333'};
-    border-radius: 12px;
-    position: relative;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    border: 1px solid ${props => props.checked ? 'rgba(255, 107, 0, 0.5)' : 'rgba(255, 255, 255, 0.1)'};
-  }
-  
-  .toggle-slider {
-    width: 20px;
-    height: 20px;
-    background: #fff;
-    border-radius: 50%;
-    position: absolute;
-    top: 1px;
-    left: ${props => props.checked ? '27px' : '1px'};
-    transition: left 0.3s ease;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-  }
-`;
-
-const ValueDisplay = styled.span`
-  color: #00ff88;
-  font-weight: 600;
-  font-family: 'Courier New', monospace;
-  font-size: 0.9rem;
-`;
-
-const PresetButtons = styled.div`
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 1rem;
-  flex-wrap: wrap;
-`;
-
-const PresetButton = styled.button`
-  padding: 0.4rem 0.8rem;
-  font-size: 0.8rem;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 107, 0, 0.3);
-  color: #e0e0e0;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  
-  &:hover {
-    background: rgba(255, 107, 0, 0.1);
-    border-color: rgba(255, 107, 0, 0.6);
-    color: #ff6b00;
-  }
-`;
 
 const SpatialAudioControls: React.FC<SpatialAudioControlsProps> = ({
   settings,
@@ -227,133 +93,285 @@ const SpatialAudioControls: React.FC<SpatialAudioControlsProps> = ({
   };
 
   return (
-    <Container>
-      <Title>
+    <Paper
+      sx={{
+        p: 0.5,
+        background: 'rgba(255, 255, 255, 0.02)',
+        borderRadius: 2,
+        border: '1px solid rgba(255, 107, 0, 0.2)',
+        maxHeight: 250,
+        overflowY: 'auto',
+        overflowX: 'hidden'
+      }}
+    >
+      <Typography
+        variant="h6"
+        component="h3"
+        sx={{
+          color: '#ff6b00',
+          mb: 0.5,
+          fontSize: '1rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 0.5
+        }}
+      >
         🎧 Spatial Audio (8D Effects)
-      </Title>
+      </Typography>
 
-      <ControlGroup>
-        <Toggle 
-          checked={settings.enabled}
-          onClick={() => handleToggle('enabled')}
-        >
-          <input 
-            type="checkbox" 
-            checked={settings.enabled}
-            onChange={() => {}}
-          />
-          <div className="toggle-switch">
-            <div className="toggle-slider" />
-          </div>
-          <Label>Enable 8D Audio</Label>
-        </Toggle>
-      </ControlGroup>
+      <Box sx={{ mb: 0.5 }}>
+        <FormControlLabel
+          control={
+            <Switch
+              checked={settings.enabled}
+              onChange={() => handleToggle('enabled')}
+              sx={{
+                '& .MuiSwitch-track': {
+                  background: settings.enabled 
+                    ? 'linear-gradient(45deg, #ff6b00, #8a2be2)' 
+                    : '#333',
+                  opacity: 1
+                },
+                '& .MuiSwitch-thumb': {
+                  backgroundColor: '#fff'
+                }
+              }}
+            />
+          }
+          label={
+            <Typography sx={{ color: '#e0e0e0', fontSize: '0.8rem', fontWeight: 500 }}>
+              Enable 8D Audio
+            </Typography>
+          }
+        />
+      </Box>
 
       {settings.enabled && (
         <>
-          <ControlGroup>
-            <Label>
-              Movement Speed: <ValueDisplay>{settings.movement_speed.toFixed(2)} Hz</ValueDisplay>
-            </Label>
+          <Box sx={{ mb: 0.5 }}>
+            <Typography sx={{ color: '#e0e0e0', fontSize: '0.8rem', mb: 0.25, fontWeight: 500 }}>
+              Movement Speed: <Box component="span" sx={{ color: '#00ff88', fontWeight: 600, fontFamily: 'Courier New, monospace', fontSize: '0.9rem' }}>{settings.movement_speed.toFixed(2)} Hz</Box>
+            </Typography>
             <Slider
               min={0.01}
               max={0.5}
               step={0.01}
               value={settings.movement_speed}
-              onChange={(e) => handleSliderChange('movement_speed', parseFloat(e.target.value))}
+              onChange={(_, value) => handleSliderChange('movement_speed', value as number)}
+              sx={{
+                color: '#ff6b00',
+                '& .MuiSlider-thumb': {
+                  background: 'linear-gradient(45deg, #ff6b00, #00ff88)',
+                  border: '2px solid #fff',
+                  boxShadow: '0 0 10px rgba(255, 107, 0, 0.5)',
+                  '&:hover': {
+                    boxShadow: '0 0 15px rgba(255, 107, 0, 0.7)'
+                  }
+                },
+                '& .MuiSlider-track': {
+                  background: 'linear-gradient(90deg, rgba(255, 107, 0, 0.3), rgba(0, 255, 136, 0.3))'
+                }
+              }}
             />
-          </ControlGroup>
+          </Box>
 
-          <ControlGroup>
-            <Label>
-              Spatial Intensity: <ValueDisplay>{(settings.spatial_intensity * 100).toFixed(0)}%</ValueDisplay>
-            </Label>
+          <Box sx={{ mb: 0.5 }}>
+            <Typography sx={{ color: '#e0e0e0', fontSize: '0.8rem', mb: 0.25, fontWeight: 500 }}>
+              Spatial Intensity: <Box component="span" sx={{ color: '#00ff88', fontWeight: 600, fontFamily: 'Courier New, monospace', fontSize: '0.9rem' }}>{(settings.spatial_intensity * 100).toFixed(0)}%</Box>
+            </Typography>
             <Slider
               min={0.1}
               max={1.0}
               step={0.05}
               value={settings.spatial_intensity}
-              onChange={(e) => handleSliderChange('spatial_intensity', parseFloat(e.target.value))}
+              onChange={(_, value) => handleSliderChange('spatial_intensity', value as number)}
+              sx={{
+                color: '#ff6b00',
+                '& .MuiSlider-thumb': {
+                  background: 'linear-gradient(45deg, #ff6b00, #00ff88)',
+                  border: '2px solid #fff',
+                  boxShadow: '0 0 10px rgba(255, 107, 0, 0.5)'
+                },
+                '& .MuiSlider-track': {
+                  background: 'linear-gradient(90deg, rgba(255, 107, 0, 0.3), rgba(0, 255, 136, 0.3))'
+                }
+              }}
             />
-          </ControlGroup>
+          </Box>
 
-          <ControlGroup>
-            <Toggle 
-              checked={settings.reverb_enabled}
-              onClick={() => handleToggle('reverb_enabled')}
-            >
-              <input 
-                type="checkbox" 
-                checked={settings.reverb_enabled}
-                onChange={() => {}}
-              />
-              <div className="toggle-switch">
-                <div className="toggle-slider" />
-              </div>
-              <Label>Reverb Effect</Label>
-            </Toggle>
-          </ControlGroup>
+          <Box sx={{ mb: 0.5 }}>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={settings.reverb_enabled}
+                  onChange={() => handleToggle('reverb_enabled')}
+                  sx={{
+                    '& .MuiSwitch-track': {
+                      background: settings.reverb_enabled 
+                        ? 'linear-gradient(45deg, #ff6b00, #8a2be2)' 
+                        : '#333',
+                      opacity: 1
+                    },
+                    '& .MuiSwitch-thumb': {
+                      backgroundColor: '#fff'
+                    }
+                  }}
+                />
+              }
+              label={
+                <Typography sx={{ color: '#e0e0e0', fontSize: '0.8rem', fontWeight: 500 }}>
+                  Reverb Effect
+                </Typography>
+              }
+            />
+          </Box>
 
           {settings.reverb_enabled && (
             <>
-              <ControlGroup>
-                <Label>
-                  Reverberance: <ValueDisplay>{((settings.reverberance || 0.5) * 100).toFixed(0)}%</ValueDisplay>
-                </Label>
+              <Box sx={{ mb: 0.5 }}>
+                <Typography sx={{ color: '#e0e0e0', fontSize: '0.8rem', mb: 0.25, fontWeight: 500 }}>
+                  Reverberance: <Box component="span" sx={{ color: '#00ff88', fontWeight: 600, fontFamily: 'Courier New, monospace', fontSize: '0.9rem' }}>{((settings.reverberance || 0.5) * 100).toFixed(0)}%</Box>
+                </Typography>
                 <Slider
                   min={0.1}
                   max={0.9}
                   step={0.05}
                   value={settings.reverberance || 0.5}
-                  onChange={(e) => handleSliderChange('reverberance', parseFloat(e.target.value))}
+                  onChange={(_, value) => handleSliderChange('reverberance', value as number)}
+                  sx={{
+                    color: '#ff6b00',
+                    '& .MuiSlider-thumb': {
+                      background: 'linear-gradient(45deg, #ff6b00, #00ff88)',
+                      border: '2px solid #fff'
+                    },
+                    '& .MuiSlider-track': {
+                      background: 'linear-gradient(90deg, rgba(255, 107, 0, 0.3), rgba(0, 255, 136, 0.3))'
+                    }
+                  }}
                 />
-              </ControlGroup>
+              </Box>
 
-              <ControlGroup>
-                <Label>
-                  Room Scale: <ValueDisplay>{((settings.room_scale || 1.0) * 100).toFixed(0)}%</ValueDisplay>
-                </Label>
+              <Box sx={{ mb: 0.5 }}>
+                <Typography sx={{ color: '#e0e0e0', fontSize: '0.8rem', mb: 0.25, fontWeight: 500 }}>
+                  Room Scale: <Box component="span" sx={{ color: '#00ff88', fontWeight: 600, fontFamily: 'Courier New, monospace', fontSize: '0.9rem' }}>{((settings.room_scale || 1.0) * 100).toFixed(0)}%</Box>
+                </Typography>
                 <Slider
                   min={0.3}
                   max={2.0}
                   step={0.1}
                   value={settings.room_scale || 1.0}
-                  onChange={(e) => handleSliderChange('room_scale', parseFloat(e.target.value))}
+                  onChange={(_, value) => handleSliderChange('room_scale', value as number)}
+                  sx={{
+                    color: '#ff6b00',
+                    '& .MuiSlider-thumb': {
+                      background: 'linear-gradient(45deg, #ff6b00, #00ff88)',
+                      border: '2px solid #fff'
+                    },
+                    '& .MuiSlider-track': {
+                      background: 'linear-gradient(90deg, rgba(255, 107, 0, 0.3), rgba(0, 255, 136, 0.3))'
+                    }
+                  }}
                 />
-              </ControlGroup>
+              </Box>
 
-              <ControlGroup>
-                <Label>
-                  HF Damping: <ValueDisplay>{((settings.hf_damping || 0.5) * 100).toFixed(0)}%</ValueDisplay>
-                </Label>
+              <Box sx={{ mb: 0.5 }}>
+                <Typography sx={{ color: '#e0e0e0', fontSize: '0.8rem', mb: 0.25, fontWeight: 500 }}>
+                  HF Damping: <Box component="span" sx={{ color: '#00ff88', fontWeight: 600, fontFamily: 'Courier New, monospace', fontSize: '0.9rem' }}>{((settings.hf_damping || 0.5) * 100).toFixed(0)}%</Box>
+                </Typography>
                 <Slider
                   min={0.1}
                   max={0.9}
                   step={0.05}
                   value={settings.hf_damping || 0.5}
-                  onChange={(e) => handleSliderChange('hf_damping', parseFloat(e.target.value))}
+                  onChange={(_, value) => handleSliderChange('hf_damping', value as number)}
+                  sx={{
+                    color: '#ff6b00',
+                    '& .MuiSlider-thumb': {
+                      background: 'linear-gradient(45deg, #ff6b00, #00ff88)',
+                      border: '2px solid #fff'
+                    },
+                    '& .MuiSlider-track': {
+                      background: 'linear-gradient(90deg, rgba(255, 107, 0, 0.3), rgba(0, 255, 136, 0.3))'
+                    }
+                  }}
                 />
-              </ControlGroup>
+              </Box>
             </>
           )}
 
-          <PresetButtons>
-            <PresetButton onClick={() => applyPreset('off')}>
+          <Box sx={{ display: 'flex', gap: 0.5, mt: 1, flexWrap: 'wrap' }}>
+            <Button
+              onClick={() => applyPreset('off')}
+              size="small"
+              sx={{
+                fontSize: '0.8rem',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 107, 0, 0.3)',
+                color: '#e0e0e0',
+                '&:hover': {
+                  background: 'rgba(255, 107, 0, 0.1)',
+                  borderColor: 'rgba(255, 107, 0, 0.6)',
+                  color: '#ff6b00'
+                }
+              }}
+            >
               Off
-            </PresetButton>
-            <PresetButton onClick={() => applyPreset('subtle')}>
+            </Button>
+            <Button
+              onClick={() => applyPreset('subtle')}
+              size="small"
+              sx={{
+                fontSize: '0.8rem',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 107, 0, 0.3)',
+                color: '#e0e0e0',
+                '&:hover': {
+                  background: 'rgba(255, 107, 0, 0.1)',
+                  borderColor: 'rgba(255, 107, 0, 0.6)',
+                  color: '#ff6b00'
+                }
+              }}
+            >
               Subtle
-            </PresetButton>
-            <PresetButton onClick={() => applyPreset('standard')}>
+            </Button>
+            <Button
+              onClick={() => applyPreset('standard')}
+              size="small"
+              sx={{
+                fontSize: '0.8rem',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 107, 0, 0.3)',
+                color: '#e0e0e0',
+                '&:hover': {
+                  background: 'rgba(255, 107, 0, 0.1)',
+                  borderColor: 'rgba(255, 107, 0, 0.6)',
+                  color: '#ff6b00'
+                }
+              }}
+            >
               Standard 8D
-            </PresetButton>
-            <PresetButton onClick={() => applyPreset('intense')}>
+            </Button>
+            <Button
+              onClick={() => applyPreset('intense')}
+              size="small"
+              sx={{
+                fontSize: '0.8rem',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 107, 0, 0.3)',
+                color: '#e0e0e0',
+                '&:hover': {
+                  background: 'rgba(255, 107, 0, 0.1)',
+                  borderColor: 'rgba(255, 107, 0, 0.6)',
+                  color: '#ff6b00'
+                }
+              }}
+            >
               Intense
-            </PresetButton>
-          </PresetButtons>
+            </Button>
+          </Box>
         </>
       )}
-    </Container>
+    </Paper>
   );
 };
 

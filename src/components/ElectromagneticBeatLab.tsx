@@ -2,7 +2,7 @@
 // Advanced binaural beats generator with electromagnetic field visualization
 
 import React, {useCallback, useEffect, useState} from 'react';
-import styled from 'styled-components';
+import { Box, Typography, Grid, Paper } from '@mui/material';
 import type {AppState, ElectromagneticBeatLabProps, PatternMode} from '../types/index';
 
 import {useMasterAudioControl} from '../hooks/useMasterAudioControl';
@@ -28,260 +28,16 @@ import YouTubeTab from './tabs/YouTubeTab';
 import SettingsTab from './tabs/SettingsTab';
 import GuideTab from './tabs/GuideTab';
 
-const Container = styled.div`
-  width: 100vw;
-  height: 100vh;
-  position: relative;
-  overflow: hidden;
-  background: transparent;
-  box-sizing: border-box;
-  
-  /* Prevent zoom issues */
-  * {
-    box-sizing: border-box;
-  }
-`;
 
-const Header = styled.header`
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 100;
-  padding: 0.25rem 0.5rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  backdrop-filter: blur(10px);
-  background: rgba(0, 0, 0, 0.2);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  min-height: 40px;
-  
-  /* Handle zoom levels */
-  @media (max-zoom: 200%) {
-    padding: 0.2rem 0.4rem;
-    min-height: 35px;
-  }
-  
-  @media (max-zoom: 300%) {
-    padding: 0.1rem 0.3rem;
-    min-height: 30px;
-    font-size: 0.9rem;
-  }
-`;
 
-const Title = styled.h1`
-  font-size: 2rem;
-  font-weight: 700;
-  margin: 0;
-  
-  /* Handle zoom levels */
-  @media (max-zoom: 200%) {
-    font-size: 1.6rem;
-  }
-  
-  @media (max-zoom: 300%) {
-    font-size: 1.3rem;
-  }
-  
-  @media (max-width: 768px) {
-    font-size: 1.5rem;
-  }
-`;
 
-const StatusBar = styled.div`
-  display: flex;
-  gap: 0.25rem;
-  align-items: center;
-  font-size: 0.75rem;
-`;
 
-const MainInterface = styled.div`
-  position: absolute;
-  top: 40px;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: grid;
-  grid-template-columns: minmax(280px, 25%) 1fr minmax(260px, 25%);
-  grid-template-rows: auto 1fr auto;
-  gap: 0.5rem;
-  padding: 0.5rem;
-  overflow: hidden;
 
-  /* Handle zoom and small screens */
-  @media (max-width: 1200px), (max-zoom: 150%) {
-    grid-template-columns: minmax(250px, 30%) 1fr;
-    grid-template-rows: auto 1fr auto;
-  }
 
-  @media (max-width: 768px), (max-zoom: 200%) {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto 1fr auto;
-    gap: 0.25rem;
-    padding: 0.25rem;
-  }
-`;
 
-const LeftPanel = styled.div`
-  grid-column: 1;
-  grid-row: 1 / -1;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  overflow-y: auto;
-  overflow-x: hidden;
-  min-width: 0; /* Allow shrinking */
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 107, 0, 0.5) rgba(0, 0, 0, 0.3);
-  
-  &::-webkit-scrollbar {
-    width: 6px;
-  }
-  
-  &::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 3px;
-  }
-  
-  &::-webkit-scrollbar-thumb {
-    background: linear-gradient(45deg, #ff6b00, #8a2be2);
-    border-radius: 3px;
-    box-shadow: 0 0 5px rgba(255, 107, 0, 0.5);
-  }
-  
-  &::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(45deg, #ff8533, #9944d9);
-  }
 
-  @media (max-width: 768px), (max-zoom: 200%) {
-    grid-column: 1;
-    grid-row: 1;
-    max-height: 40vh;
-  }
-`;
 
-const CenterPanel = styled.div`
-  grid-column: 2;
-  grid-row: 1 / -1;
-  position: relative;
-  overflow: hidden;
-  min-width: 0; /* Allow shrinking */
-  min-height: 300px;
 
-  @media (max-width: 1200px), (max-zoom: 150%) {
-    grid-column: 2;
-    grid-row: 1 / -1;
-  }
-
-  @media (max-width: 768px), (max-zoom: 200%) {
-    grid-column: 1;
-    grid-row: 3;
-    min-height: 250px;
-  }
-`;
-
-const RightPanel = styled.div`
-  grid-column: 3;
-  grid-row: 1 / -1;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  overflow-y: auto;
-  overflow-x: hidden;
-  min-width: 0; /* Allow shrinking */
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 107, 0, 0.5) rgba(0, 0, 0, 0.3);
-  
-  &::-webkit-scrollbar {
-    width: 6px;
-  }
-  
-  &::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 3px;
-  }
-  
-  &::-webkit-scrollbar-thumb {
-    background: linear-gradient(45deg, #ff6b00, #8a2be2);
-    border-radius: 3px;
-    box-shadow: 0 0 5px rgba(255, 107, 0, 0.5);
-  }
-  
-  &::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(45deg, #ff8533, #9944d9);
-  }
-
-  @media (max-width: 1200px), (max-zoom: 150%) {
-    display: none;
-  }
-`;
-
-const VisualizationContainer = styled.div`
-  width: 100%;
-  height: 100%;
-  position: relative;
-  border-radius: 12px;
-  overflow: hidden;
-  background: radial-gradient(circle at center, 
-    rgba(0, 0, 0, 0.8) 0%, 
-    rgba(0, 0, 0, 0.95) 100%
-  );
-`;
-
-const ControlsContainer = styled.div`
-  position: absolute;
-  bottom: 0.25rem;
-  left: 0.25rem;
-  right: 0.25rem;
-  z-index: 50;
-
-  @media (max-width: 768px), (max-zoom: 200%) {
-    grid-column: 1;
-    grid-row: 4;
-    position: relative;
-    bottom: auto;
-    left: auto;
-    right: auto;
-  }
-`;
-
-const TabContent = styled.div`
-  min-height: 300px;
-  max-height: 600px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 107, 0, 0.5) rgba(0, 0, 0, 0.3);
-  padding-right: 0.5rem;
-  
-  &::-webkit-scrollbar {
-    width: 8px;
-  }
-  
-  &::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 4px;
-  }
-  
-  &::-webkit-scrollbar-thumb {
-    background: linear-gradient(45deg, #ff6b00, #8a2be2);
-    border-radius: 4px;
-    box-shadow: 0 0 10px rgba(255, 107, 0, 0.5);
-  }
-  
-  &::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(45deg, #ff8533, #9944d9);
-    box-shadow: 0 0 15px rgba(255, 107, 0, 0.7);
-  }
-
-  /* Handle extreme zoom levels */
-  @media (max-zoom: 300%) {
-    min-height: 200px;
-    max-height: 400px;
-    font-size: 0.8rem;
-  }
-`;
 
 const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
   initialPattern,
@@ -528,25 +284,57 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
   };
 
   return (
-    <Container>
+    <Box sx={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden' }}>
       {/* Background Star Field */}
       <StarField {...appState.visualizations.starField} />
 
       {/* Header */}
-      <Header>
-        <Title>Bishop's Electromagnetic Beat Lab</Title>
-        <StatusBar>
+      <Paper
+        elevation={0}
+        sx={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 100,
+          p: 1,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          backdropFilter: 'blur(10px)',
+          bgcolor: 'rgba(0, 0, 0, 0.2)',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+          minHeight: 40
+        }}
+      >
+        <Typography variant="h4" sx={{ fontWeight: 700, m: 0 }}>
+          Bishop's Electromagnetic Beat Lab
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 0.25, alignItems: 'center', fontSize: '0.75rem' }}>
           <ElectromagneticStatus 
             field={appState.electromagnetic}
             status={appState.systemStatus}
           />
-        </StatusBar>
-      </Header>
+        </Box>
+      </Paper>
 
       {/* Main Interface */}
-      <MainInterface>
+      <Grid
+        container
+        sx={{
+          position: 'realitive',
+          top: '40px',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          p: 1,
+          overflow: 'hidden'
+        }}
+        spacing={1}
+      >
         {/* Left Panel - Controls and Pattern Selection */}
-        <LeftPanel>
+        <Grid item xs={12} md={3} lg={3}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, height: '100%', overflow: 'auto' }}>
           <MasterStopControl
             activeStatus={masterAudio.activeStatus}
             onMasterStop={masterAudio.masterStop}
@@ -584,55 +372,85 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
             rightFreq={audioEngine.audioState.rightFreq || 444}
             onFrequencyChange={(left, right) => audioEngine.updateFrequency(left, right)}
           />
-        </LeftPanel>
+          </Box>
+        </Grid>
 
         {/* Center Panel - Main Visualization */}
-        <CenterPanel>
-          <VisualizationContainer>
-            {patterns8D.activePattern && (
-              <SpatialVisualizer
-                pattern={patterns8D.activePattern}
-                electromagnetic={appState.electromagnetic}
-                size={400}
-              />
-            )}
-          </VisualizationContainer>
-          
-          <ControlsContainer>
-            <div className="glass-panel">
-              <ControlTabs
-                tabs={tabs}
-                activeTab={appState.activeTab}
-                onTabChange={handleTabChange}
-              />
-              
-              <TabContent>
-                {renderTabContent()}
-              </TabContent>
-            </div>
-          </ControlsContainer>
-        </CenterPanel>
+        <Grid item xs={12} md={6} lg={6}>
+          <Box sx={{ position: 'relative', height: '100%', minHeight: 300 }}>
+            <Paper
+              elevation={3}
+              sx={{
+                width: '100%',
+                height: '100%',
+                borderRadius: 3,
+                overflow: 'hidden',
+                background: 'radial-gradient(circle at center, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.95) 100%)'
+              }}
+            >
+              {patterns8D.activePattern && (
+                <SpatialVisualizer
+                  pattern={patterns8D.activePattern}
+                  electromagnetic={appState.electromagnetic}
+                  size={400}
+                />
+              )}
+            </Paper>
+            
+            <Box
+              sx={{
+                position: 'absolute',
+                bottom: 1,
+                left: 1,
+                right: 1,
+                zIndex: 50
+              }}
+            >
+              <Paper elevation={4} sx={{ p: 2, backdropFilter: 'blur(10px)', bgcolor: 'rgba(0, 0, 0, 0.8)' }}>
+                <ControlTabs
+                  tabs={tabs}
+                  activeTab={appState.activeTab}
+                  onTabChange={handleTabChange}
+                />
+                
+                <Box
+                  sx={{
+                    minHeight: 300,
+                    maxHeight: 600,
+                    overflowY: 'auto',
+                    pr: 1,
+                    mt: 2
+                  }}
+                >
+                  {renderTabContent()}
+                </Box>
+              </Paper>
+            </Box>
+          </Box>
+        </Grid>
 
         {/* Right Panel - Wave Guide and Advanced Controls */}
-        <RightPanel>
-          <WaveGuidePanelMUI
-            config={{
-              type: 'toroidal',
-              dimensions: { width: 200, height: 200, depth: 100 },
-              material: 'copper',
-              resonance: appState.frequency,
-              impedance: 377
-            }}
-            onChange={(config) => {
-              // Handle wave guide configuration change
-              console.log('Wave guide config changed:', config);
-            }}
-          />
-        </RightPanel>
-      </MainInterface>
+        <Grid item xs={12} md={3} lg={3} sx={{ display: { xs: 'none', lg: 'block' } }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, height: '100%', overflow: 'auto' }}>
+            <WaveGuidePanelMUI
+              config={{
+                type: 'toroidal',
+                dimensions: { width: 200, height: 200, depth: 100 },
+                material: 'copper',
+                resonance: appState.frequency,
+                impedance: 377
+              }}
+              onChange={(config) => {
+                // Handle wave guide configuration change
+                console.log('Wave guide config changed:', config);
+              }}
+            />
+          </Box>
+        </Grid>
+      </Grid>
       
       {/* All audio controls now consolidated in MasterStopControl above */}
-    </Container>
+    </Box>
   );
 };
 

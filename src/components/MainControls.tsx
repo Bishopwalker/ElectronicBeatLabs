@@ -2,62 +2,10 @@
 // Primary playback and volume controls
 
 import React from 'react';
-import styled from 'styled-components';
+import { Box, Typography, Button, Slider } from '@mui/material';
+import { PlayArrow, Stop, VolumeUp } from '@mui/icons-material';
 import type {MainControlsProps} from '../types/index';
 
-const Container = styled.div`
-  padding: 0.5rem;
-  max-height: 250px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(138, 43, 226, 0.5) rgba(0, 0, 0, 0.3);
-  
-  &::-webkit-scrollbar {
-    width: 8px;
-  }
-  
-  &::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 4px;
-  }
-  
-  &::-webkit-scrollbar-thumb {
-    background: linear-gradient(45deg, #8a2be2, #ff6b00);
-    border-radius: 4px;
-    box-shadow: 0 0 10px rgba(138, 43, 226, 0.5);
-  }
-  
-  &::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(45deg, #9944d9, #ff8533);
-    box-shadow: 0 0 15px rgba(138, 43, 226, 0.7);
-  }
-`;
-
-const Title = styled.h3`
-  margin-bottom: 0.5rem;
-  color: #8a2be2;
-  text-align: center;
-  font-size: 1rem;
-`;
-
-const PlaybackControls = styled.div`
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
-  justify-content: center;
-`;
-
-const ControlButton = styled.button<{ primary?: boolean }>`
-  padding: 0.5rem 1rem;
-  font-size: 0.9rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  position: relative;
   overflow: hidden;
   
   ${props => props.primary ? `

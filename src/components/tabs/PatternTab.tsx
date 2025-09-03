@@ -2,111 +2,8 @@
 // Pattern selection and management interface
 
 import React from 'react';
-import styled from 'styled-components';
+import { Box, Typography, Grid, Card, CardContent, Chip } from '@mui/material';
 import type { PatternConfig, PatternPreset, AppState, AudioEngine, Pattern8D } from '../../types/index';
-
-const Container = styled.div`
-  padding: 1rem 0;
-`;
-
-const Section = styled.div`
-  margin-bottom: 2rem;
-`;
-
-const SectionTitle = styled.h4`
-  font-size: 1.1rem;
-  color: #ff6b00;
-  margin-bottom: 1rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-`;
-
-const PatternGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1rem;
-`;
-
-const PatternCard = styled.div<{ selected: boolean }>`
-  padding: 1rem;
-  background: ${props => props.selected ? 
-    'rgba(255, 107, 0, 0.15)' : 
-    'rgba(255, 255, 255, 0.03)'
-  };
-  border: 1px solid ${props => props.selected ? '#ff6b00' : 'rgba(255, 255, 255, 0.1)'};
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  
-  &:hover {
-    background: rgba(255, 107, 0, 0.1);
-    border-color: #ff6b00;
-    transform: translateY(-2px);
-  }
-`;
-
-const PatternName = styled.div`
-  font-weight: 600;
-  color: #ffffff;
-  margin-bottom: 0.5rem;
-  font-size: 1rem;
-`;
-
-const PatternType = styled.div`
-  font-size: 0.8rem;
-  color: #00ff88;
-  text-transform: uppercase;
-  margin-bottom: 0.5rem;
-  font-weight: 600;
-`;
-
-const PatternDescription = styled.div`
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.7);
-  line-height: 1.4;
-  margin-bottom: 0.75rem;
-`;
-
-const PatternBenefits = styled.div`
-  margin-bottom: 0.75rem;
-`;
-
-const BenefitItem = styled.div`
-  font-size: 0.75rem;
-  color: #8a2be2;
-  margin-bottom: 0.25rem;
-  &:before {
-    content: '• ';
-    color: #00ff88;
-  }
-`;
-
-const PatternFreq = styled.div`
-  font-size: 0.8rem;
-  color: #ff6b00;
-  font-family: 'Courier New', monospace;
-  background: rgba(255, 107, 0, 0.1);
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  margin-bottom: 0.5rem;
-`;
-
-const PatternDuration = styled.div`
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.6);
-`;
-
-const ADHDIndicator = styled.div`
-  display: inline-block;
-  background: linear-gradient(45deg, #ff1493, #8a2be2);
-  color: #ffffff;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  margin-bottom: 0.5rem;
-`;
 
 interface PatternTabProps {
   patterns: PatternConfig[];
@@ -125,56 +22,215 @@ const PatternTab: React.FC<PatternTabProps> = ({
   onPatternSelect
 }) => {
   return (
-    <Container>
-      <Section>
-        <SectionTitle>Electromagnetic Wave Patterns</SectionTitle>
-        <PatternGrid>
+    <Box sx={{ py: 1 }}>
+      <Box sx={{ mb: 2 }}>
+        <Typography
+          variant="h6"
+          component="h4"
+          sx={{ mb: 1, color: '#ffd700' }}
+        >
+          Electromagnetic Wave Patterns
+        </Typography>
+        <Grid container spacing={1}>
           {patterns.map((pattern) => (
-            <PatternCard
-              key={pattern.id}
-              selected={appState.currentPattern?.id === pattern.id}
-              onClick={() => onPatternSelect(pattern.id)}
-            >
-              {pattern.adhd && <ADHDIndicator>ADHD Protocol</ADHDIndicator>}
-              <PatternName>{pattern.name}</PatternName>
-              <PatternType>{pattern.type}</PatternType>
-              <PatternDescription>{pattern.description}</PatternDescription>
-              <PatternBenefits>
-                {pattern.benefits.slice(0, 3).map((benefit, index) => (
-                  <BenefitItem key={index}>{benefit}</BenefitItem>
-                ))}
-              </PatternBenefits>
-              <PatternFreq>
-                {pattern.frequencies.beat}Hz • {pattern.frequencies.range}
-              </PatternFreq>
-              <PatternDuration>
-                Duration: {pattern.duration} minutes
-              </PatternDuration>
-            </PatternCard>
+            <Grid item xs={12} sm={6} md={4} key={pattern.id}>
+              <Card
+                onClick={() => onPatternSelect(pattern.id)}
+                sx={{
+                  background: appState.currentPattern?.id === pattern.id
+                    ? 'rgba(255, 215, 0, 0.1)'
+                    : 'rgba(255, 255, 255, 0.02)',
+                  border: appState.currentPattern?.id === pattern.id
+                    ? '1px solid rgba(255, 215, 0, 0.5)'
+                    : '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: 2,
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    background: 'rgba(255, 215, 0, 0.05)',
+                    transform: 'translateY(-2px)'
+                  }
+                }}
+              >
+                <CardContent sx={{ p: 1 }}>
+                  {pattern.adhd && (
+                    <Chip
+                      label="ADHD Protocol"
+                      size="small"
+                      sx={{
+                        background: 'linear-gradient(45deg, #ff1493, #8a2be2)',
+                        color: '#ffffff',
+                        fontSize: '0.7rem',
+                        fontWeight: 600,
+                        textTransform: 'uppercase',
+                        mb: 0.5
+                      }}
+                    />
+                  )}
+                  
+                  <Typography
+                    variant="h6"
+                    component="h5"
+                    sx={{
+                      mb: 0.5,
+                      fontSize: '1rem',
+                      color: '#ffffff'
+                    }}
+                  >
+                    {pattern.name}
+                  </Typography>
+                  
+                  <Typography
+                    sx={{
+                      fontSize: '0.8rem',
+                      color: '#00ff88',
+                      textTransform: 'uppercase',
+                      mb: 0.5,
+                      fontWeight: 600
+                    }}
+                  >
+                    {pattern.type}
+                  </Typography>
+                  
+                  <Typography
+                    sx={{
+                      fontSize: '0.85rem',
+                      color: 'rgba(255, 255, 255, 0.7)',
+                      lineHeight: 1.4,
+                      mb: 0.75
+                    }}
+                  >
+                    {pattern.description}
+                  </Typography>
+                  
+                  <Box sx={{ mb: 0.75 }}>
+                    {pattern.benefits.slice(0, 3).map((benefit, index) => (
+                      <Typography
+                        key={index}
+                        sx={{
+                          fontSize: '0.75rem',
+                          color: '#8a2be2',
+                          mb: 0.25,
+                          '&:before': {
+                            content: '"• "',
+                            color: '#00ff88'
+                          }
+                        }}
+                      >
+                        {benefit}
+                      </Typography>
+                    ))}
+                  </Box>
+                  
+                  <Box
+                    sx={{
+                      fontSize: '0.8rem',
+                      color: '#ff6b00',
+                      fontFamily: 'Courier New, monospace',
+                      background: 'rgba(255, 107, 0, 0.1)',
+                      p: 0.5,
+                      borderRadius: 1,
+                      mb: 0.5
+                    }}
+                  >
+                    {pattern.frequencies.beat}Hz • {pattern.frequencies.range}
+                  </Box>
+                  
+                  <Typography
+                    sx={{
+                      fontSize: '0.75rem',
+                      color: 'rgba(255, 255, 255, 0.6)'
+                    }}
+                  >
+                    Duration: {pattern.duration} minutes
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
           ))}
-        </PatternGrid>
-      </Section>
+        </Grid>
+      </Box>
       
-      <Section>
-        <SectionTitle>Quick Presets</SectionTitle>
-        <PatternGrid>
+      <Box>
+        <Typography
+          variant="h6"
+          component="h4"
+          sx={{ mb: 1, color: '#ffd700' }}
+        >
+          Quick Presets
+        </Typography>
+        <Grid container spacing={1}>
           {presets.map((preset) => (
-            <PatternCard
-              key={preset.id}
-              selected={false}
-              onClick={() => onPatternSelect(preset.pattern.id)}
-            >
-              <PatternName>{preset.name}</PatternName>
-              <PatternType>{preset.category}</PatternType>
-              <PatternDescription>{preset.pattern.description}</PatternDescription>
-              <PatternFreq>
-                {preset.pattern.frequencies.beat}Hz • Rating: {preset.rating}/5
-              </PatternFreq>
-            </PatternCard>
+            <Grid item xs={12} sm={6} md={4} key={preset.id}>
+              <Card
+                onClick={() => onPatternSelect(preset.pattern.id)}
+                sx={{
+                  background: 'rgba(255, 255, 255, 0.02)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: 2,
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    background: 'rgba(255, 215, 0, 0.05)',
+                    transform: 'translateY(-2px)'
+                  }
+                }}
+              >
+                <CardContent sx={{ p: 1 }}>
+                  <Typography
+                    variant="h6"
+                    component="h5"
+                    sx={{
+                      mb: 0.5,
+                      fontSize: '1rem',
+                      color: '#ffffff'
+                    }}
+                  >
+                    {preset.name}
+                  </Typography>
+                  
+                  <Typography
+                    sx={{
+                      fontSize: '0.8rem',
+                      color: '#00ff88',
+                      textTransform: 'uppercase',
+                      mb: 0.5,
+                      fontWeight: 600
+                    }}
+                  >
+                    {preset.category}
+                  </Typography>
+                  
+                  <Typography
+                    sx={{
+                      fontSize: '0.85rem',
+                      color: 'rgba(255, 255, 255, 0.7)',
+                      lineHeight: 1.4,
+                      mb: 0.75
+                    }}
+                  >
+                    {preset.pattern.description}
+                  </Typography>
+                  
+                  <Box
+                    sx={{
+                      fontSize: '0.8rem',
+                      color: '#ff6b00',
+                      fontFamily: 'Courier New, monospace',
+                      background: 'rgba(255, 107, 0, 0.1)',
+                      p: 0.5,
+                      borderRadius: 1
+                    }}
+                  >
+                    {preset.pattern.frequencies.beat}Hz • Rating: {preset.rating}/5
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
           ))}
-        </PatternGrid>
-      </Section>
-    </Container>
+        </Grid>
+      </Box>
+    </Box>
   );
 };
 

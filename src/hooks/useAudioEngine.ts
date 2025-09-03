@@ -57,12 +57,12 @@ export const useAudioEngine = () => {
 
   // Create oscillator with specified waveform
   const createOscillator = useCallback((
-    context: AudioContext,
-    frequency: number,
-    waveform: 'sine' | 'square' | 'triangle' | 'sawtooth'
+      context: AudioContext,
+      frequency: number,
+      waveform: 'sine' | 'square' | 'triangle' | 'sawtooth'
   ): OscillatorNode => {
     const oscillator = context.createOscillator();
-    oscillator.type = waveform;
+    oscillator.type = waveform as OscillatorType;
     oscillator.frequency.setValueAtTime(frequency, context.currentTime);
     return oscillator;
   }, []);
@@ -139,8 +139,8 @@ export const useAudioEngine = () => {
       }
 
       // Create oscillators
-      const oscL = createOscillator(context, config.leftFreq, config.waveform);
-      const oscR = createOscillator(context, config.rightFreq, config.waveform);
+      const oscL = createOscillator(context, config.leftFreq, config.waveform as 'sine' | 'square' | 'triangle' | 'sawtooth');
+      const oscR = createOscillator(context, config.rightFreq, config.waveform as 'sine' | 'square' | 'triangle' | 'sawtooth');
 
       // Create gain nodes
       const gainL = createGainNode(context, config.amplitude * audioState.volume);
@@ -217,7 +217,7 @@ export const useAudioEngine = () => {
     }
     animationRef.current = window.setTimeout(animate, 100) as unknown as number;
 
-  }, [audioState.volume, audioState.context, audioState.isPlaying, initializeAudio, connectWebSocket, sendWebSocketMessage, calculateElectromagneticField]);
+  }, [audioState.volume, audioState.context, audioState.isPlaying, initializeAudio, createOscillator, createGainNode, calculateElectromagneticField]);
 
   // Stop binaural beat playback
   const stopBinauralBeat = useCallback(() => {

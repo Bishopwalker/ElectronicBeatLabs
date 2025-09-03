@@ -2,32 +2,10 @@
 // Pattern selection with mode controls
 
 import React from 'react';
-import styled from 'styled-components';
+import { Box, Typography, Grid, Button, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 import type {PatternMode, PatternSelectorProps} from '../types/index';
 
-const Container = styled.div`
-  padding: 0.5rem;
-`;
-
-const Title = styled.h3`
-  margin-bottom: 0.5rem;
-  color: #ff6b00;
-  text-align: center;
-  font-size: 1rem;
-`;
-
-const ModeSelector = styled.div`
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.25rem;
-  margin-bottom: 0.5rem;
-`;
-
-const ModeButton = styled.button<{ active: boolean }>`
-  padding: 0.25rem;
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
+const modes: PatternMode[] = ['AUTO', 'MANUAL', 'PRESET', 'OFF'];
   background: ${props => props.active ? 
     'linear-gradient(45deg, #ff6b00, #8a2be2)' : 
     'rgba(255, 255, 255, 0.05)'

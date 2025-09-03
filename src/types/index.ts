@@ -17,11 +17,19 @@ export type FrequencyRange = 'delta' | 'theta' | 'alpha' | 'beta' | 'gamma';
 
 export type ElectromagneticFieldState = 'INACTIVE' | 'CHARGING' | 'ACTIVE' | 'RESONANT' | 'CRITICAL';
 
+type WaveForm = {
+  sine: 'sine';
+  square: 'square';
+  triangle: 'triangle';
+  sawtooth: 'sawtooth';
+}
+
 export interface Position3D {
   x: number;
   y: number;
   z: number;
 }
+
 
 export interface FrequencyPoint {
   frequency: number;
@@ -35,7 +43,7 @@ export interface BinauralBeatConfig {
   rightFreq: number;
   beatFreq: number;
   amplitude: number;
-  waveform: 'sine' | 'square' | 'triangle' | 'sawtooth';
+  waveform:  string;
 }
 
 export interface PatternConfig {
@@ -95,7 +103,7 @@ export interface AudioEngine {
   stopBinauralBeat: () => void;
   updateFrequency: (left: number, right: number) => void;
   updateVolume: (volume: number) => void;
-  updateWaveform: (waveform: 'sine' | 'square' | 'triangle' | 'sawtooth') => void;
+  updateWaveform: (waveForm: WaveForm) => void;
   loadPattern: (pattern: PatternConfig) => void;
   generateTestTones: (leftFreq: number, rightFreq: number, duration?: number) => void;
   frequencySweep: (startFreq: number, endFreq: number, duration: number) => void;

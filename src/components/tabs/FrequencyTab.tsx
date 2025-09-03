@@ -1,12 +1,8 @@
 // Electromagnetic Beat Lab - Frequency Tab Component
 
 import React from 'react';
-import styled from 'styled-components';
+import { Box, Typography } from '@mui/material';
 import type { AppState, AudioEngine, Pattern8D } from '../../types';
-
-const Container = styled.div`
-  padding: 1rem 0;
-`;
 
 interface FrequencyTabProps {
   appState: AppState;
@@ -18,10 +14,12 @@ interface FrequencyTabProps {
 
 const FrequencyTab: React.FC<FrequencyTabProps> = () => {
   return (
-    <Container>
-      <h4>Advanced Frequency Controls</h4>
-      <p>Frequency controls are available in the left panel.</p>
-    </Container>
+    <Box sx={{ py: 1 }}>
+      <Typography variant="h5" component="h4">
+        Advanced Frequency Controls
+      </Typography>
+      <Typography>Frequency controls are available in the left panel.</Typography>
+    </Box>
   );
 };
 
