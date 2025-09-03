@@ -1,32 +1,9 @@
 // Electromagnetic Beat Lab - Settings Tab Component
 
 import React from 'react';
-import styled from 'styled-components';
+import { Box, Paper, Typography } from '@mui/material';
 import SpatialAudioControls from '../SpatialAudioControls';
 import type { AppState, AudioEngine, Pattern8D } from '../../types';
-
-const Container = styled.div`
-  padding: 1rem 0;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-`;
-
-const Section = styled.div`
-  background: rgba(255, 255, 255, 0.02);
-  border-radius: 12px;
-  padding: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-`;
-
-const SectionTitle = styled.h4`
-  color: #ffd700;
-  margin-bottom: 1rem;
-  font-size: 1.1rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-`;
 
 interface SettingsTabProps {
   appState: AppState;
@@ -79,8 +56,22 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
   */
 
   return (
-    <Container>
-      <Section>
+    <Box
+      sx={{
+        py: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 1
+      }}
+    >
+      <Paper
+        sx={{
+          background: 'rgba(255, 255, 255, 0.02)',
+          borderRadius: 3,
+          p: 1,
+          border: '1px solid rgba(255, 255, 255, 0.1)'
+        }}
+      >
         <SpatialAudioControls
           settings={{
             enabled: appState.spatialAudio?.enabled || false,
@@ -93,58 +84,112 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
           }}
           onChange={handleSpatialSettingsChange}
         />
-      </Section>
+      </Paper>
 
-      <Section>
-        <SectionTitle>
+      <Paper
+        sx={{
+          background: 'rgba(255, 255, 255, 0.02)',
+          borderRadius: 3,
+          p: 1,
+          border: '1px solid rgba(255, 255, 255, 0.1)'
+        }}
+      >
+        <Typography
+          variant="h6"
+          component="h4"
+          sx={{
+            color: '#ffd700',
+            mb: 1,
+            fontSize: '1.1rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.5
+          }}
+        >
           ⚡ Backend Connection
-        </SectionTitle>
+        </Typography>
         {audioEngine.backendConnected ? (
-          <div style={{ color: '#00ff88' }}>
+          <Typography sx={{ color: '#00ff88' }}>
             ✅ Connected to backend (Session: {audioEngine.sessionId?.slice(-8)})
-          </div>
+          </Typography>
         ) : (
-          <div style={{ color: '#ff6b00' }}>
+          <Typography sx={{ color: '#ff6b00' }}>
             ⚠️ Using local audio engine
-          </div>
+          </Typography>
         )}
         
         {audioEngine.websocketState && (
-          <div style={{ marginTop: '0.5rem', fontSize: '0.9rem', color: '#e0e0e0' }}>
+          <Typography sx={{ mt: 0.5, fontSize: '0.9rem', color: '#e0e0e0' }}>
             WebSocket: {audioEngine.websocketState.connected ? 'Connected' : 
                       audioEngine.websocketState.connecting ? 'Connecting...' : 'Disconnected'}
             {audioEngine.websocketState.error && (
-              <div style={{ color: '#ff4444', marginTop: '0.25rem' }}>
+              <Typography component="div" sx={{ color: '#ff4444', mt: 0.25 }}>
                 Error: {audioEngine.websocketState.error}
-              </div>
+              </Typography>
             )}
-          </div>
+          </Typography>
         )}
-      </Section>
+      </Paper>
 
-      <Section>
-        <SectionTitle>
+      <Paper
+        sx={{
+          background: 'rgba(255, 255, 255, 0.02)',
+          borderRadius: 3,
+          p: 1,
+          border: '1px solid rgba(255, 255, 255, 0.1)'
+        }}
+      >
+        <Typography
+          variant="h6"
+          component="h4"
+          sx={{
+            color: '#ffd700',
+            mb: 1,
+            fontSize: '1.1rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.5
+          }}
+        >
           🔧 Audio Settings
-        </SectionTitle>
-        <div style={{ color: '#e0e0e0', fontSize: '0.9rem' }}>
-          <div>Sample Rate: {audioEngine.audioState?.context?.sampleRate || 44100} Hz</div>
-          <div>Audio Context State: {audioEngine.audioState?.context?.state || 'Not initialized'}</div>
-          <div>Web Audio Support: {audioEngine.isSupported ? '✅ Supported' : '❌ Not supported'}</div>
-        </div>
-      </Section>
+        </Typography>
+        <Box sx={{ color: '#e0e0e0', fontSize: '0.9rem' }}>
+          <Typography component="div">Sample Rate: {audioEngine.audioState?.context?.sampleRate || 44100} Hz</Typography>
+          <Typography component="div">Audio Context State: {audioEngine.audioState?.context?.state || 'Not initialized'}</Typography>
+          <Typography component="div">Web Audio Support: {audioEngine.isSupported ? '✅ Supported' : '❌ Not supported'}</Typography>
+        </Box>
+      </Paper>
 
-      <Section>
-        <SectionTitle>
+      <Paper
+        sx={{
+          background: 'rgba(255, 255, 255, 0.02)',
+          borderRadius: 3,
+          p: 1,
+          border: '1px solid rgba(255, 255, 255, 0.1)'
+        }}
+      >
+        <Typography
+          variant="h6"
+          component="h4"
+          sx={{
+            color: '#ffd700',
+            mb: 1,
+            fontSize: '1.1rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.5
+          }}
+        >
           📊 Performance
-        </SectionTitle>
-        <div style={{ color: '#e0e0e0', fontSize: '0.9rem' }}>
-          <div>Electromagnetic State: {appState.electromagnetic?.state || 'INACTIVE'}</div>
-          <div>Field Strength: {((appState.electromagnetic?.strength || 0) * 100).toFixed(1)}%</div>
-          <div>Coherence: {((appState.electromagnetic?.coherence || 0) * 100).toFixed(1)}%</div>
-          <div>Beat Frequency: {appState.frequency?.toFixed(2) || '0.00'} Hz</div>
-        </div>
-      </Section>
-    </Container>
+        </Typography>
+        <Box sx={{ color: '#e0e0e0', fontSize: '0.9rem' }}>
+          <Typography component="div">Electromagnetic State: {appState.electromagnetic?.state || 'INACTIVE'}</Typography>
+          <Typography component="div">Field Strength: {((appState.electromagnetic?.strength || 0) * 100).toFixed(1)}%</Typography>
+          <Typography component="div">Coherence: {((appState.electromagnetic?.coherence || 0) * 100).toFixed(1)}%</Typography>
+          <Typography component="div">Beat Frequency: {appState.frequency?.toFixed(2) || '0.00'} Hz</Typography>
+        </Box>
+      </Paper>
+    </Box>
   );
 };
 

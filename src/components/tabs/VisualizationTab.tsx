@@ -1,12 +1,8 @@
 // Electromagnetic Beat Lab - Visualization Tab Component
 
 import React from 'react';
-import styled from 'styled-components';
+import { Box, Typography } from '@mui/material';
 import type { AppState, AudioEngine, Pattern8D } from '../../types';
-
-const Container = styled.div`
-  padding: 1rem 0;
-`;
 
 interface VisualizationTabProps {
   appState: AppState;
@@ -17,10 +13,12 @@ interface VisualizationTabProps {
 
 const VisualizationTab: React.FC<VisualizationTabProps> = () => {
   return (
-    <Container>
-      <h4>Visualization Settings</h4>
-      <p>Visualization controls coming soon.</p>
-    </Container>
+    <Box sx={{ py: 1 }}>
+      <Typography variant="h5" component="h4">
+        Visualization Settings
+      </Typography>
+      <Typography>Visualization controls coming soon.</Typography>
+    </Box>
   );
 };
 

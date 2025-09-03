@@ -2,21 +2,8 @@
 // 3D visualization of electromagnetic field patterns
 
 import React, { useEffect, useRef, useCallback } from 'react';
-import styled from 'styled-components';
+import { Box } from '@mui/material';
 import type { SpatialVisualizerProps, ElectromagneticField } from '../types/index';
-
-const Container = styled.div`
-  width: 100%;
-  height: 100%;
-  position: relative;
-  overflow: hidden;
-`;
-
-const Canvas = styled.canvas`
-  width: 100%;
-  height: 100%;
-  background: transparent;
-`;
 
 const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
   pattern,
@@ -195,9 +182,24 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
   }, [animate, size]);
 
   return (
-    <Container>
-      <Canvas ref={canvasRef} />
-    </Container>
+    <Box
+      sx={{
+        width: '100%',
+        height: '100%',
+        position: 'relative',
+        overflow: 'hidden'
+      }}
+    >
+      <Box
+        component="canvas"
+        ref={canvasRef}
+        sx={{
+          width: '100%',
+          height: '100%',
+          background: 'transparent'
+        }}
+      />
+    </Box>
   );
 };
 

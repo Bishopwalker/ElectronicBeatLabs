@@ -1,12 +1,8 @@
 // Electromagnetic Beat Lab - YouTube Tab Component
 
 import React from 'react';
-import styled from 'styled-components';
+import { Box, Typography } from '@mui/material';
 import type { AppState, AudioEngine, Pattern8D } from '../../types';
-
-const Container = styled.div`
-  padding: 1rem 0;
-`;
 
 interface YouTubeTabProps {
   appState: AppState;
@@ -17,10 +13,12 @@ interface YouTubeTabProps {
 
 const YouTubeTab: React.FC<YouTubeTabProps> = () => {
   return (
-    <Container>
-      <h4 style={{ color: '#ff0000' }}>YouTube Integration</h4>
-      <p>YouTube sync functionality coming soon.</p>
-    </Container>
+    <Box sx={{ py: 1 }}>
+      <Typography variant="h5" component="h4" sx={{ color: '#ff0000' }}>
+        YouTube Integration
+      </Typography>
+      <Typography>YouTube sync functionality coming soon.</Typography>
+    </Box>
   );
 };
 
