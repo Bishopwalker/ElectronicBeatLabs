@@ -3,7 +3,7 @@ import { Box, Button, Card, CardContent, Typography, Alert, CircularProgress } f
 import { useAuth } from '../hooks/useAuth';
 
 export const SimpleAuth: React.FC = () => {
-  const { user, usage, requiresLogin } = useAuth();
+  const { user, usage, requiresLogin, loginAsAdmin, logout, isAdmin } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -93,6 +93,21 @@ export const SimpleAuth: React.FC = () => {
             >
               Login with GitHub
             </Button>
+
+            {/* Development Admin Login */}
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={loginAsAdmin}
+              sx={{ 
+                background: 'linear-gradient(45deg, #ff6b00, #8a2be2)',
+                '&:hover': {
+                  background: 'linear-gradient(45deg, #ff8533, #9944d9)',
+                }
+              }}
+            >
+              🔑 DEV: Login as Admin
+            </Button>
           </Box>
 
           <Typography variant="caption" display="block" sx={{ mt: 2, textAlign: 'center' }}>
@@ -117,12 +132,16 @@ export const SimpleAuth: React.FC = () => {
             </Typography>
           </Box>
           
-          <Button size="small" onClick={() => alert('Logout functionality')}>
+          <Button size="small" onClick={logout}>
             Logout
           </Button>
         </Box>
 
-        {user.is_premium ? (
+        {isAdmin ? (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            🔑 Administrator - Full access to all features!
+          </Alert>
+        ) : user.is_premium ? (
           <Alert severity="success" sx={{ mb: 2 }}>
             🎵 Premium subscriber - unlimited usage!
           </Alert>

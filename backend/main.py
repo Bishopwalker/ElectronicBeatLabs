@@ -3,28 +3,27 @@ Electromagnetic Beat Lab - FastAPI Backend
 Main application entry point
 """
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, Depends
+import asyncio
+import time
+from datetime import datetime
+from typing import Dict, List
+import psutil
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
-import asyncio
-import json
-import time
-import psutil
-from typing import Dict, List
-from datetime import datetime
 
 from core.audio_engine import AudioEngine
 from core.field_simulator import FieldSimulator
+# Import simplified database and auth
+from database.database import init_db
 from modules.binaural import BinauralBeatGenerator
 from modules.spatial_audio import SpatialAudioProcessor
 from protocols.adhd_protocols import ADHDProtocols
-from utils.logger import setup_logger, RequestLogger, AudioLogger
-from utils.metrics import MetricsCollector, get_metrics, CONTENT_TYPE_LATEST
-
-# Import simplified database and auth
-from database.database import init_db
+from routes.audio_websocket import router as audio_router
 from routes.simple_routes import router as simple_router
 from routes.timer import router as timer_router
+from utils.logger import setup_logger, RequestLogger, AudioLogger
+from utils.metrics import MetricsCollector, get_metrics, CONTENT_TYPE_LATEST
 
 # Setup logging
 logger = setup_logger(name="ebl.main", level="DEBUG", env="development")
@@ -40,6 +39,7 @@ app = FastAPI(
 # Include simplified auth and subscription routes
 app.include_router(simple_router, prefix="/api")
 app.include_router(timer_router, prefix="/api")
+app.include_router(audio_router, prefix="/api")
 
 # Initialize database on startup
 @app.on_event("startup")

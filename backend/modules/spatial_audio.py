@@ -45,8 +45,13 @@ class SpatialAudioProcessor:
         session["pan_phase"] = session["pan_phase"] % (2 * np.pi)
         
         # Apply auto-panning with specified intensity
-        left_processed = audio_left * (1 - pan_values * intensity)
-        right_processed = audio_right * (1 + pan_values * intensity)
+        # CRITICAL: Maintain binaural separation - left freq stays left, right freq stays right
+        # Only apply spatial movement without cross-channel bleeding
+        left_gain = 0.5 + (pan_values * intensity * 0.5)  # Range: 0.5 ± intensity*0.5
+        right_gain = 0.5 - (pan_values * intensity * 0.5) # Inverse for spatial movement
+        
+        left_processed = audio_left * np.clip(left_gain, 0.1, 1.0)
+        right_processed = audio_right * np.clip(right_gain, 0.1, 1.0)
         
         # Apply reverb if enabled
         if session["reverb_enabled"]:

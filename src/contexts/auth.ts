@@ -3,6 +3,7 @@ import { createContext } from 'react';
 export interface User {
   email: string;
   is_premium: boolean;
+  is_admin: boolean;
   oauth_provider: string;
   stripe_customer_id?: string;
   name?: string;
@@ -21,11 +22,13 @@ export interface AuthContextType {
   loading: boolean;
   requiresLogin: boolean;
   login: (provider: string, token: string) => Promise<void>;
+  loginAsAdmin: () => void;
   logout: () => void;
   recordUsage: (minutes: number) => Promise<void>;
   refreshUsage: () => Promise<void>;
   canUseApp: () => boolean;
   isSubscribed: boolean;
+  isAdmin: boolean;
   keycloakReady: boolean;
 }
 

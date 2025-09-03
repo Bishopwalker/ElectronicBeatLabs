@@ -20,31 +20,49 @@
 
 ## EXAMPLES:
 
-### 1. Basic Binaural Beat Generator (`examples/binauralbeats.html`)
+### 1. Qt Multimedia Audio Engine Reference (`examples/qt-multimedia-audioengine-reference.md`)
+- Professional audio processing patterns and buffer management
+- Spatial audio positioning and multi-channel processing
+- Performance optimization techniques for real-time audio
+- **Application**: Guides implementation of Web Audio API and Python audio engine
+
+### 2. Qt Multimedia Audio Input Reference (`examples/qt-multimedia-audioinput-reference.md`)
+- Real-time audio input capture and device management
+- Audio level monitoring and visualization techniques
+- Cross-platform microphone access patterns
+- **Application**: Audio feedback monitoring, voice control, and binaural beat validation
+
+### 3. AudioKit AudioEngine Reference (`examples/audiokit-audioengine-reference.md`)
+- Professional node-based audio graph architecture
+- Real-time DSP operations and parameter automation
+- Cross-platform audio engine management
+- **Application**: Modular audio processing design, zero-latency performance patterns
+
+### 4. Basic Binaural Beat Generator (`examples/binauralbeats.html`)
 - Web Audio API implementation with dual oscillators
 - Left/right channel separation for binaural effect
 - Real-time frequency control
 - **Enhancement Needed**: Add preset buttons, visualization, save/load functionality
 
-### 2. ADHD Protocol Examples
+### 5. ADHD Protocol Examples
 - **SMR Training**: 12-14 Hz for attention and impulse control
 - **Theta Suppression**: Beta enhancement to reduce daydreaming
 - **Executive Function**: Multi-stage protocols with gamma bursts
 - **Morning Activation**: Quick 15-minute energy boost sequence
 
-### 3. EM Field Visualization Examples
+### 6. EM Field Visualization Examples
 - **Toroidal Field**: Rotating torus patterns synchronized with beat frequency
 - **Spherical Harmonic**: Pulsating spherical waves with multiple harmonics
 - **Vortex Pattern**: Spiral field formations for deep focus states
 - **Standing Wave**: Interference patterns for cognitive enhancement
 
-### 4. WebSocket Streaming Examples
+### 7. WebSocket Streaming Examples
 - Real-time audio frame streaming at 60 FPS
 - Field data synchronization with audio
 - Session management with unique IDs
 - Live parameter updates during sessions
 
-### 5. React Component Examples
+### 8. React Component Examples
 - `SpatialVisualizer`: 3D field visualization with WebGL
 - `FrequencyDisplay`: Real-time spectrum analysis
 - `PatternSelector`: ADHD protocol selection interface
