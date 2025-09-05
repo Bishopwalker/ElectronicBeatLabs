@@ -2,24 +2,22 @@
 // Advanced binaural beats generator with electromagnetic field visualization
 
 import React, {useCallback, useEffect, useState} from 'react';
-import {Box, Typography, Grid, Paper, Collapse, IconButton, Card, CardContent, Chip} from '@mui/material';
+import {Box, Card, CardContent, Chip, Collapse, IconButton, Paper, Typography} from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import type {AppState, ElectromagneticBeatLabProps, PatternMode} from '../types/index';
+import type {AppState, ElectromagneticBeatLabProps, PatternMode} from '../types';
 
 import {useMasterAudioControl} from '../hooks/useMasterAudioControl';
 import {PATTERN_PRESETS, WAVE_PATTERNS} from '../data/patterns';
 
 import StarField from './StarField';
 import SpatialVisualizer from './SpatialVisualizer';
-import FrequencyDisplayMUI from './FrequencyDisplayMUI';
 import PatternSelectorMUI from './PatternSelectorMUI';
 import ElectromagneticStatus from './ElectromagneticStatus';
-import WaveGuidePanelMUI from './WaveGuidePanelMUI';
 import MainControlsMUI from './MainControlsMUI';
 import ControlTabs from './ControlTabs';
 import MasterStopControl from './MasterStopControl';
-import BinauralGeneratorMUI   from "./BinauralGeneratorMUI.tsx";
+import BinauralGeneratorMUI from "./BinauralGeneratorMUI.tsx";
 // Tab Components
 import FrequencyTab from './tabs/FrequencyTab';
 import PatternTab from './tabs/PatternTab';
@@ -92,9 +90,8 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
 
 const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
   initialPattern,
-  autoStart = false,
-  fullscreen = false
-}) => {
+  autoStart = false
+                                                                       }) => {
   // State management
   const [closedSections, setClosedSections] = useState<string[]>([]);
   const [appState, setAppState] = useState<AppState>({
@@ -133,7 +130,8 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
         fps: 60,
         cpuUsage: 0,
         memoryUsage: 0
-      }
+      },
+      state: ''
     },
     visualizations: {
       starField: {
@@ -294,6 +292,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
       'adhdID': { title: 'ADHD Protocol', icon: '⚡' },
       'patternID': { title: 'Patterns', icon: '🌀' }
     };
+    // @ts-expect-error cause i'm not making n object just 4 this
     return sections[id] || { title: 'Unknown', icon: '❓' };
   };
   // Tab configuration
