@@ -57,13 +57,31 @@ interface TimerStatus {
   subscription_required?: boolean;
 }
 
-const TimerControls: React.FC = () => {
+interface TimerControlsProps {
+  audioEngine?: {
+    startBinauralBeat: (config: any) => void;
+    stopBinauralBeat: () => void;
+    updateFrequency: (left: number, right: number) => void;
+    audioState: {
+      isPlaying: boolean;
+    };
+  };
+}
+
+const TimerControls: React.FC<TimerControlsProps> = ({ audioEngine }) => {
   const { user } = useAuth();
   const [presets, setPresets] = useState<TimerPreset[]>([]);
   const [selectedPresetId, setSelectedPresetId] = useState<string>('');
   const [timerStatus, setTimerStatus] = useState<TimerStatus | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [localTimer, setLocalTimer] = useState<{
+    startTime: number;
+    currentTransitionIndex: number;
+    transitions: FrequencyTransition[];
+    isActive: boolean;
+    isPaused: boolean;
+  } | null>(null);
 
   // Load presets on component mount
   useEffect(() => {
@@ -74,36 +92,68 @@ const TimerControls: React.FC = () => {
   useEffect(() => {
     let interval: NodeJS.Timeout;
     
-    if (timerStatus?.session?.is_active) {
-      interval = setInterval(loadTimerStatus, 5000); // Poll every 5 seconds
+    if (localTimer?.isActive && !localTimer?.isPaused) {
+      interval = setInterval(loadTimerStatus, 1000); // Update every second
     }
 
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [timerStatus?.session?.is_active]);
+  }, [localTimer?.isActive, localTimer?.isPaused, selectedPresetId]);
 
   const loadPresets = async () => {
-    // if (!user) return;
-    
+    // Mock presets for development
     try {
       setLoading(true);
       setError(null);
       
-      const response = await fetch('/api/timer/presets', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token') || 'dummy'}`,
-          'Content-Type': 'application/json',
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const mockPresets: TimerPreset[] = [
+        {
+          id: 'focus-30min',
+          name: 'Focus Session - 30min',
+          description: 'Beta waves for concentration and productivity',
+          total_duration: 30,
+          transitions_count: 3,
+          tags: ['focus', 'beta', 'productivity'],
+          is_premium: false,
+          available: true
         },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setPresets(data.filter((item: any) => item.type !== 'subscription_promotion'));
-      } else {
-        setError('Failed to load timer presets');
-      }
+        {
+          id: 'meditation-20min', 
+          name: 'Meditation - 20min',
+          description: 'Alpha to theta progression for deep relaxation',
+          total_duration: 20,
+          transitions_count: 2,
+          tags: ['meditation', 'alpha', 'theta'],
+          is_premium: false,
+          available: true
+        },
+        {
+          id: 'sleep-60min',
+          name: 'Sleep Induction - 60min',
+          description: 'Progressive delta waves for natural sleep',
+          total_duration: 60,
+          transitions_count: 4,
+          tags: ['sleep', 'delta', 'relaxation'],
+          is_premium: true,
+          available: true
+        },
+        {
+          id: 'lucid-dream-45min',
+          name: 'Lucid Dreaming - 45min', 
+          description: 'Theta-Delta-REM pattern for lucid states',
+          total_duration: 45,
+          transitions_count: 3,
+          tags: ['lucid', 'theta', 'rem'],
+          is_premium: true,
+          available: true
+        }
+      ];
+      
+      setPresets(mockPresets);
     } catch (err) {
       setError('Error loading presets');
       console.error('Error loading presets:', err);
@@ -113,56 +163,200 @@ const TimerControls: React.FC = () => {
   };
 
   const loadTimerStatus = async () => {
-    // if (!user) return;
+    if (!localTimer || !localTimer.isActive) return;
     
-    try {
-      const response = await fetch('/api/timer/status', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token') || 'dummy'}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        const status = await response.json();
-        setTimerStatus(status);
+    const now = Date.now();
+    const elapsed = Math.floor((now - localTimer.startTime) / 1000 / 60); // minutes
+    
+    // Calculate current transition
+    let currentTransitionIndex = 0;
+    let elapsedInTransitions = elapsed;
+    
+    for (let i = 0; i < localTimer.transitions.length; i++) {
+      if (elapsedInTransitions >= localTimer.transitions[i].duration_minutes) {
+        elapsedInTransitions -= localTimer.transitions[i].duration_minutes;
+        currentTransitionIndex++;
+      } else {
+        break;
       }
-    } catch (err) {
-      console.error('Error loading timer status:', err);
+    }
+    
+    if (currentTransitionIndex >= localTimer.transitions.length) {
+      // Timer finished
+      setLocalTimer(null);
+      setTimerStatus(null);
+      return;
+    }
+    
+    const currentTransition = localTimer.transitions[currentTransitionIndex];
+    const nextTransition = localTimer.transitions[currentTransitionIndex + 1] || null;
+    const timeRemainingCurrent = currentTransition.duration_minutes - elapsedInTransitions;
+    
+    const totalTimeRemaining = localTimer.transitions
+      .slice(currentTransitionIndex)
+      .reduce((sum, t, i) => {
+        if (i === 0) return sum + timeRemainingCurrent;
+        return sum + t.duration_minutes;
+      }, 0);
+    
+    const mockSession: TimerSession = {
+      session_id: 'mock-session-' + Date.now(),
+      preset_id: selectedPresetId,
+      user_id: 'mock-user',
+      start_time: new Date(localTimer.startTime).toISOString(),
+      current_transition_index: currentTransitionIndex,
+      elapsed_minutes: elapsed,
+      is_active: localTimer.isActive,
+      is_paused: localTimer.isPaused
+    };
+    
+    const status: TimerStatus = {
+      session: mockSession,
+      current_transition: currentTransition,
+      next_transition: nextTransition,
+      time_remaining_current: timeRemainingCurrent,
+      time_remaining_total: totalTimeRemaining
+    };
+    
+    setTimerStatus(status);
+    
+    // Update audio engine with current frequencies
+    if (audioEngine && currentTransition) {
+      audioEngine.updateFrequency(currentTransition.left_ear_hz, currentTransition.right_ear_hz);
     }
   };
 
   const startTimer = async () => {
     if (!selectedPresetId) return;
-    // if (!selectedPresetId || !user) return;
     
     try {
       setLoading(true);
       setError(null);
       
-      const response = await fetch('/api/timer/start', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token') || 'dummy'}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          preset_id: selectedPresetId
-        }),
-      });
-
-      if (response.ok) {
-        const status = await response.json();
-        setTimerStatus(status);
-      } else {
-        const errorData = await response.json();
-        if (errorData.detail?.includes('subscription')) {
-          setError('Premium subscription required for this preset');
-        } else {
-          setError('Failed to start timer');
-        }
+      // Create mock transitions based on preset
+      const mockTransitions: FrequencyTransition[] = [];
+      
+      switch (selectedPresetId) {
+        case 'focus-30min':
+          mockTransitions.push(
+            {
+              duration_minutes: 10,
+              frequency_hz: 15,
+              frequency_type: 'Beta',
+              left_ear_hz: 440,
+              right_ear_hz: 455,
+              description: 'Beta waves for focus activation'
+            },
+            {
+              duration_minutes: 15,
+              frequency_hz: 20,
+              frequency_type: 'Beta',
+              left_ear_hz: 440,
+              right_ear_hz: 460,
+              description: 'High beta for peak concentration'
+            },
+            {
+              duration_minutes: 5,
+              frequency_hz: 12,
+              frequency_type: 'Alpha',
+              left_ear_hz: 440,
+              right_ear_hz: 452,
+              description: 'Alpha cool-down'
+            }
+          );
+          break;
+        case 'meditation-20min':
+          mockTransitions.push(
+            {
+              duration_minutes: 10,
+              frequency_hz: 10,
+              frequency_type: 'Alpha',
+              left_ear_hz: 440,
+              right_ear_hz: 450,
+              description: 'Alpha relaxation'
+            },
+            {
+              duration_minutes: 10,
+              frequency_hz: 6,
+              frequency_type: 'Theta',
+              left_ear_hz: 440,
+              right_ear_hz: 446,
+              description: 'Deep theta meditation'
+            }
+          );
+          break;
+        case 'sleep-60min':
+          mockTransitions.push(
+            {
+              duration_minutes: 15,
+              frequency_hz: 8,
+              frequency_type: 'Alpha',
+              left_ear_hz: 440,
+              right_ear_hz: 448,
+              description: 'Initial relaxation'
+            },
+            {
+              duration_minutes: 15,
+              frequency_hz: 4,
+              frequency_type: 'Theta',
+              left_ear_hz: 440,
+              right_ear_hz: 444,
+              description: 'Pre-sleep theta'
+            },
+            {
+              duration_minutes: 20,
+              frequency_hz: 2,
+              frequency_type: 'Delta',
+              left_ear_hz: 440,
+              right_ear_hz: 442,
+              description: 'Deep delta sleep'
+            },
+            {
+              duration_minutes: 10,
+              frequency_hz: 1,
+              frequency_type: 'Delta',
+              left_ear_hz: 440,
+              right_ear_hz: 441,
+              description: 'Ultra-deep delta'
+            }
+          );
+          break;
+        default:
+          mockTransitions.push({
+            duration_minutes: 5,
+            frequency_hz: 10,
+            frequency_type: 'Alpha',
+            left_ear_hz: 440,
+            right_ear_hz: 450,
+            description: 'Default session'
+          });
       }
+      
+      const timer = {
+        startTime: Date.now(),
+        currentTransitionIndex: 0,
+        transitions: mockTransitions,
+        isActive: true,
+        isPaused: false
+      };
+      
+      setLocalTimer(timer);
+      
+      // Start audio with first transition frequencies
+      if (audioEngine && mockTransitions.length > 0) {
+        const firstTransition = mockTransitions[0];
+        const config = {
+          leftFreq: firstTransition.left_ear_hz,
+          rightFreq: firstTransition.right_ear_hz,
+          beatFreq: firstTransition.frequency_hz,
+          amplitude: 0.5,
+          waveform: 'sine' as const
+        };
+        audioEngine.startBinauralBeat(config);
+      }
+      
+      loadTimerStatus();
+      
     } catch (err) {
       setError('Error starting timer');
       console.error('Error starting timer:', err);
@@ -172,24 +366,23 @@ const TimerControls: React.FC = () => {
   };
 
   const controlTimer = async (action: 'pause' | 'resume' | 'stop') => {
-    // if (!user) return;
+    if (!localTimer) return;
     
     try {
       setLoading(true);
       
-      const response = await fetch('/api/timer/control', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token') || 'dummy'}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ action }),
-      });
-
-      if (response.ok) {
-        const status = await response.json();
-        setTimerStatus(status);
+      if (action === 'stop') {
+        if (audioEngine) {
+          audioEngine.stopBinauralBeat();
+        }
+        setLocalTimer(null);
+        setTimerStatus(null);
+      } else if (action === 'pause') {
+        setLocalTimer({...localTimer, isPaused: true});
+      } else if (action === 'resume') {
+        setLocalTimer({...localTimer, isPaused: false});
       }
+      
     } catch (err) {
       console.error(`Error ${action} timer:`, err);
     } finally {

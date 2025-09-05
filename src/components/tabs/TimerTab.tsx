@@ -11,7 +11,7 @@ interface TimerTabProps {
   onStateChange: (state: Partial<AppState>) => void;
 }
 
-const TimerTab: React.FC<TimerTabProps> = () => {
+const TimerTab: React.FC<TimerTabProps> = ({ audioEngine }) => {
   return (
     <Box
       sx={{
@@ -47,7 +47,7 @@ const TimerTab: React.FC<TimerTabProps> = () => {
         Schedule automated frequency transitions for extended sessions. 
         Perfect for sleep induction, meditation progressions, and lucid dreaming protocols.
       </Typography>
-      <TimerControls />
+      <TimerControls audioEngine={audioEngine} />
     </Box>
   );
 };
