@@ -2,7 +2,7 @@
 // Pattern selection and management interface
 
 import React from 'react';
-import { Box, Typography, Grid, Card, CardContent, Chip } from '@mui/material';
+import { Box, Typography, Card, CardContent, Chip } from '@mui/material';
 import type { PatternConfig, PatternPreset, AppState, AudioEngine, Pattern8D } from '../../types/index';
 
 interface PatternTabProps {
@@ -31,9 +31,9 @@ const PatternTab: React.FC<PatternTabProps> = ({
         >
           Electromagnetic Wave Patterns
         </Typography>
-        <Grid container spacing={1}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 1 }}>
           {patterns.map((pattern) => (
-            <Grid xs={12} sm={6} md={4} key={pattern.id}>
+            <Box key={pattern.id}>
               <Card
                 onClick={() => onPatternSelect(pattern.id)}
                 sx={{
@@ -146,9 +146,9 @@ const PatternTab: React.FC<PatternTabProps> = ({
                   </Typography>
                 </CardContent>
               </Card>
-            </Grid>
+            </Box>
           ))}
-        </Grid>
+        </Box>
       </Box>
       
       <Box>
@@ -159,9 +159,9 @@ const PatternTab: React.FC<PatternTabProps> = ({
         >
           Quick Presets
         </Typography>
-        <Grid container spacing={1}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 1 }}>
           {presets.map((preset) => (
-            <Grid xs={12} sm={6} md={4} key={preset.id}>
+            <Box key={preset.id}>
               <Card
                 onClick={() => onPatternSelect(preset.pattern.id)}
                 sx={{
@@ -226,9 +226,9 @@ const PatternTab: React.FC<PatternTabProps> = ({
                   </Box>
                 </CardContent>
               </Card>
-            </Grid>
+            </Box>
           ))}
-        </Grid>
+        </Box>
       </Box>
     </Box>
   );
