@@ -2,7 +2,7 @@
 // Tab navigation for different control panels
 
 import React from 'react';
-import { Box, Tabs, Tab } from '@mui/material';
+import { Tabs, Tab } from '@mui/material';
 import type {ControlTabsProps} from '../types/index';
 
 

@@ -132,7 +132,7 @@
             <line number="253" hits="0" branch="false"/>
           </lines>
         </class>
-        <class name="BinauralTestMUI.tsx" filename="src\components\BinauralTestMUI.tsx" line-rate="0" branch-rate="0">
+        <class name="BinauralGeneratorMUI.tsx" filename="src\components\BinauralGeneratorMUI.tsx" line-rate="0" branch-rate="0">
           <methods>
             <method name="(anonymous_1)" hits="0" signature="()V">
               <lines>

@@ -84,7 +84,7 @@ const TimerControls: React.FC = () => {
   }, [timerStatus?.session?.is_active]);
 
   const loadPresets = async () => {
-    if (!user) return;
+    // if (!user) return;
     
     try {
       setLoading(true);
@@ -113,7 +113,7 @@ const TimerControls: React.FC = () => {
   };
 
   const loadTimerStatus = async () => {
-    if (!user) return;
+    // if (!user) return;
     
     try {
       const response = await fetch('/api/timer/status', {
@@ -134,7 +134,8 @@ const TimerControls: React.FC = () => {
   };
 
   const startTimer = async () => {
-    if (!selectedPresetId || !user) return;
+    if (!selectedPresetId) return;
+    // if (!selectedPresetId || !user) return;
     
     try {
       setLoading(true);
@@ -171,7 +172,7 @@ const TimerControls: React.FC = () => {
   };
 
   const controlTimer = async (action: 'pause' | 'resume' | 'stop') => {
-    if (!user) return;
+    // if (!user) return;
     
     try {
       setLoading(true);
@@ -207,15 +208,15 @@ const TimerControls: React.FC = () => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  if (!user) {
-    return (
-      <Box p={3}>
-        <Alert severity="info">
-          Please log in to access timer functionality
-        </Alert>
-      </Box>
-    );
-  }
+  // if (!user) {
+  //   return (
+  //     <Box p={3}>
+  //       <Alert severity="info">
+  //         Please log in to access timer functionality
+  //       </Alert>
+  //     </Box>
+  //   );
+  // }
 
   return (
     <Box p={3}>

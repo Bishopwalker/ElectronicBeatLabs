@@ -36,7 +36,16 @@
       "Bash(start http://localhost:5173)",
       "Bash(start http://localhost:5174)",
       "Bash(start http://localhost:5175)",
-      "Bash(start http://localhost:5176)"
+      "Bash(start http://localhost:5176)",
+      "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\src\\components/**)",
+      "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\src/**)",
+      "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\src\\components/**)",
+      "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\src\\hooks/**)",
+      "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\src\\types/**)",
+      "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\src\\components\\tabs/**)",
+      "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\src\\components/**)",
+      "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\src\\components/**)",
+      "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\src\\components/**)"
     ],
     "deny": [],
     "ask": []

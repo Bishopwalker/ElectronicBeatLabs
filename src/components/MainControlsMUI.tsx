@@ -15,7 +15,7 @@ import {
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import StopIcon from '@mui/icons-material/Stop';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
-import type { MainControlsProps } from '../types/index';
+import type { MainControlsProps } from '../types';
 
 const MainControlsMUI: React.FC<MainControlsProps> = ({
   isPlaying,
@@ -30,8 +30,8 @@ const MainControlsMUI: React.FC<MainControlsProps> = ({
 
   return (
     <Card sx={{ 
-      maxHeight: 250,
-      overflow: 'auto',
+      minHeight: 650,
+      overflow: 'scroll',
       background: 'rgba(138, 43, 226, 0.05)',
       borderColor: 'rgba(138, 43, 226, 0.3)',
       '&::-webkit-scrollbar': {

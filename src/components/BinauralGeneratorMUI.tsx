@@ -18,22 +18,30 @@ import HeadphonesIcon from '@mui/icons-material/Headphones';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import StopIcon from '@mui/icons-material/Stop';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import type { BinauralTestProps } from '../types/index';
+import { useAudioEngine } from '../hooks/useAudioEngine';
+import type { BinauralTestProps } from '../types';
 
-const BinauralTestMUI: React.FC<BinauralTestProps> = ({
+const BinauralGeneratorMUI: React.FC<BinauralTestProps> = ({
   leftFreq,
   rightFreq,
   onFrequencyChange
 }) => {
   const [localLeft, setLocalLeft] = useState(leftFreq.toString());
   const [localRight, setLocalRight] = useState(rightFreq.toString());
-  const [isPlaying, setIsPlaying] = useState(false);
+ // const [isPlaying, setIsPlaying] = useState(false);
+
+    const audioEngine = useAudioEngine();
 
   const handleLeftChange = (value: string) => {
     setLocalLeft(value);
     const freq = parseFloat(value);
     if (!isNaN(freq) && freq >= 20 && freq <= 20000) {
-      onFrequencyChange(freq, rightFreq);
+      onFrequencyChange(freq, parseFloat(localRight));
+      
+      // Update live audio if playing
+      if (audioEngine.audioState.isPlaying) {
+        audioEngine.updateFrequency(freq, parseFloat(localRight));
+      }
     }
   };
 
@@ -41,15 +49,32 @@ const BinauralTestMUI: React.FC<BinauralTestProps> = ({
     setLocalRight(value);
     const freq = parseFloat(value);
     if (!isNaN(freq) && freq >= 20 && freq <= 20000) {
-      onFrequencyChange(leftFreq, freq);
+      onFrequencyChange(parseFloat(localLeft), freq);
+      
+      // Update live audio if playing
+      if (audioEngine.audioState.isPlaying) {
+        audioEngine.updateFrequency(parseFloat(localLeft), freq);
+      }
     }
   };
 
-  const handleTest = () => {
-    setIsPlaying(!isPlaying);
-  };
-
-  const beatFrequency = Math.abs(leftFreq - rightFreq);
+    const handleTest = () => {
+        if (audioEngine.audioState.isPlaying) {
+            // Stop audio
+            audioEngine.stopBinauralBeat();
+        } else {
+            // Start audio with current frequencies
+            const config = {
+                leftFreq: parseFloat(localLeft),
+                rightFreq: parseFloat(localRight),
+                beatFreq: Math.abs(parseFloat(localRight) - parseFloat(localLeft)),
+                amplitude: 0.5,
+                waveform: 'sine' as const
+            };
+            audioEngine.startBinauralBeat(config);
+        }
+    };
+  const beatFrequency = Math.abs(audioEngine.audioState.rightFreq - audioEngine.audioState.leftFreq);
 
   const handleReset = () => {
     const defaultLeft = 440;
@@ -61,7 +86,7 @@ const BinauralTestMUI: React.FC<BinauralTestProps> = ({
 
   return (
     <Card sx={{ 
-      maxHeight: 160,
+      maxHeight: 300,
       overflow: 'auto',
       background: 'rgba(0, 191, 255, 0.05)',
       borderColor: 'rgba(0, 191, 255, 0.3)',
@@ -81,7 +106,7 @@ const BinauralTestMUI: React.FC<BinauralTestProps> = ({
         <Stack direction="row" alignItems="center" justifyContent="center" spacing={0.5} mb={0.5}>
           <HeadphonesIcon color="info" />
           <Typography variant="subtitle1" align="center" color="info">
-            Binaural Test
+            Binaural Beat Generator
           </Typography>
         </Stack>
         
@@ -196,23 +221,23 @@ const BinauralTestMUI: React.FC<BinauralTestProps> = ({
           <Stack direction="row" spacing={0.5}>
             <Button
               variant="contained"
-              color={isPlaying ? "error" : "info"}
+              color={audioEngine.audioState.isPlaying ? "error" : "info"}
               onClick={handleTest}
-              startIcon={isPlaying ? <StopIcon /> : <PlayArrowIcon />}
+              startIcon={audioEngine.audioState.isPlaying ? <StopIcon /> : <PlayArrowIcon />}
               fullWidth
               size="small"
               sx={{
-                background: isPlaying 
+                background: audioEngine.audioState.isPlaying
                   ? 'linear-gradient(45deg, #ff0066, #ff6b00)'
                   : 'linear-gradient(45deg, #00bfff, #8a2be2)',
                 '&:hover': {
-                  background: isPlaying
+                  background: audioEngine.audioState.isPlaying
                     ? 'linear-gradient(45deg, #ff3388, #ff8533)'
                     : 'linear-gradient(45deg, #33ccff, #9944d9)',
                 }
               }}
             >
-              {isPlaying ? 'Stop Test' : 'Test'}
+                {audioEngine.audioState.isPlaying ? 'Stop' : 'Play'}
             </Button>
             
             <IconButton 
@@ -232,10 +257,10 @@ const BinauralTestMUI: React.FC<BinauralTestProps> = ({
           
           <Stack direction="row" spacing={0.5} justifyContent="center">
             <Chip label="20Hz - 20kHz Range" size="small" sx={{ fontSize: '0.65rem' }} />
-            <Chip 
-              label={isPlaying ? "Testing..." : "Ready"} 
-              color={isPlaying ? "success" : "default"}
-              size="small" 
+            <Chip
+                label={audioEngine.audioState.isPlaying ? "Playing..." : "Ready"}
+                color={audioEngine.audioState.isPlaying ? "success" : "default"}
+              size="small"
               sx={{ fontSize: '0.65rem' }}
             />
           </Stack>
@@ -245,4 +270,4 @@ const BinauralTestMUI: React.FC<BinauralTestProps> = ({
   );
 };
 
-export default BinauralTestMUI;
+export default BinauralGeneratorMUI;
