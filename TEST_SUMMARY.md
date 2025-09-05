@@ -56,7 +56,7 @@ New npm scripts in `package.json`:
   - Pattern selection handling
   - UI state management
 
-- **`BinauralTestMUI.test.tsx`** - Binaural beat testing component
+- **`BinauralGeneratorMUI.test.tsx`** - Binaural beat testing component
   - Test interface rendering
   - Backend communication
   - Frequency controls

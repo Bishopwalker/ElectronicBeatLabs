@@ -83,7 +83,7 @@ npm run test:full
 - **ElectromagneticBeatLab.test.tsx**: Main application component
 - **FrequencyDisplayMUI.test.tsx**: Frequency display and controls
 - **PatternSelectorMUI.test.tsx**: Pattern selection interface
-- **BinauralTestMUI.test.tsx**: Binaural beat testing component
+- **BinauralGeneratorMUI.test.tsx**: Binaural beat testing component
 
 #### Hook Tests
 - **useAudioEngine.test.ts**: Audio generation and management

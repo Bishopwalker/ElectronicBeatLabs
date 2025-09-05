@@ -17,12 +17,7 @@ export type FrequencyRange = 'delta' | 'theta' | 'alpha' | 'beta' | 'gamma';
 
 export type ElectromagneticFieldState = 'INACTIVE' | 'CHARGING' | 'ACTIVE' | 'RESONANT' | 'CRITICAL';
 
-type WaveForm = {
-  sine: 'sine';
-  square: 'square';
-  triangle: 'triangle';
-  sawtooth: 'sawtooth';
-}
+export type WaveForm = 'sine' | 'square' | 'triangle' | 'sawtooth';
 
 export interface Position3D {
   x: number;
@@ -43,7 +38,7 @@ export interface BinauralBeatConfig {
   rightFreq: number;
   beatFreq: number;
   amplitude: number;
-  waveform:  string;
+  waveform: WaveForm;
 }
 
 export interface PatternConfig {

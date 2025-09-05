@@ -2,7 +2,9 @@
 // Advanced binaural beats generator with electromagnetic field visualization
 
 import React, {useCallback, useEffect, useState} from 'react';
-import { Box, Typography, Grid, Paper } from '@mui/material';
+import {Box, Typography, Grid, Paper, Collapse, IconButton, Card, CardContent, Chip} from '@mui/material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import type {AppState, ElectromagneticBeatLabProps, PatternMode} from '../types/index';
 
 import {useMasterAudioControl} from '../hooks/useMasterAudioControl';
@@ -17,7 +19,7 @@ import WaveGuidePanelMUI from './WaveGuidePanelMUI';
 import MainControlsMUI from './MainControlsMUI';
 import ControlTabs from './ControlTabs';
 import MasterStopControl from './MasterStopControl';
-import BinauralTestMUI   from "./BinauralTestMUI.tsx";
+import BinauralGeneratorMUI   from "./BinauralGeneratorMUI.tsx";
 // Tab Components
 import FrequencyTab from './tabs/FrequencyTab';
 import PatternTab from './tabs/PatternTab';
@@ -29,21 +31,72 @@ import SettingsTab from './tabs/SettingsTab';
 import GuideTab from './tabs/GuideTab';
 
 
+// Collapsible Section Component with close/restore functionality
+interface CollapsibleSectionProps {
+  id: string;
+  title: string;
+  icon: string;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+  onClose?: (id: string) => void;
+}
 
-
-
-
-
-
-
-
-
+const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({ 
+  id,
+  title, 
+  icon, 
+  children, 
+  defaultOpen = false,
+  onClose 
+}) => {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+  
+  const handleSectionClose = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onClose) onClose(id);
+  };
+  
+  return (
+    <Card elevation={2} sx={{ mb: '10px', bgcolor: 'rgba(0, 0, 0, 0.3)', backdropFilter: 'blur(10px)' }}>
+      <Box 
+        sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          p: 1,
+          cursor: 'pointer',
+          borderBottom: isOpen ? '1px solid rgba(255, 255, 255, 0.1)' : 'none'
+        }}
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          {icon} {title}
+        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <IconButton size="small" onClick={handleSectionClose} sx={{ color: '#ff4444' }}>
+            ✕
+          </IconButton>
+          <IconButton size="small">
+            {isOpen ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+          </IconButton>
+        </Box>
+      </Box>
+      <Collapse in={isOpen}>
+        <CardContent sx={{ p: '10px !important' }}>
+          {children}
+        </CardContent>
+      </Collapse>
+    </Card>
+  );
+};
 
 const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
   initialPattern,
-  autoStart = false
+  autoStart = false,
+  fullscreen = false
 }) => {
   // State management
+  const [closedSections, setClosedSections] = useState<string[]>([]);
   const [appState, setAppState] = useState<AppState>({
     mode: 'AUTO',
     currentPattern: null,
@@ -218,6 +271,31 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
     setAppState(prev => ({ ...prev, activeTab: tabId }));
   }, []);
 
+  const handleSectionClose = useCallback((id: string) => {
+    setClosedSections(prev => {
+      const index = prev.indexOf(id);
+      if (index > -1) {
+        return [...prev.slice(0, index), ...prev.slice(index + 1)];
+      }
+      return prev;
+    });
+  },[])
+
+  // Get section data for restore functionality
+  const getSectionData = (id: string) => {
+    const sections = {
+      'patterns': { title: 'Patterns', icon: '🌀' },
+      'waveguide': { title: 'Wave Guide', icon: '📡' },
+      'adhd': { title: 'ADHD Protocol', icon: '⚡' },
+      'freqID': { title: 'Frequency Display', icon: '📊' },
+      'visualizeID': { title: 'Visualization', icon: '🎨' },
+      'advanceControlsID': { title: 'Advanced Controls', icon: '⚙️' },
+      'waveGuideID': { title: 'Wave Guide', icon: '📡' },
+      'adhdID': { title: 'ADHD Protocol', icon: '⚡' },
+      'patternID': { title: 'Patterns', icon: '🌀' }
+    };
+    return sections[id] || { title: 'Unknown', icon: '❓' };
+  };
   // Tab configuration
   const tabs = [
     { id: 'patterns', label: 'Patterns', icon: '🌀', component: PatternTab, enabled: true },
@@ -284,7 +362,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
   };
 
   return (
-    <Box sx={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden' }}>
+    <Box sx={{ width: '100vw', height: '100vh', overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
       {/* Background Star Field */}
       <StarField {...appState.visualizations.starField} />
 
@@ -292,22 +370,23 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
       <Paper
         elevation={0}
         sx={{
-          position: 'absolute',
+          position: 'sticky',
           top: 0,
           left: 0,
           right: 0,
           zIndex: 100,
           p: 1,
           display: 'flex',
-          justifyContent: 'space-between',
+          justifyContent: 'flex-end',
           alignItems: 'center',
           backdropFilter: 'blur(10px)',
           bgcolor: 'rgba(0, 0, 0, 0.2)',
           borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-          minHeight: 40
+          minHeight: 40,
+          flexShrink: 0
         }}
       >
-        <Typography variant="h4" sx={{ fontWeight: 700, m: 0 }}>
+        <Typography variant="h4"   sx={{fontWeight:700, m: 0 }}>
           Bishop's Electromagnetic Beat Lab
         </Typography>
         <Box sx={{ display: 'flex', gap: 0.25, alignItems: 'center', fontSize: '0.75rem' }}>
@@ -318,138 +397,146 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
         </Box>
       </Paper>
 
-      {/* Main Interface */}
-      <Grid
-        container
-        sx={{
-          position: 'realitive',
-          top: '40px',
-          left: 0,
-          right: 0,
-          bottom: 0,
-          p: 1,
-          overflow: 'hidden'
-        }}
-        spacing={1}
-      >
-        {/* Left Panel - Controls and Pattern Selection */}
-        <Grid item xs={12} md={3} lg={3}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, height: '100%', overflow: 'auto' }}>
-          <MasterStopControl
-            activeStatus={masterAudio.activeStatus}
-            onMasterStop={masterAudio.masterStop}
-            onMasterStart={masterAudio.quickStart}
-            frequencies={masterAudio.frequencies}
-            volume={masterAudio.volume}
-          />
+      {/* 3 Column Layout */}
+      <Box sx={{ flex: 1, p: '10px', display: 'flex', gap: '10px', height: 'calc(100vh - 60px)' }}>
+        {/* Left Column - Controls */}
+        <Box sx={{ 
+          flex: '1 1 33.33%',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '10px'
+        }}>
+          <CollapsibleSection id="masterControls" title="Master Controls" icon="🎛️" defaultOpen={true}>
+            <MasterStopControl
+              activeStatus={masterAudio.activeStatus}
+              onMasterStop={masterAudio.masterStop}
+              onMasterStart={masterAudio.quickStart}
+              frequencies={masterAudio.frequencies}
+              volume={masterAudio.volume}
+            />
+            <Box sx={{ mt: 1 }}>
+              <MainControlsMUI
+                isPlaying={appState.isPlaying}
+                volume={appState.volume}
+                onPlay={handlePlay}
+                onStop={handleStop}
+                onVolumeChange={handleVolumeChange}
+              />
+            </Box>
+          </CollapsibleSection>
+          
+          <CollapsibleSection id="patternID" title="Patterns" icon="🌀" defaultOpen={true}>
+            <PatternSelectorMUI
+              patterns={WAVE_PATTERNS}
+              selected={appState.currentPattern?.id || null}
+              mode={appState.mode}
+              onSelect={handlePatternSelect}
+              onModeChange={handleModeChange}
+            />
+          </CollapsibleSection>
+        </Box>
 
-          <PatternSelectorMUI
-            patterns={WAVE_PATTERNS}
-            selected={appState.currentPattern?.id || null}
-            mode={appState.mode}
-            onSelect={handlePatternSelect}
-            onModeChange={handleModeChange}
-          />
+        {/* Middle Column - Binaural Beat Generator */}
+        <Box sx={{ 
+          flex: '1 1 33.33%',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '10px'
+        }}>
+          <CollapsibleSection id="binauralBeats" title="Binaural Beat Generator" icon="🎧" defaultOpen={true}>
+            <Box sx={{ height: 'auto', overflow: 'visible' }}>
+              <BinauralGeneratorMUI
+                leftFreq={audioEngine.audioState.leftFreq || 440}
+                rightFreq={audioEngine.audioState.rightFreq || 444}
+                onFrequencyChange={(left, right) => audioEngine.updateFrequency(left, right)}
+              />
+            </Box>
+          </CollapsibleSection>
+        </Box>
 
-          <FrequencyDisplayMUI
-            frequency={appState.frequency}
-            beatFreq={appState.frequency}
-            target={appState.currentPattern?.frequencies.carrier || 440}
-            range={appState.currentPattern?.frequencies.range || 'alpha'}
-            onChange={handleFrequencyChange}
-          />
-
-          <MainControlsMUI
-            isPlaying={appState.isPlaying}
-            volume={appState.volume}
-            onPlay={handlePlay}
-            onStop={handleStop}
-            onVolumeChange={handleVolumeChange}
-          />
-
-          <BinauralTestMUI
-            leftFreq={audioEngine.audioState.leftFreq || 440}
-            rightFreq={audioEngine.audioState.rightFreq || 444}
-            onFrequencyChange={(left, right) => audioEngine.updateFrequency(left, right)}
-          />
-          </Box>
-        </Grid>
-
-        {/* Center Panel - Main Visualization */}
-        <Grid item xs={12} md={6} lg={6}>
-          <Box sx={{ position: 'relative', height: '100%', minHeight: 300 }}>
-            <Paper
-              elevation={3}
-              sx={{
-                width: '100%',
-                height: '100%',
-                borderRadius: 3,
-                overflow: 'hidden',
-                background: 'radial-gradient(circle at center, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.95) 100%)'
-              }}
-            >
-              {patterns8D.activePattern && (
-                <SpatialVisualizer
-                  pattern={patterns8D.activePattern}
-                  electromagnetic={appState.electromagnetic}
-                  size={400}
-                />
-              )}
-            </Paper>
-            
-            <Box
-              sx={{
-                position: 'absolute',
-                bottom: 1,
-                left: 1,
-                right: 1,
-                zIndex: 50
-              }}
-            >
-              <Paper elevation={4} sx={{ p: 2, backdropFilter: 'blur(10px)', bgcolor: 'rgba(0, 0, 0, 0.8)' }}>
-                <ControlTabs
-                  tabs={tabs}
-                  activeTab={appState.activeTab}
-                  onTabChange={handleTabChange}
-                />
-                
-                <Box
-                  sx={{
-                    minHeight: 300,
-                    maxHeight: 600,
-                    overflowY: 'auto',
-                    pr: 1,
-                    mt: 2
-                  }}
-                >
-                  {renderTabContent()}
-                </Box>
+        {/* Right Column - Visualization & Advanced */}
+        <Box sx={{ 
+          flex: '1 1 33.33%',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '10px'
+        }}>
+          <CollapsibleSection id="visualizeID" title="Visualization" icon="🎨" defaultOpen={true}>
+            <Box sx={{ position: 'relative', height: '250px' }}>
+              <Paper
+                elevation={3}
+                sx={{
+                  width: '100%',
+                  height: '100%',
+                  borderRadius: 3,
+                  overflow: 'hidden',
+                  background: 'radial-gradient(circle at center, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.95) 100%)'
+                }}
+              >
+                {patterns8D.activePattern && (
+                  <SpatialVisualizer
+                    pattern={patterns8D.activePattern}
+                    electromagnetic={appState.electromagnetic}
+                    size={300}
+                  />
+                )}
               </Paper>
             </Box>
-          </Box>
-        </Grid>
-
-        {/* Right Panel - Wave Guide and Advanced Controls */}
-        <Grid item xs={12} md={3} lg={3} sx={{ display: { xs: 'none', lg: 'block' } }}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, height: '100%', overflow: 'auto' }}>
-            <WaveGuidePanelMUI
-              config={{
-                type: 'toroidal',
-                dimensions: { width: 200, height: 200, depth: 100 },
-                material: 'copper',
-                resonance: appState.frequency,
-                impedance: 377
-              }}
-              onChange={(config) => {
-                // Handle wave guide configuration change
-                console.log('Wave guide config changed:', config);
-              }}
+          </CollapsibleSection>
+          
+          <CollapsibleSection id="advanceControlsID" title="Advanced Controls" icon="⚙️" defaultOpen={false}>
+            <ControlTabs
+              tabs={tabs.filter(tab => !['timer'].includes(tab.id))}
+              activeTab={appState.activeTab}
+              onTabChange={handleTabChange}
             />
+            <Box sx={{ height: '200px', overflowY: 'auto', pr: 1, mt: 2 }}>
+              {renderTabContent()}
+            </Box>
+          </CollapsibleSection>
+          
+          <CollapsibleSection id="timerPanel" title="Timer & Sessions" icon="⏰" defaultOpen={true}>
+            <Box sx={{ height: '300px', overflowY: 'auto' }}>
+              <TimerTab
+                appState={appState}
+                audioEngine={audioEngine}
+                patterns8D={patterns8D.patterns}
+                onStateChange={(partialState) => setAppState(prev => ({ ...prev, ...partialState }))}
+              />
+            </Box>
+          </CollapsibleSection>
+        </Box>
+
+        {/* Restore Tabs for Closed Sections - Fixed Position */}
+        {closedSections.length > 0 && (
+          <Box sx={{ 
+            position: 'fixed', 
+            bottom: 10, 
+            right: 10, 
+            zIndex: 1000,
+            maxWidth: 300
+          }}>
+            <Paper elevation={2} sx={{ p: 1, bgcolor: 'rgba(0, 0, 0, 0.8)', backdropFilter: 'blur(10px)' }}>
+              <Typography variant="body2" sx={{ mb: 1, color: '#888' }}>Closed sections:</Typography>
+              <Box sx={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+                {closedSections.map(sectionId => {
+                  const sectionData = getSectionData(sectionId);
+                  return (
+                    <Chip
+                      key={sectionId}
+                      label={`${sectionData.icon} ${sectionData.title}`}
+                      onClick={() => handleSectionClose(sectionId)}
+                      size="small"
+                      sx={{ cursor: 'pointer', bgcolor: 'rgba(255, 255, 255, 0.1)' }}
+                    />
+                  );
+                })}
+              </Box>
+            </Paper>
           </Box>
-        </Grid>
-      </Grid>
-      
-      {/* All audio controls now consolidated in MasterStopControl above */}
+        )}
+      </Box>
+
     </Box>
   );
 };

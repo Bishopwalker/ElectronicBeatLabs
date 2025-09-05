@@ -1358,7 +1358,7 @@ import type {AppState, ElectromagneticBeatLabProps, PatternMode} from '../types/
 <span class="cstat-no" title="statement not covered" >import WaveGuidePanelMUI from './WaveGuidePanelMUI';</span>
 <span class="cstat-no" title="statement not covered" >import MainControlsMUI from './MainControlsMUI';</span>
 <span class="cstat-no" title="statement not covered" >import ControlTabs from './ControlTabs';</span>
-<span class="cstat-no" title="statement not covered" >import BinauralTestMUI from './BinauralTestMUI';</span>
+<span class="cstat-no" title="statement not covered" >import BinauralGeneratorMUI from './BinauralGeneratorMUI';</span>
 <span class="cstat-no" title="statement not covered" >import SimpleAudioTest from './SimpleAudioTest';</span>
 <span class="cstat-no" title="statement not covered" >import QuickStartGuide from './QuickStartGuide';</span>
 &nbsp;
@@ -1916,7 +1916,7 @@ const ElectromagneticBeatLab: React.FC&lt;ElectromagneticBeatLabProps&gt; = <spa
             onVolumeChange={handleVolumeChange}
           /&gt;
 &nbsp;
-          &lt;BinauralTestMUI
+          &lt;BinauralGeneratorMUI
             leftFreq={audioEngine.audioState.leftFreq || 440}
             rightFreq={audioEngine.audioState.rightFreq || 444}
             onFrequencyChange={<span class="fstat-no" title="function not covered" >(l</span>eft, right) =&gt; <span class="cstat-no" title="statement not covered" >audioEngine.updateFrequency(left, right)}</span>
