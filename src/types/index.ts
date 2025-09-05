@@ -145,6 +145,7 @@ export interface FrequencyAnalysis {
 }
 
 export interface SystemStatus {
+  state: string;
   electromagnetic: ElectromagneticField;
   audio: {
     latency: number;
