@@ -33,7 +33,7 @@ const PatternTab: React.FC<PatternTabProps> = ({
         </Typography>
         <Grid container spacing={1}>
           {patterns.map((pattern) => (
-            <Grid item xs={12} sm={6} md={4} key={pattern.id}>
+            <Grid xs={12} sm={6} md={4} key={pattern.id}>
               <Card
                 onClick={() => onPatternSelect(pattern.id)}
                 sx={{
@@ -161,7 +161,7 @@ const PatternTab: React.FC<PatternTabProps> = ({
         </Typography>
         <Grid container spacing={1}>
           {presets.map((preset) => (
-            <Grid item xs={12} sm={6} md={4} key={preset.id}>
+            <Grid xs={12} sm={6} md={4} key={preset.id}>
               <Card
                 onClick={() => onPatternSelect(preset.pattern.id)}
                 sx={{
