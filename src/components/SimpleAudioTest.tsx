@@ -2,51 +2,7 @@
 // Basic binaural beat test for immediate audio verification
 
 import React, { useState } from 'react';
-import styled from 'styled-components';
-
-const Container = styled.div`
-  position: fixed;
-  top: 50px;
-  right: 10px;
-  background: rgba(0, 0, 0, 0.9);
-  padding: 1rem;
-  border-radius: 8px;
-  border: 2px solid #ff6b00;
-  z-index: 1000;
-  min-width: 200px;
-`;
-
-const Title = styled.h3`
-  color: #ff6b00;
-  margin: 0 0 1rem 0;
-  font-size: 1rem;
-`;
-
-const Button = styled.button`
-  background: linear-gradient(45deg, #ff6b00, #8a2be2);
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-  margin: 0.25rem 0;
-  width: 100%;
-  
-  &:hover {
-    background: linear-gradient(45deg, #ff8533, #9944d9);
-  }
-  
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-`;
-
-const Status = styled.div<{ $isPlaying: boolean }>`
-  color: ${props => props.$isPlaying ? '#00ff88' : '#666'};
-  font-size: 0.8rem;
-  margin-top: 0.5rem;
-`;
+import { Box, Typography, Button } from '@mui/material';
 
 const SimpleAudioTest: React.FC = () => {
   const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
@@ -128,27 +84,80 @@ const SimpleAudioTest: React.FC = () => {
   };
 
   return (
-    <Container>
-      <Title>🎵 Audio Test</Title>
+    <Box
+      sx={{
+        position: 'fixed',
+        top: 50,
+        right: 10,
+        background: 'rgba(0, 0, 0, 0.9)',
+        p: 2,
+        borderRadius: 2,
+        border: '2px solid #ff6b00',
+        zIndex: 1000,
+        minWidth: 200
+      }}
+    >
+      <Typography
+        variant="h6"
+        sx={{
+          color: '#ff6b00',
+          m: 0,
+          mb: 2,
+          fontSize: '1rem'
+        }}
+      >
+        🎵 Audio Test
+      </Typography>
       
-      <Button 
+      <Button
+        variant="contained"
         onClick={startTest}
         disabled={isPlaying}
+        fullWidth
+        sx={{
+          background: 'linear-gradient(45deg, #ff6b00, #8a2be2)',
+          mb: 1,
+          '&:hover': {
+            background: 'linear-gradient(45deg, #ff8533, #9944d9)',
+          },
+          '&:disabled': {
+            opacity: 0.5
+          }
+        }}
       >
         Start 4Hz Beat
       </Button>
       
-      <Button 
+      <Button
+        variant="contained"
         onClick={stopTest}
         disabled={!isPlaying}
+        fullWidth
+        sx={{
+          background: 'linear-gradient(45deg, #ff6b00, #8a2be2)',
+          mb: 1,
+          '&:hover': {
+            background: 'linear-gradient(45deg, #ff8533, #9944d9)',
+          },
+          '&:disabled': {
+            opacity: 0.5
+          }
+        }}
       >
         Stop Audio
       </Button>
       
-      <Status $isPlaying={isPlaying}>
+      <Typography
+        variant="body2"
+        sx={{
+          color: isPlaying ? '#00ff88' : '#666',
+          fontSize: '0.8rem',
+          mt: 1
+        }}
+      >
         {isPlaying ? '▶ Playing 4Hz Binaural Beat' : '⏹ Audio Stopped'}
-      </Status>
-    </Container>
+      </Typography>
+    </Box>
   );
 };
 
