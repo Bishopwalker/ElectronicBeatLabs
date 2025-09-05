@@ -32,7 +32,7 @@ const ADHDTab: React.FC<ADHDTabProps> = ({
       
       <Grid container spacing={1}>
         {ADHD_PROTOCOLS.map((protocol) => (
-          <Grid item xs={12} key={protocol.id}>
+          <Grid item xs={12} sm={6} xl={3}  key={protocol.id}>
             <Paper
               onClick={() => handleProtocolSelect(protocol)}
               sx={{

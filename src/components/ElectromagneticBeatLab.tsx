@@ -16,8 +16,7 @@ import PatternSelectorMUI from './PatternSelectorMUI';
 import ElectromagneticStatus from './ElectromagneticStatus';
 import MainControlsMUI from './MainControlsMUI';
 import ControlTabs from './ControlTabs';
-import MasterStopControl from './MasterStopControl';
-import BinauralGeneratorMUI from "./BinauralGeneratorMUI.tsx";
+ import BinauralGeneratorMUI from "./BinauralGeneratorMUI.tsx";
 // Tab Components
 import FrequencyTab from './tabs/FrequencyTab';
 import PatternTab from './tabs/PatternTab';
@@ -27,6 +26,7 @@ import ADHDTab from './tabs/ADHDTab';
 import YouTubeTab from './tabs/YouTubeTab';
 import SettingsTab from './tabs/SettingsTab';
 import GuideTab from './tabs/GuideTab';
+import MasterStopControl from "./MasterStopControl.tsx";
 
 
 // Collapsible Section Component with close/restore functionality

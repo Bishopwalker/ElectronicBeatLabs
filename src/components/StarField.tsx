@@ -2,19 +2,8 @@
 // Dynamic starfield with electromagnetic field interactions
 
 import React, { useEffect, useRef, useCallback } from 'react';
-import styled from 'styled-components';
+import { Box } from '@mui/material';
 import type { StarFieldProps } from '../types/index';
-
-const Canvas = styled.canvas`
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: -10;
-  background: transparent;
-  pointer-events: none;
-`;
 
 interface Star {
   x: number;
@@ -316,7 +305,22 @@ const StarField: React.FC<StarFieldProps> = ({
     }
   }, [density, speed, color, initializeStars]);
 
-  return <Canvas ref={canvasRef} />;
+  return (
+    <Box
+      component="canvas"
+      ref={canvasRef}
+      sx={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100vw',
+        height: '100vh',
+        zIndex: -10,
+        background: 'transparent',
+        pointerEvents: 'none'
+      }}
+    />
+  );
 };
 
 export default StarField;
