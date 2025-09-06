@@ -3,7 +3,7 @@
 
 import React from 'react';
 import { Box, Typography, Card, CardContent, Chip } from '@mui/material';
-import type { PatternConfig, PatternPreset, AppState, AudioEngine, Pattern8D } from '../../types/index';
+import type { PatternConfig, PatternPreset, AppState, AudioEngine, Pattern8D } from '../../types';
 
 interface PatternTabProps {
   patterns: PatternConfig[];
@@ -19,8 +19,17 @@ const PatternTab: React.FC<PatternTabProps> = ({
   patterns,
   presets,
   appState,
-  onPatternSelect
+  onPatternSelect,
+  onStateChange
 }) => {
+  
+  const handlePatternSelect = (patternId: string) => {
+    const pattern = patterns.find(p => p.id === patternId);
+    if (pattern && onStateChange) {
+      onStateChange({ currentPattern: pattern });
+    }
+    onPatternSelect(patternId);
+  };
   return (
     <Box sx={{ py: 1 }}>
       <Box sx={{ mb: 2 }}>
@@ -35,7 +44,7 @@ const PatternTab: React.FC<PatternTabProps> = ({
           {patterns.map((pattern) => (
             <Box key={pattern.id}>
               <Card
-                onClick={() => onPatternSelect(pattern.id)}
+                onClick={() => handlePatternSelect(pattern.id)}
                 sx={{
                   background: appState.currentPattern?.id === pattern.id
                     ? 'rgba(255, 215, 0, 0.1)'
@@ -163,7 +172,7 @@ const PatternTab: React.FC<PatternTabProps> = ({
           {presets.map((preset) => (
             <Box key={preset.id}>
               <Card
-                onClick={() => onPatternSelect(preset.pattern.id)}
+                onClick={() => handlePatternSelect(preset.pattern.id)}
                 sx={{
                   background: 'rgba(255, 255, 255, 0.02)',
                   border: '1px solid rgba(255, 255, 255, 0.1)',

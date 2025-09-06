@@ -77,7 +77,7 @@ export const useUsageTracking = () => {
     return () => {
       endSession();
     };
-  }, [endSession]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return {
     startSession,

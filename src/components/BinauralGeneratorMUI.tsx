@@ -1,7 +1,7 @@
 // Electromagnetic Beat Lab - Binaural Test Component (Material UI)
 // Test individual left/right frequencies
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Card,
   CardContent,
@@ -26,35 +26,33 @@ const BinauralGeneratorMUI: React.FC<BinauralTestProps> = ({
   rightFreq,
   onFrequencyChange
 }) => {
-  const [localLeft, setLocalLeft] = useState(leftFreq.toString());
-  const [localRight, setLocalRight] = useState(rightFreq.toString());
- // const [isPlaying, setIsPlaying] = useState(false);
+  // Use props directly for display, local state only for editing
+  const [editingLeft, setEditingLeft] = useState<string | null>(null);
+  const [editingRight, setEditingRight] = useState<string | null>(null);
 
-    const audioEngine = useAudioEngine();
+  const audioEngine = useAudioEngine();
 
   const handleLeftChange = (value: string) => {
-    setLocalLeft(value);
-    const freq = parseFloat(value);
-    if (!isNaN(freq) && freq >= 20 && freq <= 20000) {
-      onFrequencyChange(freq, parseFloat(localRight));
-      
-      // Update live audio if playing
-      if (audioEngine.audioState.isPlaying) {
-        audioEngine.updateFrequency(freq, parseFloat(localRight));
-      }
+    console.log('🎛️ Left Hz input changed:', value);
+    setEditingLeft(value);
+    
+    // Parse and update parent if valid number
+    const numValue = parseFloat(value);
+    if (!isNaN(numValue)) {
+      console.log('🎛️ Calling onFrequencyChange:', numValue, rightFreq);
+      onFrequencyChange(numValue, rightFreq);
     }
   };
 
   const handleRightChange = (value: string) => {
-    setLocalRight(value);
-    const freq = parseFloat(value);
-    if (!isNaN(freq) && freq >= 20 && freq <= 20000) {
-      onFrequencyChange(parseFloat(localLeft), freq);
-      
-      // Update live audio if playing
-      if (audioEngine.audioState.isPlaying) {
-        audioEngine.updateFrequency(parseFloat(localLeft), freq);
-      }
+    console.log('🎛️ Right Hz input changed:', value);
+    setEditingRight(value);
+    
+    // Parse and update parent if valid number
+    const numValue = parseFloat(value);
+    if (!isNaN(numValue)) {
+      console.log('🎛️ Calling onFrequencyChange:', leftFreq, numValue);
+      onFrequencyChange(leftFreq, numValue);
     }
   };
 
@@ -63,11 +61,17 @@ const BinauralGeneratorMUI: React.FC<BinauralTestProps> = ({
             // Stop audio
             audioEngine.stopBinauralBeat();
         } else {
+            // Use current prop values (which come from parent state)
+            const leftValue = leftFreq;
+            const rightValue = rightFreq;
+            
+            console.log('🎛️ Starting binaural beat:', leftValue, 'Hz /', rightValue, 'Hz');
+            
             // Start audio with current frequencies
             const config = {
-                leftFreq: parseFloat(localLeft),
-                rightFreq: parseFloat(localRight),
-                beatFreq: Math.abs(parseFloat(localRight) - parseFloat(localLeft)),
+                leftFreq: leftValue,
+                rightFreq: rightValue,
+                beatFreq: Math.abs(rightValue - leftValue),
                 amplitude: 0.5,
                 waveform: 'sine' as const
             };
@@ -76,11 +80,32 @@ const BinauralGeneratorMUI: React.FC<BinauralTestProps> = ({
     };
   const beatFrequency = Math.abs(audioEngine.audioState.rightFreq - audioEngine.audioState.leftFreq);
 
+  const handleLeftBlur = () => {
+    if (editingLeft !== null) {
+      const numValue = parseFloat(editingLeft);
+      if (!isNaN(numValue)) {
+        onFrequencyChange(numValue, rightFreq);
+      }
+    }
+    setEditingLeft(null);
+  };
+
+  const handleRightBlur = () => {
+    if (editingRight !== null) {
+      const numValue = parseFloat(editingRight);
+      if (!isNaN(numValue)) {
+        onFrequencyChange(leftFreq, numValue);
+      }
+    }
+    setEditingRight(null);
+  };
+
   const handleReset = () => {
+    setEditingLeft(null);
+    setEditingRight(null);
+    
     const defaultLeft = 440;
     const defaultRight = 444;
-    setLocalLeft(defaultLeft.toString());
-    setLocalRight(defaultRight.toString());
     onFrequencyChange(defaultLeft, defaultRight);
   };
 
@@ -125,15 +150,14 @@ const BinauralGeneratorMUI: React.FC<BinauralTestProps> = ({
                   LEFT EAR
                 </Typography>
                 <TextField
-                  type="number"
-                  value={localLeft}
+                  type="text"
+                  value={editingLeft !== null ? editingLeft : leftFreq.toString()}
+                  placeholder={`Current: ${leftFreq}`}
                   onChange={(e) => handleLeftChange(e.target.value)}
+                  onBlur={handleLeftBlur}
                   size="small"
                   fullWidth
                   inputProps={{ 
-                    min: 20, 
-                    max: 20000,
-                    step: 0.1,
                     style: { textAlign: 'center', fontFamily: 'monospace' }
                   }}
                   sx={{
@@ -167,15 +191,14 @@ const BinauralGeneratorMUI: React.FC<BinauralTestProps> = ({
                   RIGHT EAR
                 </Typography>
                 <TextField
-                  type="number"
-                  value={localRight}
+                  type="text"
+                  value={editingRight !== null ? editingRight : rightFreq.toString()}
+                  placeholder={`Current: ${rightFreq}`}
                   onChange={(e) => handleRightChange(e.target.value)}
+                  onBlur={handleRightBlur}
                   size="small"
                   fullWidth
                   inputProps={{ 
-                    min: 20, 
-                    max: 20000,
-                    step: 0.1,
                     style: { textAlign: 'center', fontFamily: 'monospace' }
                   }}
                   sx={{

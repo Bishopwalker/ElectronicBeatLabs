@@ -8,6 +8,7 @@ import GlobalStyles from './styles/GlobalStyles';
 import ElectromagneticBeatLab from './components/ElectromagneticBeatLab';
 import SimpleAuth from './components/SimpleAuth';
 import UsageTrackingExample from './components/UsageTrackingExample';
+import TimerTab from './components/tabs/TimerTab';
 import { AuthProvider } from './contexts/AuthContext';
 import { useAuth } from './hooks/useAuth';
 import { muiTheme } from './theme/muiTheme';
@@ -92,14 +93,19 @@ const AppContent = () => {
           <Tabs 
             value={activeTab} 
             onChange={(_, newValue) => setActiveTab(newValue)}
-            centered
+            variant="fullWidth"
             sx={{ 
               '& .MuiTab-root': { 
                 color: 'white',
+                minWidth: 0,
+                flex: 1,
                 '&.Mui-selected': { color: '#ff6b00' }
               },
               '& .MuiTabs-indicator': { 
                 backgroundColor: '#ff6b00' 
+              },
+              '& .MuiTabs-flexContainer': {
+                justifyContent: 'stretch'
               }
             }}
           >
@@ -116,8 +122,101 @@ const AppContent = () => {
             />
           )}
           {activeTab === 1 && (
-            <Box sx={{ p: 4, minHeight: 'calc(100vh - 64px)' }}>
-              <Typography variant="h4">Timer Controls (Coming Soon)</Typography>
+            <Box sx={{ p: 2, minHeight: 'calc(100vh - 64px)' }}>
+              <TimerTab 
+                appState={{
+                  mode: 'AUTO',
+                  currentPattern: null,
+                  frequency: 4.0,
+                  isPlaying: false,
+                  volume: 0.3,
+                  electromagnetic: {
+                    strength: 0,
+                    frequency: 0,
+                    phase: 0,
+                    coherence: 0,
+                    resonance: 0,
+                    state: 'INACTIVE',
+                    stability: 0
+                  },
+                  patterns8D: [],
+                  systemStatus: {
+                    electromagnetic: {
+                      strength: 0,
+                      frequency: 0,
+                      phase: 0,
+                      coherence: 0,
+                      resonance: 0,
+                      state: 'INACTIVE',
+                      stability: 0
+                    },
+                    audio: {
+                      latency: 0,
+                      sampleRate: 44100,
+                      bufferSize: 512,
+                      quality: 'HIGH'
+                    },
+                    performance: {
+                      fps: 60,
+                      cpuUsage: 0,
+                      memoryUsage: 0
+                    },
+                    state: ''
+                  },
+                  visualizations: {
+                    starField: {
+                      density: 100,
+                      speed: 1,
+                      color: '#ffffff',
+                      twinkle: true
+                    },
+                    spatial: {
+                      gridSize: 50,
+                      opacity: 0.3,
+                      color: '#00ff88',
+                      animation: true
+                    },
+                    frequency: {
+                      bars: 64,
+                      sensitivity: 1,
+                      color: '#ff6b00',
+                      glow: true
+                    }
+                  },
+                  spatialAudio: {
+                    enabled: true,
+                    hrtf: false,
+                    roomSize: 1,
+                    reverbAmount: 0.2,
+                    spatialWidth: 1,
+                    elevation: 0,
+                    azimuth: 0
+                  },
+                  youtube: {
+                    videoId: '',
+                    timestamp: 0,
+                    syncMode: 'audio',
+                    pythonScript: '',
+                    enabled: false
+                  },
+                  adhd: null,
+                  activeTab: 'timer'
+                }}
+                audioEngine={{
+                  startBinauralBeat: (config: any) => console.log('Starting binaural beat:', config),
+                  stopBinauralBeat: () => console.log('Stopping binaural beat'),
+                  updateFrequency: (left: number, right: number) => console.log('Updating frequency:', left, right),
+                  audioState: {
+                    isPlaying: false,
+                    leftFreq: 440,
+                    rightFreq: 444,
+                    beatFreq: 4,
+                    volume: 0.3
+                  }
+                } as any}
+                patterns8D={[]}
+                onStateChange={() => {}}
+              />
             </Box>
           )}
         </Box>

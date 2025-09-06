@@ -1,20 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { 
-  Box, 
-  Typography, 
-  Alert, 
-  Button, 
-  FormControl, 
-  InputLabel, 
-  Select, 
-  MenuItem, 
-  Card, 
-  CardContent, 
-  LinearProgress, 
+import {
+  Box,
+  Typography,
+  Alert,
+  Button,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Card,
+  CardContent,
+  LinearProgress,
   Chip,
-  CircularProgress
+  CircularProgress,
+  TextField,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
+  Grid,
+  Paper,
+
 } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 interface FrequencyTransition {
   duration_minutes: number;
@@ -59,7 +70,7 @@ interface TimerStatus {
 
 interface TimerControlsProps {
   audioEngine?: {
-    startBinauralBeat: (config: any) => void;
+    startBinauralBeat: (config: never) => void;
     stopBinauralBeat: () => void;
     updateFrequency: (left: number, right: number) => void;
     audioState: {
@@ -83,33 +94,54 @@ const TimerControls: React.FC<TimerControlsProps> = ({ audioEngine }) => {
     isPaused: boolean;
   } | null>(null);
 
+  // Track current transition to only update audioEngine on actual transitions
+  const currentTransitionIndexRef = useRef<number | null>(null);
+
+  // Custom preset creation state
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [customPreset, setCustomPreset] = useState({
+    name: '',
+    description: '',
+    transitions: [
+      {
+        duration_minutes: 10,
+        frequency_hz: 4,
+        frequency_type: 'Theta',
+        left_ear_hz: 440,
+        right_ear_hz: 444,
+        description: 'Theta waves'
+      }
+    ]
+  });
+
+  // Store custom preset transitions separately
+  const [customPresetTransitions, setCustomPresetTransitions] = useState<{[key: string]: FrequencyTransition[]}>({});
+
+  // Helper function to determine wave type from beat frequency
+  const getWaveTypeFromFrequency = (frequency: number): string => {
+    if (frequency >= 0.5 && frequency <= 4) return 'Delta';
+    if (frequency > 4 && frequency <= 8) return 'Theta';
+    if (frequency > 8 && frequency <= 13) return 'Alpha';
+    if (frequency > 13 && frequency <= 30) return 'Beta';
+    if (frequency > 30) return 'Gamma';
+    return 'Alpha'; // default
+  };
+
   // Load presets on component mount
   useEffect(() => {
     loadPresets();
   }, [user]);
 
-  // Poll for timer status when active
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    
-    if (localTimer?.isActive && !localTimer?.isPaused) {
-      interval = setInterval(loadTimerStatus, 1000); // Update every second
-    }
-
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [localTimer?.isActive, localTimer?.isPaused, selectedPresetId]);
+  // This useEffect will be moved after loadTimerStatus definition
 
   const loadPresets = async () => {
     // Mock presets for development
     try {
       setLoading(true);
       setError(null);
-      
+
       // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
+
       const mockPresets: TimerPreset[] = [
         {
           id: 'focus-30min',
@@ -122,7 +154,7 @@ const TimerControls: React.FC<TimerControlsProps> = ({ audioEngine }) => {
           available: true
         },
         {
-          id: 'meditation-20min', 
+          id: 'meditation-20min',
           name: 'Meditation - 20min',
           description: 'Alpha to theta progression for deep relaxation',
           total_duration: 20,
@@ -143,7 +175,7 @@ const TimerControls: React.FC<TimerControlsProps> = ({ audioEngine }) => {
         },
         {
           id: 'lucid-dream-45min',
-          name: 'Lucid Dreaming - 45min', 
+          name: 'Lucid Dreaming - 45min',
           description: 'Theta-Delta-REM pattern for lucid states',
           total_duration: 45,
           transitions_count: 3,
@@ -152,7 +184,7 @@ const TimerControls: React.FC<TimerControlsProps> = ({ audioEngine }) => {
           available: true
         }
       ];
-      
+
       setPresets(mockPresets);
     } catch (err) {
       setError('Error loading presets');
@@ -160,45 +192,46 @@ const TimerControls: React.FC<TimerControlsProps> = ({ audioEngine }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  const loadTimerStatus = async () => {
+  const loadTimerStatus = useCallback(async () => {
     if (!localTimer || !localTimer.isActive) return;
-    
+
     const now = Date.now();
     const elapsed = Math.floor((now - localTimer.startTime) / 1000 / 60); // minutes
-    
+
     // Calculate current transition
     let currentTransitionIndex = 0;
     let elapsedInTransitions = elapsed;
-    
-    for (let i = 0; i < localTimer.transitions.length; i++) {
-      if (elapsedInTransitions >= localTimer.transitions[i].duration_minutes) {
-        elapsedInTransitions -= localTimer.transitions[i].duration_minutes;
+
+    for (const element of localTimer.transitions) {
+      if (elapsedInTransitions >= element.duration_minutes) {
+        elapsedInTransitions -= element.duration_minutes;
         currentTransitionIndex++;
       } else {
         break;
       }
     }
-    
+
     if (currentTransitionIndex >= localTimer.transitions.length) {
       // Timer finished
       setLocalTimer(null);
       setTimerStatus(null);
+      currentTransitionIndexRef.current = null;
       return;
     }
-    
+
     const currentTransition = localTimer.transitions[currentTransitionIndex];
     const nextTransition = localTimer.transitions[currentTransitionIndex + 1] || null;
     const timeRemainingCurrent = currentTransition.duration_minutes - elapsedInTransitions;
-    
+
     const totalTimeRemaining = localTimer.transitions
       .slice(currentTransitionIndex)
       .reduce((sum, t, i) => {
         if (i === 0) return sum + timeRemainingCurrent;
         return sum + t.duration_minutes;
       }, 0);
-    
+
     const mockSession: TimerSession = {
       session_id: 'mock-session-' + Date.now(),
       preset_id: selectedPresetId,
@@ -209,7 +242,7 @@ const TimerControls: React.FC<TimerControlsProps> = ({ audioEngine }) => {
       is_active: localTimer.isActive,
       is_paused: localTimer.isPaused
     };
-    
+
     const status: TimerStatus = {
       session: mockSession,
       current_transition: currentTransition,
@@ -217,14 +250,29 @@ const TimerControls: React.FC<TimerControlsProps> = ({ audioEngine }) => {
       time_remaining_current: timeRemainingCurrent,
       time_remaining_total: totalTimeRemaining
     };
-    
+
     setTimerStatus(status);
-    
-    // Update audio engine with current frequencies
-    if (audioEngine && currentTransition) {
+
+    // Only update audio engine when transition actually changes
+    if (audioEngine && currentTransition && currentTransitionIndexRef.current !== currentTransitionIndex) {
+      console.log(`🔄 Timer transition changed to index ${currentTransitionIndex}: ${currentTransition.left_ear_hz}Hz / ${currentTransition.right_ear_hz}Hz`);
       audioEngine.updateFrequency(currentTransition.left_ear_hz, currentTransition.right_ear_hz);
+      currentTransitionIndexRef.current = currentTransitionIndex;
     }
-  };
+  }, [localTimer, audioEngine]);
+
+  // Poll for timer status when active
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+
+    if (localTimer?.isActive && !localTimer?.isPaused) {
+      interval = setInterval(loadTimerStatus, 1000); // Update every second
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [localTimer?.isActive, localTimer?.isPaused, loadTimerStatus]);
 
   const startTimer = async () => {
     if (!selectedPresetId) return;
@@ -233,12 +281,25 @@ const TimerControls: React.FC<TimerControlsProps> = ({ audioEngine }) => {
       setLoading(true);
       setError(null);
       
-      // Create mock transitions based on preset
+      // Reset transition tracking so first transition triggers
+      currentTransitionIndexRef.current = null;
+      
+      // Create transitions based on preset
       const mockTransitions: FrequencyTransition[] = [];
       
-      switch (selectedPresetId) {
+      // Handle custom presets
+      if (selectedPresetId.startsWith('custom-')) {
+        const customTransitions = customPresetTransitions[selectedPresetId];
+        if (customTransitions) {
+          mockTransitions.push(...customTransitions);
+        }
+      } else {
+        // Handle built-in presets
+        let baseTransitions = [];
+        
+        switch (selectedPresetId) {
         case 'focus-30min':
-          mockTransitions.push(
+          baseTransitions = [
             {
               duration_minutes: 10,
               frequency_hz: 15,
@@ -263,10 +324,10 @@ const TimerControls: React.FC<TimerControlsProps> = ({ audioEngine }) => {
               right_ear_hz: 452,
               description: 'Alpha cool-down'
             }
-          );
+          ];
           break;
         case 'meditation-20min':
-          mockTransitions.push(
+          baseTransitions = [
             {
               duration_minutes: 10,
               frequency_hz: 10,
@@ -283,10 +344,10 @@ const TimerControls: React.FC<TimerControlsProps> = ({ audioEngine }) => {
               right_ear_hz: 446,
               description: 'Deep theta meditation'
             }
-          );
+          ];
           break;
         case 'sleep-60min':
-          mockTransitions.push(
+          baseTransitions = [
             {
               duration_minutes: 15,
               frequency_hz: 8,
@@ -319,17 +380,35 @@ const TimerControls: React.FC<TimerControlsProps> = ({ audioEngine }) => {
               right_ear_hz: 441,
               description: 'Ultra-deep delta'
             }
-          );
+          ];
+          break;
+        case 'lucid-dream-45min':
+          baseTransitions = [
+            {
+              duration_minutes: 45,
+              frequency_hz: 6,
+              frequency_type: 'Theta',
+              left_ear_hz: 440,
+              right_ear_hz: 446,
+              description: 'Theta lucid dreaming'
+            }
+          ];
           break;
         default:
-          mockTransitions.push({
-            duration_minutes: 5,
-            frequency_hz: 10,
-            frequency_type: 'Alpha',
-            left_ear_hz: 440,
-            right_ear_hz: 450,
-            description: 'Default session'
-          });
+          baseTransitions = [
+            {
+              duration_minutes: 10,
+              frequency_hz: 10,
+              frequency_type: 'Alpha',
+              left_ear_hz: 440,
+              right_ear_hz: 450,
+              description: 'Default session'
+            }
+          ];
+        }
+        
+        // Use transitions as-is (no custom duration scaling for now)
+        mockTransitions.push(...baseTransitions);
       }
       
       const timer = {
@@ -377,6 +456,7 @@ const TimerControls: React.FC<TimerControlsProps> = ({ audioEngine }) => {
         }
         setLocalTimer(null);
         setTimerStatus(null);
+        currentTransitionIndexRef.current = null;
       } else if (action === 'pause') {
         setLocalTimer({...localTimer, isPaused: true});
       } else if (action === 'resume') {
@@ -399,6 +479,107 @@ const TimerControls: React.FC<TimerControlsProps> = ({ audioEngine }) => {
       return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }
     return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const addTransition = () => {
+    setCustomPreset(prev => ({
+      ...prev,
+      transitions: [...prev.transitions, {
+        duration_minutes: 10,
+        frequency_hz: 10,
+        frequency_type: 'Alpha',
+        left_ear_hz: 440,
+        right_ear_hz: 450,
+        description: 'New transition'
+      }]
+    }));
+  };
+
+  const removeTransition = (index: number) => {
+    setCustomPreset(prev => ({
+      ...prev,
+      transitions: prev.transitions.filter((_, i) => i !== index)
+    }));
+  };
+
+  const updateTransition = (index: number, field: string, value: any) => {
+    setCustomPreset(prev => {
+      const newTransitions = prev.transitions.map((t, i) => {
+        if (i === index) {
+          const updatedTransition = { ...t, [field]: value };
+          
+          // Auto-calculate beat frequency and wave type when ear frequencies change
+          if (field === 'left_ear_hz' || field === 'right_ear_hz') {
+            const leftEar = field === 'left_ear_hz' ? value : updatedTransition.left_ear_hz;
+            const rightEar = field === 'right_ear_hz' ? value : updatedTransition.right_ear_hz;
+            
+            // Parse values to numbers
+            const leftNum = parseFloat(leftEar);
+            const rightNum = parseFloat(rightEar);
+            
+            // Only calculate if both values are valid numbers
+            if (!isNaN(leftNum) && !isNaN(rightNum)) {
+              const beatFreq = Math.abs(rightNum - leftNum);
+              updatedTransition.frequency_hz = beatFreq;
+              updatedTransition.frequency_type = getWaveTypeFromFrequency(beatFreq);
+            }
+          }
+          
+          return updatedTransition;
+        }
+        return t;
+      });
+      
+      return {
+        ...prev,
+        transitions: newTransitions
+      };
+    });
+  };
+
+  const saveCustomPreset = () => {
+    if (!customPreset.name.trim()) {
+      setError('Please enter a preset name');
+      return;
+    }
+
+    const totalDuration = customPreset.transitions.reduce((sum, t) => sum + t.duration_minutes, 0);
+    const presetId = `custom-${Date.now()}`;
+    
+    const newPreset: TimerPreset = {
+      id: presetId,
+      name: customPreset.name,
+      description: customPreset.description || `Custom preset - ${totalDuration} minutes`,
+      total_duration: totalDuration,
+      transitions_count: customPreset.transitions.length,
+      tags: ['custom'],
+      is_premium: false,
+      available: true
+    };
+
+    // Store the transitions separately
+    setCustomPresetTransitions(prev => ({
+      ...prev,
+      [presetId]: customPreset.transitions
+    }));
+
+    setPresets(prev => [...prev, newPreset]);
+    setSelectedPresetId(newPreset.id);
+    setShowCreateDialog(false);
+    
+    // Reset form
+    setCustomPreset({
+      name: '',
+      description: '',
+      transitions: [{
+        duration_minutes: 10,
+        frequency_hz: 10,
+        frequency_type: 'Alpha',
+        left_ear_hz: 440,
+        right_ear_hz: 450,
+        description: 'Alpha waves'
+      }]
+    });
   };
 
   // if (!user) {
@@ -437,9 +618,12 @@ const TimerControls: React.FC<TimerControlsProps> = ({ audioEngine }) => {
           </Typography>
           
           <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel>Choose Preset</InputLabel>
+            <InputLabel id="preset-select-label">Choose Preset</InputLabel>
             <Select
+              labelId="preset-select-label"
+              id="preset-select"
               value={selectedPresetId}
+              label="Choose Preset"
               onChange={(e) => setSelectedPresetId(e.target.value)}
               disabled={loading || timerStatus?.session?.is_active}
             >
@@ -463,13 +647,25 @@ const TimerControls: React.FC<TimerControlsProps> = ({ audioEngine }) => {
             </Select>
           </FormControl>
 
+
           <Button
             variant="contained"
             fullWidth
             onClick={startTimer}
             disabled={!selectedPresetId || loading || timerStatus?.session?.is_active}
+            sx={{ mb: 2 }}
           >
             {loading ? <CircularProgress size={20} /> : 'Start Timer Session'}
+          </Button>
+
+          <Button
+            variant="outlined"
+            fullWidth
+            startIcon={<AddIcon />}
+            onClick={() => setShowCreateDialog(true)}
+            disabled={loading || timerStatus?.session?.is_active}
+          >
+            Create Custom Preset
           </Button>
         </CardContent>
       </Card>
@@ -559,6 +755,194 @@ const TimerControls: React.FC<TimerControlsProps> = ({ audioEngine }) => {
           <CircularProgress />
         </Box>
       )}
+
+      {/* Custom Preset Creation Dialog */}
+      <Dialog 
+        open={showCreateDialog} 
+        onClose={() => setShowCreateDialog(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>Create Custom Timer Preset</DialogTitle>
+        <DialogContent>
+          <Box sx={{ mt: 2 }}>
+            {/* Global Preset Fields */}
+            <TextField
+              fullWidth
+              label="Preset Name"
+              value={customPreset.name}
+              onChange={(e) => setCustomPreset(prev => ({ ...prev, name: e.target.value }))}
+              sx={{ mb: 2 }}
+              required
+            />
+            
+            <TextField
+              fullWidth
+              label="Description"
+              value={customPreset.description}
+              onChange={(e) => setCustomPreset(prev => ({ ...prev, description: e.target.value }))}
+              multiline
+              rows={2}
+              sx={{ mb: 3 }}
+            />
+
+            <Typography variant="h6" gutterBottom>
+              Transitions
+            </Typography>
+            
+            {/* Simple Transition List */}
+            {customPreset.transitions.map((transition, index) => (
+              <Paper key={index} elevation={1} sx={{ p: 2, mb: 2, bgcolor: 'rgba(0,0,0,0.05)' }}>
+                <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                  <Typography variant="subtitle1" fontWeight="bold">
+                    Transition {index + 1}
+                  </Typography>
+                  {customPreset.transitions.length > 1 && (
+                    <IconButton
+                      size="small"
+                      onClick={() => removeTransition(index)}
+                      color="error"
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  )}
+                </Box>
+                
+                <Grid container spacing={2}>
+                  {/* Left Ear */}
+                  <Grid xs={6} md={3}>
+                    <TextField
+                      fullWidth
+                      label="Left Ear (Hz)"
+                      type="text"
+                      value={transition.left_ear_hz}
+                      onChange={(e) => {
+                        updateTransition(index, 'left_ear_hz', e.target.value);
+                      }}
+                      size="small"
+                    />
+                  </Grid>
+                  
+                  {/* Right Ear */}
+                  <Grid xs={6} md={3}>
+                    <TextField
+                      fullWidth
+                      label="Right Ear (Hz)"
+                      type="text"
+                      value={transition.right_ear_hz}
+                      onChange={(e) => {
+                        updateTransition(index, 'right_ear_hz', e.target.value);
+                      }}
+                      size="small"
+                    />
+                  </Grid>
+                  
+                  {/* Beat Frequency (Auto) */}
+                  <Grid xs={6} md={3}>
+                    <TextField
+                      fullWidth
+                      label="Beat Frequency (Hz)"
+                      type="number"
+                      value={transition.frequency_hz}
+                      InputProps={{ readOnly: true }}
+                      size="small"
+                      sx={{
+                        '& .MuiInputBase-input': {
+                          backgroundColor: 'rgba(0, 191, 255, 0.1)',
+                          color: '#00bfff',
+                          fontWeight: 'bold'
+                        }
+                      }}
+                    />
+                  </Grid>
+                  
+                  {/* Wave Type (Auto) */}
+                  <Grid xs={6} md={3}>
+                    <TextField
+                      fullWidth
+                      label="Wave Type"
+                      value={transition.frequency_type}
+                      InputProps={{ readOnly: true }}
+                      size="small"
+                      sx={{
+                        '& .MuiInputBase-input': {
+                          backgroundColor: 'rgba(0, 191, 255, 0.1)',
+                          color: '#00bfff',
+                          fontWeight: 'bold'
+                        }
+                      }}
+                    />
+                  </Grid>
+                  
+                  {/* Duration */}
+                  <Grid xs={6} md={6}>
+                    <TextField
+                      fullWidth
+                      label={`Duration of Transition ${index + 1}`}
+                      type="number"
+                      value={transition.duration_minutes}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value);
+                        if (!isNaN(value) && value >= 1 && value <= 300) {
+                          updateTransition(index, 'duration_minutes', value);
+                        }
+                      }}
+                      inputProps={{
+                        min: 1,
+                        max: 300,
+                        step: 1
+                      }}
+                      size="small"
+                    />
+                  </Grid>
+                  
+                  {/* Total Preset Duration (Auto) */}
+                  <Grid xs={6} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Total Preset Duration"
+                      type="number"
+                      value={customPreset.transitions.slice(index).reduce((sum, t) => sum + t.duration_minutes, 0)}
+                      InputProps={{ readOnly: true }}
+                      size="small"
+                      sx={{
+                        '& .MuiInputBase-input': {
+                          backgroundColor: 'rgba(255, 107, 0, 0.1)',
+                          color: '#ff6b00',
+                          fontWeight: 'bold'
+                        }
+                      }}
+                    />
+                  </Grid>
+                </Grid>
+              </Paper>
+            ))}
+            
+            <Button
+              variant="outlined"
+              startIcon={<AddIcon />}
+              onClick={addTransition}
+              sx={{ mt: 1, mb: 2 }}
+            >
+              Add Transition
+            </Button>
+            
+            <Typography variant="body2" color="textSecondary" align="center">
+              Total Preset Duration: {customPreset.transitions.reduce((sum, t) => sum + t.duration_minutes, 0)} minutes
+            </Typography>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowCreateDialog(false)}>Cancel</Button>
+          <Button 
+            onClick={saveCustomPreset} 
+            variant="contained"
+            disabled={!customPreset.name.trim()}
+          >
+            Save Preset
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

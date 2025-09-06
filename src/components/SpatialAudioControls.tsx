@@ -149,7 +149,7 @@ const SpatialAudioControls: React.FC<SpatialAudioControlsProps> = ({
       {settings.enabled && (
         <>
           <Box sx={{ mb: 0.5 }}>
-            <Typography sx={{ color: '#e0e0e0', fontSize: '0.8rem', mb: 0.25, fontWeight: 500 }}>
+            <Typography component="div" sx={{ color: '#e0e0e0', fontSize: '0.8rem', mb: 0.25, fontWeight: 500 }}>
               Movement Speed: <Box component="span" sx={{ color: '#00ff88', fontWeight: 600, fontFamily: 'Courier New, monospace', fontSize: '0.9rem' }}>{settings.movement_speed.toFixed(2)} Hz</Box>
             </Typography>
             <Slider
@@ -176,7 +176,7 @@ const SpatialAudioControls: React.FC<SpatialAudioControlsProps> = ({
           </Box>
 
           <Box sx={{ mb: 0.5 }}>
-            <Typography sx={{ color: '#e0e0e0', fontSize: '0.8rem', mb: 0.25, fontWeight: 500 }}>
+            <Typography component="div" sx={{ color: '#e0e0e0', fontSize: '0.8rem', mb: 0.25, fontWeight: 500 }}>
               Spatial Intensity: <Box component="span" sx={{ color: '#00ff88', fontWeight: 600, fontFamily: 'Courier New, monospace', fontSize: '0.9rem' }}>{(settings.spatial_intensity * 100).toFixed(0)}%</Box>
             </Typography>
             <Slider
@@ -229,7 +229,7 @@ const SpatialAudioControls: React.FC<SpatialAudioControlsProps> = ({
           {settings.reverb_enabled && (
             <>
               <Box sx={{ mb: 0.5 }}>
-                <Typography sx={{ color: '#e0e0e0', fontSize: '0.8rem', mb: 0.25, fontWeight: 500 }}>
+                <Typography component="div" sx={{ color: '#e0e0e0', fontSize: '0.8rem', mb: 0.25, fontWeight: 500 }}>
                   Reverberance: <Box component="span" sx={{ color: '#00ff88', fontWeight: 600, fontFamily: 'Courier New, monospace', fontSize: '0.9rem' }}>{((settings.reverberance || 0.5) * 100).toFixed(0)}%</Box>
                 </Typography>
                 <Slider
@@ -252,7 +252,7 @@ const SpatialAudioControls: React.FC<SpatialAudioControlsProps> = ({
               </Box>
 
               <Box sx={{ mb: 0.5 }}>
-                <Typography sx={{ color: '#e0e0e0', fontSize: '0.8rem', mb: 0.25, fontWeight: 500 }}>
+                <Typography component="div" sx={{ color: '#e0e0e0', fontSize: '0.8rem', mb: 0.25, fontWeight: 500 }}>
                   Room Scale: <Box component="span" sx={{ color: '#00ff88', fontWeight: 600, fontFamily: 'Courier New, monospace', fontSize: '0.9rem' }}>{((settings.room_scale || 1.0) * 100).toFixed(0)}%</Box>
                 </Typography>
                 <Slider
@@ -275,7 +275,7 @@ const SpatialAudioControls: React.FC<SpatialAudioControlsProps> = ({
               </Box>
 
               <Box sx={{ mb: 0.5 }}>
-                <Typography sx={{ color: '#e0e0e0', fontSize: '0.8rem', mb: 0.25, fontWeight: 500 }}>
+                <Typography component="div" sx={{ color: '#e0e0e0', fontSize: '0.8rem', mb: 0.25, fontWeight: 500 }}>
                   HF Damping: <Box component="span" sx={{ color: '#00ff88', fontWeight: 600, fontFamily: 'Courier New, monospace', fontSize: '0.9rem' }}>{((settings.hf_damping || 0.5) * 100).toFixed(0)}%</Box>
                 </Typography>
                 <Slider

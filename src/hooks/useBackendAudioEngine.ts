@@ -357,7 +357,7 @@ export const useBackendAudioEngine = () => {
     return () => {
       stopBackendSession();
     };
-  }, [stopBackendSession]);
+  }, []);
 
   return {
     audioState,

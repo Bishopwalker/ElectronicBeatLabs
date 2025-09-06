@@ -87,6 +87,18 @@
 - **Features must not break** existing tests or CI/CD pipeline.
 - **Test audio functionality** with actual audio generation and validation.
 
+### 🌐 Development Server Management
+- **ALWAYS check if port 5173 is available first** before starting new dev servers with `npm run dev`.
+- **ALWAYS check if backend ports are available** before starting backend servers (typically port 8000 for FastAPI).
+- **Kill existing dev servers** before starting new ones to avoid port conflicts and multiple servers running simultaneously.
+- **Use `netstat -ano | findstr :5173`** and `netstat -ano | findstr :8000` to check if ports are in use.
+- **Kill processes properly** using `taskkill -F -PID <process_id>` when ports are occupied.
+- **Prefer using default ports** (5173 for frontend, 8000 for backend) for consistency across development sessions.
+- **Ensure proper cleanup** - when applications are closed, verify ports are freed and processes terminated.
+- **Close unused browser tabs** and terminate background processes to free up resources and ports.
+- **Use Ctrl+C to gracefully stop dev servers** before starting new ones.
+- **Always verify port availability** with netstat before `npm run dev` or backend startup commands.
+
 ### 📝 Git Workflow Standards
 - **Each completed feature** must be added, committed with concise commit message following project norms, and pushed to GitLab.
 - **Features that don't work** break the pipeline and are unacceptable.

@@ -69,39 +69,48 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
   // Render toroidal electromagnetic field
   const renderToroidalField = (ctx: CanvasRenderingContext2D, field: ElectromagneticField, time: number) => {
     const radius = 100;
-    const fieldStrength = field.strength;
+    const fieldStrength = Math.max(0, Math.min(1, isFinite(field.strength) ? field.strength : 0));
     
     for (let i = 0; i < 8; i++) {
-      const angle = (i / 8) * Math.PI * 2 + time * 0.001;
+      const safeTime = isFinite(time) ? time : 0;
+      const angle = (i / 8) * Math.PI * 2 + safeTime * 0.001;
       const x = Math.cos(angle) * radius;
       const y = Math.sin(angle) * radius * 0.3;
       
-      const gradient = ctx.createRadialGradient(x, y, 0, x, y, 50);
+      // Ensure all gradient parameters are finite
+      const safeX = isFinite(x) ? x : 0;
+      const safeY = isFinite(y) ? y : 0;
+      
+      const gradient = ctx.createRadialGradient(safeX, safeY, 0, safeX, safeY, 50);
       gradient.addColorStop(0, `rgba(255, 107, 0, ${fieldStrength})`);
       gradient.addColorStop(1, 'rgba(255, 107, 0, 0)');
       
       ctx.fillStyle = gradient;
       ctx.beginPath();
-      ctx.arc(x, y, 30 * fieldStrength, 0, Math.PI * 2);
+      ctx.arc(safeX, safeY, 30 * fieldStrength, 0, Math.PI * 2);
       ctx.fill();
     }
   };
 
   // Render vortex electromagnetic field
   const renderVortexField = (ctx: CanvasRenderingContext2D, field: ElectromagneticField, time: number) => {
-    const fieldStrength = field.strength;
+    const fieldStrength = Math.max(0, Math.min(1, isFinite(field.strength) ? field.strength : 0));
     
     for (let r = 20; r < 150; r += 20) {
       const points = Math.floor(r / 10);
       
       for (let i = 0; i < points; i++) {
-        const angle = (i / points) * Math.PI * 2 + time * 0.002 + r * 0.01;
+        const safeTime = isFinite(time) ? time : 0;
+        const angle = (i / points) * Math.PI * 2 + safeTime * 0.002 + r * 0.01;
         const x = Math.cos(angle) * r;
         const y = Math.sin(angle) * r;
         
+        const safeX = isFinite(x) ? x : 0;
+        const safeY = isFinite(y) ? y : 0;
+        
         ctx.fillStyle = `rgba(138, 43, 226, ${fieldStrength * 0.3})`;
         ctx.beginPath();
-        ctx.arc(x, y, 3 * fieldStrength, 0, Math.PI * 2);
+        ctx.arc(safeX, safeY, 3 * fieldStrength, 0, Math.PI * 2);
         ctx.fill();
       }
     }
@@ -109,21 +118,25 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
 
   // Render spiral electromagnetic field
   const renderSpiralField = (ctx: CanvasRenderingContext2D, field: ElectromagneticField, time: number) => {
-    const fieldStrength = field.strength;
+    const fieldStrength = Math.max(0, Math.min(1, isFinite(field.strength) ? field.strength : 0));
     
     ctx.strokeStyle = `rgba(0, 191, 255, ${fieldStrength})`;
     ctx.lineWidth = 2;
     
     ctx.beginPath();
+    const safeTime = isFinite(time) ? time : 0;
     for (let t = 0; t < Math.PI * 8; t += 0.1) {
       const r = t * 10;
-      const x = Math.cos(t + time * 0.001) * r;
-      const y = Math.sin(t + time * 0.001) * r;
+      const x = Math.cos(t + safeTime * 0.001) * r;
+      const y = Math.sin(t + safeTime * 0.001) * r;
+      
+      const safeX = isFinite(x) ? x : 0;
+      const safeY = isFinite(y) ? y : 0;
       
       if (t === 0) {
-        ctx.moveTo(x, y);
+        ctx.moveTo(safeX, safeY);
       } else {
-        ctx.lineTo(x, y);
+        ctx.lineTo(safeX, safeY);
       }
     }
     ctx.stroke();
@@ -131,7 +144,7 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
 
   // Render default electromagnetic field
   const renderDefaultField = (ctx: CanvasRenderingContext2D, field: ElectromagneticField) => {
-    const fieldStrength = field.strength;
+    const fieldStrength = Math.max(0, Math.min(1, isFinite(field.strength) ? field.strength : 0));
     const gridSize = 20;
     
     for (let x = -200; x < 200; x += gridSize) {
