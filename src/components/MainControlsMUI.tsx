@@ -17,6 +17,7 @@ import StopIcon from '@mui/icons-material/Stop';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import type { MainControlsProps } from '../types';
 
+
 const MainControlsMUI: React.FC<MainControlsProps> = ({
   isPlaying,
   volume,
