@@ -1,7 +1,7 @@
 // Electromagnetic Beat Lab - Pattern Tab Component
 // Pattern selection and management interface
 
-import React from 'react';
+import React, {useCallback} from 'react';
 import { Box, Typography, Card, CardContent, Chip } from '@mui/material';
 import type { PatternConfig, PatternPreset, AppState, AudioEngine, Pattern8D } from '../../types';
 
@@ -23,13 +23,14 @@ const PatternTab: React.FC<PatternTabProps> = ({
   onStateChange
 }) => {
   
-  const handlePatternSelect = (patternId: string) => {
+  const handlePatternSelect = useCallback((patternId: string) => {
     const pattern = patterns.find(p => p.id === patternId);
     if (pattern && onStateChange) {
       onStateChange({ currentPattern: pattern });
     }
     onPatternSelect(patternId);
-  };
+  }, [patterns, onStateChange, onPatternSelect]);
+
   return (
     <Box sx={{ py: 1 }}>
       <Box sx={{ mb: 2 }}>

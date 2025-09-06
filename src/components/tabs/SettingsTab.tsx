@@ -137,9 +137,9 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
             size="small"
             onClick={() => {
               if (audioEngine.backendConnected) {
-                audioEngine.stopBackendSession();
+                audioEngine.disconnectBackend?.();
               } else {
-                audioEngine.startBackendSession();
+                audioEngine.connectBackend?.();
               }
             }}
             sx={{ ml: 1 }}

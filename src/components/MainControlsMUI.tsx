@@ -30,7 +30,7 @@ const MainControlsMUI: React.FC<MainControlsProps> = ({
 
   return (
     <Card sx={{ 
-      minHeight: 650,
+      minHeight: '300px',
       overflow: 'scroll',
       background: 'rgba(138, 43, 226, 0.05)',
       borderColor: 'rgba(138, 43, 226, 0.3)',

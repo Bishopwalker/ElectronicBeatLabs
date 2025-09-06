@@ -258,7 +258,7 @@ export const useAudioEngine = () => {
     } catch (error) {
       console.error('Error stopping binaural beat:', error);
     }
-  }, [audioState]);
+  }, []);
 
   // Update frequency
   const updateFrequency = useCallback((leftFreq: number, rightFreq: number) => {
@@ -291,7 +291,7 @@ export const useAudioEngine = () => {
         stability: Math.min(1, Math.max(0.5, 1 - Math.abs(leftFreq - rightFreq) / 100))
       });
     }
-  }, [audioState]);
+  }, []);
 
   // Update volume
   const updateVolume = useCallback((volume: number) => {
@@ -305,7 +305,7 @@ export const useAudioEngine = () => {
       ...prev,
       volume
     }));
-  }, [audioState]);
+  }, []);
 
   // Update waveform
   const updateWaveform = useCallback((waveform: 'sine' | 'square' | 'triangle' | 'sawtooth') => {
@@ -318,7 +318,7 @@ export const useAudioEngine = () => {
         waveform
       }));
     }
-  }, [audioState]);
+  }, []);
 
   // Load pattern configuration
   const loadPattern = useCallback((pattern: PatternConfig) => {
@@ -371,7 +371,7 @@ export const useAudioEngine = () => {
     audioState.oscillatorR.frequency.setValueAtTime(startFreq + beatFreq, now);
     audioState.oscillatorR.frequency.linearRampToValueAtTime(endFreq + beatFreq, endTime);
 
-  }, [audioState]);
+  }, []);
 
   // Create gamma wave protocol for ADHD
   const createGammaProtocol = useCallback((protocol: ADHDProtocol) => {

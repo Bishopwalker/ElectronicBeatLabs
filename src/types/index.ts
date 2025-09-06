@@ -108,6 +108,12 @@ export interface AudioEngine {
   backendConnected?: boolean;
   sessionId?: string | null;
   websocketState?: WebSocketState;
+  // Backend-specific methods
+  connectBackend?: () => Promise<void>;
+  disconnectBackend?: () => Promise<void>;
+  startBackendSession?: (config?: BinauralBeatConfig & { spatial_enabled?: boolean, spatial_settings?: Record<string, unknown> }) => Promise<void>;
+  stopBackendSession?: () => Promise<void>;
+  updateSettings?: (settings: Record<string, unknown>) => void;
 }
 
 export interface Pattern8D {

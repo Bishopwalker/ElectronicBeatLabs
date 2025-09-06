@@ -99,6 +99,7 @@ export const useBackendAudioEngine = () => {
 
   // Process backend audio frame
   const processAudioFrame = useCallback((frame: BackendAudioFrame) => {
+    console.log('🎧 Backend Engine: Processing audio frame with', frame.frame_size, 'samples');
     if (!audioContext.current) return;
 
     try {
@@ -165,11 +166,12 @@ export const useBackendAudioEngine = () => {
       
       switch (message.type) {
         case 'frame':
-          if (message.data?.audio && typeof message.data.audio === 'object' && message.data.audio !== null && 'left' in message.data.audio && 'right' in message.data.audio) {
-            processAudioFrame(message.data.audio as BackendAudioFrame);
+          console.log('📨 Backend Engine: Received frame message', message.data);
+          if (message.data?.data?.audio && typeof message.data.data.audio === 'object' && message.data.data.audio !== null && 'left' in message.data.data.audio && 'right' in message.data.data.audio) {
+            processAudioFrame(message.data.data.audio as BackendAudioFrame);
           }
-          if (message.data?.field && typeof message.data.field === 'object' && message.data.field !== null && 'field' in message.data.field && 'grid_size' in message.data.field) {
-            processFieldFrame(message.data.field as BackendFieldFrame);
+          if (message.data?.data?.field && typeof message.data.data.field === 'object' && message.data.data.field !== null && 'field' in message.data.data.field && 'grid_size' in message.data.data.field) {
+            processFieldFrame(message.data.data.field as BackendFieldFrame);
           }
           break;
           
@@ -188,8 +190,27 @@ export const useBackendAudioEngine = () => {
     }
   }, [websocket.state.lastMessage, processAudioFrame, processFieldFrame]);
 
-  // Start backend session
+  // Connect to backend (test health endpoint and set ready state)
+  const connectBackend = useCallback(async () => {
+    console.log('🔌 Backend Engine: Connecting to backend...');
+    try {
+      // Test backend health endpoint
+      const healthResponse = await api.healthCheck();
+      if (healthResponse.status === 200) {
+        setBackendConnected(true);
+        console.log('✅ Backend Engine: Connected successfully');
+      } else {
+        throw new Error('Backend health check failed');
+      }
+    } catch (error) {
+      console.error('❌ Backend Engine: Connection failed:', error);
+      setBackendConnected(false);
+    }
+  }, [api]);
+
+  // Start backend session (creates audio session)
   const startBackendSession = useCallback(async (config?: BinauralBeatConfig & { spatial_enabled?: boolean, spatial_settings?: Record<string, unknown> }) => {
+    console.log('🎧 Backend Engine: Starting session with config:', config);
     try {
       // Use current audioState values as defaults if no config provided
       const sessionConfig = config ? {
@@ -214,12 +235,15 @@ export const useBackendAudioEngine = () => {
         setSessionId(newSessionId);
         
         // Connect WebSocket
+        console.log('🔌 Backend Engine: Connecting WebSocket for session:', newSessionId);
         websocket.connect(newSessionId);
         
         // Initialize audio context
+        console.log('🎵 Backend Engine: Initializing audio context');
         await initializeAudio();
         
         // Send start streaming command
+        console.log('📡 Backend Engine: Sending start_stream command');
         websocket.sendMessage({
           type: 'start_stream',
           data: {
@@ -359,12 +383,24 @@ export const useBackendAudioEngine = () => {
     };
   }, []);
 
+  // Disconnect from backend
+  const disconnectBackend = useCallback(async () => {
+    console.log('🔌 Backend Engine: Disconnecting from backend...');
+    if (sessionId) {
+      await stopBackendSession();
+    }
+    setBackendConnected(false);
+    console.log('✅ Backend Engine: Disconnected successfully');
+  }, [sessionId, stopBackendSession]);
+
   return {
     audioState,
     electromagnetic,
     sessionId,
     backendConnected,
     websocketState: websocket.state,
+    connectBackend,
+    disconnectBackend,
     startBackendSession,
     stopBackendSession,
     updateFrequency,

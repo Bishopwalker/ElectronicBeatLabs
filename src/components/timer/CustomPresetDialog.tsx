@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
-import type { CustomPresetForm } from '../../data/timer/types';
+import type { CustomPresetForm } from '../../data/timer';
 import { getWaveTypeFromFrequency } from '../../helpers/timer/timerUtils';
 
 interface CustomPresetDialogProps {
