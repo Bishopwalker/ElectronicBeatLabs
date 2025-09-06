@@ -281,6 +281,10 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
                 # Start audio and field generation
                 settings = data.get("settings", {})
                 
+                # Store settings in session
+                if session_id in manager.sessions:
+                    manager.sessions[session_id]["settings"] = settings
+                
                 # Configure generators
                 audio_engine.configure(session_id, settings)
                 field_simulator.configure(session_id, settings)
@@ -289,6 +293,13 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
                 asyncio.create_task(
                     stream_data(websocket, session_id, settings)
                 )
+                
+                # Send confirmation
+                await websocket.send_json({
+                    "type": "session_started",
+                    "session_id": session_id,
+                    "settings": settings
+                })
                 
             elif data["type"] == "update_settings":
                 # Update live settings
@@ -317,16 +328,24 @@ async def stream_data(websocket: WebSocket, session_id: str, settings: dict):
             # Generate field data
             field_data = await field_simulator.generate_frame(session_id)
             
+            # Calculate frequencies from settings
+            base_freq = settings.get("base_frequency", 440)
+            beat_freq = settings.get("beat_frequency", 4)
+            left_freq = base_freq
+            right_freq = base_freq + beat_freq
+            
             # Combine and send
             frame_data = {
                 "type": "frame",
                 "timestamp": datetime.now().isoformat(),
-                "audio": audio_data,
-                "field": field_data,
+                "data": {
+                    "audio": audio_data,
+                    "field": field_data
+                },
                 "metrics": {
-                    "frequency_left": settings.get("frequency_left", 440),
-                    "frequency_right": settings.get("frequency_right", 444),
-                    "beat_frequency": settings.get("beat_frequency", 4),
+                    "frequency_left": left_freq,
+                    "frequency_right": right_freq,
+                    "beat_frequency": beat_freq,
                     "amplitude": settings.get("amplitude", 0.5)
                 }
             }

@@ -82,11 +82,19 @@ const SpatialAudioControls: React.FC<SpatialAudioControlsProps> = ({
       },
       intense: {
         enabled: true,
-        movement_speed: 0.15,
+        movement_speed: 0.25,  // Much faster movement
         spatial_intensity: 1.0,
         reverb_enabled: true,
-        reverberance: 0.7,
-        room_scale: 1.5
+        reverberance: 0.8,
+        room_scale: 2.0  // Bigger room
+      },
+      extreme: {
+        enabled: true,
+        movement_speed: 0.5,   // Very dramatic circular motion
+        spatial_intensity: 1.0,
+        reverb_enabled: true,
+        reverberance: 0.9,
+        room_scale: 3.0
       }
     };
 
@@ -371,6 +379,26 @@ const SpatialAudioControls: React.FC<SpatialAudioControlsProps> = ({
               }}
             >
               Intense
+            </Button>
+            
+            <Button
+              size="small"
+              onClick={() => applyPreset('extreme')}
+              sx={{
+                ml: 1,
+                fontSize: '0.8rem',
+                background: 'rgba(255, 68, 68, 0.2)',
+                border: '1px solid rgba(255, 68, 68, 0.5)',
+                color: '#ff4444',
+                fontWeight: 'bold',
+                '&:hover': {
+                  background: 'rgba(255, 68, 68, 0.3)',
+                  borderColor: '#ff4444',
+                  color: '#ff6666'
+                }
+              }}
+            >
+              🚀 EXTREME
             </Button>
           </Box>
         </>

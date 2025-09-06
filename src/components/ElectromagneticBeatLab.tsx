@@ -94,6 +94,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                                                                        }) => {
   // State management
   const [closedSections, setClosedSections] = useState<string[]>([]);
+  const [advancedControlsOpen, setAdvancedControlsOpen] = useState<boolean>(false);
   const [appState, setAppState] = useState<AppState>({
     mode: 'AUTO',
     currentPattern: null,
@@ -180,9 +181,10 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
   // - Frontend Engine (audioEngine): Web Audio API for instant binaural beats
   // - Backend Engine (backendEngine): Python DSP for 8D spatial audio & EM field integration
   // See README.md "Audio Engine Architecture" section for full details
-  const audioEngine = useMemo(() => masterAudio.engines.audioEngine, [masterAudio.engines.audioEngine]);
-  const backendEngine = useMemo(() => masterAudio.engines.backendEngine, [masterAudio.engines.backendEngine]);
-  const patterns8D = useMemo(() => masterAudio.engines.patternsEngine, [masterAudio.engines.patternsEngine]);
+  // Direct references to engines (no memoization to ensure state updates)
+  const audioEngine = masterAudio.engines.audioEngine;
+  const backendEngine = masterAudio.engines.backendEngine;
+  const patterns8D = masterAudio.engines.patternsEngine;
 
   // Initialize with pattern (only on mount)
   useEffect(() => {
@@ -208,8 +210,12 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
   const lastAudioStateRef = useRef(audioEngine.audioState);
 
   useEffect(() => {
-    const currentElectromagnetic = audioEngine.electromagnetic;
-    const currentAudioState = audioEngine.audioState;
+    // Check which engine is active and use its electromagnetic field data
+    const useSpatialAudio = appState.spatialAudio?.enabled && backendEngine.backendConnected;
+    const activeEngine = useSpatialAudio ? backendEngine : audioEngine;
+    
+    const currentElectromagnetic = activeEngine.electromagnetic;
+    const currentAudioState = activeEngine.audioState;
     
     if (
       currentElectromagnetic !== lastElectromagneticRef.current ||
@@ -221,15 +227,58 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
       lastElectromagneticRef.current = currentElectromagnetic;
       lastAudioStateRef.current = currentAudioState;
       
+      // Create enhanced electromagnetic field with actual frequency data
+      const enhancedElectromagnetic = {
+        ...currentElectromagnetic,
+        frequency: currentAudioState.beatFreq || appState.frequency || 4,
+        strength: currentAudioState.isPlaying ? Math.min(1, (currentAudioState.volume || 0.5) * 2) : 0,
+        // Add more dynamic values based on current audio state
+        resonance: currentAudioState.isPlaying ? 0.7 + (currentAudioState.beatFreq || 4) / 40 * 0.3 : 0,
+        coherence: currentAudioState.isPlaying ? 0.8 : 0,
+        stability: currentAudioState.isPlaying ? 0.9 : 0
+      };
+      
       setAppState(prev => ({
         ...prev,
-        electromagnetic: currentElectromagnetic,
+        electromagnetic: enhancedElectromagnetic,
         isPlaying: currentAudioState.isPlaying,
         volume: currentAudioState.volume,
         frequency: currentAudioState.beatFreq
       }));
     }
-  }, [audioEngine]);
+  }, [audioEngine, backendEngine, appState.spatialAudio?.enabled]);
+
+  // Force re-render when backend connection state changes
+  useEffect(() => {
+    console.log('🔄 Backend connection state changed:', backendEngine.backendConnected);
+  }, [backendEngine.backendConnected, backendEngine.sessionId]);
+
+  // Force electromagnetic field update when pattern changes
+  useEffect(() => {
+    if (appState.currentPattern) {
+      const frequency = appState.currentPattern.frequencies.beat;
+      const isPlaying = appState.isPlaying;
+      
+      // Create immediate electromagnetic field update for visualizer responsiveness
+      const immediateElectromagnetic = {
+        strength: isPlaying ? Math.min(1, (appState.volume || 0.5) * 2) : 0.3, // Show some activity even when not playing
+        frequency: frequency,
+        phase: 0,
+        coherence: 0.8,
+        resonance: 0.7 + frequency / 40 * 0.3,
+        state: isPlaying ? 'ACTIVE' : 'STANDBY' as const,
+        stability: 0.9
+      };
+      
+      setAppState(prev => ({
+        ...prev,
+        electromagnetic: immediateElectromagnetic,
+        frequency: frequency
+      }));
+      
+      console.log('🎨 Visualizer updated for pattern:', appState.currentPattern.name, 'Frequency:', frequency);
+    }
+  }, [appState.currentPattern?.id, appState.isPlaying, appState.volume]);
 
   // Handle pattern selection
   const handlePatternSelect = useCallback((patternId: string) => {
@@ -280,14 +329,23 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
   // Handle play/stop
   const handlePlay = useCallback(() => {
     if (appState.currentPattern && !appState.isPlaying) {
-      audioEngine.loadPattern(appState.currentPattern);
+      // Choose engine based on spatial audio settings
+      const useSpatialAudio = appState.spatialAudio?.enabled && backendEngine.backendConnected;
+      
+      if (useSpatialAudio) {
+        console.log('🎧 Using Backend Engine for 8D Spatial Audio');
+        backendEngine.loadPattern(appState.currentPattern);
+      } else {
+        console.log('🎵 Using Frontend Engine for Basic Binaural Beats');
+        audioEngine.loadPattern(appState.currentPattern);
+      }
       
       const pattern8D = patterns8D.getPatternById(appState.currentPattern.type + '-visualization');
       if (pattern8D) {
         patterns8D.startAnimation(pattern8D);
       }
     }
-  }, [masterAudio, appState.currentPattern, appState.isPlaying]);
+  }, [audioEngine, backendEngine, patterns8D, appState.currentPattern, appState.isPlaying, appState.spatialAudio?.enabled]);
 
   const handleStop = useCallback(() => {
     masterAudio.masterStop();
@@ -314,10 +372,12 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
       'adhd': { title: 'ADHD Protocol', icon: '⚡' },
       'freqID': { title: 'Frequency Display', icon: '📊' },
       'visualizeID': { title: 'Visualization', icon: '🎨' },
-      'advanceControlsID': { title: 'Advanced Controls', icon: '⚙️' },
       'waveGuideID': { title: 'Wave Guide', icon: '📡' },
       'adhdID': { title: 'ADHD Protocol', icon: '⚡' },
-      'patternID': { title: 'Patterns', icon: '🌀' }
+      'patternID': { title: 'Patterns', icon: '🌀' },
+      'masterControls': { title: 'Master Controls', icon: '🎛️' },
+      'binauralBeats': { title: 'Binaural Beat Generator', icon: '🎧' },
+      'timerPanel': { title: 'Timer & Sessions', icon: '⏰' }
     };
     // @ts-expect-error cause i'm not making n object just 4 this
     return sections[id] || { title: 'Unknown', icon: '❓' };
@@ -363,6 +423,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
 
     switch (appState.activeTab) {
       case 'patterns':
+        // @ts-ignore
         return (
           <PatternTab
             {...commonProps}
@@ -399,6 +460,91 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
     <Box sx={{ width: '100vw', height: '100vh', overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
       {/* Background Star Field */}
       <StarField {...appState.visualizations.starField} />
+      
+      {/* Advanced Controls Menu Toggle Button */}
+      <IconButton
+        onClick={() => setAdvancedControlsOpen(!advancedControlsOpen)}
+        sx={{
+          position: 'fixed',
+          top: 16,
+          right: 16,
+          zIndex: 200,
+          bgcolor: 'rgba(0, 0, 0, 0.7)',
+          color: 'white',
+          backdropFilter: 'blur(10px)',
+          '&:hover': {
+            bgcolor: 'rgba(0, 0, 0, 0.8)',
+          },
+          border: '1px solid rgba(255, 255, 255, 0.2)',
+        }}
+      >
+        ⚙️
+      </IconButton>
+
+      {/* Advanced Controls Menu Overlay */}
+      {advancedControlsOpen && (
+        <Paper
+          elevation={8}
+          sx={{
+            position: 'fixed',
+            top: 0,
+            right: 0,
+            zIndex: 150,
+            height: '100vh',
+            width: {
+              xs: '100vw', // Mobile: full width
+              sm: '50vw',  // Tablets: 50% width
+              xl: '25vw'   // Desktop XL: 25% width
+            },
+            maxWidth: '600px',
+            minWidth: '320px',
+            bgcolor: 'rgba(0, 0, 0, 0.9)',
+            backdropFilter: 'blur(20px)',
+            borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden'
+          }}
+        >
+          {/* Menu Header */}
+          <Box sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            p: 2,
+            borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+          }}>
+            <Typography variant="h6" sx={{ color: 'white', display: 'flex', alignItems: 'center', gap: 1 }}>
+              ⚙️ Advanced Controls
+            </Typography>
+            <IconButton
+              onClick={() => setAdvancedControlsOpen(false)}
+              sx={{ color: 'white' }}
+            >
+              ✕
+            </IconButton>
+          </Box>
+
+          {/* Tabs */}
+          <Box sx={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
+            <ControlTabs
+              tabs={tabs.filter(tab => !['timer'].includes(tab.id))}
+              activeTab={appState.activeTab}
+              onTabChange={handleTabChange}
+            />
+          </Box>
+
+          {/* Tab Content */}
+          <Box sx={{
+            flex: 1,
+            overflowY: 'auto',
+            p: 2,
+            backgroundColor: 'rgba(30, 60, 90, 0.1)'
+          }}>
+            {renderTabContent()}
+          </Box>
+        </Paper>
+      )}
 
       {/* Header */}
       <Paper
@@ -424,50 +570,47 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
           Bishop's Electromagnetic Beat Lab
         </Typography>
         <Box sx={{ display: 'flex', gap: 0.25, alignItems: 'center', fontSize: '0.75rem' }}>
-          <ElectromagneticStatus 
+
+          <ElectromagneticStatus
             field={appState.electromagnetic}
             status={appState.systemStatus}
           />
         </Box>
       </Paper>
 
-      {/* Dynamic Flex Layout - Components expand when others are minimized */}
+      {/* Dynamic Flex Layout - Full viewport utilization */}
       <Box sx={{ 
         flex: 1, 
         p: '10px', 
         display: 'flex', 
         gap: '10px', 
-        height: 'calc(100vh - 60px)',
-        flexWrap: 'wrap',
-        minHeight: 0
+        height: 'calc(100vh - 120px)', // Account for header and padding
+        minHeight: 0,
+        // No flex-wrap - let components expand horizontally
+        '@media (max-width: 1200px)': {
+          flexWrap: 'wrap' // Only wrap on smaller screens
+        }
       }}>
         {/* Master Controls */}
         {!closedSections.includes('masterControls') && (
           <Box sx={{ 
-            flex: '1 1 350px',
+            flex: '1 1 300px',
             minWidth: '300px',
-            maxWidth: '400px',
+            height: '100%',
             display: 'flex',
-            flexDirection: 'column'
+            flexDirection: 'column',
+            // Remove maxWidth to allow expansion on large screens
           }}>
             <CollapsibleSection id="masterControls" title="Master Controls" icon="🎛️" defaultOpen={true} onClose={handleSectionClose}>
               <MasterStopControl
-                activeStatus={masterAudio.activeStatus}
-                onMasterStop={masterAudio.masterStop}
-                onMasterStart={masterAudio.quickStart}
-                frequencies={masterAudio.frequencies}
-                volume={masterAudio.volume}
-                audioEngine={backendEngine}
+                  activeStatus={masterAudio.activeStatus}
+                  onMasterStop={masterAudio.masterStop}
+                  onMasterStart={masterAudio.quickStart}
+                  frequencies={masterAudio.frequencies}
+                  volume={masterAudio.volume}
+                  audioEngine={backendEngine}
               />
-              <Box sx={{ mt: 1 }}>
-                <MainControlsMUI
-                  isPlaying={appState.isPlaying}
-                  volume={appState.volume}
-                  onPlay={handlePlay}
-                  onStop={handleStop}
-                  onVolumeChange={handleVolumeChange}
-                />
-              </Box>
+
             </CollapsibleSection>
           </Box>
         )}
@@ -475,9 +618,9 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
         {/* Patterns */}
         {!closedSections.includes('patternID') && (
           <Box sx={{ 
-            flex: '1 1 350px',
+            flex: '1 1 300px',
             minWidth: '300px',
-            maxWidth: '400px',
+            height: '100%',
             display: 'flex',
             flexDirection: 'column'
           }}>
@@ -496,8 +639,9 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
         {/* Binaural Beat Generator */}
         {!closedSections.includes('binauralBeats') && (
           <Box sx={{ 
-            flex: '1 1 400px',
+            flex: '1 1 350px',
             minWidth: '350px',
+            height: '100%',
             display: 'flex',
             flexDirection: 'column'
           }}>
@@ -511,6 +655,15 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                     audioEngine.updateFrequency(left, right);
                   }}
                 />
+                <Box sx={{ mt: 1 , maxHeight: '250px', overflowY: 'auto' }}>
+                  <MainControlsMUI
+                      isPlaying={appState.isPlaying}
+                      volume={appState.volume}
+                      onPlay={handlePlay}
+                      onStop={handleStop}
+                      onVolumeChange={handleVolumeChange}
+                  />
+                </Box>
               </Box>
             </CollapsibleSection>
           </Box>
@@ -519,13 +672,14 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
         {/* Visualization */}
         {!closedSections.includes('visualizeID') && (
           <Box sx={{ 
-            flex: '1 1 400px',
+            flex: '1 1 350px',
             minWidth: '350px',
+            height: '100%',
             display: 'flex',
             flexDirection: 'column'
           }}>
             <CollapsibleSection id="visualizeID" title="Visualization" icon="🎨" defaultOpen={true} onClose={handleSectionClose}>
-              <Box sx={{ position: 'relative', height: '250px' }}>
+              <Box sx={{ position: 'relative', height: '100%', minHeight: '250px' }}>
                 <Paper
                   elevation={3}
                   sx={{
@@ -549,41 +703,19 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
           </Box>
         )}
 
-        {/* Advanced Controls */}
-        {!closedSections.includes('advanceControlsID') && (
-          <Box sx={{ 
-            flex: '1 1 400px',
-            minWidth: '350px',
-            display: 'flex',
-            flexDirection: 'column',
-            position: 'sticky',
-            top: 0,
-            alignSelf: 'flex-start',
-            zIndex: 10
-          }}>
-            <CollapsibleSection id="advanceControlsID" title="Advanced Controls" icon="⚙️" defaultOpen={false} onClose={handleSectionClose}>
-              <ControlTabs
-                tabs={tabs.filter(tab => !['timer'].includes(tab.id))}
-                activeTab={appState.activeTab}
-                onTabChange={handleTabChange}
-              />
-              <Box sx={{ height: '200px', overflowY: 'auto', pr: 1, mt: 2 }}>
-                {renderTabContent()}
-              </Box>
-            </CollapsibleSection>
-          </Box>
-        )}
+
 
         {/* Timer & Sessions */}
         {!closedSections.includes('timerPanel') && (
           <Box sx={{ 
-            flex: '1 1 400px',
+            flex: '1 1 350px',
             minWidth: '350px',
+            height: '100%',
             display: 'flex',
             flexDirection: 'column'
           }}>
             <CollapsibleSection id="timerPanel" title="Timer & Sessions" icon="⏰" defaultOpen={true} onClose={handleSectionClose}>
-              <Box sx={{ height: '300px', overflowY: 'auto' }}>
+              <Box sx={{ height: '100%', minHeight: '300px', overflowY: 'auto' }}>
                 <TimerTab
                   appState={appState}
                   audioEngine={audioEngine}

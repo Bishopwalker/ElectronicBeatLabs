@@ -185,26 +185,42 @@ const MasterStopControl: React.FC<MasterStopControlProps> = ({
           
           {/* Backend Connection Control */}
           {audioEngine && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', my: 1 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', my: 1 }}>
               <Button
                 variant={audioEngine.backendConnected ? "outlined" : "contained"}
                 color={audioEngine.backendConnected ? "error" : "success"}
                 size="small"
                 onClick={() => {
                   if (audioEngine.backendConnected) {
-                    audioEngine.stopBackendSession();
+                    audioEngine.disconnectBackend?.();
                   } else {
-                    audioEngine.startBackendSession();
+                    audioEngine.connectBackend?.();
                   }
                 }}
                 sx={{ 
                   minWidth: 140,
                   fontSize: '0.85rem',
-                  fontWeight: 'bold'
+                  fontWeight: 'bold',
+                  mb: 0.5
                 }}
               >
                 {audioEngine.backendConnected ? '🔌 Disconnect Backend' : '🔌 Connect Backend'}
               </Button>
+              
+              {/* Active Engine Indicator */}
+              <Typography 
+                variant="caption" 
+                sx={{ 
+                  color: audioEngine.backendConnected && audioEngine.sessionId ? '#00ff88' : '#ff6b00',
+                  fontWeight: 'bold',
+                  fontSize: '0.7rem'
+                }}
+              >
+                {audioEngine.backendConnected && audioEngine.sessionId 
+                  ? '🎧 8D Spatial Engine Active' 
+                  : '🎵 Web Audio Engine Active'
+                }
+              </Typography>
             </Box>
           )}
           
