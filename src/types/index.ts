@@ -339,6 +339,30 @@ export interface WaveGuidePanelProps {
   onChange: (config: WaveGuideConfig) => void;
 }
 
+
+export interface ActiveAudioStatus {
+  binauralEngine: boolean;
+  backendEngine: boolean;
+  spatialAudio: boolean;
+  patterns: boolean;
+  testTones: boolean;
+}
+
+export interface QuickStartProps {
+  activeStatus: ActiveAudioStatus;
+  frequencies?: {
+    left: number;
+    right: number;
+    beat: number;
+  };
+  volume: number;
+  audioEngine?: {
+    backendConnected: boolean;
+    connectBackend?: () => Promise<void>;
+    disconnectBackend?: () => Promise<void>;
+    sessionId?: string | null;
+  };
+}
 export interface MainControlsProps {
   isPlaying: boolean;
   volume: number;
@@ -346,6 +370,7 @@ export interface MainControlsProps {
   onStop: () => void;
   onVolumeChange: (volume: number) => void;
 }
+
 
 export interface ControlTabsProps {
   tabs: ControlTabConfig[];

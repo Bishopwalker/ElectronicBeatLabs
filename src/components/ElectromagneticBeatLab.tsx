@@ -26,7 +26,7 @@ import ADHDTab from './tabs/ADHDTab';
 import YouTubeTab from './tabs/YouTubeTab';
 import SettingsTab from './tabs/SettingsTab';
 import GuideTab from './tabs/GuideTab';
-import MasterStopControl from "./MasterStopControl.tsx";
+import QuickStart from "./QuickStart.tsx";
 
 
 // Collapsible Section Component with close/restore functionality
@@ -602,10 +602,8 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
             // Remove maxWidth to allow expansion on large screens
           }}>
             <CollapsibleSection id="masterControls" title="Master Controls" icon="🎛️" defaultOpen={true} onClose={handleSectionClose}>
-              <MasterStopControl
+              <QuickStart
                   activeStatus={masterAudio.activeStatus}
-                  onMasterStop={masterAudio.masterStop}
-                  onMasterStart={masterAudio.quickStart}
                   frequencies={masterAudio.frequencies}
                   volume={masterAudio.volume}
                   audioEngine={backendEngine}
