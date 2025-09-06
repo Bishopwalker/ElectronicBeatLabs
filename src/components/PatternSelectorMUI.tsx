@@ -123,6 +123,8 @@ const PatternSelectorMUI: React.FC<PatternSelectorProps> = ({
                   sx={{ py: 0.75, px: 1 }}
                 >
                   <ListItemText
+                    primaryTypographyProps={{ component: 'div' }}
+                    secondaryTypographyProps={{ component: 'div' }}
                     primary={
                       <Typography variant="body2" fontWeight={600}>
                         {pattern.name}

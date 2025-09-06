@@ -52,7 +52,20 @@
       "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\src/**)",
       "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\src\\components/**)",
       "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\src\\components/**)",
-      "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\src\\components/**)"
+      "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\src\\components/**)",
+      "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\src\\hooks/**)",
+      "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\src\\hooks/**)",
+      "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\src\\hooks/**)",
+      "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\src\\hooks/**)",
+      "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\src\\hooks/**)",
+      "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\src\\hooks/**)",
+      "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\src\\hooks/**)",
+      "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\src/**)",
+      "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\src/**)",
+      "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\src/**)",
+      "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\src\\components/**)",
+      "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl/**)",
+      "Bash(npx ts-node:*)"
     ],
     "deny": [],
     "ask": []

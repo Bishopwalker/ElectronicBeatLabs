@@ -22,8 +22,7 @@ const ControlTabs: React.FC<ControlTabsProps> = ({
           onTabChange(selectedTab.id);
         }
       }}
-      variant="scrollable"
-      scrollButtons="auto"
+      variant="fullWidth"
       sx={{
         borderBottom: '2px solid rgba(255, 255, 255, 0.1)',
         mb: 2,
@@ -32,6 +31,8 @@ const ControlTabs: React.FC<ControlTabsProps> = ({
           fontWeight: 600,
           textTransform: 'uppercase',
           letterSpacing: '0.5px',
+          minWidth: 0,
+          flex: 1,
           '&.Mui-selected': {
             color: '#ff6b00'
           },
@@ -42,6 +43,9 @@ const ControlTabs: React.FC<ControlTabsProps> = ({
         '& .MuiTabs-indicator': {
           backgroundColor: '#ff6b00',
           height: 2
+        },
+        '& .MuiTabs-flexContainer': {
+          justifyContent: 'stretch'
         }
       }}
     >

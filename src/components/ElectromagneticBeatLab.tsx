@@ -1,7 +1,7 @@
 // Electromagnetic Beat Lab - Main Component
 // Advanced binaural beats generator with electromagnetic field visualization
 
-import React, {useCallback, useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useState, useMemo, useRef} from 'react';
 import {Box, Card, CardContent, Chip, Collapse, IconButton, Paper, Typography} from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
@@ -175,10 +175,10 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
 
   // Master audio control - consolidates all audio systems
   const masterAudio = useMasterAudioControl();
-  const audioEngine = masterAudio.engines.audioEngine;
-  const patterns8D = masterAudio.engines.patternsEngine;
+  const audioEngine = useMemo(() => masterAudio.engines.audioEngine, [masterAudio.engines.audioEngine]);
+  const patterns8D = useMemo(() => masterAudio.engines.patternsEngine, [masterAudio.engines.patternsEngine]);
 
-  // Initialize with pattern
+  // Initialize with pattern (only on mount)
   useEffect(() => {
     if (initialPattern) {
       const pattern = WAVE_PATTERNS.find(p => p.id === initialPattern);
@@ -189,28 +189,51 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
         }
       }
     } else {
-      // Default to first pattern
-      const defaultPattern = WAVE_PATTERNS[0];
-      setAppState(prev => ({ ...prev, currentPattern: defaultPattern }));
+      // Default to first pattern only if no pattern is set
+      if (!appState.currentPattern) {
+        const defaultPattern = WAVE_PATTERNS[0];
+        setAppState(prev => ({ ...prev, currentPattern: defaultPattern }));
+      }
     }
-  }, [initialPattern, autoStart, audioEngine]);
+  }, []); // Only run on mount
 
-  // Update electromagnetic state
+  // Update electromagnetic state with refs to prevent infinite loops
+  const lastElectromagneticRef = useRef(audioEngine.electromagnetic);
+  const lastAudioStateRef = useRef(audioEngine.audioState);
+
   useEffect(() => {
-    setAppState(prev => ({
-      ...prev,
-      electromagnetic: audioEngine.electromagnetic,
-      isPlaying: audioEngine.audioState.isPlaying,
-      volume: audioEngine.audioState.volume,
-      frequency: audioEngine.audioState.beatFreq
-    }));
-  }, [audioEngine.electromagnetic, audioEngine.audioState]);
+    const currentElectromagnetic = audioEngine.electromagnetic;
+    const currentAudioState = audioEngine.audioState;
+    
+    if (
+      currentElectromagnetic !== lastElectromagneticRef.current ||
+      currentAudioState !== lastAudioStateRef.current ||
+      currentAudioState.isPlaying !== lastAudioStateRef.current?.isPlaying ||
+      currentAudioState.volume !== lastAudioStateRef.current?.volume ||
+      currentAudioState.beatFreq !== lastAudioStateRef.current?.beatFreq
+    ) {
+      lastElectromagneticRef.current = currentElectromagnetic;
+      lastAudioStateRef.current = currentAudioState;
+      
+      setAppState(prev => ({
+        ...prev,
+        electromagnetic: currentElectromagnetic,
+        isPlaying: currentAudioState.isPlaying,
+        volume: currentAudioState.volume,
+        frequency: currentAudioState.beatFreq
+      }));
+    }
+  }, [audioEngine]);
 
   // Handle pattern selection
   const handlePatternSelect = useCallback((patternId: string) => {
     const pattern = WAVE_PATTERNS.find(p => p.id === patternId);
     if (pattern) {
-      setAppState(prev => ({ ...prev, currentPattern: pattern }));
+      setAppState(prev => ({ 
+        ...prev, 
+        currentPattern: pattern,
+        frequency: pattern.frequencies.beat
+      }));
       audioEngine.loadPattern(pattern);
       
       // Update 8D pattern
@@ -447,7 +470,10 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
               <BinauralGeneratorMUI
                 leftFreq={audioEngine.audioState.leftFreq || 440}
                 rightFreq={audioEngine.audioState.rightFreq || 444}
-                onFrequencyChange={(left, right) => audioEngine.updateFrequency(left, right)}
+                onFrequencyChange={(left, right) => {
+                  console.log('🎛️ Parent received frequency change:', left, right);
+                  audioEngine.updateFrequency(left, right);
+                }}
               />
             </Box>
           </CollapsibleSection>
