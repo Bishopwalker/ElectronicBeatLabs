@@ -1,7 +1,7 @@
 // Electromagnetic Beat Lab - Settings Tab Component
 
 import React from 'react';
-import { Box, Paper, Typography } from '@mui/material';
+import { Box, Paper, Typography, Button } from '@mui/material';
 import SpatialAudioControls from '../SpatialAudioControls';
 import type { AppState, AudioEngine, Pattern8D } from '../../types';
 
@@ -72,6 +72,17 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
           border: '1px solid rgba(255, 255, 255, 0.1)'
         }}
       >
+        <Typography
+          variant="body2"
+          sx={{
+            color: '#00ff88',
+            mb: 1,
+            fontSize: '0.8rem',
+            fontStyle: 'italic'
+          }}
+        >
+          💡 8D Spatial Audio requires Backend Engine (Python DSP) • Basic binaural beats use Frontend Engine (Web Audio)
+        </Typography>
         <SpatialAudioControls
           settings={{
             enabled: appState.spatialAudio?.enabled || false,
@@ -83,6 +94,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
             hf_damping: appState.spatialAudio?.hf_damping || 0.5
           }}
           onChange={handleSpatialSettingsChange}
+          backendConnected={audioEngine.backendConnected}
         />
       </Paper>
 
@@ -108,15 +120,33 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
         >
           ⚡ Backend Connection
         </Typography>
-        {audioEngine.backendConnected ? (
-          <Typography sx={{ color: '#00ff88' }}>
-            ✅ Connected to backend (Session: {audioEngine.sessionId?.slice(-8)})
-          </Typography>
-        ) : (
-          <Typography sx={{ color: '#ff6b00' }}>
-            ⚠️ Using local audio engine
-          </Typography>
-        )}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+          {audioEngine.backendConnected ? (
+            <Typography sx={{ color: '#00ff88' }}>
+              ✅ Connected to backend (Session: {audioEngine.sessionId?.slice(-8)})
+            </Typography>
+          ) : (
+            <Typography sx={{ color: '#ff6b00' }}>
+              ⚠️ Using local audio engine
+            </Typography>
+          )}
+          
+          <Button
+            variant={audioEngine.backendConnected ? "outlined" : "contained"}
+            color={audioEngine.backendConnected ? "error" : "success"}
+            size="small"
+            onClick={() => {
+              if (audioEngine.backendConnected) {
+                audioEngine.stopBackendSession();
+              } else {
+                audioEngine.startBackendSession();
+              }
+            }}
+            sx={{ ml: 1 }}
+          >
+            {audioEngine.backendConnected ? 'Disconnect' : 'Connect Backend'}
+          </Button>
+        </Box>
         
         {audioEngine.websocketState && (
           <Typography sx={{ mt: 0.5, fontSize: '0.9rem', color: '#e0e0e0' }}>

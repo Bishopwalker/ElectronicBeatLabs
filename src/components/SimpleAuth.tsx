@@ -147,7 +147,7 @@ export const SimpleAuth: React.FC = () => {
           </Alert>
         ) : (
           <Box>
-            {usage && (
+            {false && usage && (
               <Alert 
                 severity={usage.can_use ? "info" : "warning"}
                 sx={{ mb: 2 }}

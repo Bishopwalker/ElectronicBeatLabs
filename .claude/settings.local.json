@@ -65,9 +65,35 @@
       "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\src/**)",
       "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\src\\components/**)",
       "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl/**)",
-      "Bash(npx ts-node:*)"
+      "Bash(npx ts-node:*)",
+      "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\backend\\schemas/**)",
+      "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\src\\components/**)",
+      "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\src/**)",
+      "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\src\\components/**)",
+      "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\src\\components/**)",
+      "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\.claude/**)",
+      "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\.claude/**)",
+      "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\.claude/**)",
+      "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\.claude/**)",
+      "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\.claude\\hooks/**)",
+      "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\.claude/**)",
+      "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\.claude/**)",
+      "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\src\\hooks/**)",
+      "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\src\\hooks/**)"
     ],
     "deny": [],
     "ask": []
+  },
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'echo \"📋 REMINDER: Read .claude/CLAUDE.md for project instructions and coding standards before responding.\" >&2; echo \"{}\"'"
+          }
+        ]
+      }
+    ]
   }
 }

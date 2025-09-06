@@ -189,16 +189,25 @@ export const useBackendAudioEngine = () => {
   }, [websocket.state.lastMessage, processAudioFrame, processFieldFrame]);
 
   // Start backend session
-  const startBackendSession = useCallback(async (config: BinauralBeatConfig & { spatial_enabled?: boolean, spatial_settings?: Record<string, unknown> }) => {
+  const startBackendSession = useCallback(async (config?: BinauralBeatConfig & { spatial_enabled?: boolean, spatial_settings?: Record<string, unknown> }) => {
     try {
-      // Start session via API
-      const response = await api.startSession({
+      // Use current audioState values as defaults if no config provided
+      const sessionConfig = config ? {
         base_frequency: config.leftFreq,
         beat_frequency: config.beatFreq,
         amplitude: config.amplitude,
         spatial_enabled: config.spatial_enabled || false,
         spatial_settings: config.spatial_settings || {}
-      });
+      } : {
+        base_frequency: audioState.leftFreq,
+        beat_frequency: audioState.beatFreq,
+        amplitude: audioState.volume,
+        spatial_enabled: false,
+        spatial_settings: {}
+      };
+
+      // Start session via API
+      const response = await api.startSession(sessionConfig);
 
       if (response.data?.session_id && typeof response.data.session_id === 'string') {
         const newSessionId = response.data.session_id;
@@ -214,29 +223,20 @@ export const useBackendAudioEngine = () => {
         websocket.sendMessage({
           type: 'start_stream',
           data: {
-            settings: {
-              base_frequency: config.leftFreq,
-              beat_frequency: config.beatFreq,
-              amplitude: config.amplitude,
-              spatial_enabled: config.spatial_enabled,
-              spatial_settings: config.spatial_settings
-            }
+            settings: sessionConfig
           }
         });
 
         setAudioState(prev => ({
           ...prev,
           isPlaying: true,
-          leftFreq: config.leftFreq,
-          rightFreq: config.rightFreq,
-          beatFreq: config.beatFreq,
           context: audioContext.current
         }));
       }
     } catch (error) {
       console.error('Failed to start backend session:', error);
     }
-  }, [api, websocket, initializeAudio]);
+  }, [api, websocket, initializeAudio, audioState]);
 
   // Stop backend session
   const stopBackendSession = useCallback(async () => {

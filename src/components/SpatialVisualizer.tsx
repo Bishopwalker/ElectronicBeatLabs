@@ -70,24 +70,29 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
   const renderToroidalField = (ctx: CanvasRenderingContext2D, field: ElectromagneticField, time: number) => {
     const radius = 100;
     const fieldStrength = Math.max(0, Math.min(1, isFinite(field.strength) ? field.strength : 0));
+    const fieldFreq = Math.max(0.1, isFinite(field.frequency) ? field.frequency : 1);
+    const resonance = Math.max(0, Math.min(1, isFinite(field.resonance) ? field.resonance : 0));
     
     for (let i = 0; i < 8; i++) {
       const safeTime = isFinite(time) ? time : 0;
-      const angle = (i / 8) * Math.PI * 2 + safeTime * 0.001;
-      const x = Math.cos(angle) * radius;
-      const y = Math.sin(angle) * radius * 0.3;
+      // Use field frequency and resonance to modulate animation speed
+      const animSpeed = 0.001 * (1 + resonance) * (fieldFreq / 440);
+      const angle = (i / 8) * Math.PI * 2 + safeTime * animSpeed;
+      const x = Math.cos(angle) * radius * (1 + fieldStrength * 0.3);
+      const y = Math.sin(angle) * radius * 0.3 * (1 + resonance * 0.5);
       
       // Ensure all gradient parameters are finite
       const safeX = isFinite(x) ? x : 0;
       const safeY = isFinite(y) ? y : 0;
       
-      const gradient = ctx.createRadialGradient(safeX, safeY, 0, safeX, safeY, 50);
-      gradient.addColorStop(0, `rgba(255, 107, 0, ${fieldStrength})`);
+      const intensity = fieldStrength * (0.7 + resonance * 0.3);
+      const gradient = ctx.createRadialGradient(safeX, safeY, 0, safeX, safeY, 50 + resonance * 20);
+      gradient.addColorStop(0, `rgba(255, 107, 0, ${intensity})`);
       gradient.addColorStop(1, 'rgba(255, 107, 0, 0)');
       
       ctx.fillStyle = gradient;
       ctx.beginPath();
-      ctx.arc(safeX, safeY, 30 * fieldStrength, 0, Math.PI * 2);
+      ctx.arc(safeX, safeY, 30 * intensity, 0, Math.PI * 2);
       ctx.fill();
     }
   };
@@ -95,22 +100,27 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
   // Render vortex electromagnetic field
   const renderVortexField = (ctx: CanvasRenderingContext2D, field: ElectromagneticField, time: number) => {
     const fieldStrength = Math.max(0, Math.min(1, isFinite(field.strength) ? field.strength : 0));
+    const fieldFreq = Math.max(0.1, isFinite(field.frequency) ? field.frequency : 1);
+    const coherence = Math.max(0, Math.min(1, isFinite(field.coherence) ? field.coherence : 0));
     
     for (let r = 20; r < 150; r += 20) {
       const points = Math.floor(r / 10);
       
       for (let i = 0; i < points; i++) {
         const safeTime = isFinite(time) ? time : 0;
-        const angle = (i / points) * Math.PI * 2 + safeTime * 0.002 + r * 0.01;
-        const x = Math.cos(angle) * r;
-        const y = Math.sin(angle) * r;
+        // Frequency modulates rotation speed, coherence affects pattern density
+        const rotSpeed = 0.002 * (fieldFreq / 440) * (1 + coherence);
+        const angle = (i / points) * Math.PI * 2 + safeTime * rotSpeed + r * 0.01;
+        const x = Math.cos(angle) * r * (1 + fieldStrength * 0.2);
+        const y = Math.sin(angle) * r * (1 + fieldStrength * 0.2);
         
         const safeX = isFinite(x) ? x : 0;
         const safeY = isFinite(y) ? y : 0;
         
-        ctx.fillStyle = `rgba(138, 43, 226, ${fieldStrength * 0.3})`;
+        const intensity = fieldStrength * (0.3 + coherence * 0.2);
+        ctx.fillStyle = `rgba(138, 43, 226, ${intensity})`;
         ctx.beginPath();
-        ctx.arc(safeX, safeY, 3 * fieldStrength, 0, Math.PI * 2);
+        ctx.arc(safeX, safeY, 3 * fieldStrength * (1 + coherence * 0.5), 0, Math.PI * 2);
         ctx.fill();
       }
     }
@@ -119,16 +129,21 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
   // Render spiral electromagnetic field
   const renderSpiralField = (ctx: CanvasRenderingContext2D, field: ElectromagneticField, time: number) => {
     const fieldStrength = Math.max(0, Math.min(1, isFinite(field.strength) ? field.strength : 0));
+    const fieldFreq = Math.max(0.1, isFinite(field.frequency) ? field.frequency : 1);
+    const stability = Math.max(0, Math.min(1, isFinite(field.stability) ? field.stability : 0));
     
-    ctx.strokeStyle = `rgba(0, 191, 255, ${fieldStrength})`;
-    ctx.lineWidth = 2;
+    const intensity = fieldStrength * (0.8 + stability * 0.2);
+    ctx.strokeStyle = `rgba(0, 191, 255, ${intensity})`;
+    ctx.lineWidth = 2 + fieldStrength * 2;
     
     ctx.beginPath();
     const safeTime = isFinite(time) ? time : 0;
+    // Use field frequency to modulate spiral tightness and rotation speed
+    const spiralSpeed = 0.001 * (fieldFreq / 440) * (1 + fieldStrength);
     for (let t = 0; t < Math.PI * 8; t += 0.1) {
-      const r = t * 10;
-      const x = Math.cos(t + safeTime * 0.001) * r;
-      const y = Math.sin(t + safeTime * 0.001) * r;
+      const r = t * 10 * (1 + stability * 0.3);
+      const x = Math.cos(t + safeTime * spiralSpeed) * r;
+      const y = Math.sin(t + safeTime * spiralSpeed) * r;
       
       const safeX = isFinite(x) ? x : 0;
       const safeY = isFinite(y) ? y : 0;
@@ -140,6 +155,14 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
       }
     }
     ctx.stroke();
+    
+    // Add pulsing effect based on field strength
+    if (fieldStrength > 0.5) {
+      ctx.shadowColor = 'rgba(0, 191, 255, 0.5)';
+      ctx.shadowBlur = 10 * fieldStrength;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
   };
 
   // Render default electromagnetic field

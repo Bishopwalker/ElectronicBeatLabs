@@ -175,7 +175,13 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
 
   // Master audio control - consolidates all audio systems
   const masterAudio = useMasterAudioControl();
+  
+  // DUAL AUDIO ENGINE ARCHITECTURE:
+  // - Frontend Engine (audioEngine): Web Audio API for instant binaural beats
+  // - Backend Engine (backendEngine): Python DSP for 8D spatial audio & EM field integration
+  // See README.md "Audio Engine Architecture" section for full details
   const audioEngine = useMemo(() => masterAudio.engines.audioEngine, [masterAudio.engines.audioEngine]);
+  const backendEngine = useMemo(() => masterAudio.engines.backendEngine, [masterAudio.engines.backendEngine]);
   const patterns8D = useMemo(() => masterAudio.engines.patternsEngine, [masterAudio.engines.patternsEngine]);
 
   // Initialize with pattern (only on mount)
@@ -293,14 +299,12 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
   }, []);
 
   const handleSectionClose = useCallback((id: string) => {
-    setClosedSections(prev => {
-      const index = prev.indexOf(id);
-      if (index > -1) {
-        return [...prev.slice(0, index), ...prev.slice(index + 1)];
-      }
-      return prev;
-    });
-  },[])
+    setClosedSections(prev => [...prev, id]);
+  }, []);
+
+  const handleSectionRestore = useCallback((id: string) => {
+    setClosedSections(prev => prev.filter(sectionId => sectionId !== id));
+  }, []);
 
   // Get section data for restore functionality
   const getSectionData = (id: string) => {
@@ -348,6 +352,14 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
       patterns8D: patterns8D.patterns,
       onStateChange: handleStateChange
     };
+    
+    // Special props for settings tab that needs backend engine for spatial audio
+    const settingsProps = {
+      appState,
+      audioEngine: backendEngine, // Use backend engine for spatial audio
+      patterns8D: patterns8D.patterns,
+      onStateChange: handleStateChange
+    };
 
     switch (appState.activeTab) {
       case 'patterns':
@@ -377,7 +389,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
       case 'guide':
         return <GuideTab {...commonProps} />;
       case 'settings':
-        return <SettingsTab {...commonProps} />;
+        return <SettingsTab {...settingsProps} />;
       default:
         return <div>Select a tab</div>;
     }
@@ -419,118 +431,170 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
         </Box>
       </Paper>
 
-      {/* 3 Column Layout */}
-      <Box sx={{ flex: 1, p: '10px', display: 'flex', gap: '10px', height: 'calc(100vh - 60px)' }}>
-        {/* Left Column - Controls */}
-        <Box sx={{ 
-          flex: '1 1 33.33%',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '10px'
-        }}>
-          <CollapsibleSection id="masterControls" title="Master Controls" icon="🎛️" defaultOpen={true}>
-            <MasterStopControl
-              activeStatus={masterAudio.activeStatus}
-              onMasterStop={masterAudio.masterStop}
-              onMasterStart={masterAudio.quickStart}
-              frequencies={masterAudio.frequencies}
-              volume={masterAudio.volume}
-            />
-            <Box sx={{ mt: 1 }}>
-              <MainControlsMUI
-                isPlaying={appState.isPlaying}
-                volume={appState.volume}
-                onPlay={handlePlay}
-                onStop={handleStop}
-                onVolumeChange={handleVolumeChange}
+      {/* Dynamic Flex Layout - Components expand when others are minimized */}
+      <Box sx={{ 
+        flex: 1, 
+        p: '10px', 
+        display: 'flex', 
+        gap: '10px', 
+        height: 'calc(100vh - 60px)',
+        flexWrap: 'wrap',
+        minHeight: 0
+      }}>
+        {/* Master Controls */}
+        {!closedSections.includes('masterControls') && (
+          <Box sx={{ 
+            flex: '1 1 350px',
+            minWidth: '300px',
+            maxWidth: '400px',
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
+            <CollapsibleSection id="masterControls" title="Master Controls" icon="🎛️" defaultOpen={true} onClose={handleSectionClose}>
+              <MasterStopControl
+                activeStatus={masterAudio.activeStatus}
+                onMasterStop={masterAudio.masterStop}
+                onMasterStart={masterAudio.quickStart}
+                frequencies={masterAudio.frequencies}
+                volume={masterAudio.volume}
+                audioEngine={backendEngine}
               />
-            </Box>
-          </CollapsibleSection>
-          
-          <CollapsibleSection id="patternID" title="Patterns" icon="🌀" defaultOpen={true}>
-            <PatternSelectorMUI
-              patterns={WAVE_PATTERNS}
-              selected={appState.currentPattern?.id || null}
-              mode={appState.mode}
-              onSelect={handlePatternSelect}
-              onModeChange={handleModeChange}
-            />
-          </CollapsibleSection>
-        </Box>
+              <Box sx={{ mt: 1 }}>
+                <MainControlsMUI
+                  isPlaying={appState.isPlaying}
+                  volume={appState.volume}
+                  onPlay={handlePlay}
+                  onStop={handleStop}
+                  onVolumeChange={handleVolumeChange}
+                />
+              </Box>
+            </CollapsibleSection>
+          </Box>
+        )}
 
-        {/* Middle Column - Binaural Beat Generator */}
-        <Box sx={{ 
-          flex: '1 1 33.33%',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '10px'
-        }}>
-          <CollapsibleSection id="binauralBeats" title="Binaural Beat Generator" icon="🎧" defaultOpen={true}>
-            <Box sx={{ height: 'auto', overflow: 'visible' }}>
-              <BinauralGeneratorMUI
-                leftFreq={audioEngine.audioState.leftFreq || 440}
-                rightFreq={audioEngine.audioState.rightFreq || 444}
-                onFrequencyChange={(left, right) => {
-                  console.log('🎛️ Parent received frequency change:', left, right);
-                  audioEngine.updateFrequency(left, right);
-                }}
+        {/* Patterns */}
+        {!closedSections.includes('patternID') && (
+          <Box sx={{ 
+            flex: '1 1 350px',
+            minWidth: '300px',
+            maxWidth: '400px',
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
+            <CollapsibleSection id="patternID" title="Patterns" icon="🌀" defaultOpen={true} onClose={handleSectionClose}>
+              <PatternSelectorMUI
+                patterns={WAVE_PATTERNS}
+                selected={appState.currentPattern?.id || null}
+                mode={appState.mode}
+                onSelect={handlePatternSelect}
+                onModeChange={handleModeChange}
               />
-            </Box>
-          </CollapsibleSection>
-        </Box>
+            </CollapsibleSection>
+          </Box>
+        )}
 
-        {/* Right Column - Visualization & Advanced */}
-        <Box sx={{ 
-          flex: '1 1 33.33%',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '10px'
-        }}>
-          <CollapsibleSection id="visualizeID" title="Visualization" icon="🎨" defaultOpen={true}>
-            <Box sx={{ position: 'relative', height: '250px' }}>
-              <Paper
-                elevation={3}
-                sx={{
-                  width: '100%',
-                  height: '100%',
-                  borderRadius: 3,
-                  overflow: 'hidden',
-                  background: 'radial-gradient(circle at center, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.95) 100%)'
-                }}
-              >
-                {patterns8D.activePattern && (
-                  <SpatialVisualizer
-                    pattern={patterns8D.activePattern}
-                    electromagnetic={appState.electromagnetic}
-                    size={300}
-                  />
-                )}
-              </Paper>
-            </Box>
-          </CollapsibleSection>
-          
-          <CollapsibleSection id="advanceControlsID" title="Advanced Controls" icon="⚙️" defaultOpen={false}>
-            <ControlTabs
-              tabs={tabs.filter(tab => !['timer'].includes(tab.id))}
-              activeTab={appState.activeTab}
-              onTabChange={handleTabChange}
-            />
-            <Box sx={{ height: '200px', overflowY: 'auto', pr: 1, mt: 2 }}>
-              {renderTabContent()}
-            </Box>
-          </CollapsibleSection>
-          
-          <CollapsibleSection id="timerPanel" title="Timer & Sessions" icon="⏰" defaultOpen={true}>
-            <Box sx={{ height: '300px', overflowY: 'auto' }}>
-              <TimerTab
-                appState={appState}
-                audioEngine={audioEngine}
-                patterns8D={patterns8D.patterns}
-                onStateChange={(partialState) => setAppState(prev => ({ ...prev, ...partialState }))}
+        {/* Binaural Beat Generator */}
+        {!closedSections.includes('binauralBeats') && (
+          <Box sx={{ 
+            flex: '1 1 400px',
+            minWidth: '350px',
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
+            <CollapsibleSection id="binauralBeats" title="Binaural Beat Generator" icon="🎧" defaultOpen={true} onClose={handleSectionClose}>
+              <Box sx={{ height: 'auto', overflow: 'visible' }}>
+                <BinauralGeneratorMUI
+                  leftFreq={audioEngine.audioState.leftFreq || 440}
+                  rightFreq={audioEngine.audioState.rightFreq || 444}
+                  onFrequencyChange={(left, right) => {
+                    console.log('🎛️ Parent received frequency change:', left, right);
+                    audioEngine.updateFrequency(left, right);
+                  }}
+                />
+              </Box>
+            </CollapsibleSection>
+          </Box>
+        )}
+
+        {/* Visualization */}
+        {!closedSections.includes('visualizeID') && (
+          <Box sx={{ 
+            flex: '1 1 400px',
+            minWidth: '350px',
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
+            <CollapsibleSection id="visualizeID" title="Visualization" icon="🎨" defaultOpen={true} onClose={handleSectionClose}>
+              <Box sx={{ position: 'relative', height: '250px' }}>
+                <Paper
+                  elevation={3}
+                  sx={{
+                    width: '100%',
+                    height: '100%',
+                    borderRadius: 3,
+                    overflow: 'hidden',
+                    background: 'radial-gradient(circle at center, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.95) 100%)'
+                  }}
+                >
+                  {patterns8D.activePattern && (
+                    <SpatialVisualizer
+                      pattern={patterns8D.activePattern}
+                      electromagnetic={appState.electromagnetic}
+                      size={300}
+                    />
+                  )}
+                </Paper>
+              </Box>
+            </CollapsibleSection>
+          </Box>
+        )}
+
+        {/* Advanced Controls */}
+        {!closedSections.includes('advanceControlsID') && (
+          <Box sx={{ 
+            flex: '1 1 400px',
+            minWidth: '350px',
+            display: 'flex',
+            flexDirection: 'column',
+            position: 'sticky',
+            top: 0,
+            alignSelf: 'flex-start',
+            zIndex: 10
+          }}>
+            <CollapsibleSection id="advanceControlsID" title="Advanced Controls" icon="⚙️" defaultOpen={false} onClose={handleSectionClose}>
+              <ControlTabs
+                tabs={tabs.filter(tab => !['timer'].includes(tab.id))}
+                activeTab={appState.activeTab}
+                onTabChange={handleTabChange}
               />
-            </Box>
-          </CollapsibleSection>
-        </Box>
+              <Box sx={{ height: '200px', overflowY: 'auto', pr: 1, mt: 2 }}>
+                {renderTabContent()}
+              </Box>
+            </CollapsibleSection>
+          </Box>
+        )}
+
+        {/* Timer & Sessions */}
+        {!closedSections.includes('timerPanel') && (
+          <Box sx={{ 
+            flex: '1 1 400px',
+            minWidth: '350px',
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
+            <CollapsibleSection id="timerPanel" title="Timer & Sessions" icon="⏰" defaultOpen={true} onClose={handleSectionClose}>
+              <Box sx={{ height: '300px', overflowY: 'auto' }}>
+                <TimerTab
+                  appState={appState}
+                  audioEngine={audioEngine}
+                  patterns8D={patterns8D.patterns}
+                  onStateChange={(partialState) => setAppState(prev => ({ ...prev, ...partialState }))}
+                />
+              </Box>
+            </CollapsibleSection>
+          </Box>
+        )}
+      </Box>
 
         {/* Restore Tabs for Closed Sections - Fixed Position */}
         {closedSections.length > 0 && (
@@ -550,7 +614,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                     <Chip
                       key={sectionId}
                       label={`${sectionData.icon} ${sectionData.title}`}
-                      onClick={() => handleSectionClose(sectionId)}
+                      onClick={() => handleSectionRestore(sectionId)}
                       size="small"
                       sx={{ cursor: 'pointer', bgcolor: 'rgba(255, 255, 255, 0.1)' }}
                     />
@@ -562,7 +626,6 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
         )}
       </Box>
 
-    </Box>
   );
 };
 

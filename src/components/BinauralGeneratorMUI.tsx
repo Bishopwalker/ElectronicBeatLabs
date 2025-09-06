@@ -1,7 +1,7 @@
 // Electromagnetic Beat Lab - Binaural Test Component (Material UI)
 // Test individual left/right frequencies
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   Card,
   CardContent,

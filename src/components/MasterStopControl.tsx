@@ -38,6 +38,11 @@ interface MasterStopControlProps {
     beat: number;
   };
   volume: number;
+  audioEngine?: {
+    backendConnected: boolean;
+    startBackendSession: () => void;
+    stopBackendSession: () => void;
+  };
 }
 
 const MasterStopControl: React.FC<MasterStopControlProps> = ({
@@ -45,7 +50,8 @@ const MasterStopControl: React.FC<MasterStopControlProps> = ({
   onMasterStop,
   onMasterStart,
   frequencies,
-  volume
+  volume,
+  audioEngine
 }) => {
   const isAnyActive = Object.values(activeStatus).some(Boolean);
   const activeCount = Object.values(activeStatus).filter(Boolean).length;
@@ -175,6 +181,31 @@ const MasterStopControl: React.FC<MasterStopControlProps> = ({
             activeStatus.backendEngine,
             "Backend Engine",
             <SpatialAudioIcon />
+          )}
+          
+          {/* Backend Connection Control */}
+          {audioEngine && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', my: 1 }}>
+              <Button
+                variant={audioEngine.backendConnected ? "outlined" : "contained"}
+                color={audioEngine.backendConnected ? "error" : "success"}
+                size="small"
+                onClick={() => {
+                  if (audioEngine.backendConnected) {
+                    audioEngine.stopBackendSession();
+                  } else {
+                    audioEngine.startBackendSession();
+                  }
+                }}
+                sx={{ 
+                  minWidth: 140,
+                  fontSize: '0.85rem',
+                  fontWeight: 'bold'
+                }}
+              >
+                {audioEngine.backendConnected ? '🔌 Disconnect Backend' : '🔌 Connect Backend'}
+              </Button>
+            </Box>
           )}
           
           {getStatusChip(

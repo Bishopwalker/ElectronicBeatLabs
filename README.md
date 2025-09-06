@@ -1,6 +1,8 @@
-# Electromagnetic Beat Lab (EBL)
+# 🎧 Electromagnetic Beat Lab (EBL)
 
-A Python + React + TypeScript application for generating binaural beats and electromagnetic field simulations.
+**Advanced binaural beats generator with 8D spatial audio and electromagnetic field visualization**
+
+A cutting-edge audio application combining binaural beat generation, 8D spatial audio effects, and electromagnetic field simulations for enhanced focus, meditation, and altered states of consciousness.
 
 ## 📚 Documentation Structure
 
@@ -24,6 +26,42 @@ A Python + React + TypeScript application for generating binaural beats and elec
 - **Authentication**: Keycloak or AWS Cognito
 - **Payments**: Stripe Payment Platform
 - **Deployment**: AWS (ECS, S3, CloudFront) + Docker
+
+## 🎧 Audio Engine Architecture
+
+EBL uses a **dual-engine architecture** for optimal performance and reliability:
+
+### **Frontend Audio Engine** (`useAudioEngine`)
+- **Technology**: Web Audio API (browser-native)
+- **Purpose**: Instant, local binaural beat generation
+- **Capabilities**: 
+  - Sine wave generation with precise frequency control
+  - Real-time frequency/volume adjustments
+  - Zero network latency
+- **Use Cases**: Quick sessions, offline usage, fallback when backend unavailable
+
+### **Backend Audio Engine** (`useBackendAudioEngine`)  
+- **Technology**: Python + NumPy/SciPy + Custom DSP
+- **Purpose**: Advanced spatial audio processing and electromagnetic field integration
+- **Capabilities**:
+  - **8D Spatial Audio**: HRTF processing, binaural panning, reverb
+  - **Electromagnetic Integration**: Converts EM field data to spatial positioning
+  - **Research-Grade DSP**: Professional audio algorithms impossible in browsers
+  - **Real-time Streaming**: WebSocket-based audio frame delivery
+- **Use Cases**: Advanced sessions, spatial effects, electromagnetic field synchronization
+
+### **Why Both Engines?**
+
+1. **Performance**: Frontend = instant response, Backend = powerful processing
+2. **Reliability**: Frontend works offline, Backend adds advanced features  
+3. **User Experience**: Quick start (frontend) → Enhanced features (backend)
+4. **Scalability**: Distribute processing load between client and server
+
+### **Engine Selection Logic**
+- **Basic binaural beats** → Frontend Engine (instant)
+- **8D spatial audio** → Backend Engine (advanced)
+- **Electromagnetic patterns** → Backend Engine (field integration)
+- **Fallback scenarios** → Frontend Engine (always available)
 
 ## Installation
 
