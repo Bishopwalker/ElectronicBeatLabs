@@ -275,6 +275,21 @@ export const useAudioEngine = () => {
         rightFreq,
         beatFreq
       }));
+
+      // Update electromagnetic field based on frequency changes
+      const avgFreq = (leftFreq + rightFreq) / 2;
+      const fieldStrength = Math.min(1, Math.max(0, beatFreq / 100)); // Normalize beat frequency to 0-1
+      const coherence = Math.min(1, Math.max(0.1, 1 - (beatFreq / 50))); // Higher coherence for lower beat frequencies
+      
+      setElectromagnetic({
+        strength: fieldStrength,
+        frequency: avgFreq,
+        phase: Date.now() * 0.001, // Dynamic phase for animation
+        coherence: coherence,
+        resonance: beatFreq,
+        state: 'ACTIVE',
+        stability: Math.min(1, Math.max(0.5, 1 - Math.abs(leftFreq - rightFreq) / 100))
+      });
     }
   }, [audioState]);
 
@@ -376,6 +391,13 @@ export const useAudioEngine = () => {
     }, protocol.duration * 60 * 1000); // Convert minutes to milliseconds
   }, [startBinauralBeat, stopBinauralBeat]);
 
+  // Update spatial settings (frontend engine doesn't support this)
+  const updateSpatialSettings = useCallback((spatialSettings: Record<string, unknown>) => {
+    console.warn('🎧 Spatial audio (8D effects) requires Backend Engine connection');
+    console.warn('Current settings ignored:', spatialSettings);
+    console.warn('To use spatial audio, connect to the Python backend server');
+  }, []);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -396,10 +418,14 @@ export const useAudioEngine = () => {
     updateFrequency,
     updateVolume,
     updateWaveform,
+    updateSpatialSettings,
     loadPattern,
     generateTestTones,
     frequencySweep,
     createGammaProtocol,
+    backendConnected: false, // Frontend engine is never connected to backend
+    sessionId: null,
+    websocketState: { connected: false, connecting: false, error: null },
     isSupported: !!(window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)
   };
 };

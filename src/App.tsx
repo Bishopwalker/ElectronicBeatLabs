@@ -7,7 +7,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import GlobalStyles from './styles/GlobalStyles';
 import ElectromagneticBeatLab from './components/ElectromagneticBeatLab';
 import SimpleAuth from './components/SimpleAuth';
-import UsageTrackingExample from './components/UsageTrackingExample';
+// import UsageTrackingExample from './components/UsageTrackingExample';
 import TimerTab from './components/tabs/TimerTab';
 import { AuthProvider } from './contexts/AuthContext';
 import { useAuth } from './hooks/useAuth';
@@ -83,9 +83,9 @@ const AppContent = () => {
       )}
       
       {/* Show usage tracking demo for testing */}
-      <Box sx={{ position: 'fixed', top: 16, left: 16, zIndex: 1000 }}>
+      {/* <Box sx={{ position: 'fixed', top: 16, left: 16, zIndex: 1000 }}>
         <UsageTrackingExample />
-      </Box>
+      </Box> */}
       
       {/* Main app with tabs */}
       <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>

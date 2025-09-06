@@ -31,14 +31,17 @@ interface SpatialAudioControlsProps {
     room_scale?: number;
     hf_damping?: number;
   }) => void;
+  backendConnected?: boolean;
 }
 
 
 const SpatialAudioControls: React.FC<SpatialAudioControlsProps> = ({
   settings,
-  onChange
+  onChange,
+  backendConnected = false
 }) => {
   const handleToggle = (key: string) => {
+    console.log(`🎧 Spatial Audio: Toggling ${key} from ${settings[key as keyof typeof settings]} to ${!settings[key as keyof typeof settings]}`);
     onChange({
       ...settings,
       [key]: !settings[key as keyof typeof settings]
@@ -53,6 +56,7 @@ const SpatialAudioControls: React.FC<SpatialAudioControlsProps> = ({
   };
 
   const applyPreset = (preset: string) => {
+    console.log(`🎧 Spatial Audio: Applying preset "${preset}"`);
     const presets = {
       off: {
         enabled: false,

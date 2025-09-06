@@ -16,7 +16,7 @@ import {
   InputLabel,
   Chip,
 } from '@mui/material';
-import type { WaveGuidePanelProps, WaveGuideConfig } from '../types/index';
+import type { WaveGuidePanelProps, WaveGuideConfig } from '../types';
 
 const WaveGuidePanelMUI: React.FC<WaveGuidePanelProps> = ({
   config,
