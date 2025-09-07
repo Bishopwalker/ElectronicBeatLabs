@@ -291,7 +291,7 @@ export const useAudioEngine = () => {
         stability: Math.min(1, Math.max(0.5, 1 - Math.abs(leftFreq - rightFreq) / 100))
       });
     }
-  }, []);
+  }, [audioState.oscillatorL, audioState.oscillatorR, audioState.context]);
 
   // Update volume
   const updateVolume = useCallback((volume: number) => {
@@ -305,7 +305,7 @@ export const useAudioEngine = () => {
       ...prev,
       volume
     }));
-  }, []);
+  }, [audioState.gainL, audioState.gainR, audioState.context]);
 
   // Update waveform
   const updateWaveform = useCallback((waveform: 'sine' | 'square' | 'triangle' | 'sawtooth') => {
@@ -318,7 +318,7 @@ export const useAudioEngine = () => {
         waveform
       }));
     }
-  }, []);
+  }, [audioState.oscillatorL, audioState.oscillatorR]);
 
   // Load pattern configuration
   const loadPattern = useCallback((pattern: PatternConfig) => {

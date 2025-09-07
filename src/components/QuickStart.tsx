@@ -46,7 +46,8 @@ const QuickStart: React.FC<QuickStartProps> = ({
   );
 
   return (
-    <Card sx={{
+    <Card  sx={{
+      width: '15vw',
       background: 'rgba(138, 43, 226, 0.08)',
       borderColor: isAnyActive ? 'rgba(255, 102, 0, 0.5)' : 'rgba(138, 43, 226, 0.3)',
       border: isAnyActive ? '2px solid' : '1px solid',

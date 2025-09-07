@@ -55,7 +55,14 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
   };
   
   return (
-    <Card elevation={2} sx={{ mb: '10px', bgcolor: 'rgba(0, 0, 0, 0.3)', backdropFilter: 'blur(10px)' }}>
+    <Card elevation={2} sx={{ 
+      mb: '10px', 
+      bgcolor: 'rgba(0, 0, 0, 0.3)', 
+      backdropFilter: 'blur(10px)',
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column'
+    }}>
       <Box 
         sx={{ 
           display: 'flex', 
@@ -63,7 +70,8 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
           alignItems: 'center', 
           p: 1,
           cursor: 'pointer',
-          borderBottom: isOpen ? '1px solid rgba(255, 255, 255, 0.1)' : 'none'
+          borderBottom: isOpen ? '1px solid rgba(255, 255, 255, 0.1)' : 'none',
+          flexShrink: 0
         }}
         onClick={() => setIsOpen(!isOpen)}
       >
@@ -79,8 +87,15 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
           </IconButton>
         </Box>
       </Box>
-      <Collapse in={isOpen}>
-        <CardContent sx={{ p: '10px !important' }}>
+      <Collapse in={isOpen} sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <CardContent sx={{ 
+          p: '10px !important', 
+          flex: 1, 
+          display: 'flex', 
+          flexDirection: 'column',
+          height: '100%',
+          overflow: 'auto'
+        }}>
           {children}
         </CardContent>
       </Collapse>
@@ -92,8 +107,8 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
   initialPattern,
   autoStart = false
                                                                        }) => {
-  // State management
-  const [closedSections, setClosedSections] = useState<string[]>([]);
+  // State management - Start with Master Controls closed to show compact view
+  const [closedSections, setClosedSections] = useState<string[]>(['masterControls']);
   const [advancedControlsOpen, setAdvancedControlsOpen] = useState<boolean>(false);
   const [appState, setAppState] = useState<AppState>({
     mode: 'AUTO',
@@ -557,25 +572,192 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
           zIndex: 100,
           p: 1,
           display: 'flex',
-          justifyContent: 'flex-end',
-          alignItems: 'center',
+          flexDirection: 'column',
+          gap: 1,
           backdropFilter: 'blur(10px)',
           bgcolor: 'rgba(0, 0, 0, 0.2)',
           borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-          minHeight: 40,
           flexShrink: 0
         }}
       >
-        <Typography variant="h4"   sx={{fontWeight:700, m: 0 }}>
-          Bishop's Electromagnetic Beat Lab
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 0.25, alignItems: 'center', fontSize: '0.75rem' }}>
-
-          <ElectromagneticStatus
-            field={appState.electromagnetic}
-            status={appState.systemStatus}
-          />
+        {/* Top row: Title and Status */}
+        <Box sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          minHeight: 40
+        }}>
+          <Typography variant="h4" sx={{fontWeight:700, m: 0 }}>
+            Bishop's Electromagnetic Beat Lab
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 0.25, alignItems: 'center', fontSize: '0.75rem' }}>
+            <ElectromagneticStatus
+              field={appState.electromagnetic}
+              status={appState.systemStatus}
+            />
+          </Box>
         </Box>
+
+        {/* Compact Status Overview - Show when Master Controls is closed */}
+        {closedSections.includes('masterControls') && (
+          <Box sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+            px: 2,
+            py: 1,
+            background: 'rgba(138, 43, 226, 0.1)',
+            borderRadius: 2,
+            border: '1px solid rgba(138, 43, 226, 0.3)',
+            flexWrap: 'wrap'
+          }}>
+            {/* Master Controls */}
+            <MainControlsMUI
+              isPlaying={appState.isPlaying}
+              volume={appState.volume}
+              onPlay={handlePlay}
+              onStop={handleStop}
+              onVolumeChange={handleVolumeChange}
+              compact={true}
+            />
+            
+            {/* All Systems Status - Always Show All Options */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 2, flexWrap: 'wrap' }}>
+              <Typography variant="caption" color="text.secondary">
+                Systems:
+              </Typography>
+              
+              {/* Audio Engines */}
+              <Chip
+                label="🎵 Frontend Engine"
+                size="small"
+                color={audioEngine.audioState.isPlaying ? "success" : "default"}
+                variant={audioEngine.audioState.isPlaying ? "filled" : "outlined"}
+                sx={{ 
+                  fontSize: '0.7rem',
+                  backgroundColor: audioEngine.audioState.isPlaying ? 'rgba(0, 255, 136, 0.2)' : 'transparent',
+                  borderColor: audioEngine.audioState.isPlaying ? 'rgba(0, 255, 136, 0.5)' : 'rgba(255, 255, 255, 0.3)'
+                }}
+              />
+              
+              <Chip
+                label="🎵 Backend Engine"
+                size="small"
+                color={backendEngine.audioState.isPlaying ? "success" : "default"}
+                variant={backendEngine.audioState.isPlaying ? "filled" : "outlined"}
+                sx={{ 
+                  fontSize: '0.7rem',
+                  backgroundColor: backendEngine.audioState.isPlaying ? 'rgba(0, 255, 136, 0.2)' : 'transparent',
+                  borderColor: backendEngine.audioState.isPlaying ? 'rgba(0, 255, 136, 0.5)' : 'rgba(255, 255, 255, 0.3)'
+                }}
+              />
+              
+              {/* Patterns */}
+              <Chip
+                label={`🌀 Patterns ${appState.currentPattern ? `(${appState.currentPattern.name})` : ''}`}
+                size="small"
+                color={appState.currentPattern ? "success" : "default"}
+                variant={appState.currentPattern ? "filled" : "outlined"}
+                sx={{ 
+                  fontSize: '0.7rem',
+                  backgroundColor: appState.currentPattern ? 'rgba(0, 255, 136, 0.2)' : 'transparent',
+                  borderColor: appState.currentPattern ? 'rgba(0, 255, 136, 0.5)' : 'rgba(255, 255, 255, 0.3)'
+                }}
+              />
+              
+              {/* Spatial Audio */}
+              <Chip
+                label="🎧 8D Spatial"
+                size="small"
+                color={(appState.spatialAudio?.enabled && backendEngine.backendConnected) ? "success" : "default"}
+                variant={(appState.spatialAudio?.enabled && backendEngine.backendConnected) ? "filled" : "outlined"}
+                sx={{ 
+                  fontSize: '0.7rem',
+                  backgroundColor: (appState.spatialAudio?.enabled && backendEngine.backendConnected) ? 'rgba(0, 255, 136, 0.2)' : 'transparent',
+                  borderColor: (appState.spatialAudio?.enabled && backendEngine.backendConnected) ? 'rgba(0, 255, 136, 0.5)' : 'rgba(255, 255, 255, 0.3)'
+                }}
+              />
+              
+              {/* Timer */}
+              <Chip
+                label="⏰ Timer"
+                size="small"
+                color={appState.activeTab === 'timer' ? "success" : "default"}
+                variant={appState.activeTab === 'timer' ? "filled" : "outlined"}
+                sx={{ 
+                  fontSize: '0.7rem',
+                  backgroundColor: appState.activeTab === 'timer' ? 'rgba(0, 255, 136, 0.2)' : 'transparent',
+                  borderColor: appState.activeTab === 'timer' ? 'rgba(0, 255, 136, 0.5)' : 'rgba(255, 255, 255, 0.3)'
+                }}
+              />
+              
+              {/* ADHD Protocol */}
+              <Chip
+                label={`⚡ ADHD ${appState.adhd ? `(${appState.adhd.mode})` : ''}`}
+                size="small"
+                color={appState.adhd ? "success" : "default"}
+                variant={appState.adhd ? "filled" : "outlined"}
+                sx={{ 
+                  fontSize: '0.7rem',
+                  backgroundColor: appState.adhd ? 'rgba(0, 255, 136, 0.2)' : 'transparent',
+                  borderColor: appState.adhd ? 'rgba(0, 255, 136, 0.5)' : 'rgba(255, 255, 255, 0.3)'
+                }}
+              />
+              
+              {/* YouTube Sync */}
+              <Chip
+                label="📺 YouTube"
+                size="small"
+                color={(appState.youtube?.enabled && appState.youtube.videoId) ? "success" : "default"}
+                variant={(appState.youtube?.enabled && appState.youtube.videoId) ? "filled" : "outlined"}
+                sx={{ 
+                  fontSize: '0.7rem',
+                  backgroundColor: (appState.youtube?.enabled && appState.youtube.videoId) ? 'rgba(0, 255, 136, 0.2)' : 'transparent',
+                  borderColor: (appState.youtube?.enabled && appState.youtube.videoId) ? 'rgba(0, 255, 136, 0.5)' : 'rgba(255, 255, 255, 0.3)'
+                }}
+              />
+              
+              {/* Frequency Tab */}
+              <Chip
+                label="📊 Frequency"
+                size="small"
+                color={appState.activeTab === 'frequency' ? "success" : "default"}
+                variant={appState.activeTab === 'frequency' ? "filled" : "outlined"}
+                sx={{ 
+                  fontSize: '0.7rem',
+                  backgroundColor: appState.activeTab === 'frequency' ? 'rgba(0, 255, 136, 0.2)' : 'transparent',
+                  borderColor: appState.activeTab === 'frequency' ? 'rgba(0, 255, 136, 0.5)' : 'rgba(255, 255, 255, 0.3)'
+                }}
+              />
+              
+              {/* Visualizations */}
+              <Chip
+                label="🎨 Visualizations"
+                size="small"
+                color={appState.activeTab === 'visualizations' ? "success" : "default"}
+                variant={appState.activeTab === 'visualizations' ? "filled" : "outlined"}
+                sx={{ 
+                  fontSize: '0.7rem',
+                  backgroundColor: appState.activeTab === 'visualizations' ? 'rgba(0, 255, 136, 0.2)' : 'transparent',
+                  borderColor: appState.activeTab === 'visualizations' ? 'rgba(0, 255, 136, 0.5)' : 'rgba(255, 255, 255, 0.3)'
+                }}
+              />
+              
+              {/* Settings */}
+              <Chip
+                label="⚙️ Settings"
+                size="small"
+                color={appState.activeTab === 'settings' ? "success" : "default"}
+                variant={appState.activeTab === 'settings' ? "filled" : "outlined"}
+                sx={{ 
+                  fontSize: '0.7rem',
+                  backgroundColor: appState.activeTab === 'settings' ? 'rgba(0, 255, 136, 0.2)' : 'transparent',
+                  borderColor: appState.activeTab === 'settings' ? 'rgba(0, 255, 136, 0.5)' : 'rgba(255, 255, 255, 0.3)'
+                }}
+              />
+            </Box>
+          </Box>
+        )}
       </Paper>
 
       {/* Dynamic Flex Layout - Full viewport utilization */}
@@ -584,7 +766,9 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
         p: '10px', 
         display: 'flex', 
         gap: '10px', 
-        height: 'calc(100vh - 120px)', // Account for header and padding
+        height: closedSections.includes('masterControls') 
+          ? 'calc(100vh - 180px)' // More space for compact header with status bar
+          : 'calc(100vh - 120px)', // Standard header height
         minHeight: 0,
         // No flex-wrap - let components expand horizontally
         '@media (max-width: 1200px)': {

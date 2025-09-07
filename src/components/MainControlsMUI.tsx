@@ -18,17 +18,125 @@ import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import type { MainControlsProps } from '../types';
 
 
-const MainControlsMUI: React.FC<MainControlsProps> = ({
+interface ExtendedMainControlsProps extends MainControlsProps {
+  compact?: boolean;
+}
+
+const MainControlsMUI: React.FC<ExtendedMainControlsProps> = ({
   isPlaying,
   volume,
   onPlay,
   onStop,
-  onVolumeChange
+  onVolumeChange,
+  compact = false
 }) => {
   const handleVolumeChange = (_: Event, value: number | number[]) => {
     onVolumeChange(value as number);
   };
 
+  // Compact horizontal layout for header
+  if (compact) {
+    return (
+      <Box sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 2,
+        px: 2,
+        py: 1,
+        background: 'rgba(138, 43, 226, 0.1)',
+        borderRadius: 2,
+        border: '1px solid rgba(138, 43, 226, 0.3)',
+      }}>
+        {/* Play/Stop buttons */}
+        <Stack direction="row" spacing={1}>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={onPlay}
+            startIcon={<PlayArrowIcon />}
+            size="small"
+            sx={{ 
+              minWidth: '80px',
+              background: 'linear-gradient(45deg, #00ff88, #8a2be2)',
+              '&:hover': {
+                background: 'linear-gradient(45deg, #33ffaa, #9944d9)',
+              }
+            }}
+          >
+            Play
+          </Button>
+          
+          <Button
+            variant="contained"
+            color="error"
+            onClick={onStop}
+            startIcon={<StopIcon />}
+            size="small"
+            sx={{ 
+              minWidth: '80px',
+              background: 'linear-gradient(45deg, #ff0066, #ff6b00)',
+              '&:hover': {
+                background: 'linear-gradient(45deg, #ff3388, #ff8533)',
+              }
+            }}
+          >
+            Stop
+          </Button>
+        </Stack>
+        
+        {/* Volume control */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: '200px' }}>
+          <VolumeUpIcon color="secondary" fontSize="small" />
+          <Slider
+            value={volume}
+            onChange={handleVolumeChange}
+            min={0}
+            max={1}
+            step={0.01}
+            size="small"
+            sx={{
+              minWidth: '120px',
+              '& .MuiSlider-track': {
+                background: 'linear-gradient(90deg, #8a2be2, #ff6b00)',
+              },
+              '& .MuiSlider-thumb': {
+                background: 'linear-gradient(45deg, #8a2be2, #ff6b00)',
+                border: '2px solid #fff',
+                '&:hover': {
+                  boxShadow: '0 0 15px rgba(138, 43, 226, 0.7)',
+                },
+              },
+            }}
+          />
+          <Typography 
+            variant="caption" 
+            color="secondary"
+            sx={{ fontFamily: 'monospace', minWidth: '35px' }}
+          >
+            {Math.round(volume * 100)}%
+          </Typography>
+        </Box>
+        
+        {/* Status chip */}
+        <Chip
+          label={isPlaying ? 'Active' : 'Ready'}
+          color={isPlaying ? "success" : "default"}
+          size="small"
+          sx={{ 
+            fontSize: '0.7rem',
+            background: isPlaying 
+              ? 'rgba(0, 255, 136, 0.1)' 
+              : 'rgba(255, 255, 255, 0.05)',
+            borderColor: isPlaying 
+              ? 'rgba(0, 255, 136, 0.3)' 
+              : 'rgba(255, 255, 255, 0.1)',
+          }}
+        />
+      </Box>
+    );
+  }
+
+  // Full layout for expanded view
   return (
     <Card sx={{ 
       minHeight: '300px',
@@ -53,27 +161,42 @@ const MainControlsMUI: React.FC<MainControlsProps> = ({
         </Typography>
         
         <Stack spacing={2} alignItems="center">
-          <Button
-            variant="contained"
-            color={isPlaying ? "error" : "primary"}
-            onClick={isPlaying ? onStop : onPlay}
-            startIcon={isPlaying ? <StopIcon /> : <PlayArrowIcon />}
-            fullWidth
-            sx={{ 
-              maxWidth: 200,
-              py: 1,
-              background: isPlaying 
-                ? 'linear-gradient(45deg, #ff0066, #ff6b00)'
-                : 'linear-gradient(45deg, #ff6b00, #8a2be2)',
-              '&:hover': {
-                background: isPlaying
-                  ? 'linear-gradient(45deg, #ff3388, #ff8533)'
-                  : 'linear-gradient(45deg, #ff8533, #9944d9)',
-              }
-            }}
-          >
-            {isPlaying ? 'Stop' : 'Play'}
-          </Button>
+          {/* Play and Stop Buttons - Separate buttons */}
+          <Stack direction="row" spacing={1} sx={{ width: '100%', maxWidth: 250 }}>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={onPlay}
+              startIcon={<PlayArrowIcon />}
+              fullWidth
+              sx={{ 
+                py: 1,
+                background: 'linear-gradient(45deg, #00ff88, #8a2be2)',
+                '&:hover': {
+                  background: 'linear-gradient(45deg, #33ffaa, #9944d9)',
+                }
+              }}
+            >
+              Play
+            </Button>
+            
+            <Button
+              variant="contained"
+              color="error"
+              onClick={onStop}
+              startIcon={<StopIcon />}
+              fullWidth
+              sx={{ 
+                py: 1,
+                background: 'linear-gradient(45deg, #ff0066, #ff6b00)',
+                '&:hover': {
+                  background: 'linear-gradient(45deg, #ff3388, #ff8533)',
+                }
+              }}
+            >
+              Stop
+            </Button>
+          </Stack>
           
           <Box sx={{ width: '100%' }}>
             <Stack direction="row" spacing={1} alignItems="center" mb={1}>
