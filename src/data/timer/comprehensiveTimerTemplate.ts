@@ -249,8 +249,8 @@ export const ULTIMATE_CONSCIOUSNESS_EXPANSION_TEMPLATE: ComprehensiveTimerPreset
       duration_minutes: 10,
       frequency_hz: 7.83, // Schumann Resonance
       frequency_type: 'Alpha',
-      left_ear_hz: 432,
-      right_ear_hz: 439.83,
+      left_ear_hz: 110,
+      right_ear_hz: 117.83,
       description: '🌍 Phase 1: Earth Grounding (Schumann Resonance 7.83Hz)',
       
       pattern_id: 'toroidal-max-resonance',
@@ -301,8 +301,8 @@ export const ULTIMATE_CONSCIOUSNESS_EXPANSION_TEMPLATE: ComprehensiveTimerPreset
       duration_minutes: 15,
       frequency_hz: 10,
       frequency_type: 'Alpha',
-      left_ear_hz: 432,
-      right_ear_hz: 442,
+      left_ear_hz: 120,
+      right_ear_hz: 130,
       description: '🧘 Phase 2: Alpha Activation (10Hz) - Relaxed Awareness',
       
       pattern_id: 'vortex-focus-enhancement',
@@ -411,8 +411,8 @@ export const ULTIMATE_CONSCIOUSNESS_EXPANSION_TEMPLATE: ComprehensiveTimerPreset
       duration_minutes: 15,
       frequency_hz: 4,
       frequency_type: 'Theta',
-      left_ear_hz: 432,
-      right_ear_hz: 436,
+      left_ear_hz: 120,
+      right_ear_hz: 116,
       description: '🕳️ Phase 4: Deep Theta (4Hz) - Profound States',
       
       pattern_id: 'standing-wave-meditation',
@@ -568,8 +568,8 @@ export const ULTIMATE_CONSCIOUSNESS_EXPANSION_TEMPLATE: ComprehensiveTimerPreset
       duration_minutes: 5,
       frequency_hz: 7.83, // Back to Schumann
       frequency_type: 'Alpha',
-      left_ear_hz: 432,
-      right_ear_hz: 439.83,
+      left_ear_hz: 120,
+      right_ear_hz: 127.83,
       description: '🌍 Phase 7: Grounding Return (7.83Hz) - Earth Connection',
       
       pattern_id: 'interference-balance',

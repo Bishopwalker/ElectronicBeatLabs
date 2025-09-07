@@ -12,7 +12,7 @@ import TimerTab from './components/tabs/TimerTab';
 import { AuthProvider } from './contexts/AuthContext';
 import { useAuth } from './hooks/useAuth';
 import { muiTheme } from './theme/muiTheme';
-import { Box, Alert, Tabs, Tab, Typography } from '@mui/material';
+import { Box, Alert, Tabs, Tab  } from '@mui/material';
 import React from 'react';
 
 // Styled Components theme configuration
@@ -88,7 +88,7 @@ const AppContent = () => {
       </Box> */}
       
       {/* Main app with tabs */}
-      <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+      <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', }}>
         <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'rgba(0,0,0,0.8)' }}>
           <Tabs 
             value={activeTab} 
