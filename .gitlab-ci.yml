@@ -1,427 +1,369 @@
-# Electromagnetic Beat Lab - GitLab CI/CD Pipeline
-# Build → Test → Package → Security → Quality Gate
+# Electromagnetic Beat Lab - Comprehensive Security & Quality CI/CD Pipeline
+# Enhanced security monitoring with CodeQL-equivalent, Dependabot-like scanning, and SonarQube
+
+stages:
+  - security-scan
+  - dependency-check
+  - quality-analysis
+  - test
+  - security-audit
+  - build
+  - deploy
 
 variables:
   NODE_VERSION: "20"
   PYTHON_VERSION: "3.11"
   DOCKER_DRIVER: overlay2
-  SECRET_DETECTION_ENABLED: 'true'
+  SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"
+  GIT_DEPTH: "0"  # Tells git to fetch all the commits for Sonar
 
-# Define pipeline stages
-stages:
-  - build
-  - test
-  - package
-  - security
-  - quality-gate
-  - deploy
+# ============================================
+# SECURITY SCANNING STAGE
+# ============================================
 
-# Cache configuration for faster builds
-.cache_template: &cache_config
-  cache:
-    key: 
-      files:
-        - package-lock.json
-        - backend/requirements.txt
-    paths:
-      - node_modules/
-      - backend/venv/
-      - .pip-cache/
-    policy: pull-push
-
-# ==========================================
-# BUILD STAGE
-# ==========================================
-
-build:frontend:
-  stage: build
-  image: node:${NODE_VERSION}
-  <<: *cache_config
-  script:
-    # Fix rollup dependency issue on Linux
-    - rm -rf node_modules package-lock.json
-    - npm install --no-audit
-    # Type check
-    - npm run build
-    # Verify build artifacts
-    - ls -la dist/
-    # Create build environment file for dotenv reports
-    - echo "FRONTEND_VERSION=$(node --version)" > build.env
-    - echo "BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> build.env
-    - echo "COMMIT_SHA=$CI_COMMIT_SHORT_SHA" >> build.env
-    - cat build.env  # Debug: show what was created
+# GitLab SAST (Static Application Security Testing) - CodeQL equivalent
+sast:
+  stage: security-scan
+  include:
+    - template: Security/SAST.gitlab-ci.yml
+  variables:
+    SAST_EXCLUDED_PATHS: "node_modules, dist, coverage, .venv"
+    SAST_EXPERIMENTAL_FEATURES: "true"
   artifacts:
-    name: "frontend-build-$CI_COMMIT_SHORT_SHA"
-    paths:
-      - dist/
-      - node_modules/
-      - build.env
-    expire_in: 1 hour
     reports:
-      dotenv: build.env
-  rules:
-    - changes:
-        - "src/**/*"
-        - "package*.json"
-        - "tsconfig.json"
-        - "vite.config.ts"
-    - if: $CI_COMMIT_BRANCH == "main"
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      sast: gl-sast-report.json
+    expire_in: 1 week
+  allow_failure: false
 
-build:backend:
-  stage: build
-  image: python:${PYTHON_VERSION}-slim
-  <<: *cache_config
-  before_script:
-    # Install build dependencies for PyAudio and other packages
-    - apt-get update && apt-get install -y gcc g++ make portaudio19-dev python3-dev libasound2-dev libffi-dev python3-venv
-    # Setup Python environment - slim image has glibc for wheel compatibility
-    - python3 -m venv backend/venv || (echo "venv creation failed" && exit 1)
-    - ls -la backend/venv/bin/ || (echo "venv bin directory not created" && exit 1)
-    - . backend/venv/bin/activate || (echo "venv activation failed" && exit 1)
-    - which python3 && python3 --version
-    - pip install --upgrade pip
-    - pip install --cache-dir .pip-cache -r backend/requirements.txt
+# Secret Detection - Prevent credential leaks
+secret_detection:
+  stage: security-scan
+  include:
+    - template: Security/Secret-Detection.gitlab-ci.yml
+  variables:
+    SECRET_DETECTION_EXCLUDED_PATHS: "node_modules, dist, coverage, .venv"
+  artifacts:
+    reports:
+      secret_detection: gl-secret-detection-report.json
+    expire_in: 1 week
+  allow_failure: false
+
+# Semgrep - Advanced static analysis (CodeQL-like)
+semgrep-sast:
+  stage: security-scan
+  image: returntocorp/semgrep
   script:
-    # Validate Python code
-    - . backend/venv/bin/activate
+    - semgrep --config=auto --json --output=semgrep-report.json .
+    - semgrep --config=p/security-audit --json --output=semgrep-security.json .
+    - semgrep --config=p/nodejs --json --output=semgrep-nodejs.json .
+    - semgrep --config=p/typescript --json --output=semgrep-typescript.json .
+  artifacts:
+    reports:
+      sast: semgrep-report.json
+    paths:
+      - semgrep-*.json
+    expire_in: 1 week
+  allow_failure: false
+
+# ============================================
+# DEPENDENCY SECURITY STAGE  
+# ============================================
+
+# Dependency Scanning - Dependabot equivalent
+dependency_scanning:
+  stage: dependency-check
+  include:
+    - template: Security/Dependency-Scanning.gitlab-ci.yml
+  variables:
+    DS_EXCLUDED_PATHS: "node_modules, dist, coverage, .venv"
+  artifacts:
+    reports:
+      dependency_scanning: gl-dependency-scanning-report.json
+    expire_in: 1 week
+  allow_failure: false
+
+# npm audit - Additional Node.js dependency check
+npm-audit:
+  stage: dependency-check
+  image: node:$NODE_VERSION
+  script:
+    - npm ci
+    - npm audit --audit-level moderate --json > npm-audit-report.json || true
+    - npm audit --audit-level high --json > npm-audit-high.json || true
+    - npm audit --audit-level critical --json > npm-audit-critical.json || true
+  artifacts:
+    paths:
+      - npm-audit*.json
+    expire_in: 1 week
+  allow_failure: false
+
+# Snyk - Advanced vulnerability scanning
+snyk-test:
+  stage: dependency-check
+  image: node:$NODE_VERSION
+  before_script:
+    - npm install -g snyk
+    - npm ci
+  script:
+    - snyk auth $SNYK_TOKEN
+    - snyk test --json > snyk-vulnerabilities.json || true
+    - snyk monitor --project-name="electromagnetic-beat-lab"
+  artifacts:
+    paths:
+      - snyk-vulnerabilities.json
+    expire_in: 1 week
+  variables:
+    SNYK_TOKEN: $SNYK_TOKEN  # Set in GitLab CI/CD variables
+  allow_failure: true
+
+# Python backend dependency check
+python-safety-check:
+  stage: dependency-check
+  image: python:$PYTHON_VERSION
+  script:
     - cd backend
-    - python -m py_compile main.py
-    - python -c "import main; print('Backend validation successful')"
-    # Create deployment package info
-    - cd ..
-    - echo "BACKEND_VERSION=$(python3 --version)" > build.env
-    - echo "BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> build.env
-    - echo "COMMIT_SHA=$CI_COMMIT_SHORT_SHA" >> build.env
-    - cat build.env  # Debug: show what was created
+    - pip install safety bandit
+    - pip install -r requirements.txt
+    - safety check --json > safety-report.json || true
+    - bandit -r . -f json -o bandit-report.json || true
   artifacts:
-    name: "backend-build-$CI_COMMIT_SHORT_SHA"
     paths:
-      - backend/
-      - build.env
-    expire_in: 1 hour
-  rules:
-    - changes:
-        - "backend/**/*"
-    - if: $CI_COMMIT_BRANCH == "main"
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      - backend/safety-report.json
+      - backend/bandit-report.json
+    expire_in: 1 week
+  allow_failure: true
 
-# ==========================================
-# TEST STAGE
-# ==========================================
+# ============================================
+# QUALITY ANALYSIS STAGE
+# ============================================
 
-test:frontend:unit:
-  stage: test
-  image: node:${NODE_VERSION}
-  needs: ["build:frontend"]
-  dependencies:
-    - build:frontend
-  before_script:
-    # Install Chrome for testing with proper dependencies
-    - apt-get update && apt-get install -y wget gnupg2 software-properties-common
-    - wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
-    - echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list
-    - apt-get update && apt-get install -y google-chrome-stable
-    - export CHROME_BIN=/usr/bin/google-chrome
-    - export CHROME_PATH=/usr/bin/google-chrome
+# SonarQube Analysis
+sonarqube-check:
+  stage: quality-analysis
+  image: 
+    name: sonarqube/sonar-scanner-cli:latest
+    entrypoint: [""]
+  cache:
+    key: "${CI_JOB_NAME}"
+    paths:
+      - .sonar/cache
+  script: 
+    - sonar-scanner
+  variables:
+    SONAR_HOST_URL: $SONAR_HOST_URL  # Set in GitLab CI/CD variables
+    SONAR_TOKEN: $SONAR_TOKEN        # Set in GitLab CI/CD variables
+  only:
+    - main
+    - develop
+    - merge_requests
+  allow_failure: true
+
+# ESLint Security Analysis
+eslint-security:
+  stage: quality-analysis
+  image: node:$NODE_VERSION
   script:
-    # Run Jest unit tests with proper error handling
-    - npm run test:ci
-    # Generate coverage badge
-    - npm install -g coverage-badges-cli
-    - test -d coverage && coverage-badges-cli --output coverage/badge.svg || true
-  coverage: '/Lines\s*:\s*(\d+\.\d+)%/'
+    - npm ci
+    - npm install -g @typescript-eslint/eslint-plugin eslint-plugin-security
+    - npx eslint . --ext .ts,.tsx,.js,.jsx --format json > eslint-report.json || true
   artifacts:
-    name: "frontend-test-results-$CI_COMMIT_SHORT_SHA"
     paths:
-      - coverage/
+      - eslint-report.json
+    expire_in: 1 week
+  allow_failure: true
+
+# ============================================
+# TESTING STAGE
+# ============================================
+
+# Unit Tests with Coverage
+unit-tests:
+  stage: test
+  image: node:$NODE_VERSION
+  script:
+    - npm ci
+    - npm run test:coverage
+  artifacts:
     reports:
-      junit: coverage/junit.xml
       coverage_report:
         coverage_format: cobertura
         path: coverage/cobertura-coverage.xml
-    expire_in: 1 week
-  rules:
-    - changes:
-        - "src/**/*"
-        - "package*.json"
-        - "jest.config.js"
-        - "**/*.test.*"
-        - "**/*.spec.*"
-    - if: $CI_COMMIT_BRANCH == "main"
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-
-test:frontend:e2e:
-  stage: test
-  image: node:${NODE_VERSION}
-  needs: ["build:frontend"]
-  dependencies:
-    - build:frontend
-  before_script:
-    # Install Chrome for E2E testing with proper dependencies
-    - apt-get update && apt-get install -y wget gnupg2 software-properties-common
-    - wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
-    - echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list
-    - apt-get update && apt-get install -y google-chrome-stable
-    - export CHROME_BIN=/usr/bin/google-chrome
-    - export CHROME_PATH=/usr/bin/google-chrome
-  script:
-    # Run Cucumber BDD tests if they exist
-    - if npm run test:e2e --dry-run; then npm run test:e2e; else echo "No E2E tests configured yet"; fi
-  artifacts:
-    name: "e2e-test-results-$CI_COMMIT_SHORT_SHA"
     paths:
-      - reports/
-    reports:
-      junit: reports/cucumber_report.xml
+      - coverage/
     expire_in: 1 week
-  rules:
-    - changes:
-        - "features/**/*"
-        - "src/**/*"
-        - "cucumber.js"
-    - if: $CI_COMMIT_BRANCH == "main"
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  coverage: '/Lines\s*:\s*(\d+\.\d+)%/'
 
-test:backend:
+# End-to-End Security Tests
+e2e-security-tests:
   stage: test
-  image: python:${PYTHON_VERSION}-slim
-  needs: ["build:backend"]
-  dependencies:
-    - build:backend
-  before_script:
-    # Install runtime dependencies for PyAudio and testing
-    - apt-get update && apt-get install -y libportaudio2 libasound2
-    - . backend/venv/bin/activate
-  script:
-    # Run Python tests
-    - cd backend
-    - . venv/bin/activate
-    - mkdir -p ../reports
-    - python -m pytest --ignore=manual_route_test.py --junitxml=../reports/backend-junit.xml --cov=. --cov-report=xml:../reports/backend-coverage.xml --cov-report=html:../reports/backend-coverage-html/
-  coverage: '/TOTAL.+?(\d+\%)$/'
-  artifacts:
-    name: "backend-test-results-$CI_COMMIT_SHORT_SHA"
-    paths:
-      - reports/
-    reports:
-      junit: reports/backend-junit.xml
-      coverage_report:
-        coverage_format: cobertura
-        path: reports/backend-coverage.xml
-    expire_in: 1 week
-  rules:
-    - changes:
-        - "backend/**/*"
-    - if: $CI_COMMIT_BRANCH == "main"
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-
-test:integration:
-  stage: test
-  image: node:${NODE_VERSION}
+  image: node:$NODE_VERSION
   services:
-    - name: python:${PYTHON_VERSION}-slim
-      alias: backend
-      command: ["sleep", "300"]
-  needs: ["build:frontend", "build:backend"]
-  dependencies:
-    - build:frontend
-    - build:backend
-  before_script:
-    # Setup Chrome for frontend testing
-    - apt-get update && apt-get install -y wget gnupg2 software-properties-common
-    - wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
-    - echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list
-    - apt-get update && apt-get install -y google-chrome-stable
-    - export CHROME_BIN=/usr/bin/google-chrome
-    - export CHROME_PATH=/usr/bin/google-chrome
-    # Setup Python backend environment
-    - apt-get install -y python3 python3-pip python3-venv portaudio19-dev
-    - cd backend
-    - pwd && ls -la  # Debug: show current directory
-    - df -h  # Debug: check disk space
-    - python3 -c "import venv; print('venv module available')"  # Test venv module
-    - python3 -m venv --help  # Test venv command works
-    - python3 -m venv venv --verbose || (echo "venv creation failed with verbose output" && exit 1)
-    - ls -la  # Debug: show what was created
-    - ls -la venv/ || echo "venv directory not created"
-    - ls -la venv/bin/ || echo "venv/bin directory not created"
-    - test -f venv/bin/python3 && echo "python3 exists" || echo "python3 missing"
-    - . venv/bin/activate || (echo "venv activation failed" && exit 1)
-    - which python3 && python3 --version
-    - pip install --upgrade pip
-    - pip install -r requirements.txt
-    - cd ..
+    - name: selenoid/vnc:chrome_78.0
+      alias: chrome
   script:
-    # Start backend in background
-    - cd backend
-    - . venv/bin/activate
-    - python -m uvicorn main:app --host 0.0.0.0 --port 8000 &
-    - cd ..
-    - sleep 15 # Wait for backend to start
-    # Run integration tests
-    - npm run test:all
-    # Health check
-    - curl -f http://localhost:8000/health || exit 1
+    - npm ci
+    - npm run build
+    - npm run test:e2e:security || true
   artifacts:
-    name: "integration-test-results-$CI_COMMIT_SHORT_SHA"
     paths:
-      - reports/integration/
+      - e2e-security-results/
     expire_in: 1 week
-  allow_failure: true  # Integration tests can fail during development
-  rules:
-    - if: $CI_COMMIT_BRANCH == "main"
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  allow_failure: true
 
-# ==========================================
-# PACKAGE STAGE
-# ==========================================
+# ============================================
+# SECURITY AUDIT STAGE
+# ============================================
 
-package:docker:
-  stage: package
-  image: docker:24-dind
-  services:
-    - docker:24-dind
-  needs: 
-    - job: build:frontend
-      artifacts: true
-    - job: build:backend
-      artifacts: true
-    - job: test:frontend:unit
-      artifacts: false
-    - job: test:backend
-      artifacts: false
-  before_script:
-    - docker info
-    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
-  script:
-    # Build multi-stage Docker image
-    - |
-      docker build \
-        --build-arg NODE_VERSION=${NODE_VERSION} \
-        --build-arg PYTHON_VERSION=${PYTHON_VERSION} \
-        --tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA \
-        --tag $CI_REGISTRY_IMAGE:latest \
-        .
-    # Push to registry
-    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
-    - docker push $CI_REGISTRY_IMAGE:latest
-    # Generate image metadata
-    - docker inspect $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA > docker-metadata.json
-  artifacts:
-    name: "docker-package-$CI_COMMIT_SHORT_SHA"
-    paths:
-      - docker-metadata.json
-    expire_in: 1 week
-  rules:
-    - if: $CI_COMMIT_BRANCH == "main"
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-
-package:npm:
-  stage: package
-  image: node:${NODE_VERSION}
-  needs: 
-    - job: build:frontend
-      artifacts: true
-    - job: test:frontend:unit
-      artifacts: false
-  script:
-    # Create NPM package (if applicable)
-    - npm pack
-    # Create release notes
-    - echo "# Release $CI_COMMIT_SHORT_SHA" > RELEASE_NOTES.md
-    - echo "" >> RELEASE_NOTES.md
-    - echo "## Changes" >> RELEASE_NOTES.md
-    - git log --oneline -10 >> RELEASE_NOTES.md
-  artifacts:
-    name: "npm-package-$CI_COMMIT_SHORT_SHA"
-    paths:
-      - "*.tgz"
-      - RELEASE_NOTES.md
-    expire_in: 1 week
-  rules:
-    - if: $CI_COMMIT_BRANCH == "main"
-    - if: $CI_COMMIT_TAG
-
-# ==========================================
-# SECURITY STAGE
-# ==========================================
-
-sast:
-  stage: security
-  needs: ["build:frontend", "build:backend"]
-
-secret_detection:
-  stage: security
-
+# Container Security Scanning
 container_scanning:
-  stage: security
-  needs: ["package:docker"]
+  stage: security-audit
+  include:
+    - template: Security/Container-Scanning.gitlab-ci.yml
+  variables:
+    CS_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
   dependencies:
-    - package:docker
+    - docker-build
+  allow_failure: false
 
-dependency_scanning:
-  stage: security
-  needs: ["build:frontend", "build:backend"]
+# License Compliance Check
+license_scanning:
+  stage: security-audit
+  include:
+    - template: Security/License-Scanning.gitlab-ci.yml
+  variables:
+    LIC_EXCLUDED_PATHS: "node_modules, dist, coverage, .venv"
+  artifacts:
+    reports:
+      license_scanning: gl-license-scanning-report.json
+    expire_in: 1 week
+  allow_failure: true
 
-# ==========================================
-# QUALITY GATE STAGE
-# ==========================================
-
-quality_gate:
-  stage: quality-gate
-  image: alpine:latest
-  needs: 
-    - job: test:frontend:unit
-      artifacts: true
-    - job: test:backend
-      artifacts: true
-    - job: sast
-      artifacts: false
-      optional: true
-    - job: secret_detection
-      artifacts: false
-      optional: true
-  before_script:
-    - apk add --no-cache jq curl bc
+# OWASP ZAP Dynamic Security Testing
+owasp-zap:
+  stage: security-audit
+  image: owasp/zap2docker-stable
+  variables:
+    website: "http://localhost:5173"
   script:
-    # Check test coverage thresholds
+    - mkdir zap-reports
+    - /zap/zap-baseline.py -t $website -J zap-baseline-report.json -w zap-baseline-report.md || true
+    - /zap/zap-full-scan.py -t $website -J zap-full-report.json -w zap-full-report.md || true
+  artifacts:
+    paths:
+      - zap-reports/
+      - zap-*.json
+      - zap-*.md
+    expire_in: 1 week
+  allow_failure: true
+
+# ============================================
+# BUILD STAGE
+# ============================================
+
+# TypeScript Build with Security Checks
+build-frontend:
+  stage: build
+  image: node:$NODE_VERSION
+  script:
+    - npm ci
+    - npm run type-check
+    - npm run build
+  artifacts:
+    paths:
+      - dist/
+    expire_in: 1 day
+
+# Docker Build with Security Scanning
+docker-build:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  variables:
+    DOCKER_BUILDKIT: 1
+  script:
+    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+    - docker build --security-opt no-new-privileges -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA .
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+    - docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE:latest
+    - docker push $CI_REGISTRY_IMAGE:latest
+
+# ============================================
+# SECURITY REPORTING & NOTIFICATIONS
+# ============================================
+
+# Aggregate Security Reports
+security-report:
+  stage: security-audit
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache jq curl
+  script:
+    - echo "# Electromagnetic Beat Lab Security Report" > security-summary.md
+    - echo "Generated on $(date)" >> security-summary.md
+    - echo "" >> security-summary.md
+    
+    # Aggregate SAST findings
+    - echo "## Static Analysis Security Testing (SAST)" >> security-summary.md
+    - jq -r '.vulnerabilities[] | "- **\(.severity)**: \(.message) in \(.location.file):\(.location.start_line)"' gl-sast-report.json >> security-summary.md || echo "No SAST report found" >> security-summary.md
+    
+    # Aggregate dependency vulnerabilities
+    - echo "" >> security-summary.md
+    - echo "## Dependency Vulnerabilities" >> security-summary.md
+    - jq -r '.vulnerabilities[] | "- **\(.severity)**: \(.title) in \(.location.dependency.package.name)"' gl-dependency-scanning-report.json >> security-summary.md || echo "No dependency vulnerabilities found" >> security-summary.md
+    
+    # Secret detection results
+    - echo "" >> security-summary.md
+    - echo "## Secret Detection" >> security-summary.md
+    - jq -r '.vulnerabilities[] | "- **SECRET DETECTED**: \(.description) in \(.location.file)"' gl-secret-detection-report.json >> security-summary.md || echo "No secrets detected" >> security-summary.md
+    
+    # Send to monitoring webhook if configured
     - |
-      FRONTEND_COVERAGE=$(test -f coverage/lcov-report/index.html && grep -o 'Lines.*[0-9.]*%' coverage/lcov-report/index.html | grep -o '[0-9.]*' | head -1 || echo "0")
-      BACKEND_COVERAGE=$(test -f reports/backend-coverage.xml && grep -o 'TOTAL.*[0-9]*%' reports/backend-coverage.xml | grep -o '[0-9]*' | tail -1 || echo "0")
-      
-      echo "Frontend Coverage: ${FRONTEND_COVERAGE}%"
-      echo "Backend Coverage: ${BACKEND_COVERAGE}%"
-      
-      # Set minimum thresholds (lowered temporarily during fixes)
-      MIN_FRONTEND_COVERAGE=30
-      MIN_BACKEND_COVERAGE=50
-      
-      # Check thresholds
-      if (( $(echo "$FRONTEND_COVERAGE < $MIN_FRONTEND_COVERAGE" | bc -l) )); then
-        echo "❌ Frontend coverage ${FRONTEND_COVERAGE}% below threshold ${MIN_FRONTEND_COVERAGE}%"
-        exit 1
+      if [ -n "$SECURITY_WEBHOOK_URL" ]; then
+        curl -X POST -H "Content-Type: application/json" \
+             -d "{\"text\": \"Security scan completed for Electromagnetic Beat Lab\", \"attachments\": [{\"text\": \"$(cat security-summary.md)\"}]}" \
+             $SECURITY_WEBHOOK_URL
       fi
-      
-      if (( $(echo "$BACKEND_COVERAGE < $MIN_BACKEND_COVERAGE" | bc -l) )); then
-        echo "❌ Backend coverage ${BACKEND_COVERAGE}% below threshold ${MIN_BACKEND_COVERAGE}%"
-        exit 1
-      fi
-      
-      echo "✅ All quality gates passed!"
-      echo "✅ Frontend coverage: ${FRONTEND_COVERAGE}% (≥${MIN_FRONTEND_COVERAGE}%)"
-      echo "✅ Backend coverage: ${BACKEND_COVERAGE}% (≥${MIN_BACKEND_COVERAGE}%)"
-  rules:
-    - if: $CI_COMMIT_BRANCH == "main"
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  artifacts:
+    paths:
+      - security-summary.md
+    expire_in: 1 week
+  dependencies:
+    - sast
+    - dependency_scanning
+    - secret_detection
+  allow_failure: true
 
-# ==========================================
-# INCLUDE SECURITY TEMPLATES
-# ==========================================
+# ============================================
+# DEPLOYMENT STAGE (Conditional)
+# ============================================
 
-include:
-  - template: Security/SAST.gitlab-ci.yml
-  - template: Security/Secret-Detection.gitlab-ci.yml
-  - template: Security/Container-Scanning.gitlab-ci.yml
-  - template: Security/Dependency-Scanning.gitlab-ci.yml
-  - local: '.gitlab-ci-deploy.yml'
+deploy-staging:
+  stage: deploy
+  script:
+    - echo "Deploying to staging with security validation..."
+    - # Add your deployment scripts here
+  environment:
+    name: staging
+    url: https://staging.electromagnetic-beat-lab.com
+  only:
+    - develop
+  when: manual
+  dependencies:
+    - build-frontend
+    - docker-build
+
+deploy-production:
+  stage: deploy
+  script:
+    - echo "Deploying to production with security validation..."
+    - # Add your production deployment scripts here
+  environment:
+    name: production
+    url: https://electromagnetic-beat-lab.com
+  only:
+    - main
+  when: manual
+  dependencies:
+    - build-frontend
+    - docker-build

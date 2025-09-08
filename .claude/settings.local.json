@@ -79,7 +79,15 @@
       "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\.claude/**)",
       "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\.claude/**)",
       "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\src\\hooks/**)",
-      "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\src\\hooks/**)"
+      "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\src\\hooks/**)",
+      "Bash(git remote add:*)",
+      "Bash(npx serverless:*)",
+      "Bash(npm run security:audit:*)",
+      "Bash(npm run security:bandit:*)",
+      "Bash(npm run security:safety:*)",
+      "Bash(npm run security:license:*)",
+      "Bash(netsh:*)",
+      "Bash(npm run type-check:*)"
     ],
     "deny": [],
     "ask": []
