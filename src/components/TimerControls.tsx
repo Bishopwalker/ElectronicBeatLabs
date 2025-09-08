@@ -17,7 +17,9 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  IconButton
+  IconButton,
+  FormControlLabel,
+  Checkbox
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
@@ -51,6 +53,7 @@ const TimerControls: React.FC<TimerControlsProps> = ({ audioEngine }) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [editingPresetId, setEditingPresetId] = useState<string | null>(null);
   const [deletingPresetId, setDeletingPresetId] = useState<string | null>(null);
+  const [loopEnabled, setLoopEnabled] = useState(false);
   const [customPreset, setCustomPreset] = useState<CustomPresetForm>({
     name: '',
     description: '',
@@ -258,11 +261,36 @@ const TimerControls: React.FC<TimerControlsProps> = ({ audioEngine }) => {
             </Select>
           </FormControl>
 
+          {/* Loop Control */}
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={loopEnabled || (timerStatus?.session?.preset?.loop_enabled || false)}
+                onChange={(e) => setLoopEnabled(e.target.checked)}
+                disabled={loading || timerStatus?.session?.is_active}
+                sx={{
+                  color: '#00bfff',
+                  '&.Mui-checked': { color: '#00bfff' }
+                }}
+              />
+            }
+            label={
+              <Typography variant="body2" sx={{ color: '#00bfff' }}>
+                🔄 Enable Loop for this session
+                {timerStatus?.session?.is_active && (loopEnabled || (timerStatus?.session?.preset?.loop_enabled || false)) && (
+                  <Box component="span" sx={{ color: '#00ff88', ml: 1, fontWeight: 'bold' }}>
+                    (ACTIVE)
+                  </Box>
+                )}
+              </Typography>
+            }
+            sx={{ mb: 2 }}
+          />
 
           <Button
             variant="contained"
             fullWidth
-            onClick={startTimer}
+            onClick={() => startTimer(loopEnabled)}
             disabled={!selectedPresetId || loading || timerStatus?.session?.is_active}
             sx={{ mb: 2 }}
           >
