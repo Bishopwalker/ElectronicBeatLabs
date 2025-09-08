@@ -12,9 +12,16 @@ import {
   CardContent,
   LinearProgress,
   Chip,
-  CircularProgress
+  CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 import type { TimerControlsProps, CustomPresetForm } from '../data/timer/types';
 import { formatTime } from '../helpers/timer/timerUtils';
 import { useTimerLogic } from '../hooks/useTimerLogic';
@@ -33,7 +40,10 @@ const TimerControls: React.FC<TimerControlsProps> = ({ audioEngine }) => {
     setHideSession,
     startTimer,
     controlTimer,
-    saveCustomPreset
+    saveCustomPreset,
+    updateCustomPreset,
+    deleteCustomPreset,
+    customPresetTransitions
   } = useTimerLogic({ audioEngine });
 
   const [showCreateDialog, setShowCreateDialog] = useState(false);
