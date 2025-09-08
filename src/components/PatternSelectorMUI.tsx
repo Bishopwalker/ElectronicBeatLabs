@@ -40,8 +40,8 @@ const PatternSelectorMUI: React.FC<PatternSelectorProps> = ({
 
   return (
     <Card sx={{
-      minHeight: 600,
-      overflow: 'scroll',
+      height: '100%',
+      overflow: 'hidden',
       display: 'flex',
       flexDirection: 'column',
       background: 'rgba(255, 107, 0, 0.05)',
@@ -95,6 +95,9 @@ const PatternSelectorMUI: React.FC<PatternSelectorProps> = ({
         '&::-webkit-scrollbar-thumb': {
           background: 'linear-gradient(45deg, #ff6b00, #8a2be2)',
           borderRadius: '4px',
+        },
+        '&::-webkit-scrollbar-thumb:hover': {
+          background: 'linear-gradient(45deg, #ff8533, #9944d9)',
         },
       }}>
         <List dense sx={{ p: 0 }}>

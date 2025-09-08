@@ -110,6 +110,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
   // State management - Start with Master Controls closed to show compact view
   const [closedSections, setClosedSections] = useState<string[]>(['masterControls']);
   const [advancedControlsOpen, setAdvancedControlsOpen] = useState<boolean>(false);
+  const [darkScreen, setDarkScreen] = useState<boolean>(false);
   const [appState, setAppState] = useState<AppState>({
     mode: 'AUTO',
     currentPattern: null,
@@ -476,6 +477,26 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
       {/* Background Star Field */}
       <StarField {...appState.visualizations.starField} />
       
+      {/* Dark Screen Toggle Button */}
+      <IconButton
+        onClick={() => setDarkScreen(!darkScreen)}
+        sx={{
+          position: 'fixed',
+          top: 16,
+          right: 80,
+          zIndex: 200,
+          bgcolor: darkScreen ? 'rgba(0, 0, 0, 0.9)' : 'rgba(0, 0, 0, 0.7)',
+          color: darkScreen ? '#00ff88' : 'white',
+          backdropFilter: 'blur(10px)',
+          '&:hover': {
+            bgcolor: darkScreen ? 'rgba(0, 0, 0, 1)' : 'rgba(0, 0, 0, 0.8)',
+          },
+          border: `1px solid ${darkScreen ? '#00ff88' : 'rgba(255, 255, 255, 0.2)'}`,
+        }}
+      >
+        {darkScreen ? '🌞' : '🌙'}
+      </IconButton>
+
       {/* Advanced Controls Menu Toggle Button */}
       <IconButton
         onClick={() => setAdvancedControlsOpen(!advancedControlsOpen)}
@@ -838,14 +859,14 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
         }, 
         height: closedSections.includes('masterControls') 
           ? {
-              xs: 'calc(100vh - 220px)',  // Mobile: account for stacked header
-              sm: 'calc(100vh - 200px)',  // Small tablets: medium adjustment
-              md: 'calc(100vh - 180px)'   // Medium+: compact header
+              xs: 'calc(100vh - 120px)',  // Mobile: full height minus minimal header
+              sm: 'calc(100vh - 100px)',  // Small tablets: full height
+              md: 'calc(100vh - 80px)'    // Medium+: full height minus compact header
             }
           : {
-              xs: 'calc(100vh - 160px)',  // Mobile: account for stacked header
-              sm: 'calc(100vh - 140px)',  // Small tablets: medium adjustment
-              md: 'calc(100vh - 120px)'   // Medium+: standard header
+              xs: 'calc(100vh - 80px)',   // Mobile: full height minus minimal header
+              sm: 'calc(100vh - 60px)',   // Small tablets: full height
+              md: 'calc(100vh - 40px)'    // Medium+: almost full viewport
             },
         minHeight: 0,
         flexDirection: {
@@ -1082,15 +1103,47 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
               <Box sx={{ height: '100%', minHeight: '300px', overflowY: 'auto' }}>
                 <TimerTab
                   appState={appState}
-                  audioEngine={audioEngine}
+                  audioEngine={backendEngine}
                   patterns8D={patterns8D.patterns}
                   onStateChange={(partialState) => setAppState(prev => ({ ...prev, ...partialState }))}
                 />
               </Box>
-            </CollapsibleSection>
+            </CollipsibleSection>
           </Box>
         )}
       </Box>
+
+        {/* Dark Screen Overlay */}
+        {darkScreen && (
+          <Box
+            sx={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.95)',
+              zIndex: 150,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backdropFilter: 'blur(5px)',
+            }}
+            onClick={() => setDarkScreen(false)}
+          >
+            <Typography 
+              variant="h6" 
+              sx={{ 
+                color: 'rgba(255, 255, 255, 0.3)',
+                fontStyle: 'italic',
+                cursor: 'pointer',
+                userSelect: 'none'
+              }}
+            >
+              Click anywhere to exit dark screen
+            </Typography>
+          </Box>
+        )}
 
         {/* Restore Tabs for Closed Sections - Fixed Position with responsive adjustments */}
         {closedSections.length > 0 && (
