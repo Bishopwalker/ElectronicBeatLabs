@@ -1,0 +1,160 @@
+# GitLab Dependency Scanning Configuration
+# Equivalent to GitHub's Dependabot for automated dependency updates
+
+version: 2
+updates:
+  # Frontend Dependencies (npm)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "security-team"
+      - "lead-developer"
+    assignees:
+      - "lead-developer"
+    commit-message:
+      prefix: "npm"
+      prefix-development: "npm-dev"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "security-update"
+    ignore:
+      # Ignore specific packages that require manual testing
+      - dependency-name: "react"
+        versions: ["19.x"]
+      - dependency-name: "react-dom"  
+        versions: ["19.x"]
+    groups:
+      # Group related dependencies
+      testing:
+        patterns:
+          - "@testing-library/*"
+          - "jest*"
+          - "cucumber*"
+        update-types:
+          - "minor"
+          - "patch"
+      eslint:
+        patterns:
+          - "eslint*"
+          - "@eslint/*"
+        update-types:
+          - "minor" 
+          - "patch"
+      mui:
+        patterns:
+          - "@mui/*"
+          - "@emotion/*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Python Backend Dependencies
+  - package-ecosystem: "pip"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "backend-team"
+      - "security-team"
+    assignees:
+      - "backend-lead"
+    commit-message:
+      prefix: "pip"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "backend"
+      - "security-update"
+    groups:
+      # Group security-related Python packages
+      security:
+        patterns:
+          - "bandit"
+          - "safety"
+          - "cryptography"
+        update-types:
+          - "minor"
+          - "patch"
+      fastapi:
+        patterns:
+          - "fastapi*"
+          - "uvicorn*"
+          - "pydantic*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Docker Dependencies
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "devops-team"
+      - "security-team"
+    assignees:
+      - "devops-lead"
+    commit-message:
+      prefix: "docker"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "docker"
+      - "infrastructure"
+
+  # GitHub Actions (for any workflows)
+  - package-ecosystem: "github-actions"
+    directory: "/.github"
+    schedule:
+      interval: "weekly"
+      day: "thursday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "devops-team"
+    assignees:
+      - "devops-lead"
+    commit-message:
+      prefix: "actions"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "ci-cd"
+      
+  # Terraform Infrastructure (if applicable)
+  - package-ecosystem: "terraform"
+    directory: "/infrastructure"
+    schedule:
+      interval: "monthly"
+      day: "first-monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "devops-team"
+      - "security-team"
+    assignees:
+      - "devops-lead"
+    commit-message:
+      prefix: "terraform"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "infrastructure"
+      - "terraform"

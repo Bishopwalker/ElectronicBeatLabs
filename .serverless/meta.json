@@ -1,0 +1,351 @@
+{
+  "C:\\Users\\bisho\\IdeaProjects\\ebl\\serverless.yml": {
+    "versionFramework": "4.18.2",
+    "servicePath": "C:\\Users\\bisho\\IdeaProjects\\ebl\\serverless.yml",
+    "serviceConfigFileName": "serverless.yml",
+    "service": {
+      "service": "electromagnetic-beat-lab",
+      "frameworkVersion": "4",
+      "provider": {
+        "name": "aws",
+        "runtime": "python3.11",
+        "stage": "dev",
+        "region": "us-east-1",
+        "memorySize": 512,
+        "timeout": 30,
+        "environment": {
+          "STAGE": "${self:provider.stage}",
+          "REGION": "${self:provider.region}"
+        },
+        "iam": {
+          "role": {
+            "statements": [
+              {
+                "Effect": "Allow",
+                "Action": [
+                  "dynamodb:Query",
+                  "dynamodb:Scan",
+                  "dynamodb:GetItem",
+                  "dynamodb:PutItem",
+                  "dynamodb:UpdateItem",
+                  "dynamodb:DeleteItem"
+                ],
+                "Resource": [
+                  "arn:aws:dynamodb:${self:provider.region}:*:table/${self:service}-${self:provider.stage}-*"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "functions": {
+        "websocketConnect": {
+          "handler": "backend/lambda_handlers.websocket_connect",
+          "events": [
+            {
+              "websocket": {
+                "route": "$connect"
+              }
+            }
+          ]
+        },
+        "websocketDisconnect": {
+          "handler": "backend/lambda_handlers.websocket_disconnect",
+          "events": [
+            {
+              "websocket": {
+                "route": "$disconnect"
+              }
+            }
+          ]
+        },
+        "websocketDefault": {
+          "handler": "backend/lambda_handlers.websocket_default",
+          "events": [
+            {
+              "websocket": {
+                "route": "$default"
+              }
+            }
+          ]
+        },
+        "audioEngine": {
+          "handler": "backend/lambda_handlers.audio_handler",
+          "events": [
+            {
+              "http": {
+                "path": "/audio/{proxy+}",
+                "method": "ANY",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/audio",
+                "method": "ANY",
+                "cors": true
+              }
+            }
+          ]
+        },
+        "health": {
+          "handler": "backend/lambda_handlers.health_check",
+          "events": [
+            {
+              "http": {
+                "path": "/health",
+                "method": "get",
+                "cors": true
+              }
+            }
+          ]
+        },
+        "auth": {
+          "handler": "backend/lambda_handlers.auth_handler",
+          "events": [
+            {
+              "http": {
+                "path": "/auth/{proxy+}",
+                "method": "ANY",
+                "cors": true
+              }
+            }
+          ]
+        }
+      },
+      "resources": {
+        "Resources": {
+          "AudioSessionsTable": {
+            "Type": "AWS::DynamoDB::Table",
+            "Properties": {
+              "TableName": "${self:service}-${self:provider.stage}-sessions",
+              "AttributeDefinitions": [
+                {
+                  "AttributeName": "session_id",
+                  "AttributeType": "S"
+                }
+              ],
+              "KeySchema": [
+                {
+                  "AttributeName": "session_id",
+                  "KeyType": "HASH"
+                }
+              ],
+              "BillingMode": "PAY_PER_REQUEST",
+              "TimeToLiveSpecification": {
+                "AttributeName": "ttl",
+                "Enabled": true
+              }
+            }
+          },
+          "ConnectionsTable": {
+            "Type": "AWS::DynamoDB::Table",
+            "Properties": {
+              "TableName": "${self:service}-${self:provider.stage}-connections",
+              "AttributeDefinitions": [
+                {
+                  "AttributeName": "connection_id",
+                  "AttributeType": "S"
+                }
+              ],
+              "KeySchema": [
+                {
+                  "AttributeName": "connection_id",
+                  "KeyType": "HASH"
+                }
+              ],
+              "BillingMode": "PAY_PER_REQUEST",
+              "TimeToLiveSpecification": {
+                "AttributeName": "ttl",
+                "Enabled": true
+              }
+            }
+          },
+          "FrontendBucket": {
+            "Type": "AWS::S3::Bucket",
+            "Properties": {
+              "BucketName": "${self:service}-${self:provider.stage}-frontend",
+              "PublicAccessBlockConfiguration": {
+                "BlockPublicAcls": false,
+                "BlockPublicPolicy": false,
+                "IgnorePublicAcls": false,
+                "RestrictPublicBuckets": false
+              },
+              "WebsiteConfiguration": {
+                "IndexDocument": "index.html",
+                "ErrorDocument": "error.html"
+              }
+            }
+          },
+          "CloudFrontDistribution": {
+            "Type": "AWS::CloudFront::Distribution",
+            "Properties": {
+              "DistributionConfig": {
+                "Origins": [
+                  {
+                    "DomainName": {
+                      "Fn::GetAtt": [
+                        "FrontendBucket",
+                        "RegionalDomainName"
+                      ]
+                    },
+                    "Id": "S3Origin",
+                    "S3OriginConfig": {
+                      "OriginAccessIdentity": ""
+                    }
+                  }
+                ],
+                "Enabled": true,
+                "DefaultRootObject": "index.html",
+                "DefaultCacheBehavior": {
+                  "TargetOriginId": "S3Origin",
+                  "ViewerProtocolPolicy": "redirect-to-https",
+                  "Compress": true,
+                  "CachePolicyId": "4135ea2d-6df8-44a3-9df3-4b5a84be39ad"
+                },
+                "PriceClass": "PriceClass_100",
+                "ViewerCertificate": {
+                  "CloudFrontDefaultCertificate": true
+                }
+              }
+            }
+          }
+        },
+        "Outputs": {
+          "WebsocketURI": {
+            "Description": "WebSocket URI",
+            "Value": {
+              "Fn::Join": [
+                "",
+                [
+                  "wss://",
+                  {
+                    "Ref": "WebsocketsApi"
+                  },
+                  ".execute-api.",
+                  "${self:provider.region}",
+                  ".amazonaws.com/",
+                  "${self:provider.stage}"
+                ]
+              ]
+            }
+          },
+          "ApiEndpoint": {
+            "Description": "API Gateway endpoint URL",
+            "Value": {
+              "Fn::Join": [
+                "",
+                [
+                  "https://",
+                  {
+                    "Ref": "RestApiApigwRestApi"
+                  },
+                  ".execute-api.",
+                  "${self:provider.region}",
+                  ".amazonaws.com/",
+                  "${self:provider.stage}"
+                ]
+              ]
+            }
+          },
+          "FrontendURL": {
+            "Description": "Frontend CloudFront URL",
+            "Value": {
+              "Fn::GetAtt": [
+                "CloudFrontDistribution",
+                "DomainName"
+              ]
+            }
+          }
+        }
+      },
+      "plugins": [
+        "serverless-python-requirements",
+        "serverless-wsgi"
+      ],
+      "custom": {
+        "pythonRequirements": {
+          "dockerizePip": true,
+          "slim": true,
+          "strip": false
+        },
+        "wsgi": {
+          "app": "backend.main.app",
+          "packRequirements": false
+        }
+      },
+      "package": {
+        "patterns": [
+          "!node_modules/**",
+          "!dist/**",
+          "!coverage/**",
+          "!reports/**",
+          "!*.md",
+          "!.git/**",
+          "backend/**",
+          "!backend/venv/**",
+          "!backend/__pycache__/**",
+          "!backend/**/__pycache__/**",
+          "!backend/**/*.pyc"
+        ]
+      }
+    },
+    "provider": {
+      "name": "aws",
+      "runtime": "python3.11",
+      "stage": "dev",
+      "region": "us-east-1",
+      "memorySize": 512,
+      "timeout": 30,
+      "environment": {
+        "STAGE": "${self:provider.stage}",
+        "REGION": "${self:provider.region}"
+      },
+      "iam": {
+        "role": {
+          "statements": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "dynamodb:Query",
+                "dynamodb:Scan",
+                "dynamodb:GetItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem"
+              ],
+              "Resource": [
+                "arn:aws:dynamodb:${self:provider.region}:*:table/${self:service}-${self:provider.stage}-*"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "dashboard": {
+      "isEnabledForService": false,
+      "requiredAuthentication": false,
+      "orgFeaturesInUse": null,
+      "orgObservabilityIntegrations": null,
+      "serviceAppId": null,
+      "serviceProvider": null,
+      "instanceParameters": null
+    },
+    "serviceRawFile": "# Electromagnetic Beat Lab - Serverless Framework Configuration\r\n# Deploy to AWS Lambda + API Gateway + S3\r\n\r\nservice: electromagnetic-beat-lab\r\n\r\nframeworkVersion: '4'\r\n\r\nprovider:\r\n  name: aws\r\n  runtime: python3.11\r\n  stage: ${opt:stage, 'dev'}\r\n  region: us-east-1\r\n  memorySize: 512\r\n  timeout: 30\r\n  environment:\r\n    STAGE: ${self:provider.stage}\r\n    REGION: ${self:provider.region}\r\n  iam:\r\n    role:\r\n      statements:\r\n        - Effect: Allow\r\n          Action:\r\n            - dynamodb:Query\r\n            - dynamodb:Scan\r\n            - dynamodb:GetItem\r\n            - dynamodb:PutItem\r\n            - dynamodb:UpdateItem\r\n            - dynamodb:DeleteItem\r\n          Resource:\r\n            - \"arn:aws:dynamodb:${self:provider.region}:*:table/${self:service}-${self:provider.stage}-*\"\r\n\r\nfunctions:\r\n  # WebSocket Connection Management\r\n  websocketConnect:\r\n    handler: backend/lambda_handlers.websocket_connect\r\n    events:\r\n      - websocket:\r\n          route: $connect\r\n          \r\n  websocketDisconnect:\r\n    handler: backend/lambda_handlers.websocket_disconnect\r\n    events:\r\n      - websocket:\r\n          route: $disconnect\r\n          \r\n  websocketDefault:\r\n    handler: backend/lambda_handlers.websocket_default\r\n    events:\r\n      - websocket:\r\n          route: $default\r\n\r\n  # Audio Engine API\r\n  audioEngine:\r\n    handler: backend/lambda_handlers.audio_handler\r\n    events:\r\n      - http:\r\n          path: /audio/{proxy+}\r\n          method: ANY\r\n          cors: true\r\n      - http:\r\n          path: /audio\r\n          method: ANY\r\n          cors: true\r\n\r\n  # Health Check\r\n  health:\r\n    handler: backend/lambda_handlers.health_check\r\n    events:\r\n      - http:\r\n          path: /health\r\n          method: get\r\n          cors: true\r\n\r\n  # Authentication\r\n  auth:\r\n    handler: backend/lambda_handlers.auth_handler\r\n    events:\r\n      - http:\r\n          path: /auth/{proxy+}\r\n          method: ANY\r\n          cors: true\r\n\r\nresources:\r\n  Resources:\r\n    # DynamoDB Tables\r\n    AudioSessionsTable:\r\n      Type: AWS::DynamoDB::Table\r\n      Properties:\r\n        TableName: ${self:service}-${self:provider.stage}-sessions\r\n        AttributeDefinitions:\r\n          - AttributeName: session_id\r\n            AttributeType: S\r\n        KeySchema:\r\n          - AttributeName: session_id\r\n            KeyType: HASH\r\n        BillingMode: PAY_PER_REQUEST\r\n        TimeToLiveSpecification:\r\n          AttributeName: ttl\r\n          Enabled: true\r\n\r\n    ConnectionsTable:\r\n      Type: AWS::DynamoDB::Table\r\n      Properties:\r\n        TableName: ${self:service}-${self:provider.stage}-connections\r\n        AttributeDefinitions:\r\n          - AttributeName: connection_id\r\n            AttributeType: S\r\n        KeySchema:\r\n          - AttributeName: connection_id\r\n            KeyType: HASH\r\n        BillingMode: PAY_PER_REQUEST\r\n        TimeToLiveSpecification:\r\n          AttributeName: ttl\r\n          Enabled: true\r\n\r\n    # S3 Bucket for Frontend\r\n    FrontendBucket:\r\n      Type: AWS::S3::Bucket\r\n      Properties:\r\n        BucketName: ${self:service}-${self:provider.stage}-frontend\r\n        PublicAccessBlockConfiguration:\r\n          BlockPublicAcls: false\r\n          BlockPublicPolicy: false\r\n          IgnorePublicAcls: false\r\n          RestrictPublicBuckets: false\r\n        WebsiteConfiguration:\r\n          IndexDocument: index.html\r\n          ErrorDocument: error.html\r\n\r\n    # CloudFront Distribution\r\n    CloudFrontDistribution:\r\n      Type: AWS::CloudFront::Distribution\r\n      Properties:\r\n        DistributionConfig:\r\n          Origins:\r\n            - DomainName: !GetAtt FrontendBucket.RegionalDomainName\r\n              Id: S3Origin\r\n              S3OriginConfig:\r\n                OriginAccessIdentity: \"\"\r\n          Enabled: true\r\n          DefaultRootObject: index.html\r\n          DefaultCacheBehavior:\r\n            TargetOriginId: S3Origin\r\n            ViewerProtocolPolicy: redirect-to-https\r\n            Compress: true\r\n            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad # Managed caching optimized\r\n          PriceClass: PriceClass_100\r\n          ViewerCertificate:\r\n            CloudFrontDefaultCertificate: true\r\n\r\n  Outputs:\r\n    WebsocketURI:\r\n      Description: \"WebSocket URI\"\r\n      Value: \r\n        Fn::Join:\r\n          - \"\"\r\n          - - \"wss://\"\r\n            - Ref: WebsocketsApi\r\n            - \".execute-api.\"\r\n            - ${self:provider.region}\r\n            - \".amazonaws.com/\"\r\n            - ${self:provider.stage}\r\n    \r\n    ApiEndpoint:\r\n      Description: \"API Gateway endpoint URL\"\r\n      Value:\r\n        Fn::Join:\r\n          - \"\"\r\n          - - \"https://\"\r\n            - Ref: RestApiApigwRestApi\r\n            - \".execute-api.\"\r\n            - ${self:provider.region}\r\n            - \".amazonaws.com/\"\r\n            - ${self:provider.stage}\r\n    \r\n    FrontendURL:\r\n      Description: \"Frontend CloudFront URL\"\r\n      Value: !GetAtt CloudFrontDistribution.DomainName\r\n\r\nplugins:\r\n  - serverless-python-requirements\r\n  - serverless-wsgi\r\n\r\ncustom:\r\n  pythonRequirements:\r\n    dockerizePip: true\r\n    slim: true\r\n    strip: false\r\n  wsgi:\r\n    app: backend.main.app\r\n    packRequirements: false\r\n\r\npackage:\r\n  patterns:\r\n    - '!node_modules/**'\r\n    - '!dist/**'\r\n    - '!coverage/**'\r\n    - '!reports/**'\r\n    - '!*.md'\r\n    - '!.git/**'\r\n    - 'backend/**'\r\n    - '!backend/venv/**'\r\n    - '!backend/__pycache__/**'\r\n    - '!backend/**/__pycache__/**'\r\n    - '!backend/**/*.pyc'",
+    "command": [
+      "login"
+    ],
+    "options": {
+      "access-key": "AK0CnMq5YCIhssELzZ1z3fddDop5pQMTby4zsGZR7bBZR"
+    },
+    "orgId": "ba283b56-e166-4578-b93d-d0752934be15",
+    "orgName": "nngc333",
+    "userId": "FG3CJdLsJx69VcpWnK",
+    "userName": "nngc333",
+    "serviceProviderAwsCfStackId": null,
+    "serviceProviderAwsCfStackCreated": null,
+    "serviceProviderAwsCfStackUpdated": null,
+    "serviceProviderAwsCfStackStatus": null,
+    "serviceProviderAwsCfStackOutputs": null
+  }
+}

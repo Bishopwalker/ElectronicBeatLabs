@@ -339,7 +339,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
   const handleVolumeChange = useCallback((volume: number) => {
     setAppState(prev => ({ ...prev, volume }));
     audioEngine.updateVolume(volume);
-  }, [audioEngine]);
+  }, [audioEngine])
 
   // Handle play/stop
   const handlePlay = useCallback(() => {
@@ -507,12 +507,23 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
             zIndex: 150,
             height: '100vh',
             width: {
-              xs: '100vw', // Mobile: full width
-              sm: '50vw',  // Tablets: 50% width
-              xl: '25vw'   // Desktop XL: 25% width
+              xs: '100vw',    // Mobile phones: full width
+              sm: '100vw',    // Small tablets: full width
+              md: '60vw',     // Medium tablets: 60% width
+              lg: '45vw',     // Large screens: 45% width
+              xl: '35vw',     // Extra large screens: 35% width
+              xxl: '25vw'     // Ultra-wide: 25% width
             },
-            maxWidth: '600px',
-            minWidth: '320px',
+            maxWidth: {
+              xs: '100vw',    // Mobile: no max constraint
+              sm: '100vw',    // Small: no max constraint  
+              md: '700px',    // Medium+: reasonable max width
+            },
+            minWidth: {
+              xs: '320px',    // Minimum for mobile
+              sm: '400px',    // Bit more for small tablets
+              md: '500px'     // More for medium+
+            },
             bgcolor: 'rgba(0, 0, 0, 0.9)',
             backdropFilter: 'blur(20px)',
             borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
@@ -585,9 +596,31 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          minHeight: 40
+          minHeight: 40,
+          flexDirection: {
+            xs: 'column',    // Mobile: stack vertically
+            sm: 'column',    // Small tablets: stack vertically
+            md: 'row'        // Medium+: horizontal layout
+          },
+          gap: {
+            xs: 1,           // Mobile: small gap
+            md: 0            // Medium+: no gap (space-between handles it)
+          }
         }}>
-          <Typography variant="h4" sx={{fontWeight:700, m: 0 }}>
+          <Typography variant="h4" sx={{
+            fontWeight: 700, 
+            m: 0,
+            fontSize: {
+              xs: '1.5rem',    // Mobile: smaller title
+              sm: '2rem',      // Small tablets: medium title
+              md: '2.5rem',    // Medium+: larger title
+              lg: '3rem'       // Large: full size
+            },
+            textAlign: {
+              xs: 'center',    // Mobile: centered
+              md: 'left'       // Medium+: left aligned
+            }
+          }}>
             Bishop's Electromagnetic Beat Lab
           </Typography>
           <Box sx={{ display: 'flex', gap: 0.25, alignItems: 'center', fontSize: '0.75rem' }}>
@@ -603,13 +636,25 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
           <Box sx={{
             display: 'flex',
             alignItems: 'center',
-            gap: 2,
-            px: 2,
+            gap: {
+              xs: 1,           // Mobile: smaller gap
+              sm: 1.5,         // Small tablets: medium gap
+              md: 2            // Medium+: full gap
+            },
+            px: {
+              xs: 1,           // Mobile: less padding
+              sm: 1.5,         // Small tablets: medium padding
+              md: 2            // Medium+: full padding
+            },
             py: 1,
             background: 'rgba(138, 43, 226, 0.1)',
             borderRadius: 2,
             border: '1px solid rgba(138, 43, 226, 0.3)',
-            flexWrap: 'wrap'
+            flexWrap: 'wrap',
+            flexDirection: {
+              xs: 'column',    // Mobile: stack vertically
+              sm: 'row'        // Small tablets+: horizontal
+            }
           }}>
             {/* Master Controls */}
             <MainControlsMUI
@@ -622,7 +667,24 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
             />
             
             {/* All Systems Status - Always Show All Options */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 2, flexWrap: 'wrap' }}>
+            <Box sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: {
+                xs: 0.5,         // Mobile: tighter spacing
+                sm: 0.75,        // Small tablets: medium spacing
+                md: 1            // Medium+: full spacing
+              }, 
+              ml: {
+                xs: 0,           // Mobile: no left margin
+                sm: 2            // Small tablets+: left margin
+              }, 
+              flexWrap: 'wrap',
+              justifyContent: {
+                xs: 'center',    // Mobile: center chips
+                sm: 'flex-start' // Small tablets+: left align
+              }
+            }}>
               <Typography variant="caption" color="text.secondary">
                 Systems:
               </Typography>
@@ -760,30 +822,78 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
         )}
       </Paper>
 
-      {/* Dynamic Flex Layout - Full viewport utilization */}
+      {/* Dynamic Flex Layout - Full viewport utilization with responsive behavior */}
       <Box sx={{ 
         flex: 1, 
-        p: '10px', 
+        p: {
+          xs: '5px',         // Mobile: minimal padding
+          sm: '8px',         // Small tablets: small padding
+          md: '10px'         // Medium+: full padding
+        }, 
         display: 'flex', 
-        gap: '10px', 
+        gap: {
+          xs: '5px',         // Mobile: smaller gaps
+          sm: '8px',         // Small tablets: medium gaps
+          md: '10px'         // Medium+: full gaps
+        }, 
         height: closedSections.includes('masterControls') 
-          ? 'calc(100vh - 180px)' // More space for compact header with status bar
-          : 'calc(100vh - 120px)', // Standard header height
+          ? {
+              xs: 'calc(100vh - 220px)',  // Mobile: account for stacked header
+              sm: 'calc(100vh - 200px)',  // Small tablets: medium adjustment
+              md: 'calc(100vh - 180px)'   // Medium+: compact header
+            }
+          : {
+              xs: 'calc(100vh - 160px)',  // Mobile: account for stacked header
+              sm: 'calc(100vh - 140px)',  // Small tablets: medium adjustment
+              md: 'calc(100vh - 120px)'   // Medium+: standard header
+            },
         minHeight: 0,
-        // No flex-wrap - let components expand horizontally
-        '@media (max-width: 1200px)': {
-          flexWrap: 'wrap' // Only wrap on smaller screens
+        flexDirection: {
+          xs: 'column',      // Mobile: stack all panels vertically
+          sm: 'column',      // Small tablets: stack vertically
+          md: 'row',         // Medium tablets: horizontal layout
+          lg: 'row'          // Large+: horizontal layout
+        },
+        flexWrap: {
+          md: 'nowrap',      // Medium: don't wrap
+          lg: 'wrap',        // Large: allow wrapping
+          xl: 'nowrap'       // XL+: don't wrap
+        },
+        overflowX: {
+          xs: 'visible',     // Mobile: no horizontal scroll
+          md: 'auto'         // Medium+: allow horizontal scroll if needed
+        },
+        overflowY: {
+          xs: 'auto',        // Mobile: allow vertical scroll
+          md: 'visible'      // Medium+: no vertical scroll
         }
       }}>
         {/* Master Controls */}
         {!closedSections.includes('masterControls') && (
           <Box sx={{ 
-            flex: '1 1 300px',
-            minWidth: '300px',
-            height: '100%',
+            flex: {
+              xs: '1 1 auto',    // Mobile: take full width
+              sm: '1 1 auto',    // Small tablets: take full width
+              md: '1 1 280px',   // Medium: flexible with min 280px
+              lg: '1 1 320px',   // Large: flexible with min 320px
+              xl: '0 1 350px'    // XL: fixed width, shrinkable
+            },
+            minWidth: {
+              xs: '280px',       // Mobile: minimum width
+              sm: '300px',       // Small tablets: bit more
+              md: '280px',       // Medium: compact
+              lg: '320px'        // Large+: comfortable width
+            },
+            maxWidth: {
+              xs: '100%',        // Mobile: full width
+              md: '400px'        // Medium+: reasonable max
+            },
+            height: {
+              xs: 'auto',        // Mobile: auto height
+              md: '100%'         // Medium+: full height
+            },
             display: 'flex',
-            flexDirection: 'column',
-            // Remove maxWidth to allow expansion on large screens
+            flexDirection: 'column'
           }}>
             <CollapsibleSection id="masterControls" title="Master Controls" icon="🎛️" defaultOpen={true} onClose={handleSectionClose}>
               <QuickStart
@@ -800,9 +910,27 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
         {/* Patterns */}
         {!closedSections.includes('patternID') && (
           <Box sx={{ 
-            flex: '1 1 300px',
-            minWidth: '300px',
-            height: '100%',
+            flex: {
+              xs: '1 1 auto',    // Mobile: take full width
+              sm: '1 1 auto',    // Small tablets: take full width
+              md: '1 1 280px',   // Medium: flexible with min 280px
+              lg: '1 1 320px',   // Large: flexible with min 320px
+              xl: '0 1 350px'    // XL: fixed width, shrinkable
+            },
+            minWidth: {
+              xs: '280px',       // Mobile: minimum width
+              sm: '300px',       // Small tablets: bit more
+              md: '280px',       // Medium: compact
+              lg: '320px'        // Large+: comfortable width
+            },
+            maxWidth: {
+              xs: '100%',        // Mobile: full width
+              md: '400px'        // Medium+: reasonable max
+            },
+            height: {
+              xs: 'auto',        // Mobile: auto height
+              md: '100%'         // Medium+: full height
+            },
             display: 'flex',
             flexDirection: 'column'
           }}>
@@ -821,9 +949,27 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
         {/* Binaural Beat Generator */}
         {!closedSections.includes('binauralBeats') && (
           <Box sx={{ 
-            flex: '1 1 350px',
-            minWidth: '350px',
-            height: '100%',
+            flex: {
+              xs: '1 1 auto',    // Mobile: take full width
+              sm: '1 1 auto',    // Small tablets: take full width
+              md: '1 1 320px',   // Medium: flexible with min 320px
+              lg: '1 1 360px',   // Large: flexible with min 360px
+              xl: '0 1 400px'    // XL: fixed width, shrinkable
+            },
+            minWidth: {
+              xs: '280px',       // Mobile: minimum width
+              sm: '320px',       // Small tablets: bit more
+              md: '320px',       // Medium: comfortable
+              lg: '360px'        // Large+: spacious width
+            },
+            maxWidth: {
+              xs: '100%',        // Mobile: full width
+              md: '450px'        // Medium+: reasonable max
+            },
+            height: {
+              xs: 'auto',        // Mobile: auto height
+              md: '100%'         // Medium+: full height
+            },
             display: 'flex',
             flexDirection: 'column'
           }}>
@@ -854,9 +1000,27 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
         {/* Visualization */}
         {!closedSections.includes('visualizeID') && (
           <Box sx={{ 
-            flex: '1 1 350px',
-            minWidth: '350px',
-            height: '100%',
+            flex: {
+              xs: '1 1 auto',    // Mobile: take full width
+              sm: '1 1 auto',    // Small tablets: take full width
+              md: '1 1 320px',   // Medium: flexible with min 320px
+              lg: '1 1 360px',   // Large: flexible with min 360px
+              xl: '0 1 400px'    // XL: fixed width, shrinkable
+            },
+            minWidth: {
+              xs: '280px',       // Mobile: minimum width
+              sm: '320px',       // Small tablets: bit more
+              md: '320px',       // Medium: comfortable
+              lg: '360px'        // Large+: spacious width
+            },
+            maxWidth: {
+              xs: '100%',        // Mobile: full width
+              md: '450px'        // Medium+: reasonable max
+            },
+            height: {
+              xs: 'auto',        // Mobile: auto height
+              md: '100%'         // Medium+: full height
+            },
             display: 'flex',
             flexDirection: 'column'
           }}>
@@ -890,9 +1054,27 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
         {/* Timer & Sessions */}
         {!closedSections.includes('timerPanel') && (
           <Box sx={{ 
-            flex: '1 1 350px',
-            minWidth: '350px',
-            height: '100%',
+            flex: {
+              xs: '1 1 auto',    // Mobile: take full width
+              sm: '1 1 auto',    // Small tablets: take full width
+              md: '1 1 320px',   // Medium: flexible with min 320px
+              lg: '1 1 360px',   // Large: flexible with min 360px
+              xl: '0 1 400px'    // XL: fixed width, shrinkable
+            },
+            minWidth: {
+              xs: '280px',       // Mobile: minimum width
+              sm: '320px',       // Small tablets: bit more
+              md: '320px',       // Medium: comfortable
+              lg: '360px'        // Large+: spacious width
+            },
+            maxWidth: {
+              xs: '100%',        // Mobile: full width
+              md: '450px'        // Medium+: reasonable max
+            },
+            height: {
+              xs: 'auto',        // Mobile: auto height
+              md: '100%'         // Medium+: full height
+            },
             display: 'flex',
             flexDirection: 'column'
           }}>
@@ -910,14 +1092,26 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
         )}
       </Box>
 
-        {/* Restore Tabs for Closed Sections - Fixed Position */}
+        {/* Restore Tabs for Closed Sections - Fixed Position with responsive adjustments */}
         {closedSections.length > 0 && (
           <Box sx={{ 
             position: 'fixed', 
-            bottom: 10, 
-            right: 10, 
+            bottom: {
+              xs: 8,           // Mobile: closer to edge
+              sm: 10,          // Small tablets: normal spacing
+              md: 10           // Medium+: normal spacing
+            }, 
+            right: {
+              xs: 8,           // Mobile: closer to edge
+              sm: 10,          // Small tablets: normal spacing
+              md: 10           // Medium+: normal spacing
+            }, 
             zIndex: 1000,
-            maxWidth: 300
+            maxWidth: {
+              xs: 'calc(100vw - 16px)',  // Mobile: almost full width
+              sm: 400,                   // Small tablets: wider
+              md: 300                    // Medium+: compact
+            }
           }}>
             <Paper elevation={2} sx={{ p: 1, bgcolor: 'rgba(0, 0, 0, 0.8)', backdropFilter: 'blur(10px)' }}>
               <Typography variant="body2" sx={{ mb: 1, color: '#888' }}>Closed sections:</Typography>

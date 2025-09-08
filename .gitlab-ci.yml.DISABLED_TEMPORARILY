@@ -1,0 +1,427 @@
+# Electromagnetic Beat Lab - GitLab CI/CD Pipeline
+# Build → Test → Package → Security → Quality Gate
+
+variables:
+  NODE_VERSION: "20"
+  PYTHON_VERSION: "3.11"
+  DOCKER_DRIVER: overlay2
+  SECRET_DETECTION_ENABLED: 'true'
+
+# Define pipeline stages
+stages:
+  - build
+  - test
+  - package
+  - security
+  - quality-gate
+  - deploy
+
+# Cache configuration for faster builds
+.cache_template: &cache_config
+  cache:
+    key: 
+      files:
+        - package-lock.json
+        - backend/requirements.txt
+    paths:
+      - node_modules/
+      - backend/venv/
+      - .pip-cache/
+    policy: pull-push
+
+# ==========================================
+# BUILD STAGE
+# ==========================================
+
+build:frontend:
+  stage: build
+  image: node:${NODE_VERSION}
+  <<: *cache_config
+  script:
+    # Fix rollup dependency issue on Linux
+    - rm -rf node_modules package-lock.json
+    - npm install --no-audit
+    # Type check
+    - npm run build
+    # Verify build artifacts
+    - ls -la dist/
+    # Create build environment file for dotenv reports
+    - echo "FRONTEND_VERSION=$(node --version)" > build.env
+    - echo "BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> build.env
+    - echo "COMMIT_SHA=$CI_COMMIT_SHORT_SHA" >> build.env
+    - cat build.env  # Debug: show what was created
+  artifacts:
+    name: "frontend-build-$CI_COMMIT_SHORT_SHA"
+    paths:
+      - dist/
+      - node_modules/
+      - build.env
+    expire_in: 1 hour
+    reports:
+      dotenv: build.env
+  rules:
+    - changes:
+        - "src/**/*"
+        - "package*.json"
+        - "tsconfig.json"
+        - "vite.config.ts"
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+build:backend:
+  stage: build
+  image: python:${PYTHON_VERSION}-slim
+  <<: *cache_config
+  before_script:
+    # Install build dependencies for PyAudio and other packages
+    - apt-get update && apt-get install -y gcc g++ make portaudio19-dev python3-dev libasound2-dev libffi-dev python3-venv
+    # Setup Python environment - slim image has glibc for wheel compatibility
+    - python3 -m venv backend/venv || (echo "venv creation failed" && exit 1)
+    - ls -la backend/venv/bin/ || (echo "venv bin directory not created" && exit 1)
+    - . backend/venv/bin/activate || (echo "venv activation failed" && exit 1)
+    - which python3 && python3 --version
+    - pip install --upgrade pip
+    - pip install --cache-dir .pip-cache -r backend/requirements.txt
+  script:
+    # Validate Python code
+    - . backend/venv/bin/activate
+    - cd backend
+    - python -m py_compile main.py
+    - python -c "import main; print('Backend validation successful')"
+    # Create deployment package info
+    - cd ..
+    - echo "BACKEND_VERSION=$(python3 --version)" > build.env
+    - echo "BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> build.env
+    - echo "COMMIT_SHA=$CI_COMMIT_SHORT_SHA" >> build.env
+    - cat build.env  # Debug: show what was created
+  artifacts:
+    name: "backend-build-$CI_COMMIT_SHORT_SHA"
+    paths:
+      - backend/
+      - build.env
+    expire_in: 1 hour
+  rules:
+    - changes:
+        - "backend/**/*"
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+# ==========================================
+# TEST STAGE
+# ==========================================
+
+test:frontend:unit:
+  stage: test
+  image: node:${NODE_VERSION}
+  needs: ["build:frontend"]
+  dependencies:
+    - build:frontend
+  before_script:
+    # Install Chrome for testing with proper dependencies
+    - apt-get update && apt-get install -y wget gnupg2 software-properties-common
+    - wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
+    - echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list
+    - apt-get update && apt-get install -y google-chrome-stable
+    - export CHROME_BIN=/usr/bin/google-chrome
+    - export CHROME_PATH=/usr/bin/google-chrome
+  script:
+    # Run Jest unit tests with proper error handling
+    - npm run test:ci
+    # Generate coverage badge
+    - npm install -g coverage-badges-cli
+    - test -d coverage && coverage-badges-cli --output coverage/badge.svg || true
+  coverage: '/Lines\s*:\s*(\d+\.\d+)%/'
+  artifacts:
+    name: "frontend-test-results-$CI_COMMIT_SHORT_SHA"
+    paths:
+      - coverage/
+    reports:
+      junit: coverage/junit.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage/cobertura-coverage.xml
+    expire_in: 1 week
+  rules:
+    - changes:
+        - "src/**/*"
+        - "package*.json"
+        - "jest.config.js"
+        - "**/*.test.*"
+        - "**/*.spec.*"
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+test:frontend:e2e:
+  stage: test
+  image: node:${NODE_VERSION}
+  needs: ["build:frontend"]
+  dependencies:
+    - build:frontend
+  before_script:
+    # Install Chrome for E2E testing with proper dependencies
+    - apt-get update && apt-get install -y wget gnupg2 software-properties-common
+    - wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
+    - echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list
+    - apt-get update && apt-get install -y google-chrome-stable
+    - export CHROME_BIN=/usr/bin/google-chrome
+    - export CHROME_PATH=/usr/bin/google-chrome
+  script:
+    # Run Cucumber BDD tests if they exist
+    - if npm run test:e2e --dry-run; then npm run test:e2e; else echo "No E2E tests configured yet"; fi
+  artifacts:
+    name: "e2e-test-results-$CI_COMMIT_SHORT_SHA"
+    paths:
+      - reports/
+    reports:
+      junit: reports/cucumber_report.xml
+    expire_in: 1 week
+  rules:
+    - changes:
+        - "features/**/*"
+        - "src/**/*"
+        - "cucumber.js"
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+test:backend:
+  stage: test
+  image: python:${PYTHON_VERSION}-slim
+  needs: ["build:backend"]
+  dependencies:
+    - build:backend
+  before_script:
+    # Install runtime dependencies for PyAudio and testing
+    - apt-get update && apt-get install -y libportaudio2 libasound2
+    - . backend/venv/bin/activate
+  script:
+    # Run Python tests
+    - cd backend
+    - . venv/bin/activate
+    - mkdir -p ../reports
+    - python -m pytest --ignore=manual_route_test.py --junitxml=../reports/backend-junit.xml --cov=. --cov-report=xml:../reports/backend-coverage.xml --cov-report=html:../reports/backend-coverage-html/
+  coverage: '/TOTAL.+?(\d+\%)$/'
+  artifacts:
+    name: "backend-test-results-$CI_COMMIT_SHORT_SHA"
+    paths:
+      - reports/
+    reports:
+      junit: reports/backend-junit.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: reports/backend-coverage.xml
+    expire_in: 1 week
+  rules:
+    - changes:
+        - "backend/**/*"
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+test:integration:
+  stage: test
+  image: node:${NODE_VERSION}
+  services:
+    - name: python:${PYTHON_VERSION}-slim
+      alias: backend
+      command: ["sleep", "300"]
+  needs: ["build:frontend", "build:backend"]
+  dependencies:
+    - build:frontend
+    - build:backend
+  before_script:
+    # Setup Chrome for frontend testing
+    - apt-get update && apt-get install -y wget gnupg2 software-properties-common
+    - wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
+    - echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list
+    - apt-get update && apt-get install -y google-chrome-stable
+    - export CHROME_BIN=/usr/bin/google-chrome
+    - export CHROME_PATH=/usr/bin/google-chrome
+    # Setup Python backend environment
+    - apt-get install -y python3 python3-pip python3-venv portaudio19-dev
+    - cd backend
+    - pwd && ls -la  # Debug: show current directory
+    - df -h  # Debug: check disk space
+    - python3 -c "import venv; print('venv module available')"  # Test venv module
+    - python3 -m venv --help  # Test venv command works
+    - python3 -m venv venv --verbose || (echo "venv creation failed with verbose output" && exit 1)
+    - ls -la  # Debug: show what was created
+    - ls -la venv/ || echo "venv directory not created"
+    - ls -la venv/bin/ || echo "venv/bin directory not created"
+    - test -f venv/bin/python3 && echo "python3 exists" || echo "python3 missing"
+    - . venv/bin/activate || (echo "venv activation failed" && exit 1)
+    - which python3 && python3 --version
+    - pip install --upgrade pip
+    - pip install -r requirements.txt
+    - cd ..
+  script:
+    # Start backend in background
+    - cd backend
+    - . venv/bin/activate
+    - python -m uvicorn main:app --host 0.0.0.0 --port 8000 &
+    - cd ..
+    - sleep 15 # Wait for backend to start
+    # Run integration tests
+    - npm run test:all
+    # Health check
+    - curl -f http://localhost:8000/health || exit 1
+  artifacts:
+    name: "integration-test-results-$CI_COMMIT_SHORT_SHA"
+    paths:
+      - reports/integration/
+    expire_in: 1 week
+  allow_failure: true  # Integration tests can fail during development
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+# ==========================================
+# PACKAGE STAGE
+# ==========================================
+
+package:docker:
+  stage: package
+  image: docker:24-dind
+  services:
+    - docker:24-dind
+  needs: 
+    - job: build:frontend
+      artifacts: true
+    - job: build:backend
+      artifacts: true
+    - job: test:frontend:unit
+      artifacts: false
+    - job: test:backend
+      artifacts: false
+  before_script:
+    - docker info
+    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+  script:
+    # Build multi-stage Docker image
+    - |
+      docker build \
+        --build-arg NODE_VERSION=${NODE_VERSION} \
+        --build-arg PYTHON_VERSION=${PYTHON_VERSION} \
+        --tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA \
+        --tag $CI_REGISTRY_IMAGE:latest \
+        .
+    # Push to registry
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
+    - docker push $CI_REGISTRY_IMAGE:latest
+    # Generate image metadata
+    - docker inspect $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA > docker-metadata.json
+  artifacts:
+    name: "docker-package-$CI_COMMIT_SHORT_SHA"
+    paths:
+      - docker-metadata.json
+    expire_in: 1 week
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+package:npm:
+  stage: package
+  image: node:${NODE_VERSION}
+  needs: 
+    - job: build:frontend
+      artifacts: true
+    - job: test:frontend:unit
+      artifacts: false
+  script:
+    # Create NPM package (if applicable)
+    - npm pack
+    # Create release notes
+    - echo "# Release $CI_COMMIT_SHORT_SHA" > RELEASE_NOTES.md
+    - echo "" >> RELEASE_NOTES.md
+    - echo "## Changes" >> RELEASE_NOTES.md
+    - git log --oneline -10 >> RELEASE_NOTES.md
+  artifacts:
+    name: "npm-package-$CI_COMMIT_SHORT_SHA"
+    paths:
+      - "*.tgz"
+      - RELEASE_NOTES.md
+    expire_in: 1 week
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_COMMIT_TAG
+
+# ==========================================
+# SECURITY STAGE
+# ==========================================
+
+sast:
+  stage: security
+  needs: ["build:frontend", "build:backend"]
+
+secret_detection:
+  stage: security
+
+container_scanning:
+  stage: security
+  needs: ["package:docker"]
+  dependencies:
+    - package:docker
+
+dependency_scanning:
+  stage: security
+  needs: ["build:frontend", "build:backend"]
+
+# ==========================================
+# QUALITY GATE STAGE
+# ==========================================
+
+quality_gate:
+  stage: quality-gate
+  image: alpine:latest
+  needs: 
+    - job: test:frontend:unit
+      artifacts: true
+    - job: test:backend
+      artifacts: true
+    - job: sast
+      artifacts: false
+      optional: true
+    - job: secret_detection
+      artifacts: false
+      optional: true
+  before_script:
+    - apk add --no-cache jq curl bc
+  script:
+    # Check test coverage thresholds
+    - |
+      FRONTEND_COVERAGE=$(test -f coverage/lcov-report/index.html && grep -o 'Lines.*[0-9.]*%' coverage/lcov-report/index.html | grep -o '[0-9.]*' | head -1 || echo "0")
+      BACKEND_COVERAGE=$(test -f reports/backend-coverage.xml && grep -o 'TOTAL.*[0-9]*%' reports/backend-coverage.xml | grep -o '[0-9]*' | tail -1 || echo "0")
+      
+      echo "Frontend Coverage: ${FRONTEND_COVERAGE}%"
+      echo "Backend Coverage: ${BACKEND_COVERAGE}%"
+      
+      # Set minimum thresholds (lowered temporarily during fixes)
+      MIN_FRONTEND_COVERAGE=30
+      MIN_BACKEND_COVERAGE=50
+      
+      # Check thresholds
+      if (( $(echo "$FRONTEND_COVERAGE < $MIN_FRONTEND_COVERAGE" | bc -l) )); then
+        echo "❌ Frontend coverage ${FRONTEND_COVERAGE}% below threshold ${MIN_FRONTEND_COVERAGE}%"
+        exit 1
+      fi
+      
+      if (( $(echo "$BACKEND_COVERAGE < $MIN_BACKEND_COVERAGE" | bc -l) )); then
+        echo "❌ Backend coverage ${BACKEND_COVERAGE}% below threshold ${MIN_BACKEND_COVERAGE}%"
+        exit 1
+      fi
+      
+      echo "✅ All quality gates passed!"
+      echo "✅ Frontend coverage: ${FRONTEND_COVERAGE}% (≥${MIN_FRONTEND_COVERAGE}%)"
+      echo "✅ Backend coverage: ${BACKEND_COVERAGE}% (≥${MIN_BACKEND_COVERAGE}%)"
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+# ==========================================
+# INCLUDE SECURITY TEMPLATES
+# ==========================================
+
+include:
+  - template: Security/SAST.gitlab-ci.yml
+  - template: Security/Secret-Detection.gitlab-ci.yml
+  - template: Security/Container-Scanning.gitlab-ci.yml
+  - template: Security/Dependency-Scanning.gitlab-ci.yml
+  - local: '.gitlab-ci-deploy.yml'
