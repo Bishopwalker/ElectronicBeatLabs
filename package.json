@@ -25,20 +25,7 @@
     "deploy:backend": "bash scripts/deploy-backend.sh",
     "deploy:backend:staging": "bash scripts/deploy-backend.sh staging",
     "deploy:all": "npm run deploy:frontend && npm run deploy:backend",
-    "deploy:all:staging": "npm run deploy:frontend:staging && npm run deploy:backend:staging",
-    "security:audit": "npm audit --audit-level moderate",
-    "security:audit:high": "npm audit --audit-level high",
-    "security:audit:fix": "npm audit fix",
-    "security:deps": "npm run security:audit && npm run security:license",
-    "security:license": "npx license-checker --summary",
-    "security:snyk": "npx snyk test",
-    "security:eslint": "eslint . --ext .ts,.tsx,.js,.jsx --config eslint-security.config.js",
-    "security:bandit": "cd backend && python -m bandit -r . -f json -o bandit-report.json",
-    "security:safety": "cd backend && python -m safety check --json",
-    "security:all": "npm run security:deps && npm run security:eslint && npm run security:bandit && npm run security:safety",
-    "type-check": "tsc --noEmit",
-    "test:security": "jest --testPathPattern=security --coverage",
-    "test:e2e:security": "cucumber-js features/security --require-module ts-node/register"
+    "deploy:all:staging": "npm run deploy:frontend:staging && npm run deploy:backend:staging"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -76,21 +63,10 @@
     "jest-environment-jsdom": "^30.1.2",
     "jest-junit": "^16.0.0",
     "jsdom": "^26.1.0",
-    "serverless-python-requirements": "^6.1.2",
-    "serverless-wsgi": "^3.1.0",
     "ts-jest": "^29.4.1",
     "ts-node": "^10.9.2",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.39.1",
-    "vite": "^7.1.2",
-    "@types/eslint": "^9.6.1",
-    "eslint-plugin-security": "^3.0.1",
-    "eslint-plugin-sonarjs": "^2.0.4",
-    "license-checker": "^25.0.1",
-    "snyk": "^1.1294.0",
-    "audit-ci": "^7.1.0",
-    "helmet": "^8.0.0",
-    "express-rate-limit": "^7.4.1",
-    "express-validator": "^7.2.0"
+    "vite": "^7.1.2"
   }
 }
