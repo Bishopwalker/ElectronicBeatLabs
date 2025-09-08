@@ -73,10 +73,24 @@ export const useTimerLogic = ({ audioEngine }: UseTimerLogicProps) => {
     }
 
     if (currentTransitionIndex >= localTimer.transitions.length) {
-      setLocalTimer(null);
-      setTimerStatus(null);
-      currentTransitionIndexRef.current = null;
-      return;
+      // Check if loop is enabled for the current preset
+      const currentPreset = presets.find(p => p.id === selectedPresetId);
+      if (currentPreset?.loop_enabled || (localTimer as any).forceLoop) {
+        // Reset to beginning for loop
+        setLocalTimer({
+          ...localTimer,
+          startTime: Date.now(),
+          currentTransitionIndex: 0
+        });
+        currentTransitionIndexRef.current = null;
+        return;
+      } else {
+        // End the session
+        setLocalTimer(null);
+        setTimerStatus(null);
+        currentTransitionIndexRef.current = null;
+        return;
+      }
     }
 
     const currentTransition = localTimer.transitions[currentTransitionIndex];
@@ -121,7 +135,7 @@ export const useTimerLogic = ({ audioEngine }: UseTimerLogicProps) => {
     }
   }, [localTimer, audioEngine, selectedPresetId]);
 
-  const startTimer = async () => {
+  const startTimer = async (forceLoop?: boolean) => {
     if (!selectedPresetId) return;
     
     try {
@@ -147,8 +161,9 @@ export const useTimerLogic = ({ audioEngine }: UseTimerLogicProps) => {
         currentTransitionIndex: 0,
         transitions: mockTransitions,
         isActive: true,
-        isPaused: false
-      };
+        isPaused: false,
+        forceLoop: forceLoop
+      } as LocalTimer & { forceLoop?: boolean };
       
       setLocalTimer(timer);
       
@@ -201,7 +216,9 @@ export const useTimerLogic = ({ audioEngine }: UseTimerLogicProps) => {
         
         setTimeout(() => {
           if (selectedPresetId) {
-            startTimer();
+            const currentPreset = presets.find(p => p.id === selectedPresetId);
+            const wasLooping = localTimer && (localTimer as any).forceLoop;
+            startTimer(wasLooping || currentPreset?.loop_enabled);
           }
         }, 100);
       }
