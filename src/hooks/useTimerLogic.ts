@@ -9,7 +9,7 @@ import type {
   TimerSession
 } from '../data/timer/types';
 import { ALL_TIMER_PRESETS, getPresetTransitions } from '../data/timer';
-import { loadCustomPresets, savePresetToStorage } from '../helpers/timer/timerUtils';
+import { loadCustomPresets, savePresetToStorage, updatePresetInStorage, deletePresetFromStorage, isCustomPreset } from '../helpers/timer/timerUtils';
 
 interface UseTimerLogicProps {
   audioEngine?: {
@@ -259,6 +259,85 @@ export const useTimerLogic = ({ audioEngine }: UseTimerLogicProps) => {
     console.log('🎉 PRESET SAVE COMPLETED SUCCESSFULLY!');
   };
 
+  const updateCustomPreset = (presetId: string, updatedPreset: CustomPresetForm) => {
+    console.log('🔄 ATTEMPTING TO UPDATE PRESET:', presetId);
+    
+    if (!updatedPreset.name.trim()) {
+      setError('Please enter a preset name');
+      return;
+    }
+
+    if (!isCustomPreset(presetId)) {
+      setError('Cannot update built-in presets');
+      return;
+    }
+
+    const totalDuration = updatedPreset.transitions.reduce((sum, t) => sum + t.duration_minutes, 0);
+    
+    const newPresetData: TimerPreset = {
+      id: presetId,
+      name: updatedPreset.name,
+      description: updatedPreset.description || `Custom preset - ${totalDuration} minutes`,
+      total_duration: totalDuration,
+      transitions_count: updatedPreset.transitions.length,
+      tags: ['custom'],
+      is_premium: false,
+      available: true
+    };
+
+    const success = updatePresetInStorage(presetId, newPresetData, updatedPreset.transitions);
+    
+    if (success) {
+      setCustomPresetTransitions(prev => ({
+        ...prev,
+        [presetId]: updatedPreset.transitions
+      }));
+
+      setPresets(prev => prev.map(p => 
+        p.id === presetId ? newPresetData : p
+      ));
+
+      setError(null);
+      console.log('🎉 PRESET UPDATE COMPLETED SUCCESSFULLY!');
+      return true;
+    } else {
+      setError('Failed to update preset');
+      return false;
+    }
+  };
+
+  const deleteCustomPreset = (presetId: string) => {
+    console.log('🗑️ ATTEMPTING TO DELETE PRESET:', presetId);
+    
+    if (!isCustomPreset(presetId)) {
+      setError('Cannot delete built-in presets');
+      return false;
+    }
+
+    const success = deletePresetFromStorage(presetId);
+    
+    if (success) {
+      setCustomPresetTransitions(prev => {
+        const updated = { ...prev };
+        delete updated[presetId];
+        return updated;
+      });
+
+      setPresets(prev => prev.filter(p => p.id !== presetId));
+
+      if (selectedPresetId === presetId) {
+        setSelectedPresetId('');
+      }
+
+      setError(null);
+      console.log('🎉 PRESET DELETE COMPLETED SUCCESSFULLY!');
+      return true;
+    } else {
+      setError('Failed to delete preset');
+      return false;
+    }
+  };
+
   useEffect(() => {
     loadPresets();
   }, []);
@@ -286,6 +365,9 @@ export const useTimerLogic = ({ audioEngine }: UseTimerLogicProps) => {
     setHideSession,
     startTimer,
     controlTimer,
-    saveCustomPreset
+    saveCustomPreset,
+    updateCustomPreset,
+    deleteCustomPreset,
+    customPresetTransitions
   };
 };

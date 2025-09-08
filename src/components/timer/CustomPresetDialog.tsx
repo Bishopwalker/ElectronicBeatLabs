@@ -25,6 +25,7 @@ interface CustomPresetDialogProps {
   setCustomPreset: React.Dispatch<React.SetStateAction<CustomPresetForm>>;
   onSave: () => void;
   loading: boolean;
+  title?: string;
 }
 
 const CustomPresetDialog: React.FC<CustomPresetDialogProps> = ({
@@ -33,7 +34,8 @@ const CustomPresetDialog: React.FC<CustomPresetDialogProps> = ({
   customPreset,
   setCustomPreset,
   onSave,
-  loading
+  loading,
+  title = "Create Custom Preset"
 }) => {
   const addTransition = () => {
     setCustomPreset(prev => ({
@@ -95,7 +97,7 @@ const CustomPresetDialog: React.FC<CustomPresetDialogProps> = ({
       maxWidth="md"
       fullWidth
     >
-      <DialogTitle>Create Custom Timer Preset</DialogTitle>
+      <DialogTitle>{title}</DialogTitle>
       <DialogContent>
         <Box sx={{ mt: 2 }}>
           <TextField
