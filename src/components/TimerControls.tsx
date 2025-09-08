@@ -12,15 +12,22 @@ import {
   CardContent,
   LinearProgress,
   Chip,
-  CircularProgress
+  CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 import type { TimerControlsProps, CustomPresetForm } from '../data/timer/types';
 import { formatTime } from '../helpers/timer/timerUtils';
-import { useTimerLogic } from '../hooks/useTimerLogic';
+import { useUnifiedTimer } from '../hooks/useUnifiedTimer';
 import CustomPresetDialog from './timer/CustomPresetDialog';
 
-const TimerControls: React.FC<TimerControlsProps> = ({ audioEngine }) => {
+const TimerControls: React.FC<TimerControlsProps> = ({ audioEngine, backendEngine }) => {
   // const { user } = useAuth();
   const {
     presets,
@@ -33,8 +40,14 @@ const TimerControls: React.FC<TimerControlsProps> = ({ audioEngine }) => {
     setHideSession,
     startTimer,
     controlTimer,
-    saveCustomPreset
-  } = useTimerLogic({ audioEngine });
+    saveCustomPreset,
+    timerMode
+  } = useUnifiedTimer({ 
+    audioEngine,
+    backendEngine,
+    userId: 'demo-user', // TODO: Get from auth
+    isSubscriber: false  // TODO: Get from auth
+  });
 
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [customPreset, setCustomPreset] = useState<CustomPresetForm>({
@@ -68,6 +81,8 @@ const TimerControls: React.FC<TimerControlsProps> = ({ audioEngine }) => {
       }]
     });
   };
+
+  // Edit/delete functionality will be added back in future update
 
   // if (!user) {
   //   return (
@@ -119,10 +134,17 @@ const TimerControls: React.FC<TimerControlsProps> = ({ audioEngine }) => {
                   key={preset.id} 
                   value={preset.id}
                   disabled={!preset.available}
+                  sx={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    pr: preset.id.startsWith('custom-') ? 1 : 2
+                  }}
                 >
-                  <Box>
+                  <Box sx={{ flex: 1 }}>
                     <Typography variant="body2">
                       {preset.name}
+                      {preset.id.startsWith('custom-') && <Chip label="Custom" size="small" color="secondary" sx={{ ml: 1 }} />}
                       {preset.is_premium && <Chip label="Premium" size="small" color="warning" sx={{ ml: 1 }} />}
                       {preset.loop_enabled && <Chip label="Loop" size="small" color="info" sx={{ ml: 1 }} />}
                       {'difficulty_level' in preset && <Chip 
@@ -141,6 +163,39 @@ const TimerControls: React.FC<TimerControlsProps> = ({ audioEngine }) => {
                       )}
                     </Typography>
                   </Box>
+                  
+                  {preset.id.startsWith('custom-') && (
+                    <Box sx={{ display: 'flex', gap: 0.5 }}>
+                      <IconButton
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditPreset(preset.id);
+                        }}
+                        disabled={loading || timerStatus?.session?.is_active}
+                        sx={{ 
+                          color: '#00bfff',
+                          '&:hover': { backgroundColor: 'rgba(0, 191, 255, 0.1)' }
+                        }}
+                      >
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeletePreset(preset.id);
+                        }}
+                        disabled={loading || timerStatus?.session?.is_active}
+                        sx={{ 
+                          color: '#ff6b6b',
+                          '&:hover': { backgroundColor: 'rgba(255, 107, 107, 0.1)' }
+                        }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  )}
                 </MenuItem>
               ))}
             </Select>
@@ -317,6 +372,58 @@ const TimerControls: React.FC<TimerControlsProps> = ({ audioEngine }) => {
         onSave={handleSaveCustomPreset}
         loading={loading}
       />
+
+      {/* Edit Custom Preset Dialog */}
+      <CustomPresetDialog
+        open={showEditDialog}
+        onClose={() => {
+          setShowEditDialog(false);
+          setEditingPresetId(null);
+        }}
+        customPreset={customPreset}
+        setCustomPreset={setCustomPreset}
+        onSave={handleSaveEditPreset}
+        loading={loading}
+        title="Edit Custom Preset"
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog 
+        open={showDeleteDialog} 
+        onClose={() => setShowDeleteDialog(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ color: '#ff6b6b' }}>
+          🗑️ Delete Custom Preset
+        </DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to delete this custom preset? This action cannot be undone.
+          </Typography>
+          {deletingPresetId && (
+            <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
+              Preset: {presets.find(p => p.id === deletingPresetId)?.name}
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={() => setShowDeleteDialog(false)}
+            disabled={loading}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={confirmDeletePreset}
+            color="error"
+            variant="contained"
+            disabled={loading}
+          >
+            {loading ? <CircularProgress size={20} /> : 'Delete'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

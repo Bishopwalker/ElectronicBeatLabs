@@ -79,7 +79,8 @@
       "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\.claude/**)",
       "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\.claude/**)",
       "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\src\\hooks/**)",
-      "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\src\\hooks/**)"
+      "Read(/C:\\Users\\bisho\\IdeaProjects\\ebl\\src\\hooks/**)",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
     "ask": []
