@@ -9,6 +9,7 @@ import ElectromagneticBeatLab from './components/ElectromagneticBeatLab';
 import SimpleAuth from './components/SimpleAuth';
 // import UsageTrackingExample from './components/UsageTrackingExample';
 import TimerTab from './components/tabs/TimerTab';
+import { BinauralVisualizerTest } from './components/BinauralVisualizerTest';
 import { AuthProvider } from './contexts/AuthContext';
 import { useAuth } from './hooks/useAuth';
 import { muiTheme } from './theme/muiTheme';
@@ -111,6 +112,7 @@ const AppContent = () => {
           >
             <Tab label="Live Audio Generator" />
             <Tab label="Timer Presets" />
+            <Tab label="New Visualizer Engine" />
           </Tabs>
         </Box>
         
@@ -217,6 +219,11 @@ const AppContent = () => {
                 patterns8D={[]}
                 onStateChange={() => {}}
               />
+            </Box>
+          )}
+          {activeTab === 2 && (
+            <Box sx={{ p: 1, minHeight: 'calc(100vh - 64px)' }}>
+              <BinauralVisualizerTest />
             </Box>
           )}
         </Box>

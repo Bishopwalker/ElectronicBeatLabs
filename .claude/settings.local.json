@@ -87,7 +87,11 @@
       "Bash(npm run security:safety:*)",
       "Bash(npm run security:license:*)",
       "Bash(netsh:*)",
-      "Bash(npm run type-check:*)"
+      "Bash(npm run type-check:*)",
+      "Bash(clear)",
+      "Bash(chmod:*)",
+      "Bash(.claude/commands/init-context.sh:*)",
+      "Bash(npm run:*)"
     ],
     "deny": [],
     "ask": []

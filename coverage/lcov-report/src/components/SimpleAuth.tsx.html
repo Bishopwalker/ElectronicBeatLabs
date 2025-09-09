@@ -25,28 +25,28 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/36</span>
+                <span class='fraction'>0/35</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/21</span>
+                <span class='fraction'>0/24</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/9</span>
+                <span class='fraction'>0/8</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/32</span>
+                <span class='fraction'>0/31</span>
             </div>
         
             
@@ -233,7 +233,26 @@
 <a name='L168'></a><a href='#L168'>168</a>
 <a name='L169'></a><a href='#L169'>169</a>
 <a name='L170'></a><a href='#L170'>170</a>
-<a name='L171'></a><a href='#L171'>171</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L171'></a><a href='#L171'>171</a>
+<a name='L172'></a><a href='#L172'>172</a>
+<a name='L173'></a><a href='#L173'>173</a>
+<a name='L174'></a><a href='#L174'>174</a>
+<a name='L175'></a><a href='#L175'>175</a>
+<a name='L176'></a><a href='#L176'>176</a>
+<a name='L177'></a><a href='#L177'>177</a>
+<a name='L178'></a><a href='#L178'>178</a>
+<a name='L179'></a><a href='#L179'>179</a>
+<a name='L180'></a><a href='#L180'>180</a>
+<a name='L181'></a><a href='#L181'>181</a>
+<a name='L182'></a><a href='#L182'>182</a>
+<a name='L183'></a><a href='#L183'>183</a>
+<a name='L184'></a><a href='#L184'>184</a>
+<a name='L185'></a><a href='#L185'>185</a>
+<a name='L186'></a><a href='#L186'>186</a>
+<a name='L187'></a><a href='#L187'>187</a>
+<a name='L188'></a><a href='#L188'>188</a>
+<a name='L189'></a><a href='#L189'>189</a>
+<a name='L190'></a><a href='#L190'>190</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -339,6 +358,21 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -352,7 +386,11 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -408,7 +446,7 @@
 <span class="cstat-no" title="statement not covered" >import { useAuth } from '../hooks/useAuth';</span>
 &nbsp;
 export const <span class="cstat-no" title="statement not covered" >SimpleAuth: React.FC = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(</span>) =</span>&gt; {</span>
-  const { user, usage, requiresLogin } = <span class="cstat-no" title="statement not covered" >useAuth();</span>
+  const { user, usage, requiresLogin, loginAsAdmin, logout, isAdmin } = <span class="cstat-no" title="statement not covered" >useAuth();</span>
   const [loading, setLoading] = <span class="cstat-no" title="statement not covered" >useState(false);</span>
   const [error, setError] = <span class="cstat-no" title="statement not covered" >useState&lt;string | null&gt;(null);</span>
 &nbsp;
@@ -498,6 +536,21 @@ export const <span class="cstat-no" title="statement not covered" >SimpleAuth: R
             &gt;
               Login with GitHub
             &lt;/Button&gt;
+&nbsp;
+            {/* Development Admin Login */}
+            &lt;Button
+              variant="contained"
+              color="secondary"
+              onClick={loginAsAdmin}
+              sx={{ 
+                background: 'linear-gradient(45deg, #ff6b00, #8a2be2)',
+                '&amp;:hover': {
+                  background: 'linear-gradient(45deg, #ff8533, #9944d9)',
+                }
+              }}
+            &gt;
+              🔑 DEV: Login as Admin
+            &lt;/Button&gt;
           &lt;/Box&gt;
 &nbsp;
           &lt;Typography variant="caption" display="block" sx={{ mt: 2, textAlign: 'center' }}&gt;
@@ -522,18 +575,22 @@ export const <span class="cstat-no" title="statement not covered" >SimpleAuth: R
             &lt;/Typography&gt;
           &lt;/Box&gt;
           
-          &lt;Button size="small" onClick={<span class="fstat-no" title="function not covered" >() =</span>&gt; <span class="cstat-no" title="statement not covered" >alert('Logout functionality')}</span>&gt;
+          &lt;Button size="small" onClick={logout}&gt;
             Logout
           &lt;/Button&gt;
         &lt;/Box&gt;
 &nbsp;
-        {user.is_premium ? (
+        {isAdmin ? (
+          &lt;Alert severity="info" sx={{ mb: 2 }}&gt;
+            🔑 Administrator - Full access to all features!
+          &lt;/Alert&gt;
+        ) : user.is_premium ? (
           &lt;Alert severity="success" sx={{ mb: 2 }}&gt;
             🎵 Premium subscriber - unlimited usage!
           &lt;/Alert&gt;
         ) : (
           &lt;Box&gt;
-            {usage &amp;&amp; (
+            {false &amp;&amp; usage &amp;&amp; (
               &lt;Alert 
                 severity={usage.can_use ? "info" : "warning"}
                 sx={{ mb: 2 }}
@@ -580,7 +637,7 @@ export const <span class="cstat-no" title="statement not covered" >SimpleAuth: R
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-09-01T19:49:40.074Z
+                at 2025-09-09T02:12:49.227Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

@@ -35,16 +35,19 @@ export const useWebSocket = (baseUrl: string = 'ws://localhost:8000'): UseWebSoc
   const reconnectTimeout = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttempts = useRef(0);
   const maxReconnectAttempts = 5;
+  const manualDisconnect = useRef(false); // Track if disconnect was manual
 
   const connect = useCallback((sessionId: string) => {
     if (ws.current?.readyState === WebSocket.OPEN) {
       return; // Already connected
     }
 
+    // Reset manual disconnect flag when connecting
+    manualDisconnect.current = false;
     setState(prev => ({ ...prev, connecting: true, error: null }));
 
     try {
-      ws.current = new WebSocket(`${baseUrl}/ws/${sessionId}`);
+      ws.current = new WebSocket(`${baseUrl}/api/ws/audio/${sessionId}`);
 
       ws.current.onopen = () => {
         console.log('WebSocket connected');
@@ -60,7 +63,16 @@ export const useWebSocket = (baseUrl: string = 'ws://localhost:8000'): UseWebSoc
       ws.current.onmessage = (event) => {
         try {
           const message: WebSocketMessage = JSON.parse(event.data);
-          setState(prev => ({ ...prev, lastMessage: message }));
+          // Use functional update with message comparison to prevent infinite loops
+          setState(prev => {
+            // Only update if message is actually different (prevent re-render loops)
+            if (prev.lastMessage && 
+                prev.lastMessage.type === message.type && 
+                JSON.stringify(prev.lastMessage.data) === JSON.stringify(message.data)) {
+              return prev; // No change, prevent unnecessary re-render
+            }
+            return { ...prev, lastMessage: message };
+          });
         } catch (error) {
           console.error('Failed to parse WebSocket message:', error);
         }
@@ -74,13 +86,17 @@ export const useWebSocket = (baseUrl: string = 'ws://localhost:8000'): UseWebSoc
           connecting: false 
         }));
 
-        // Attempt reconnection if not a clean close
-        if (event.code !== 1000 && reconnectAttempts.current < maxReconnectAttempts) {
+        // Only attempt reconnection if not manually disconnected and not a clean close
+        if (event.code !== 1000 && 
+            !manualDisconnect.current && 
+            reconnectAttempts.current < maxReconnectAttempts) {
           reconnectAttempts.current++;
           reconnectTimeout.current = setTimeout(() => {
             console.log(`Reconnection attempt ${reconnectAttempts.current}/${maxReconnectAttempts}`);
             connect(sessionId);
           }, Math.pow(2, reconnectAttempts.current) * 1000); // Exponential backoff
+        } else if (manualDisconnect.current) {
+          console.log('WebSocket disconnected manually, no reconnection attempt');
         }
       };
 
@@ -104,6 +120,9 @@ export const useWebSocket = (baseUrl: string = 'ws://localhost:8000'): UseWebSoc
   }, [baseUrl]);
 
   const disconnect = useCallback(() => {
+    // Mark as manual disconnect to prevent reconnection attempts
+    manualDisconnect.current = true;
+    
     if (reconnectTimeout.current) {
       clearTimeout(reconnectTimeout.current);
       reconnectTimeout.current = null;

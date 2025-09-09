@@ -369,6 +369,7 @@ export interface MainControlsProps {
   onPlay: () => void;
   onStop: () => void;
   onVolumeChange: (volume: number) => void;
+  audioEngine?:() => AudioEngine;
 }
 
 

@@ -13,31 +13,25 @@ import type {
 } from '../../types';
 
 interface TimerTabProps {
-    appaState: AppState,
+    appState: AppState,
     patterns8D: Pattern8D[],
     onStateChange: (state: Partial<AppState>) => void,
+    onTimerStatusUpdate?: (status: any) => void,
     audioEngine?: {
-        audioEngine: AudioEngine;
-        audioState: AudioEngineState;
-        electromagnetic: ElectromagneticField;
-        startBinauralBeat: (config: BinauralBeatConfig) => Promise<void>;
-        stopBinauralBeat: () => void;
-        updateFrequency: (leftFreq: number, rightFreq: number) => void;
-        updateVolume: (volume: number) => void;
-        updateWaveform: (waveform: ("sine" | "square" | "triangle" | "sawtooth")) => void;
-        updateSpatialSettings: (spatialSettings: Record<string, unknown>) => void;
-        loadPattern: (pattern: PatternConfig) => void;
-        generateTestTones: (leftFreq: number, rightFreq: number, duration?: number) => void;
-        frequencySweep: (startFreq: number, endFreq: number, duration: number, beatFreq?: number) => void;
-        createGammaProtocol: (protocol: ADHDProtocol) => void;
-        backendConnected: boolean;
-        sessionId: null;
-        websocketState: { connected: boolean; connecting: boolean; error: null };
-        isSupported: boolean
-    }
+        startBinauralBeat: (config: any) => Promise<void>;
+        stopBinauralBeat: () => Promise<void>;
+        updateFrequency: (left: number, right: number) => void;
+        audioState: {
+            isPlaying: boolean;
+        };
+    };
+    patterns8DEngine?: {
+        setActivePattern: (pattern: PatternConfig) => void;
+        clearActivePattern: () => void;
+    };
 }
 
-const TimerTab: React.FC<TimerTabProps> = ({audioEngine}) => {
+const TimerTab: React.FC<TimerTabProps> = ({audioEngine, patterns8DEngine, onStateChange, onTimerStatusUpdate}) => {
     return (
         <Box
             sx={{
@@ -73,7 +67,12 @@ const TimerTab: React.FC<TimerTabProps> = ({audioEngine}) => {
                 Schedule automated frequency transitions for extended sessions.
                 Perfect for sleep induction, meditation progressions, and lucid dreaming protocols.
             </Typography>
-            <TimerControls audioEngine={audioEngine}/>
+            <TimerControls 
+                audioEngine={audioEngine}
+                patterns8D={patterns8DEngine}
+                onElectromagneticUpdate={(electromagnetic) => onStateChange({ electromagnetic })}
+                onTimerStatusUpdate={onTimerStatusUpdate}
+            />
         </Box>
     );
 };

@@ -1,647 +1,225 @@
-// Electromagnetic Beat Lab - Main Component
+// Electromagnetic Beat Lab - Main Component (Refactored & Modular)
 // Advanced binaural beats generator with electromagnetic field visualization
+// Now properly separated into modular components under 500 lines
 
-import React, {useCallback, useEffect, useState, useMemo, useRef} from 'react';
-import {Box, Card, CardContent, Chip, Collapse, IconButton, Paper, Typography} from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import type {AppState, ElectromagneticBeatLabProps, PatternMode} from '../types';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Box, Chip, IconButton, Paper, Typography } from '@mui/material';
+import type { ElectromagneticBeatLabProps } from '../types';
 
-import {useMasterAudioControl} from '../hooks/useMasterAudioControl';
-import {PATTERN_PRESETS, WAVE_PATTERNS} from '../data/patterns';
+// Hooks and Data
+import { useBackendAudioEngine } from '../hooks/useBackendAudioEngine';
+import { useAudioEngine } from '../hooks/useAudioEngine';
+import { useElectromagneticLabState } from '../hooks/useElectromagneticLabState';
+import { useCurrentPresetTracker } from '../hooks/useCurrentPresetTracker';
+import { WAVE_PATTERNS } from '../data/patterns';
+// Configuration and Styles
+import { TAB_CONFIG, SECTION_DATA } from './config/ElectromagneticLabConfig';
+import { ElectromagneticLabStyles } from './styles/ElectromagneticLabStyles';
 
+// Components
 import StarField from './StarField';
 import SpatialVisualizer from './SpatialVisualizer';
 import PatternSelectorMUI from './PatternSelectorMUI';
 import ElectromagneticStatus from './ElectromagneticStatus';
 import MainControlsMUI from './MainControlsMUI';
 import ControlTabs from './ControlTabs';
- import BinauralGeneratorMUI from "./BinauralGeneratorMUI.tsx";
-// Tab Components
-import FrequencyTab from './tabs/FrequencyTab';
-import PatternTab from './tabs/PatternTab';
+import BinauralGeneratorMUI from './BinauralGeneratorMUI';
+import QuickStart from './QuickStart';
 import TimerTab from './tabs/TimerTab';
-import VisualizationTab from './tabs/VisualizationTab';
-import ADHDTab from './tabs/ADHDTab';
-import YouTubeTab from './tabs/YouTubeTab';
-import SettingsTab from './tabs/SettingsTab';
-import GuideTab from './tabs/GuideTab';
-import QuickStart from "./QuickStart.tsx";
+import TimerCountdownDisplay from './TimerCountdownDisplay';
+import { FrequencyVisualizer } from './FrequencyVisualizer';
 
-
-// Collapsible Section Component with close/restore functionality
-interface CollapsibleSectionProps {
-  id: string;
-  title: string;
-  icon: string;
-  children: React.ReactNode;
-  defaultOpen?: boolean;
-  onClose?: (id: string) => void;
-}
-
-const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({ 
-  id,
-  title, 
-  icon, 
-  children, 
-  defaultOpen = false,
-  onClose 
-}) => {
-  const [isOpen, setIsOpen] = useState(defaultOpen);
-  
-  const handleSectionClose = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (onClose) onClose(id);
-  };
-  
-  return (
-    <Card elevation={2} sx={{ 
-      mb: '10px', 
-      bgcolor: 'rgba(0, 0, 0, 0.3)', 
-      backdropFilter: 'blur(10px)',
-      height: '100%',
-      display: 'flex',
-      flexDirection: 'column'
-    }}>
-      <Box 
-        sx={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center', 
-          p: 1,
-          cursor: 'pointer',
-          borderBottom: isOpen ? '1px solid rgba(255, 255, 255, 0.1)' : 'none',
-          flexShrink: 0
-        }}
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {icon} {title}
-        </Typography>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <IconButton size="small" onClick={handleSectionClose} sx={{ color: '#ff4444' }}>
-            ✕
-          </IconButton>
-          <IconButton size="small">
-            {isOpen ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-          </IconButton>
-        </Box>
-      </Box>
-      <Collapse in={isOpen} sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <CardContent sx={{ 
-          p: '10px !important', 
-          flex: 1, 
-          display: 'flex', 
-          flexDirection: 'column',
-          height: '100%',
-          overflow: 'auto'
-        }}>
-          {children}
-        </CardContent>
-      </Collapse>
-    </Card>
-  );
-};
+// Extracted Components
+import CollapsibleSection from './shared/CollapsibleSection';
+import TabContentRenderer from './shared/TabContentRenderer';
+import SystemStatusChips from './shared/SystemStatusChips';
 
 const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
   initialPattern,
   autoStart = false
-                                                                       }) => {
-  // State management - Start with Master Controls closed to show compact view
-  const [closedSections, setClosedSections] = useState<string[]>(['masterControls']);
-  const [advancedControlsOpen, setAdvancedControlsOpen] = useState<boolean>(false);
-  const [darkScreen, setDarkScreen] = useState<boolean>(false);
-  const [appState, setAppState] = useState<AppState>({
-    mode: 'AUTO',
-    currentPattern: null,
-    frequency: 4.0,
-    isPlaying: false,
-    volume: 0.3,
-    electromagnetic: {
-      strength: 0,
-      frequency: 0,
-      phase: 0,
-      coherence: 0,
-      resonance: 0,
-      state: 'INACTIVE',
-      stability: 0
-    },
-    patterns8D: [],
-    systemStatus: {
-      electromagnetic: {
-        strength: 0,
-        frequency: 0,
-        phase: 0,
-        coherence: 0,
-        resonance: 0,
-        state: 'INACTIVE',
-        stability: 0
-      },
-      audio: {
-        latency: 0,
-        sampleRate: 44100,
-        bufferSize: 512,
-        quality: 'HIGH'
-      },
-      performance: {
-        fps: 60,
-        cpuUsage: 0,
-        memoryUsage: 0
-      },
-      state: ''
-    },
-    visualizations: {
-      starField: {
-        density: 100,
-        speed: 1,
-        color: '#ffffff',
-        twinkle: true
-      },
-      spatial: {
-        gridSize: 50,
-        opacity: 0.3,
-        color: '#00ff88',
-        animation: true
-      },
-      frequency: {
-        bars: 64,
-        sensitivity: 1,
-        color: '#ff6b00',
-        glow: true
-      }
-    },
-    spatialAudio: {
-      enabled: true,
-      hrtf: false,
-      roomSize: 1,
-      reverbAmount: 0.2,
-      spatialWidth: 1,
-      elevation: 0,
-      azimuth: 0
-    },
-    youtube: {
-      videoId: '',
-      timestamp: 0,
-      syncMode: 'audio',
-      pythonScript: '',
-      enabled: false
-    },
-    adhd: null,
-    activeTab: 'patterns'
+}) => {
+  // Use custom hook for all state management
+  const {
+    closedSections,
+    advancedControlsOpen,
+    darkScreen,
+    appState,
+    handlePatternSelect,
+    handleModeChange,
+    handleFrequencyChange,
+    handleVolumeChange,
+    handlePlay,
+    handleTabChange,
+    handleSectionClose,
+    handleSectionRestore,
+    toggleAdvancedControls,
+    toggleDarkScreen,
+    updateAppState,
+    updateElectromagneticState
+  } = useElectromagneticLabState(initialPattern, autoStart);
+
+  // Hybrid audio engines: Backend for advanced features, Frontend for fallback
+  const backendEngine = useBackendAudioEngine();
+  const frontendEngine = useAudioEngine();
+  
+  // Smart audio engine selector - use backend if connected, fallback to frontend
+  const activeAudioEngine = backendEngine.backendConnected ? backendEngine : frontendEngine;
+
+  // Timer status for preset tracking
+  const [timerStatus, setTimerStatus] = useState<any>(null);
+
+  // Current preset tracking
+  const { currentPreset } = useCurrentPresetTracker({
+    timerStatus,
+    activePattern: appState.currentPattern?.id,
+    audioState: backendEngine.audioState
   });
 
-  // Master audio control - consolidates all audio systems
-  const masterAudio = useMasterAudioControl();
-  
-  // DUAL AUDIO ENGINE ARCHITECTURE:
-  // - Frontend Engine (audioEngine): Web Audio API for instant binaural beats
-  // - Backend Engine (backendEngine): Python DSP for 8D spatial audio & EM field integration
-  // See README.md "Audio Engine Architecture" section for full details
-  // Direct references to engines (no memoization to ensure state updates)
-  const audioEngine = masterAudio.engines.audioEngine;
-  const backendEngine = masterAudio.engines.backendEngine;
-  const patterns8D = masterAudio.engines.patternsEngine;
-
-  // Initialize with pattern (only on mount)
+  // Handle electromagnetic state updates
   useEffect(() => {
-    if (initialPattern) {
-      const pattern = WAVE_PATTERNS.find(p => p.id === initialPattern);
-      if (pattern) {
-        setAppState(prev => ({ ...prev, currentPattern: pattern }));
-        if (autoStart) {
-          audioEngine.loadPattern(pattern);
-        }
-      }
-    } else {
-      // Default to first pattern only if no pattern is set
-      if (!appState.currentPattern) {
-        const defaultPattern = WAVE_PATTERNS[0];
-        setAppState(prev => ({ ...prev, currentPattern: defaultPattern }));
-      }
-    }
-  }, []); // Only run on mount
-
-  // Update electromagnetic state with refs to prevent infinite loops
-  const lastElectromagneticRef = useRef(audioEngine.electromagnetic);
-  const lastAudioStateRef = useRef(audioEngine.audioState);
-
-  useEffect(() => {
-    // Check which engine is active and use its electromagnetic field data
-    const useSpatialAudio = appState.spatialAudio?.enabled && backendEngine.backendConnected;
-    const activeEngine = useSpatialAudio ? backendEngine : audioEngine;
-    
-    const currentElectromagnetic = activeEngine.electromagnetic;
-    const currentAudioState = activeEngine.audioState;
-    
-    if (
-      currentElectromagnetic !== lastElectromagneticRef.current ||
-      currentAudioState !== lastAudioStateRef.current ||
-      currentAudioState.isPlaying !== lastAudioStateRef.current?.isPlaying ||
-      currentAudioState.volume !== lastAudioStateRef.current?.volume ||
-      currentAudioState.beatFreq !== lastAudioStateRef.current?.beatFreq
-    ) {
-      lastElectromagneticRef.current = currentElectromagnetic;
-      lastAudioStateRef.current = currentAudioState;
-      
-      // Create enhanced electromagnetic field with actual frequency data
-      const enhancedElectromagnetic = {
-        ...currentElectromagnetic,
-        frequency: currentAudioState.beatFreq || appState.frequency || 4,
-        strength: currentAudioState.isPlaying ? Math.min(1, (currentAudioState.volume || 0.5) * 2) : 0,
-        // Add more dynamic values based on current audio state
-        resonance: currentAudioState.isPlaying ? 0.7 + (currentAudioState.beatFreq || 4) / 40 * 0.3 : 0,
-        coherence: currentAudioState.isPlaying ? 0.8 : 0,
-        stability: currentAudioState.isPlaying ? 0.9 : 0
-      };
-      
-      setAppState(prev => ({
-        ...prev,
-        electromagnetic: enhancedElectromagnetic,
-        isPlaying: currentAudioState.isPlaying,
-        volume: currentAudioState.volume,
-        frequency: currentAudioState.beatFreq
-      }));
-    }
-  }, [audioEngine, backendEngine, appState.spatialAudio?.enabled]);
+    updateElectromagneticState(activeAudioEngine);
+  }, [activeAudioEngine, updateElectromagneticState]);
 
   // Force re-render when backend connection state changes
   useEffect(() => {
     console.log('🔄 Backend connection state changed:', backendEngine.backendConnected);
   }, [backendEngine.backendConnected, backendEngine.sessionId]);
 
-  // Force electromagnetic field update when pattern changes
+  // Auto-connect to backend on startup
   useEffect(() => {
-    if (appState.currentPattern) {
-      const frequency = appState.currentPattern.frequencies.beat;
-      const isPlaying = appState.isPlaying;
-      
-      // Create immediate electromagnetic field update for visualizer responsiveness
-      const immediateElectromagnetic = {
-        strength: isPlaying ? Math.min(1, (appState.volume || 0.5) * 2) : 0.3, // Show some activity even when not playing
-        frequency: frequency,
-        phase: 0,
-        coherence: 0.8,
-        resonance: 0.7 + frequency / 40 * 0.3,
-        state: isPlaying ? 'ACTIVE' : 'STANDBY' as const,
-        stability: 0.9
-      };
-      
-      setAppState(prev => ({
-        ...prev,
-        electromagnetic: immediateElectromagnetic,
-        frequency: frequency
-      }));
-      
-      console.log('🎨 Visualizer updated for pattern:', appState.currentPattern.name, 'Frequency:', frequency);
+    console.log('🔧 Audio engine selected:', backendEngine.backendConnected ? 'Backend' : 'Frontend');
+    backendEngine.connectBackend().then(()=>console.log("on"));
+    if (!backendEngine.backendConnected && backendEngine.connectBackend) {
+      console.log('🔌 Auto-connecting to backend on startup...');
+      backendEngine.connectBackend().catch((error) => {
+        console.log('⚠️ Backend auto-connect failed (this is expected if backend is not running):', error.message);
+      });
     }
-  }, [appState.currentPattern?.id, appState.isPlaying, appState.volume]);
-
-  // Handle pattern selection
-  const handlePatternSelect = useCallback((patternId: string) => {
-    const pattern = WAVE_PATTERNS.find(p => p.id === patternId);
-    if (pattern) {
-      setAppState(prev => ({ 
-        ...prev, 
-        currentPattern: pattern,
-        frequency: pattern.frequencies.beat
-      }));
-      audioEngine.loadPattern(pattern);
-      
-      // Update 8D pattern
-      const pattern8D = patterns8D.getPatternById(pattern.type + '-visualization');
-      if (pattern8D) {
-        patterns8D.setActivePattern(pattern8D);
-        patterns8D.startAnimation(pattern8D);
-      }
-    }
-  }, [audioEngine, patterns8D]);
-
-  // Handle mode change
-  const handleModeChange = useCallback((mode: PatternMode) => {
-    setAppState(prev => ({ ...prev, mode }));
-    
-    if (mode === 'OFF') {
-      masterAudio.masterStop();
-    }
-  }, [masterAudio]);
-
-  // Handle frequency change
-  const handleFrequencyChange = useCallback((frequency: number) => {
-    setAppState(prev => ({ ...prev, frequency }));
-    
-    if (appState.currentPattern) {
-      const leftFreq = appState.currentPattern.frequencies.carrier;
-      const rightFreq = leftFreq + frequency;
-      audioEngine.updateFrequency(leftFreq, rightFreq);
-    }
-  }, [audioEngine, appState.currentPattern]);
-
-  // Handle volume change
-  const handleVolumeChange = useCallback((volume: number) => {
-    setAppState(prev => ({ ...prev, volume }));
-    audioEngine.updateVolume(volume);
-  }, [audioEngine])
-
-  // Handle play/stop
-  const handlePlay = useCallback(() => {
-    if (appState.currentPattern && !appState.isPlaying) {
-      // Choose engine based on spatial audio settings
-      const useSpatialAudio = appState.spatialAudio?.enabled && backendEngine.backendConnected;
-      
-      if (useSpatialAudio) {
-        console.log('🎧 Using Backend Engine for 8D Spatial Audio');
-        backendEngine.loadPattern(appState.currentPattern);
-      } else {
-        console.log('🎵 Using Frontend Engine for Basic Binaural Beats');
-        audioEngine.loadPattern(appState.currentPattern);
-      }
-      
-      const pattern8D = patterns8D.getPatternById(appState.currentPattern.type + '-visualization');
-      if (pattern8D) {
-        patterns8D.startAnimation(pattern8D);
-      }
-    }
-  }, [audioEngine, backendEngine, patterns8D, appState.currentPattern, appState.isPlaying, appState.spatialAudio?.enabled]);
-
-  const handleStop = useCallback(() => {
-    masterAudio.masterStop();
-  }, [masterAudio]);
-
-  // Handle tab change
-  const handleTabChange = useCallback((tabId: string) => {
-    setAppState(prev => ({ ...prev, activeTab: tabId }));
   }, []);
 
-  const handleSectionClose = useCallback((id: string) => {
-    setClosedSections(prev => [...prev, id]);
-  }, []);
 
-  const handleSectionRestore = useCallback((id: string) => {
-    setClosedSections(prev => prev.filter(sectionId => sectionId !== id));
-  }, []);
+  // Bound handler functions with context
+  const handlePatternSelectBound = useCallback((patternId: string) => {
+    const patternsInterface = {
+      setActivePattern: (pattern: { name: never; }) => {
+        console.log('🎨 Setting active pattern for visualizer:', pattern.name);
+        updateAppState({ currentPattern: pattern });
+      },
+      clearActivePattern: () => {
+        console.log('🎨 Clearing active pattern from visualizer');
+        updateAppState({ currentPattern: null });
+      }
+    };
+    handlePatternSelect(patternId, activeAudioEngine, patternsInterface);
+  }, [handlePatternSelect, activeAudioEngine, updateAppState]);
+
+  const handleModeChangeBound = useCallback((mode: any) => {
+    handleModeChange(mode, activeAudioEngine);
+  }, [handleModeChange, activeAudioEngine]);
+
+  const handleFrequencyChangeBound = useCallback((frequency: number) => {
+    handleFrequencyChange(frequency, activeAudioEngine);
+  }, [handleFrequencyChange, activeAudioEngine]);
+
+  const handleVolumeChangeBound = useCallback((volume: number) => {
+    handleVolumeChange(volume, activeAudioEngine);
+  }, [handleVolumeChange, activeAudioEngine]);
+
+  const handlePlayBound = useCallback(() => {
+    // Use the active audio engine (backend if connected, otherwise frontend fallback)
+    handlePlay(activeAudioEngine, backendEngine, activeAudioEngine);
+  }, [handlePlay, activeAudioEngine, backendEngine]);
+
+  const handleStop = useCallback(async () => {
+    console.log('🛑 Master Stop: Stopping all audio engines');
+    try {
+      // Always try to stop both engines regardless of state
+      console.log('🛑 Stopping backend engine...');
+      await backendEngine.stopBackendSession();
+      
+      console.log('🛑 Stopping frontend engine...');
+      await frontendEngine.stopBinauralBeat();
+      
+      // Also clear any patterns
+      updateAppState({ 
+        isPlaying: false,
+        currentPattern: null
+      });
+      
+      console.log('✅ Master Stop: All engines stopped successfully');
+    } catch (error) {
+      console.error('❌ Error during master stop:', error);
+    }
+  }, [backendEngine, frontendEngine, updateAppState]);
+
+  const handleToggleAdvancedControls = useCallback(() => {
+    toggleAdvancedControls(backendEngine);
+  }, [toggleAdvancedControls, backendEngine]);
 
   // Get section data for restore functionality
   const getSectionData = (id: string) => {
-    const sections = {
-      'patterns': { title: 'Patterns', icon: '🌀' },
-      'waveguide': { title: 'Wave Guide', icon: '📡' },
-      'adhd': { title: 'ADHD Protocol', icon: '⚡' },
-      'freqID': { title: 'Frequency Display', icon: '📊' },
-      'visualizeID': { title: 'Visualization', icon: '🎨' },
-      'waveGuideID': { title: 'Wave Guide', icon: '📡' },
-      'adhdID': { title: 'ADHD Protocol', icon: '⚡' },
-      'patternID': { title: 'Patterns', icon: '🌀' },
-      'masterControls': { title: 'Master Controls', icon: '🎛️' },
-      'binauralBeats': { title: 'Binaural Beat Generator', icon: '🎧' },
-      'timerPanel': { title: 'Timer & Sessions', icon: '⏰' }
-    };
-    // @ts-expect-error cause i'm not making n object just 4 this
-    return sections[id] || { title: 'Unknown', icon: '❓' };
-  };
-  // Tab configuration
-  const tabs = [
-    { id: 'patterns', label: 'Patterns', icon: '🌀', component: PatternTab, enabled: true },
-    { id: 'frequency', label: 'Frequency', icon: '📊', component: FrequencyTab, enabled: true },
-    { id: 'timer', label: 'Timer', icon: '⏰', component: TimerTab, enabled: true },
-    { id: 'visualization', label: 'Visual', icon: '🎨', component: VisualizationTab, enabled: true },
-    { id: 'adhd', label: 'ADHD', icon: '⚡', component: ADHDTab, enabled: true },
-    { id: 'youtube', label: 'YouTube', icon: '📺', component: YouTubeTab, enabled: true },
-    { id: 'guide', label: 'Guide', icon: '📖', component: GuideTab, enabled: true },
-    { id: 'settings', label: 'Settings', icon: '⚙️', component: SettingsTab, enabled: true }
-  ];
-
-  // Render active tab content
-  const renderTabContent = () => {
-    const activeTabConfig = tabs.find(tab => tab.id === appState.activeTab);
-    if (!activeTabConfig) return null;
-    
-    const handleStateChange = (partialState: Partial<AppState>) => {
-      setAppState(prevState => ({
-        ...prevState,
-        ...partialState
-      }));
-    };
-
-    const commonProps = {
-      appState,
-      audioEngine,
-      patterns8D: patterns8D.patterns,
-      onStateChange: handleStateChange
-    };
-    
-    // Special props for settings tab that needs backend engine for spatial audio
-    const settingsProps = {
-      appState,
-      audioEngine: backendEngine, // Use backend engine for spatial audio
-      patterns8D: patterns8D.patterns,
-      onStateChange: handleStateChange
-    };
-
-    switch (appState.activeTab) {
-      case 'patterns':
-        // @ts-ignore
-        return (
-          <PatternTab
-            {...commonProps}
-            patterns={WAVE_PATTERNS}
-            presets={PATTERN_PRESETS}
-            onPatternSelect={handlePatternSelect}
-          />
-        );
-      case 'frequency':
-        return (
-          <FrequencyTab
-            {...commonProps}
-            onFrequencyChange={handleFrequencyChange}
-          />
-        );
-      case 'timer':
-        return <TimerTab {...commonProps} />;
-      case 'visualization':
-        return <VisualizationTab {...commonProps} />;
-      case 'adhd':
-        return <ADHDTab {...commonProps} />;
-      case 'youtube':
-        return <YouTubeTab {...commonProps} />;
-      case 'guide':
-        return <GuideTab {...commonProps} />;
-      case 'settings':
-        return <SettingsTab {...settingsProps} />;
-      default:
-        return <div>Select a tab</div>;
-    }
+    return SECTION_DATA[id as keyof typeof SECTION_DATA] || { title: 'Unknown', icon: '❓' };
   };
 
   return (
-    <Box sx={{ width: '100vw', height: '100vh', overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={ElectromagneticLabStyles.mainContainer}>
       {/* Background Star Field */}
       <StarField {...appState.visualizations.starField} />
       
       {/* Dark Screen Toggle Button */}
       <IconButton
-        onClick={() => setDarkScreen(!darkScreen)}
-        sx={{
-          position: 'fixed',
-          top: 16,
-          right: 80,
-          zIndex: 200,
-          bgcolor: darkScreen ? 'rgba(0, 0, 0, 0.9)' : 'rgba(0, 0, 0, 0.7)',
-          color: darkScreen ? '#00ff88' : 'white',
-          backdropFilter: 'blur(10px)',
-          '&:hover': {
-            bgcolor: darkScreen ? 'rgba(0, 0, 0, 1)' : 'rgba(0, 0, 0, 0.8)',
-          },
-          border: `1px solid ${darkScreen ? '#00ff88' : 'rgba(255, 255, 255, 0.2)'}`,
-        }}
+        onClick={toggleDarkScreen}
+        sx={ElectromagneticLabStyles.darkScreenButton(darkScreen)}
       >
         {darkScreen ? '🌞' : '🌙'}
       </IconButton>
 
       {/* Advanced Controls Menu Toggle Button */}
       <IconButton
-        onClick={() => setAdvancedControlsOpen(!advancedControlsOpen)}
-        sx={{
-          position: 'fixed',
-          top: 16,
-          right: 16,
-          zIndex: 200,
-          bgcolor: 'rgba(0, 0, 0, 0.7)',
-          color: 'white',
-          backdropFilter: 'blur(10px)',
-          '&:hover': {
-            bgcolor: 'rgba(0, 0, 0, 0.8)',
-          },
-          border: '1px solid rgba(255, 255, 255, 0.2)',
-        }}
+        onClick={handleToggleAdvancedControls}
+        sx={ElectromagneticLabStyles.advancedControlsButton}
       >
         ⚙️
       </IconButton>
 
       {/* Advanced Controls Menu Overlay */}
       {advancedControlsOpen && (
-        <Paper
-          elevation={8}
-          sx={{
-            position: 'fixed',
-            top: 0,
-            right: 0,
-            zIndex: 150,
-            height: '100vh',
-            width: {
-              xs: '100vw',    // Mobile phones: full width
-              sm: '100vw',    // Small tablets: full width
-              md: '60vw',     // Medium tablets: 60% width
-              lg: '45vw',     // Large screens: 45% width
-              xl: '35vw',     // Extra large screens: 35% width
-              xxl: '25vw'     // Ultra-wide: 25% width
-            },
-            maxWidth: {
-              xs: '100vw',    // Mobile: no max constraint
-              sm: '100vw',    // Small: no max constraint  
-              md: '700px',    // Medium+: reasonable max width
-            },
-            minWidth: {
-              xs: '320px',    // Minimum for mobile
-              sm: '400px',    // Bit more for small tablets
-              md: '500px'     // More for medium+
-            },
-            bgcolor: 'rgba(0, 0, 0, 0.9)',
-            backdropFilter: 'blur(20px)',
-            borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden'
-          }}
-        >
-          {/* Menu Header */}
-          <Box sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            p: 2,
-            borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
-          }}>
+        <Paper elevation={8} sx={ElectromagneticLabStyles.advancedControlsMenu}>
+          <Box sx={ElectromagneticLabStyles.menuHeader}>
             <Typography variant="h6" sx={{ color: 'white', display: 'flex', alignItems: 'center', gap: 1 }}>
               ⚙️ Advanced Controls
             </Typography>
-            <IconButton
-              onClick={() => setAdvancedControlsOpen(false)}
-              sx={{ color: 'white' }}
-            >
+            <IconButton onClick={handleToggleAdvancedControls} sx={{ color: 'white' }}>
               ✕
             </IconButton>
           </Box>
 
-          {/* Tabs */}
           <Box sx={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
             <ControlTabs
-              tabs={tabs.filter(tab => !['timer'].includes(tab.id))}
+              tabs={TAB_CONFIG.filter(tab => !['timer'].includes(tab.id))}
               activeTab={appState.activeTab}
               onTabChange={handleTabChange}
             />
           </Box>
 
-          {/* Tab Content */}
-          <Box sx={{
-            flex: 1,
-            overflowY: 'auto',
-            p: 2,
-            backgroundColor: 'rgba(30, 60, 90, 0.1)'
-          }}>
-            {renderTabContent()}
+          <Box sx={ElectromagneticLabStyles.tabContent}>
+            <TabContentRenderer
+              appState={appState}
+              audioEngine={audioEngine}
+              backendEngine={backendEngine}
+              patterns8D={patterns8D}
+              onStateChange={updateAppState}
+              onPatternSelect={handlePatternSelectBound}
+              onFrequencyChange={handleFrequencyChangeBound}
+            />
           </Box>
         </Paper>
       )}
 
       {/* Header */}
-      <Paper
-        elevation={0}
-        sx={{
-          position: 'sticky',
-          top: 0,
-          left: 0,
-          right: 0,
-          zIndex: 100,
-          p: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 1,
-          backdropFilter: 'blur(10px)',
-          bgcolor: 'rgba(0, 0, 0, 0.2)',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-          flexShrink: 0
-        }}
-      >
-        {/* Top row: Title and Status */}
-        <Box sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          minHeight: 40,
-          flexDirection: {
-            xs: 'column',    // Mobile: stack vertically
-            sm: 'column',    // Small tablets: stack vertically
-            md: 'row'        // Medium+: horizontal layout
-          },
-          gap: {
-            xs: 1,           // Mobile: small gap
-            md: 0            // Medium+: no gap (space-between handles it)
-          }
-        }}>
-          <Typography variant="h4" sx={{
-            fontWeight: 700, 
-            m: 0,
-            fontSize: {
-              xs: '1.5rem',    // Mobile: smaller title
-              sm: '2rem',      // Small tablets: medium title
-              md: '2.5rem',    // Medium+: larger title
-              lg: '3rem'       // Large: full size
-            },
-            textAlign: {
-              xs: 'center',    // Mobile: centered
-              md: 'left'       // Medium+: left aligned
-            }
-          }}>
+      <Paper elevation={0} sx={ElectromagneticLabStyles.headerPaper}>
+        <Box sx={ElectromagneticLabStyles.titleStatusRow}>
+          <Typography variant="h4" sx={ElectromagneticLabStyles.mainTitle}>
             Bishop's Electromagnetic Beat Lab
           </Typography>
           <Box sx={{ display: 'flex', gap: 0.25, alignItems: 'center', fontSize: '0.75rem' }}>
@@ -654,314 +232,68 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
 
         {/* Compact Status Overview - Show when Master Controls is closed */}
         {closedSections.includes('masterControls') && (
-          <Box sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: {
-              xs: 1,           // Mobile: smaller gap
-              sm: 1.5,         // Small tablets: medium gap
-              md: 2            // Medium+: full gap
-            },
-            px: {
-              xs: 1,           // Mobile: less padding
-              sm: 1.5,         // Small tablets: medium padding
-              md: 2            // Medium+: full padding
-            },
-            py: 1,
-            background: 'rgba(138, 43, 226, 0.1)',
-            borderRadius: 2,
-            border: '1px solid rgba(138, 43, 226, 0.3)',
-            flexWrap: 'wrap',
-            flexDirection: {
-              xs: 'column',    // Mobile: stack vertically
-              sm: 'row'        // Small tablets+: horizontal
-            }
-          }}>
-            {/* Master Controls */}
+          <Box sx={ElectromagneticLabStyles.compactStatusOverview}>
             <MainControlsMUI
               isPlaying={appState.isPlaying}
               volume={appState.volume}
-              onPlay={handlePlay}
+              onPlay={handlePlayBound}
               onStop={handleStop}
-              onVolumeChange={handleVolumeChange}
+              onVolumeChange={handleVolumeChangeBound}
               compact={true}
             />
             
-            {/* All Systems Status - Always Show All Options */}
-            <Box sx={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: {
-                xs: 0.5,         // Mobile: tighter spacing
-                sm: 0.75,        // Small tablets: medium spacing
-                md: 1            // Medium+: full spacing
-              }, 
-              ml: {
-                xs: 0,           // Mobile: no left margin
-                sm: 2            // Small tablets+: left margin
-              }, 
-              flexWrap: 'wrap',
-              justifyContent: {
-                xs: 'center',    // Mobile: center chips
-                sm: 'flex-start' // Small tablets+: left align
-              }
-            }}>
-              <Typography variant="caption" color="text.secondary">
-                Systems:
-              </Typography>
-              
-              {/* Audio Engines */}
-              <Chip
-                label="🎵 Frontend Engine"
-                size="small"
-                color={audioEngine.audioState.isPlaying ? "success" : "default"}
-                variant={audioEngine.audioState.isPlaying ? "filled" : "outlined"}
-                sx={{ 
-                  fontSize: '0.7rem',
-                  backgroundColor: audioEngine.audioState.isPlaying ? 'rgba(0, 255, 136, 0.2)' : 'transparent',
-                  borderColor: audioEngine.audioState.isPlaying ? 'rgba(0, 255, 136, 0.5)' : 'rgba(255, 255, 255, 0.3)'
-                }}
-              />
-              
-              <Chip
-                label="🎵 Backend Engine"
-                size="small"
-                color={backendEngine.audioState.isPlaying ? "success" : "default"}
-                variant={backendEngine.audioState.isPlaying ? "filled" : "outlined"}
-                sx={{ 
-                  fontSize: '0.7rem',
-                  backgroundColor: backendEngine.audioState.isPlaying ? 'rgba(0, 255, 136, 0.2)' : 'transparent',
-                  borderColor: backendEngine.audioState.isPlaying ? 'rgba(0, 255, 136, 0.5)' : 'rgba(255, 255, 255, 0.3)'
-                }}
-              />
-              
-              {/* Patterns */}
-              <Chip
-                label={`🌀 Patterns ${appState.currentPattern ? `(${appState.currentPattern.name})` : ''}`}
-                size="small"
-                color={appState.currentPattern ? "success" : "default"}
-                variant={appState.currentPattern ? "filled" : "outlined"}
-                sx={{ 
-                  fontSize: '0.7rem',
-                  backgroundColor: appState.currentPattern ? 'rgba(0, 255, 136, 0.2)' : 'transparent',
-                  borderColor: appState.currentPattern ? 'rgba(0, 255, 136, 0.5)' : 'rgba(255, 255, 255, 0.3)'
-                }}
-              />
-              
-              {/* Spatial Audio */}
-              <Chip
-                label="🎧 8D Spatial"
-                size="small"
-                color={(appState.spatialAudio?.enabled && backendEngine.backendConnected) ? "success" : "default"}
-                variant={(appState.spatialAudio?.enabled && backendEngine.backendConnected) ? "filled" : "outlined"}
-                sx={{ 
-                  fontSize: '0.7rem',
-                  backgroundColor: (appState.spatialAudio?.enabled && backendEngine.backendConnected) ? 'rgba(0, 255, 136, 0.2)' : 'transparent',
-                  borderColor: (appState.spatialAudio?.enabled && backendEngine.backendConnected) ? 'rgba(0, 255, 136, 0.5)' : 'rgba(255, 255, 255, 0.3)'
-                }}
-              />
-              
-              {/* Timer */}
-              <Chip
-                label="⏰ Timer"
-                size="small"
-                color={appState.activeTab === 'timer' ? "success" : "default"}
-                variant={appState.activeTab === 'timer' ? "filled" : "outlined"}
-                sx={{ 
-                  fontSize: '0.7rem',
-                  backgroundColor: appState.activeTab === 'timer' ? 'rgba(0, 255, 136, 0.2)' : 'transparent',
-                  borderColor: appState.activeTab === 'timer' ? 'rgba(0, 255, 136, 0.5)' : 'rgba(255, 255, 255, 0.3)'
-                }}
-              />
-              
-              {/* ADHD Protocol */}
-              <Chip
-                label={`⚡ ADHD ${appState.adhd ? `(${appState.adhd.mode})` : ''}`}
-                size="small"
-                color={appState.adhd ? "success" : "default"}
-                variant={appState.adhd ? "filled" : "outlined"}
-                sx={{ 
-                  fontSize: '0.7rem',
-                  backgroundColor: appState.adhd ? 'rgba(0, 255, 136, 0.2)' : 'transparent',
-                  borderColor: appState.adhd ? 'rgba(0, 255, 136, 0.5)' : 'rgba(255, 255, 255, 0.3)'
-                }}
-              />
-              
-              {/* YouTube Sync */}
-              <Chip
-                label="📺 YouTube"
-                size="small"
-                color={(appState.youtube?.enabled && appState.youtube.videoId) ? "success" : "default"}
-                variant={(appState.youtube?.enabled && appState.youtube.videoId) ? "filled" : "outlined"}
-                sx={{ 
-                  fontSize: '0.7rem',
-                  backgroundColor: (appState.youtube?.enabled && appState.youtube.videoId) ? 'rgba(0, 255, 136, 0.2)' : 'transparent',
-                  borderColor: (appState.youtube?.enabled && appState.youtube.videoId) ? 'rgba(0, 255, 136, 0.5)' : 'rgba(255, 255, 255, 0.3)'
-                }}
-              />
-              
-              {/* Frequency Tab */}
-              <Chip
-                label="📊 Frequency"
-                size="small"
-                color={appState.activeTab === 'frequency' ? "success" : "default"}
-                variant={appState.activeTab === 'frequency' ? "filled" : "outlined"}
-                sx={{ 
-                  fontSize: '0.7rem',
-                  backgroundColor: appState.activeTab === 'frequency' ? 'rgba(0, 255, 136, 0.2)' : 'transparent',
-                  borderColor: appState.activeTab === 'frequency' ? 'rgba(0, 255, 136, 0.5)' : 'rgba(255, 255, 255, 0.3)'
-                }}
-              />
-              
-              {/* Visualizations */}
-              <Chip
-                label="🎨 Visualizations"
-                size="small"
-                color={appState.activeTab === 'visualizations' ? "success" : "default"}
-                variant={appState.activeTab === 'visualizations' ? "filled" : "outlined"}
-                sx={{ 
-                  fontSize: '0.7rem',
-                  backgroundColor: appState.activeTab === 'visualizations' ? 'rgba(0, 255, 136, 0.2)' : 'transparent',
-                  borderColor: appState.activeTab === 'visualizations' ? 'rgba(0, 255, 136, 0.5)' : 'rgba(255, 255, 255, 0.3)'
-                }}
-              />
-              
-              {/* Settings */}
-              <Chip
-                label="⚙️ Settings"
-                size="small"
-                color={appState.activeTab === 'settings' ? "success" : "default"}
-                variant={appState.activeTab === 'settings' ? "filled" : "outlined"}
-                sx={{ 
-                  fontSize: '0.7rem',
-                  backgroundColor: appState.activeTab === 'settings' ? 'rgba(0, 255, 136, 0.2)' : 'transparent',
-                  borderColor: appState.activeTab === 'settings' ? 'rgba(0, 255, 136, 0.5)' : 'rgba(255, 255, 255, 0.3)'
-                }}
-              />
-            </Box>
+            <SystemStatusChips
+              appState={appState}
+              audioEngine={frontendEngine}
+              backendEngine={backendEngine}
+            />
           </Box>
         )}
       </Paper>
 
-      {/* Dynamic Flex Layout - Full viewport utilization with responsive behavior */}
-      <Box sx={{ 
-        flex: 1, 
-        p: {
-          xs: '5px',         // Mobile: minimal padding
-          sm: '8px',         // Small tablets: small padding
-          md: '10px'         // Medium+: full padding
-        }, 
-        display: 'flex', 
-        gap: {
-          xs: '5px',         // Mobile: smaller gaps
-          sm: '8px',         // Small tablets: medium gaps
-          md: '10px'         // Medium+: full gaps
-        }, 
-        height: closedSections.includes('masterControls') 
-          ? {
-              xs: 'calc(100vh - 120px)',  // Mobile: full height minus minimal header
-              sm: 'calc(100vh - 100px)',  // Small tablets: full height
-              md: 'calc(100vh - 80px)'    // Medium+: full height minus compact header
-            }
-          : {
-              xs: 'calc(100vh - 80px)',   // Mobile: full height minus minimal header
-              sm: 'calc(100vh - 60px)',   // Small tablets: full height
-              md: 'calc(100vh - 40px)'    // Medium+: almost full viewport
-            },
-        minHeight: 0,
-        flexDirection: {
-          xs: 'column',      // Mobile: stack all panels vertically
-          sm: 'column',      // Small tablets: stack vertically
-          md: 'row',         // Medium tablets: horizontal layout
-          lg: 'row'          // Large+: horizontal layout
-        },
-        flexWrap: {
-          md: 'nowrap',      // Medium: don't wrap
-          lg: 'wrap',        // Large: allow wrapping
-          xl: 'nowrap'       // XL+: don't wrap
-        },
-        overflowX: {
-          xs: 'visible',     // Mobile: no horizontal scroll
-          md: 'auto'         // Medium+: allow horizontal scroll if needed
-        },
-        overflowY: {
-          xs: 'auto',        // Mobile: allow vertical scroll
-          md: 'visible'      // Medium+: no vertical scroll
-        }
-      }}>
+      {/* Timer Countdown Display - Always visible when timer is active */}
+      <TimerCountdownDisplay 
+        timerStatus={timerStatus}
+        isVisible={true}
+      />
+
+      {/* Dynamic Flex Layout */}
+      <Box sx={ElectromagneticLabStyles.mainLayoutContainer(closedSections)}>
         {/* Master Controls */}
         {!closedSections.includes('masterControls') && (
-          <Box sx={{ 
-            flex: {
-              xs: '1 1 auto',    // Mobile: take full width
-              sm: '1 1 auto',    // Small tablets: take full width
-              md: '1 1 280px',   // Medium: flexible with min 280px
-              lg: '1 1 320px',   // Large: flexible with min 320px
-              xl: '0 1 350px'    // XL: fixed width, shrinkable
-            },
-            minWidth: {
-              xs: '280px',       // Mobile: minimum width
-              sm: '300px',       // Small tablets: bit more
-              md: '280px',       // Medium: compact
-              lg: '320px'        // Large+: comfortable width
-            },
-            maxWidth: {
-              xs: '100%',        // Mobile: full width
-              md: '400px'        // Medium+: reasonable max
-            },
-            height: {
-              xs: 'auto',        // Mobile: auto height
-              md: '100%'         // Medium+: full height
-            },
-            display: 'flex',
-            flexDirection: 'column'
-          }}>
+          <Box sx={ElectromagneticLabStyles.panelFlex}>
             <CollapsibleSection id="masterControls" title="Master Controls" icon="🎛️" defaultOpen={true} onClose={handleSectionClose}>
               <QuickStart
-                  activeStatus={masterAudio.activeStatus}
-                  frequencies={masterAudio.frequencies}
-                  volume={masterAudio.volume}
-                  audioEngine={backendEngine}
+                activeStatus={{
+                  binauralEngine: frontendEngine.audioState.isPlaying,
+                  backendEngine: backendEngine.audioState.isPlaying,
+                  spatialAudio: backendEngine.backendConnected,
+                  patterns: !!appState.currentPattern,
+                  testTones: false
+                }}
+                frequencies={{
+                  left: activeAudioEngine.audioState.leftFreq,
+                  right: activeAudioEngine.audioState.rightFreq,
+                  beat: activeAudioEngine.audioState.beatFreq
+                }}
+                volume={activeAudioEngine.audioState.volume}
+                audioEngine={activeAudioEngine}
               />
-
             </CollapsibleSection>
           </Box>
         )}
 
         {/* Patterns */}
         {!closedSections.includes('patternID') && (
-          <Box sx={{ 
-            flex: {
-              xs: '1 1 auto',    // Mobile: take full width
-              sm: '1 1 auto',    // Small tablets: take full width
-              md: '1 1 280px',   // Medium: flexible with min 280px
-              lg: '1 1 320px',   // Large: flexible with min 320px
-              xl: '0 1 350px'    // XL: fixed width, shrinkable
-            },
-            minWidth: {
-              xs: '280px',       // Mobile: minimum width
-              sm: '300px',       // Small tablets: bit more
-              md: '280px',       // Medium: compact
-              lg: '320px'        // Large+: comfortable width
-            },
-            maxWidth: {
-              xs: '100%',        // Mobile: full width
-              md: '400px'        // Medium+: reasonable max
-            },
-            height: {
-              xs: 'auto',        // Mobile: auto height
-              md: '100%'         // Medium+: full height
-            },
-            display: 'flex',
-            flexDirection: 'column'
-          }}>
+          <Box sx={ElectromagneticLabStyles.panelFlex}>
             <CollapsibleSection id="patternID" title="Patterns" icon="🌀" defaultOpen={true} onClose={handleSectionClose}>
               <PatternSelectorMUI
                 patterns={WAVE_PATTERNS}
                 selected={appState.currentPattern?.id || null}
                 mode={appState.mode}
-                onSelect={handlePatternSelect}
-                onModeChange={handleModeChange}
+                onSelect={handlePatternSelectBound}
+                onModeChange={handleModeChangeBound}
+                activePattern={appState.currentPattern?.id || null}
               />
             </CollapsibleSection>
           </Box>
@@ -969,48 +301,25 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
 
         {/* Binaural Beat Generator */}
         {!closedSections.includes('binauralBeats') && (
-          <Box sx={{ 
-            flex: {
-              xs: '1 1 auto',    // Mobile: take full width
-              sm: '1 1 auto',    // Small tablets: take full width
-              md: '1 1 320px',   // Medium: flexible with min 320px
-              lg: '1 1 360px',   // Large: flexible with min 360px
-              xl: '0 1 400px'    // XL: fixed width, shrinkable
-            },
-            minWidth: {
-              xs: '280px',       // Mobile: minimum width
-              sm: '320px',       // Small tablets: bit more
-              md: '320px',       // Medium: comfortable
-              lg: '360px'        // Large+: spacious width
-            },
-            maxWidth: {
-              xs: '100%',        // Mobile: full width
-              md: '450px'        // Medium+: reasonable max
-            },
-            height: {
-              xs: 'auto',        // Mobile: auto height
-              md: '100%'         // Medium+: full height
-            },
-            display: 'flex',
-            flexDirection: 'column'
-          }}>
+          <Box sx={ElectromagneticLabStyles.widePanelFlex}>
             <CollapsibleSection id="binauralBeats" title="Binaural Beat Generator" icon="🎧" defaultOpen={true} onClose={handleSectionClose}>
               <Box sx={{ height: 'auto', overflow: 'visible' }}>
                 <BinauralGeneratorMUI
-                  leftFreq={audioEngine.audioState.leftFreq || 440}
-                  rightFreq={audioEngine.audioState.rightFreq || 444}
+                  leftFreq={activeAudioEngine.audioState.leftFreq || 440}
+                  rightFreq={activeAudioEngine.audioState.rightFreq || 444}
                   onFrequencyChange={(left, right) => {
                     console.log('🎛️ Parent received frequency change:', left, right);
-                    audioEngine.updateFrequency(left, right);
+                    activeAudioEngine.updateFrequency(left, right);
                   }}
+                  currentPreset={currentPreset}
                 />
-                <Box sx={{ mt: 1 , maxHeight: '250px', overflowY: 'auto' }}>
+                <Box sx={{ mt: 1, maxHeight: '250px', overflowY: 'auto' }}>
                   <MainControlsMUI
-                      isPlaying={appState.isPlaying}
-                      volume={appState.volume}
-                      onPlay={handlePlay}
-                      onStop={handleStop}
-                      onVolumeChange={handleVolumeChange}
+                    isPlaying={appState.isPlaying}
+                    volume={appState.volume}
+                    onPlay={handlePlayBound}
+                    onStop={handleStop}
+                    onVolumeChange={handleVolumeChangeBound}
                   />
                 </Box>
               </Box>
@@ -1020,49 +329,28 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
 
         {/* Visualization */}
         {!closedSections.includes('visualizeID') && (
-          <Box sx={{ 
-            flex: {
-              xs: '1 1 auto',    // Mobile: take full width
-              sm: '1 1 auto',    // Small tablets: take full width
-              md: '1 1 320px',   // Medium: flexible with min 320px
-              lg: '1 1 360px',   // Large: flexible with min 360px
-              xl: '0 1 400px'    // XL: fixed width, shrinkable
-            },
-            minWidth: {
-              xs: '280px',       // Mobile: minimum width
-              sm: '320px',       // Small tablets: bit more
-              md: '320px',       // Medium: comfortable
-              lg: '360px'        // Large+: spacious width
-            },
-            maxWidth: {
-              xs: '100%',        // Mobile: full width
-              md: '450px'        // Medium+: reasonable max
-            },
-            height: {
-              xs: 'auto',        // Mobile: auto height
-              md: '100%'         // Medium+: full height
-            },
-            display: 'flex',
-            flexDirection: 'column'
-          }}>
+          <Box sx={ElectromagneticLabStyles.widePanelFlex}>
             <CollapsibleSection id="visualizeID" title="Visualization" icon="🎨" defaultOpen={true} onClose={handleSectionClose}>
               <Box sx={{ position: 'relative', height: '100%', minHeight: '250px' }}>
-                <Paper
-                  elevation={3}
-                  sx={{
-                    width: '100%',
-                    height: '100%',
-                    borderRadius: 3,
-                    overflow: 'hidden',
-                    background: 'radial-gradient(circle at center, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.95) 100%)'
-                  }}
-                >
-                  {patterns8D.activePattern && (
+                <Paper elevation={3} sx={ElectromagneticLabStyles.visualizationPaper}>
+                  {appState.currentPattern && (
                     <SpatialVisualizer
-                      pattern={patterns8D.activePattern}
+                      pattern={appState.currentPattern}
                       electromagnetic={appState.electromagnetic}
                       size={300}
                     />
+                  )}
+                  
+                  {/* Real-time Frequency Analyzer */}
+                  {appState.isPlaying && (
+                    <Box sx={{ mt: 2 }}>
+                      <FrequencyVisualizer
+                        getVisualizationData={activeAudioEngine.getVisualizationData || null}
+                        title="Real-time Frequency Analysis"
+                        height={200}
+                        width={600}
+                      />
+                    </Box>
                   )}
                 </Paper>
               </Box>
@@ -1070,123 +358,74 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
           </Box>
         )}
 
-
-
         {/* Timer & Sessions */}
         {!closedSections.includes('timerPanel') && (
-          <Box sx={{ 
-            flex: {
-              xs: '1 1 auto',    // Mobile: take full width
-              sm: '1 1 auto',    // Small tablets: take full width
-              md: '1 1 320px',   // Medium: flexible with min 320px
-              lg: '1 1 360px',   // Large: flexible with min 360px
-              xl: '0 1 400px'    // XL: fixed width, shrinkable
-            },
-            minWidth: {
-              xs: '280px',       // Mobile: minimum width
-              sm: '320px',       // Small tablets: bit more
-              md: '320px',       // Medium: comfortable
-              lg: '360px'        // Large+: spacious width
-            },
-            maxWidth: {
-              xs: '100%',        // Mobile: full width
-              md: '450px'        // Medium+: reasonable max
-            },
-            height: {
-              xs: 'auto',        // Mobile: auto height
-              md: '100%'         // Medium+: full height
-            },
-            display: 'flex',
-            flexDirection: 'column'
-          }}>
+          <Box sx={ElectromagneticLabStyles.widePanelFlex}>
             <CollapsibleSection id="timerPanel" title="Timer & Sessions" icon="⏰" defaultOpen={true} onClose={handleSectionClose}>
-              <Box sx={{ height: '100%', minHeight: '300px', overflowY: 'auto' }}>
+              <Box sx={{ maxHeight: '500px', minHeight: '300px', overflowY: 'auto' }}>
                 <TimerTab
                   appState={appState}
-                  audioEngine={backendEngine}
-                  patterns8D={patterns8D.patterns}
-                  onStateChange={(partialState) => setAppState(prev => ({ ...prev, ...partialState }))}
+                  audioEngine={backendEngine.backendConnected ? backendEngine : frontendEngine}
+                  patterns8D={WAVE_PATTERNS}
+                  patterns8DEngine={{
+                    setActivePattern: (pattern) => {
+                      console.log('🎨 Setting active pattern for visualizer:', pattern.name);
+                      updateAppState({ currentPattern: pattern });
+                    },
+                    clearActivePattern: () => {
+                      console.log('🎨 Clearing active pattern from visualizer');
+                      updateAppState({ currentPattern: null });
+                    }
+                  }}
+                  onStateChange={updateAppState}
+                  onTimerStatusUpdate={setTimerStatus}
                 />
               </Box>
-            </CollipsibleSection>
+            </CollapsibleSection>
           </Box>
         )}
       </Box>
 
-        {/* Dark Screen Overlay */}
-        {darkScreen && (
-          <Box
-            sx={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: 'rgba(0, 0, 0, 0.95)',
-              zIndex: 150,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backdropFilter: 'blur(5px)',
+      {/* Dark Screen Overlay */}
+      {darkScreen && (
+        <Box sx={ElectromagneticLabStyles.darkScreenOverlay} onClick={toggleDarkScreen}>
+          <Typography 
+            variant="h6" 
+            sx={{ 
+              color: 'rgba(255, 255, 255, 0.3)',
+              fontStyle: 'italic',
+              cursor: 'pointer',
+              userSelect: 'none'
             }}
-            onClick={() => setDarkScreen(false)}
           >
-            <Typography 
-              variant="h6" 
-              sx={{ 
-                color: 'rgba(255, 255, 255, 0.3)',
-                fontStyle: 'italic',
-                cursor: 'pointer',
-                userSelect: 'none'
-              }}
-            >
-              Click anywhere to exit dark screen
-            </Typography>
-          </Box>
-        )}
+            Click anywhere to exit dark screen
+          </Typography>
+        </Box>
+      )}
 
-        {/* Restore Tabs for Closed Sections - Fixed Position with responsive adjustments */}
-        {closedSections.length > 0 && (
-          <Box sx={{ 
-            position: 'fixed', 
-            bottom: {
-              xs: 8,           // Mobile: closer to edge
-              sm: 10,          // Small tablets: normal spacing
-              md: 10           // Medium+: normal spacing
-            }, 
-            right: {
-              xs: 8,           // Mobile: closer to edge
-              sm: 10,          // Small tablets: normal spacing
-              md: 10           // Medium+: normal spacing
-            }, 
-            zIndex: 1000,
-            maxWidth: {
-              xs: 'calc(100vw - 16px)',  // Mobile: almost full width
-              sm: 400,                   // Small tablets: wider
-              md: 300                    // Medium+: compact
-            }
-          }}>
-            <Paper elevation={2} sx={{ p: 1, bgcolor: 'rgba(0, 0, 0, 0.8)', backdropFilter: 'blur(10px)' }}>
-              <Typography variant="body2" sx={{ mb: 1, color: '#888' }}>Closed sections:</Typography>
-              <Box sx={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
-                {closedSections.map(sectionId => {
-                  const sectionData = getSectionData(sectionId);
-                  return (
-                    <Chip
-                      key={sectionId}
-                      label={`${sectionData.icon} ${sectionData.title}`}
-                      onClick={() => handleSectionRestore(sectionId)}
-                      size="small"
-                      sx={{ cursor: 'pointer', bgcolor: 'rgba(255, 255, 255, 0.1)' }}
-                    />
-                  );
-                })}
-              </Box>
-            </Paper>
-          </Box>
-        )}
-      </Box>
-
+      {/* Restore Tabs for Closed Sections */}
+      {closedSections.length > 0 && (
+        <Box sx={ElectromagneticLabStyles.restoreTabsContainer}>
+          <Paper elevation={2} sx={ElectromagneticLabStyles.restoreTabsPaper}>
+            <Typography variant="body2" sx={{ mb: 1, color: '#888' }}>Closed sections:</Typography>
+            <Box sx={ElectromagneticLabStyles.restoreTabsChips}>
+              {closedSections.map(sectionId => {
+                const sectionData = getSectionData(sectionId);
+                return (
+                  <Chip
+                    key={sectionId}
+                    label={`${sectionData.icon} ${sectionData.title}`}
+                    onClick={() => handleSectionRestore(sectionId)}
+                    size="small"
+                    sx={{ cursor: 'pointer', bgcolor: 'rgba(255, 255, 255, 0.1)' }}
+                  />
+                );
+              })}
+            </Box>
+          </Paper>
+        </Box>
+      )}
+    </Box>
   );
 };
 

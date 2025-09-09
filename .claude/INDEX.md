@@ -7,15 +7,22 @@ This index provides the optimal reading order and navigation paths for AI assist
 
 ## 🚀 Quick Start (Essential Reading)
 
-### 1. **First Time Setup**
+### 1. **Automated Context Initialization** 
+```bash
+# Run this command first to auto-load all context
+.claude/commands/init-context.sh
+```
+
+### 2. **Manual Context Reading Order**
 ```
 1. INDEX.md (this file) ← YOU ARE HERE
 2. CLAUDE.md - Development rules & standards
 3. INITIAL.md - Project specifications & protocols
 4. ../PLANNING.md - Architecture & workflow
+5. ../TASK.md - Current sprint work
 ```
 
-### 2. **For Specific Task Types**
+### 3. **For Specific Task Types**
 
 #### 🔧 **New Feature Development**
 ```

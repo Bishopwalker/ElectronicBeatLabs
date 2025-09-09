@@ -30,7 +30,10 @@ export const BUILT_IN_PRESETS: TimerPreset[] = [
     loop_enabled: true,
     loop_count: 0, // Infinite
     loop_phase: 'specific_transitions',
-    loop_transitions: [1] // Loop the high beta concentration phase
+    loop_transitions: [1], // Loop the high beta concentration phase
+    
+    // Connect to real electromagnetic pattern
+    pattern_id: 'vortex-focus-enhancement'
   },
   {
     id: 'meditation-20min',
@@ -45,7 +48,10 @@ export const BUILT_IN_PRESETS: TimerPreset[] = [
     // Meditation - full session loop for extended practice
     loop_enabled: true,
     loop_count: 0, // Infinite
-    loop_phase: 'full'
+    loop_phase: 'full',
+    
+    // Connect to real electromagnetic pattern
+    pattern_id: 'standing-wave-meditation'
   },
   {
     id: 'sleep-60min',
@@ -61,7 +67,10 @@ export const BUILT_IN_PRESETS: TimerPreset[] = [
     loop_enabled: true,
     loop_count: 0, // Infinite
     loop_phase: 'specific_transitions',
-    loop_transitions: [2, 3] // Loop the delta sleep phases
+    loop_transitions: [2, 3], // Loop the delta sleep phases
+    
+    // Connect to real electromagnetic pattern
+    pattern_id: 'toroidal-healing'
   },
   {
     id: 'lucid-dream-45min',
@@ -91,7 +100,10 @@ export const BUILT_IN_PRESETS: TimerPreset[] = [
     // Complex OBE protocol - loop entire session for extended practice
     loop_enabled: true,
     loop_count: 0, // Infinite
-    loop_phase: 'full'
+    loop_phase: 'full',
+    
+    // Connect to real electromagnetic pattern
+    pattern_id: 'toroidal-max-resonance'
   }
 ];
 
