@@ -39,18 +39,38 @@ export const useAudioEngine = () => {
   const animationRef = useRef<number | undefined>(undefined);
   const startTimeRef = useRef<number>(0);
 
-  // Initialize Web Audio API
+  // Initialize Web Audio API with user gesture handling
   const initializeAudio = useCallback(async (): Promise<AudioContext | null> => {
     try {
-      const context = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+      console.log('🎵 Initializing Web Audio API...');
       
+      // Create audio context
+      const context = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+      console.log('🎵 Audio context created, state:', context.state);
+      
+      // Resume if suspended (required for user gesture)
       if (context.state === 'suspended') {
+        console.log('🎵 Audio context suspended, resuming...');
         await context.resume();
+        console.log('🎵 Audio context resumed, new state:', context.state);
       }
 
+      if (context.state !== 'running') {
+        console.warn('⚠️ Audio context not running after resume. State:', context.state);
+        // Try to create a dummy sound to trigger user gesture
+        const oscillator = context.createOscillator();
+        const gainNode = context.createGain();
+        gainNode.gain.setValueAtTime(0, context.currentTime);
+        oscillator.connect(gainNode);
+        gainNode.connect(context.destination);
+        oscillator.start();
+        oscillator.stop(context.currentTime + 0.01);
+      }
+
+      console.log('✅ Audio context initialized successfully');
       return context;
     } catch (error) {
-      console.error('Failed to initialize audio context:', error);
+      console.error('❌ Failed to initialize audio context:', error);
       return null;
     }
   }, []);

@@ -29,7 +29,21 @@ import { formatTime } from '../helpers/timer/timerUtils';
 import { useTimerLogic } from '../hooks/useTimerLogic';
 import CustomPresetDialog from './timer/CustomPresetDialog';
 
-const TimerControls: React.FC<TimerControlsProps> = ({ audioEngine }) => {
+interface TimerControlsPropsExtended extends TimerControlsProps {
+  onTimerStatusUpdate?: (status: any) => void;
+  patterns8D?: {
+    setActivePattern: (pattern: any) => void;
+    clearActivePattern: () => void;
+  };
+  onElectromagneticUpdate?: (electromagnetic: any) => void;
+}
+
+const TimerControls: React.FC<TimerControlsPropsExtended> = ({ 
+  audioEngine, 
+  patterns8D, 
+  onElectromagneticUpdate,
+  onTimerStatusUpdate 
+}) => {
   // const { user } = useAuth();
   const {
     presets,
@@ -46,7 +60,12 @@ const TimerControls: React.FC<TimerControlsProps> = ({ audioEngine }) => {
     updateCustomPreset,
     deleteCustomPreset,
     customPresetTransitions
-  } = useTimerLogic({ audioEngine });
+  } = useTimerLogic({ 
+    audioEngine, 
+    patterns8D, 
+    onElectromagneticUpdate,
+    onTimerStatusUpdate 
+  });
 
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -186,80 +205,60 @@ const TimerControls: React.FC<TimerControlsProps> = ({ audioEngine }) => {
               id="preset-select"
               value={selectedPresetId}
               label="Choose Preset"
-              onChange={(e) => setSelectedPresetId(e.target.value)}
-              disabled={loading || timerStatus?.session?.is_active}
+              onChange={(e) => {
+                console.log('🔄 Timer preset selected:', e.target.value);
+                setSelectedPresetId(e.target.value);
+              }}
+              disabled={false}
+              MenuProps={{
+                disablePortal: true,
+                keepMounted: false
+              }}
             >
               {presets.map((preset) => (
                 <MenuItem 
                   key={preset.id} 
                   value={preset.id}
-                  disabled={!preset.available}
-                  sx={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    pr: preset.id.startsWith('custom-') ? 1 : 2
-                  }}
                 >
-                  <Box sx={{ flex: 1 }}>
-                    <Typography variant="body2">
+                  <Box sx={{ width: '100%' }}>
+                    <Typography component="div" variant="body2" sx={{ fontWeight: selectedPresetId === preset.id ? 'bold' : 'normal' }}>
                       {preset.name}
                       {preset.id.startsWith('custom-') && <Chip label="Custom" size="small" color="secondary" sx={{ ml: 1 }} />}
                       {preset.is_premium && <Chip label="Premium" size="small" color="warning" sx={{ ml: 1 }} />}
                       {preset.loop_enabled && <Chip label="Loop" size="small" color="info" sx={{ ml: 1 }} />}
-                      {'difficulty_level' in preset && <Chip 
-                        label={(preset as any).difficulty_level} 
-                        size="small" 
-                        color={'difficulty_level' in preset && (preset as any).difficulty_level === 'expert' ? 'error' : 'secondary'} 
-                        sx={{ ml: 1 }} 
-                      />}
                     </Typography>
                     <Typography variant="caption" color="textSecondary">
                       {preset.description} ({preset.total_duration} min)
-                      {preset.loop_enabled && (
-                        <Box component="span" sx={{ color: '#00bfff', ml: 1 }}>
-                          • {preset.loop_count === 0 ? '∞ Loop' : `${preset.loop_count} Loops`}
-                        </Box>
-                      )}
                     </Typography>
                   </Box>
-                  
-                  {preset.id.startsWith('custom-') && (
-                    <Box sx={{ display: 'flex', gap: 0.5 }}>
-                      <IconButton
-                        size="small"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEditPreset(preset.id);
-                        }}
-                        disabled={loading || timerStatus?.session?.is_active}
-                        sx={{ 
-                          color: '#00bfff',
-                          '&:hover': { backgroundColor: 'rgba(0, 191, 255, 0.1)' }
-                        }}
-                      >
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeletePreset(preset.id);
-                        }}
-                        disabled={loading || timerStatus?.session?.is_active}
-                        sx={{ 
-                          color: '#ff6b6b',
-                          '&:hover': { backgroundColor: 'rgba(255, 107, 107, 0.1)' }
-                        }}
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </Box>
-                  )}
                 </MenuItem>
               ))}
             </Select>
           </FormControl>
+
+          {/* Custom Preset Actions */}
+          {selectedPresetId && selectedPresetId.startsWith('custom-') && (
+            <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+              <Button
+                size="small"
+                startIcon={<EditIcon />}
+                onClick={() => handleEditPreset(selectedPresetId)}
+                disabled={loading || timerStatus?.session?.is_active}
+                sx={{ color: '#00bfff' }}
+              >
+                Edit
+              </Button>
+              <Button
+                size="small"
+                startIcon={<DeleteIcon />}
+                onClick={() => handleDeletePreset(selectedPresetId)}
+                disabled={loading || timerStatus?.session?.is_active}
+                sx={{ color: '#ff6b6b' }}
+              >
+                Delete
+              </Button>
+            </Box>
+          )}
 
           {/* Loop Control */}
           <FormControlLabel
@@ -290,8 +289,15 @@ const TimerControls: React.FC<TimerControlsProps> = ({ audioEngine }) => {
           <Button
             variant="contained"
             fullWidth
-            onClick={() => startTimer(loopEnabled)}
-            disabled={!selectedPresetId || loading || timerStatus?.session?.is_active}
+            onClick={() => {
+              console.log('🚀 Start Timer clicked! Selected preset:', selectedPresetId, 'Loop enabled:', loopEnabled);
+              if (!selectedPresetId) {
+                console.log('❌ No preset selected');
+                return;
+              }
+              startTimer(loopEnabled);
+            }}
+            disabled={!selectedPresetId}
             sx={{ mb: 2 }}
           >
             {loading ? <CircularProgress size={20} /> : 'Start Timer Session'}

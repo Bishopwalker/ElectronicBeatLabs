@@ -43,6 +43,7 @@ export {
   type ComprehensiveTimerPreset,
   type AdvancedFrequencyTransition,
   type PatternProgression,
+    type PatternConfig,
   type Spatial8DConfig,
   type ElectromagneticProgression,
   type VisualizationProgression,

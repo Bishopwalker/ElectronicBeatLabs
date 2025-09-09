@@ -78,6 +78,7 @@
 
 ### Technical Documentation:
 - **Web Audio API**: MDN documentation for oscillator nodes, gain control
+c- **AudioWorklet**: Modern replacement for deprecated ScriptProcessorNode (see below)
 - **FastAPI**: Async WebSocket implementation patterns
 - **NumPy**: Audio signal generation and DSP operations
 - **SciPy**: Field simulation using wave equations
@@ -138,3 +139,245 @@
 6. **React strict mode**: Effects run twice in development, handle audio cleanup properly
 7. **NEVER WRITE** **Completed by:** Claude or Anthorpic or anything that isn't fucking the author of the project..
 8. **NEVER FORGET**: Check project for nay mentions of authored by Claude or Anthropic AI or anything close, only author is author!!!!!!!!!
+
+## AUDIOWORKLET IMPLEMENTATION PATTERNS
+
+### Modern Audio Processing with AudioWorklet
+
+**⚠️ CRITICAL**: `ScriptProcessorNode` is deprecated. Use `AudioWorklet` for real-time audio processing.
+
+### Basic AudioWorklet Setup Pattern
+
+```javascript
+// 1. Create AudioWorkletProcessor (separate file: audio-processor.js)
+class BinauralProcessor extends AudioWorkletProcessor {
+  constructor(options) {
+    super();
+    this.leftFreq = options.processorOptions?.leftFreq || 440;
+    this.rightFreq = options.processorOptions?.rightFreq || 444;
+    this.amplitude = options.processorOptions?.amplitude || 0.5;
+    this.phase = { left: 0, right: 0 };
+    this.sampleRate = 44100; // Will be set correctly by browser
+  }
+
+  static get parameterDescriptors() {
+    return [
+      { name: 'leftFreq', defaultValue: 440, minValue: 20, maxValue: 20000 },
+      { name: 'rightFreq', defaultValue: 444, minValue: 20, maxValue: 20000 },
+      { name: 'amplitude', defaultValue: 0.5, minValue: 0, maxValue: 1 }
+    ];
+  }
+
+  process(inputs, outputs, parameters) {
+    const output = outputs[0];
+    const leftChannel = output[0];
+    const rightChannel = output[1];
+    
+    // Get parameter values (can change per block)
+    const leftFreq = parameters.leftFreq;
+    const rightFreq = parameters.rightFreq;
+    const amplitude = parameters.amplitude;
+    
+    for (let i = 0; i < leftChannel.length; i++) {
+      // Use parameter array or constant value
+      const currentLeftFreq = leftFreq.length > 1 ? leftFreq[i] : leftFreq[0];
+      const currentRightFreq = rightFreq.length > 1 ? rightFreq[i] : rightFreq[0];
+      const currentAmplitude = amplitude.length > 1 ? amplitude[i] : amplitude[0];
+      
+      // Generate binaural audio
+      leftChannel[i] = Math.sin(this.phase.left) * currentAmplitude;
+      rightChannel[i] = Math.sin(this.phase.right) * currentAmplitude;
+      
+      // Update phase (maintain phase continuity)
+      this.phase.left += (2 * Math.PI * currentLeftFreq) / this.sampleRate;
+      this.phase.right += (2 * Math.PI * currentRightFreq) / this.sampleRate;
+      
+      // Prevent phase drift
+      if (this.phase.left > 2 * Math.PI) this.phase.left -= 2 * Math.PI;
+      if (this.phase.right > 2 * Math.PI) this.phase.right -= 2 * Math.PI;
+    }
+    
+    return true; // Keep processor alive
+  }
+}
+
+registerProcessor('binaural-processor', BinauralProcessor);
+
+// 2. Load and use AudioWorklet (main thread)
+async function initializeAudioWorklet(audioContext) {
+  try {
+    // Load the processor
+    await audioContext.audioWorklet.addModule('/audio-processor.js');
+    
+    // Create AudioWorkletNode
+    const binauralNode = new AudioWorkletNode(audioContext, 'binaural-processor', {
+      numberOfInputs: 0,
+      numberOfOutputs: 1,
+      outputChannelCount: [2], // Stereo output
+      processorOptions: {
+        leftFreq: 440,
+        rightFreq: 444,
+        amplitude: 0.5
+      }
+    });
+    
+    // Connect to audio graph
+    binauralNode.connect(audioContext.destination);
+    
+    // Real-time parameter updates
+    binauralNode.parameters.get('leftFreq').setValueAtTime(440, audioContext.currentTime);
+    binauralNode.parameters.get('rightFreq').setValueAtTime(444, audioContext.currentTime);
+    
+    return binauralNode;
+  } catch (error) {
+    console.error('Failed to initialize AudioWorklet:', error);
+    throw error;
+  }
+}
+```
+
+### Message Passing Between Threads
+
+```javascript
+// In AudioWorkletProcessor
+class MessageProcessor extends AudioWorkletProcessor {
+  constructor() {
+    super();
+    this.port.onmessage = (event) => {
+      if (event.data.type === 'updateFrequencies') {
+        this.leftFreq = event.data.leftFreq;
+        this.rightFreq = event.data.rightFreq;
+      }
+    };
+  }
+  
+  process(inputs, outputs, parameters) {
+    // Send data back to main thread
+    this.port.postMessage({
+      type: 'audioMetrics',
+      data: { 
+        currentPhase: this.phase,
+        processedSamples: outputs[0][0].length 
+      }
+    });
+    return true;
+  }
+}
+
+// In main thread
+const workletNode = new AudioWorkletNode(audioContext, 'message-processor');
+workletNode.port.onmessage = (event) => {
+  if (event.data.type === 'audioMetrics') {
+    console.log('Audio metrics:', event.data.data);
+  }
+};
+
+// Send message to processor
+workletNode.port.postMessage({
+  type: 'updateFrequencies',
+  leftFreq: 440,
+  rightFreq: 444
+});
+```
+
+### Backend Audio Frame Processing with AudioWorklet
+
+```javascript
+// For processing backend-generated audio frames
+class BackendFrameProcessor extends AudioWorkletProcessor {
+  constructor() {
+    super();
+    this.audioBuffer = { left: new Float32Array(4096), right: new Float32Array(4096) };
+    this.bufferIndex = 0;
+    
+    this.port.onmessage = (event) => {
+      if (event.data.type === 'audioFrame') {
+        // Receive audio frame from backend
+        this.audioBuffer.left = new Float32Array(event.data.left);
+        this.audioBuffer.right = new Float32Array(event.data.right);
+        this.bufferIndex = 0;
+      }
+    };
+  }
+  
+  process(inputs, outputs, parameters) {
+    const output = outputs[0];
+    const leftChannel = output[0];
+    const rightChannel = output[1];
+    
+    for (let i = 0; i < leftChannel.length; i++) {
+      if (this.bufferIndex < this.audioBuffer.left.length) {
+        leftChannel[i] = this.audioBuffer.left[this.bufferIndex];
+        rightChannel[i] = this.audioBuffer.right[this.bufferIndex];
+        this.bufferIndex++;
+      } else {
+        // Fill with silence when buffer exhausted
+        leftChannel[i] = 0;
+        rightChannel[i] = 0;
+      }
+    }
+    
+    return true;
+  }
+}
+```
+
+### Migration from ScriptProcessorNode
+
+**OLD (Deprecated)**:
+```javascript
+const scriptProcessor = audioContext.createScriptProcessor(4096, 0, 2);
+scriptProcessor.onaudioprocess = (event) => {
+  // Process audio on main thread (BAD - blocks UI)
+};
+```
+
+**NEW (AudioWorklet)**:
+```javascript
+await audioContext.audioWorklet.addModule('processor.js');
+const workletNode = new AudioWorkletNode(audioContext, 'my-processor');
+// Processing happens on dedicated audio thread (GOOD)
+```
+
+### Performance Best Practices
+
+1. **Keep processor logic minimal** - Heavy computation should be pre-calculated
+2. **Use parameter automation** instead of message passing for frequent updates
+3. **Batch message passing** - Don't send messages every frame
+4. **Proper buffer management** - Avoid memory allocations in process() method
+5. **Phase continuity** - Maintain phase across audio blocks for smooth playback
+
+### Error Handling and Fallbacks
+
+```javascript
+async function createModernAudioEngine(audioContext) {
+  try {
+    // Try AudioWorklet first
+    await audioContext.audioWorklet.addModule('processor.js');
+    return new AudioWorkletNode(audioContext, 'my-processor');
+  } catch (error) {
+    console.warn('AudioWorklet not supported, falling back to Web Audio nodes');
+    // Fallback to oscillator nodes for basic functionality
+    const oscillator = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    oscillator.connect(gain);
+    return { oscillator, gain };
+  }
+}
+```
+
+### EBL-Specific AudioWorklet Considerations
+
+1. **Binaural Beat Precision**: Maintain exact frequency relationships for therapeutic effectiveness
+2. **Phase Continuity**: Critical for preventing audio artifacts during frequency transitions  
+3. **WebSocket Integration**: Use message passing to receive backend-generated audio frames
+4. **Parameter Automation**: Smooth frequency changes during ADHD protocol progressions
+5. **Spatial Audio**: Implement panning and reverb within AudioWorklet for 8D audio effects
+6. **Performance Monitoring**: Track processing latency and buffer underruns
+
+### Browser Support and Security
+
+- **Requires HTTPS** - AudioWorklet only works in secure contexts
+- **Module loading** - Processor files must be served from same origin
+- **Browser support** - All modern browsers since 2021
+- **Fallback strategy** - Always provide Web Audio API fallback for older browsers

@@ -66,8 +66,8 @@ export interface TimerStatus {
 
 export interface TimerControlsProps {
   audioEngine?: {
-    startBinauralBeat: (config: never) => void;
-    stopBinauralBeat: () => void;
+    startBinauralBeat: (config: any) => Promise<void>;
+    stopBinauralBeat: () => Promise<void>;
     updateFrequency: (left: number, right: number) => void;
     audioState: {
       isPlaying: boolean;

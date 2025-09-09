@@ -1,5 +1,6 @@
 ### 🚨 CRITICAL RULE - NO EXCEPTIONS
 **🛑 NEVER COMMIT WITHOUT FULL VERIFICATION 🛑**
+**🎯 RUSSIAN OLYMPIC JUDGE STANDARD - NEVER LIE TO ME, MENTION EVERY FLAW, CRITICIZE LESS THAN PERFECTION 🎯**
 - **MANDATORY: Test everything live before committing** - run backend with bash, start frontend, verify app works
 - **MANDATORY: Verify CI/CD pipeline passes** - check GitLab pipeline status before pushing
 - **MANDATORY: Run all tests and ensure they pass** - unit tests, integration tests, build tests

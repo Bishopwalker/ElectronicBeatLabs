@@ -19,12 +19,17 @@ import {
 } from '@mui/material';
 import type { PatternSelectorProps, PatternMode } from '../types';
 
-const PatternSelectorMUI: React.FC<PatternSelectorProps> = ({
+interface PatternSelectorPropsExtended extends PatternSelectorProps {
+  activePattern?: string | null; // Currently active pattern (from timer, visualizer, etc.)
+}
+
+const PatternSelectorMUI: React.FC<PatternSelectorPropsExtended> = ({
   patterns,
   selected,
   onSelect,
   mode,
-  onModeChange
+  onModeChange,
+  activePattern
 }) => {
   const modes: PatternMode[] = ['AUTO', 'MANUAL', 'SYNC', 'FLOW'];
   
@@ -101,26 +106,55 @@ const PatternSelectorMUI: React.FC<PatternSelectorProps> = ({
         },
       }}>
         <List dense sx={{ p: 0 }}>
-          {patterns.map((pattern) => (
-            <ListItem key={pattern.id} disablePadding sx={{ mb: 0.5 }}>
-              <Paper
-                elevation={0}
-                sx={{
-                  width: '100%',
-                  background: selected === pattern.id
-                    ? 'rgba(255, 107, 0, 0.2)'
-                    : 'rgba(255, 255, 255, 0.03)',
-                  border: '1px solid',
-                  borderColor: selected === pattern.id
-                    ? '#ff6b00'
-                    : 'rgba(255, 255, 255, 0.05)',
-                  transition: 'all 0.3s ease',
-                  '&:hover': {
-                    background: 'rgba(255, 107, 0, 0.1)',
-                    borderColor: '#ff6b00',
-                  },
-                }}
-              >
+          {patterns.map((pattern) => {
+            const isSelected = selected === pattern.id;
+            const isActive = activePattern === pattern.id;
+            
+            return (
+              <ListItem key={pattern.id} disablePadding sx={{ mb: 0.5 }}>
+                <Paper
+                  elevation={0}
+                  sx={{
+                    width: '100%',
+                    background: isActive
+                      ? 'rgba(0, 191, 255, 0.25)' // Blue for active (timer/visualizer)
+                      : isSelected
+                      ? 'rgba(255, 107, 0, 0.2)' // Orange for selected
+                      : 'rgba(255, 255, 255, 0.03)',
+                    border: '2px solid',
+                    borderColor: isActive
+                      ? '#00bfff' // Blue border for active
+                      : isSelected
+                      ? '#ff6b00' // Orange border for selected
+                      : 'rgba(255, 255, 255, 0.05)',
+                    borderStyle: isActive ? 'solid' : 'solid',
+                    transition: 'all 0.3s ease',
+                    position: 'relative',
+                    '&:hover': {
+                      background: isActive
+                        ? 'rgba(0, 191, 255, 0.3)'
+                        : 'rgba(255, 107, 0, 0.1)',
+                      borderColor: isActive ? '#00bfff' : '#ff6b00',
+                    },
+                    // Glow effect for active patterns
+                    ...(isActive && {
+                      boxShadow: '0 0 8px rgba(0, 191, 255, 0.4)',
+                      '&::before': {
+                        content: '""',
+                        position: 'absolute',
+                        top: -2,
+                        left: -2,
+                        right: -2,
+                        bottom: -2,
+                        background: 'linear-gradient(45deg, #00bfff, #8a2be2)',
+                        borderRadius: '8px',
+                        zIndex: -1,
+                        opacity: 0.3,
+                        animation: 'pulse 2s infinite'
+                      }
+                    })
+                  }}
+                >
                 <ListItemButton
                   onClick={() => onSelect(pattern.id)}
                   sx={{ py: 0.75, px: 1 }}
@@ -129,9 +163,27 @@ const PatternSelectorMUI: React.FC<PatternSelectorProps> = ({
                     primaryTypographyProps={{ component: 'div' }}
                     secondaryTypographyProps={{ component: 'div' }}
                     primary={
-                      <Typography variant="body2" fontWeight={600}>
-                        {pattern.name}
-                      </Typography>
+                      <Stack direction="row" alignItems="center" spacing={0.5}>
+                        <Typography variant="body2" fontWeight={600}>
+                          {pattern.name}
+                        </Typography>
+                        {isActive && (
+                          <Chip
+                            label="ACTIVE"
+                            size="small"
+                            sx={{
+                              height: 16,
+                              fontSize: '0.6rem',
+                              fontWeight: 700,
+                              background: 'linear-gradient(45deg, #00bfff, #00ff88)',
+                              color: 'white',
+                              '& .MuiChip-label': {
+                                px: 0.5
+                              }
+                            }}
+                          />
+                        )}
+                      </Stack>
                     }
                     secondary={
                       <Stack spacing={0.5}>
@@ -163,7 +215,8 @@ const PatternSelectorMUI: React.FC<PatternSelectorProps> = ({
                 </ListItemButton>
               </Paper>
             </ListItem>
-          ))}
+          );
+        })}
         </List>
       </Box>
     </Card>
