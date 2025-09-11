@@ -1,21 +1,24 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { 
-  TimerPreset, 
-  TimerStatus, 
-  LocalTimer, 
-  FrequencyTransition,
-  TimerAction,
-  CustomPresetForm,
-  TimerSession,
-  PatternConfig
-} from '../data/timer/types';
-import { ALL_TIMER_PRESETS, getPresetTransitions } from '../data/timer';
+
+import {
+  ALL_TIMER_PRESETS,
+  getPresetTransitions,
+  type TimerPreset,
+  type TimerStatus,
+  type LocalTimer,
+  type FrequencyTransition,
+  type TimerSession,
+  type TimerAction,
+  type CustomPresetForm
+} from '../data/timer';
 import { loadCustomPresets, savePresetToStorage, updatePresetInStorage, deletePresetFromStorage, isCustomPreset } from '../helpers/timer/timerUtils';
 import { WAVE_PATTERNS } from '../data/patterns';
-import { useTimerWebSocketIntegration } from './useTimerWebSocketIntegration';
+import type {PatternConfig} from "../types";
+import { useWebSocketContext } from './useWebsocketContext';
 
 interface UseTimerLogicProps {
   audioEngine?: {
+    sessionId: string;
     startBinauralBeat: (config: any) => Promise<void>;
     stopBinauralBeat: () => Promise<void>;
     updateFrequency: (left: number, right: number) => void;
@@ -27,11 +30,34 @@ interface UseTimerLogicProps {
     setActivePattern: (pattern: PatternConfig) => void;
     clearActivePattern: () => void;
   };
-  onElectromagneticUpdate?: (electromagnetic: any) => void;
+  onElectromagneticUpdate?: (electromagnetic: {
+    strength: number;
+    frequency: any;
+    phase: number;
+    coherence: number;
+    resonance: number;
+    state: string;
+    stability: number
+  }) => void;
   onTimerStatusUpdate?: (status: any) => void;
 }
 
-export const useTimerLogic = ({ audioEngine, patterns8D, onElectromagneticUpdate, onTimerStatusUpdate }: UseTimerLogicProps) => {
+export const useTimerLogic = (props: UseTimerLogicProps) => {
+  // Get props
+  const {
+    audioEngine,
+    patterns8D,
+    onElectromagneticUpdate,
+    onTimerStatusUpdate
+  } = props;
+
+  // Use the WebSocket context
+  const {
+    isConnected,
+    sendMessage,
+    lastMessage
+  } = useWebSocketContext();
+
   const [presets, setPresets] = useState<TimerPreset[]>([]);
   const [selectedPresetId, setSelectedPresetId] = useState<string>('');
   const [timerStatus, setTimerStatus] = useState<TimerStatus | null>(null);
@@ -40,17 +66,27 @@ export const useTimerLogic = ({ audioEngine, patterns8D, onElectromagneticUpdate
   const [hideSession, setHideSession] = useState(false);
   const [localTimer, setLocalTimer] = useState<LocalTimer | null>(null);
   const [customPresetTransitions, setCustomPresetTransitions] = useState<{[key: string]: FrequencyTransition[]}>({});
-  
+
   const currentTransitionIndexRef = useRef<number | null>(null);
 
-  // WebSocket integration for smooth frequency transitions
-  const webSocketIntegration = useTimerWebSocketIntegration({
-    enableWebSocketTransitions: true
-  });
+  // Function to send timer updates via WebSocket
+  const sendTimerUpdate = useCallback((data: any) => {
+    if (isConnected) {
+      sendMessage({
+        type: 'timer_update',
+        data: data,
+        timestamp: new Date().toISOString()
+      });
+    }
+  }, [isConnected, sendMessage]);
 
-  // Create WebSocket-aware audio engine
-  const enhancedAudioEngine = webSocketIntegration.createWebSocketAudioEngine(audioEngine);
-
+  // Handle timer-specific WebSocket messages
+  useEffect(() => {
+    if (lastMessage && lastMessage.type === 'timer_response') {
+      console.log('⏰ Timer response from backend:', lastMessage.data);
+      // Handle timer-specific responses here if needed
+    }
+  }, [lastMessage]);
 
   // Helper function to update electromagnetic state for visualizer
   const updateElectromagneticState = useCallback((transition: FrequencyTransition) => {
@@ -60,9 +96,9 @@ export const useTimerLogic = ({ audioEngine, patterns8D, onElectromagneticUpdate
       phase: (Date.now() % 10000) / 10000 * 360, // Rotating phase
       coherence: 0.85 + (Math.min(30, transition.frequency_hz) / 100),
       resonance: Math.min(1, 0.6 + (transition.frequency_hz / 80)),
-      state: transition.frequency_hz > 20 ? 'ACTIVE' : 
-             transition.frequency_hz > 10 ? 'RESONANT' :
-             transition.frequency_hz > 6 ? 'CHARGING' : 'INACTIVE',
+      state: transition.frequency_hz > 20 ? 'ACTIVE' :
+          transition.frequency_hz > 10 ? 'RESONANT' :
+              transition.frequency_hz > 6 ? 'CHARGING' : 'INACTIVE',
       stability: 0.8 + (Math.min(40, transition.frequency_hz) / 200)
     };
 
@@ -105,10 +141,10 @@ export const useTimerLogic = ({ audioEngine, patterns8D, onElectromagneticUpdate
       cleanupDuplicates();
       const { savedCustomPresets, savedTransitions } = loadCustomPresets();
       setCustomPresetTransitions(savedTransitions);
-      
+
       const allPresets = [...ALL_TIMER_PRESETS, ...savedCustomPresets];
       setPresets(allPresets);
-      
+
       console.log('✅ ALL PRESETS LOADED:', allPresets);
     } catch (err) {
       setError('Error loading presets');
@@ -162,76 +198,77 @@ export const useTimerLogic = ({ audioEngine, patterns8D, onElectromagneticUpdate
     const timeRemainingCurrent = currentTransition.duration_minutes - elapsedInTransitions;
 
     const totalTimeRemaining = localTimer.transitions
-      .slice(currentTransitionIndex)
-      .reduce((sum, t, i) => {
-        if (i === 0) return sum + timeRemainingCurrent;
-        return sum + t.duration_minutes;
-      }, 0);
+        .slice(currentTransitionIndex)
+        .reduce((sum, t, i) => {
+          if (i === 0) return sum + timeRemainingCurrent;
+          return sum + t.duration_minutes;
+        }, 0);
 
     const currentPreset = presets.find(p => p.id === selectedPresetId);
-    
-    const mockSession: TimerSession = {
-      session_id: 'mock-session-' + Date.now(),
-      preset_id: selectedPresetId,
-      user_id: 'mock-user',
-      start_time: new Date(localTimer.startTime).toISOString(),
-      current_transition_index: currentTransitionIndex,
-      elapsed_minutes: elapsed,
-      is_active: localTimer.isActive,
-      is_paused: localTimer.isPaused,
-      preset: currentPreset
-    };
+
+
 
     const status: TimerStatus = {
-      session: mockSession,
+      session: audioEngine?.sessionId ? {
+        presetId: selectedPresetId,
+        startTime: localTimer.startTime,
+        currentPhase: currentTransitionIndex,
+        isPaused: localTimer.isPaused,
+        loopCount: 0,
+        session_id: audioEngine.sessionId
+      } : undefined,
       current_transition: currentTransition,
       next_transition: nextTransition,
       time_remaining_current: timeRemainingCurrent,
-      time_remaining_total: totalTimeRemaining
+      time_remaining_total: totalTimeRemaining,
+      isRunning: localTimer?.isActive && !localTimer?.isPaused,
+      totalTime: localTimer?.transitions.reduce((sum, t) => sum + t.duration_minutes, 0) || 0,
+      progress: (localTimer && totalTimeRemaining) ?
+          (1 - (totalTimeRemaining / localTimer.transitions.reduce((sum, t) => sum + t.duration_minutes, 0))) * 100 : 0
     };
 
     setTimerStatus(status);
-    
+
     // Notify parent component of timer status changes
     if (onTimerStatusUpdate) {
       onTimerStatusUpdate(status);
     }
 
-    if (enhancedAudioEngine && currentTransition && currentTransitionIndexRef.current !== currentTransitionIndex) {
+    if (audioEngine && currentTransition && currentTransitionIndexRef.current !== currentTransitionIndex) {
       console.log(`🚨 TIMER TRANSITION ${currentTransitionIndex + 1}/${localTimer.transitions.length}: ${currentTransition.left_ear_hz}Hz / ${currentTransition.right_ear_hz}Hz`);
       console.log(`🎯 ${currentTransition.description} - ${currentTransition.frequency_hz}Hz ${currentTransition.frequency_type} for ${currentTransition.duration_minutes} minutes`);
-      
-      // Send frequency transition via WebSocket for smooth transitions
-      const transitionSent = webSocketIntegration.sendFrequencyTransition(
-        currentTransition,
-        currentTransitionIndex,
-        localTimer.transitions.length,
-        3.0 // 3-second smooth transition
-      );
-      
-      // Fallback to direct update if WebSocket failed
-      if (!transitionSent && enhancedAudioEngine.updateFrequency) {
-        enhancedAudioEngine.updateFrequency(currentTransition.left_ear_hz, currentTransition.right_ear_hz);
-      }
-      
+
+      // Update frequencies directly on the audio engine
+      audioEngine.updateFrequency(currentTransition.left_ear_hz, currentTransition.right_ear_hz);
+
+      // Send timer update via WebSocket if connected
+      sendTimerUpdate({
+        transition: currentTransition,
+        transitionIndex: currentTransitionIndex,
+        totalTransitions: localTimer.transitions.length,
+        leftFreq: currentTransition.left_ear_hz,
+        rightFreq: currentTransition.right_ear_hz,
+        beatFreq: currentTransition.frequency_hz
+      });
+
       // Update electromagnetic state for visualizer (driven by real frequency)
       updateElectromagneticState(currentTransition);
-      
+
       currentTransitionIndexRef.current = currentTransitionIndex;
     }
-  }, [localTimer, enhancedAudioEngine, selectedPresetId, webSocketIntegration, updateElectromagneticState, onTimerStatusUpdate]);
+  }, [localTimer, audioEngine, selectedPresetId, presets, updateElectromagneticState, onTimerStatusUpdate, sendTimerUpdate]);
 
   const startTimer = async (forceLoop?: boolean) => {
     if (!selectedPresetId) return;
-    
+
     try {
       setLoading(true);
       setError(null);
-      
+
       currentTransitionIndexRef.current = null;
-      
+
       const mockTransitions: FrequencyTransition[] = [];
-      
+
       if (selectedPresetId.startsWith('custom-')) {
         const customTransitions = customPresetTransitions[selectedPresetId];
         console.log('🔥 Custom preset transitions lookup:', selectedPresetId, customTransitions);
@@ -249,7 +286,7 @@ export const useTimerLogic = ({ audioEngine, patterns8D, onElectromagneticUpdate
         mockTransitions.push(...presetTransitions);
         console.log('✅ Built-in transitions loaded:', mockTransitions.length);
       }
-      
+
       const timer: LocalTimer = {
         startTime: Date.now(),
         currentTransitionIndex: 0,
@@ -258,9 +295,9 @@ export const useTimerLogic = ({ audioEngine, patterns8D, onElectromagneticUpdate
         isPaused: false,
         forceLoop: forceLoop
       } as LocalTimer & { forceLoop?: boolean };
-      
+
       setLocalTimer(timer);
-      
+
       if (audioEngine && mockTransitions.length > 0) {
         const firstTransition = mockTransitions[0];
         const config = {
@@ -270,12 +307,29 @@ export const useTimerLogic = ({ audioEngine, patterns8D, onElectromagneticUpdate
           amplitude: 0.7,
           waveform: 'sine' as const
         };
-        
-        console.log('🔥 Timer: Starting enhanced audio engine with WebSocket support');
+
+        console.log('🔥 Timer: Starting audio engine');
         console.log('🔥 Timer: Config:', config);
-        console.log('🔥 Timer: WebSocket enabled:', webSocketIntegration.isWebSocketEnabled);
-        await enhancedAudioEngine.startBinauralBeat(config);
-        
+        console.log('🔥 Timer: Has backend session:', !!audioEngine?.sessionId);
+
+        // If backend is already connected with a session, just update frequencies
+        // Otherwise start the audio engine
+        if (audioEngine?.sessionId && audioEngine?.audioState?.isPlaying) {
+          console.log('✅ Timer: Backend already playing, just updating frequencies');
+          await audioEngine.updateFrequency(firstTransition.left_ear_hz, firstTransition.right_ear_hz);
+        } else {
+          console.log('🚀 Timer: Starting audio engine from scratch');
+          await audioEngine.startBinauralBeat(config);
+        }
+
+        // Send initial timer state via WebSocket
+        sendTimerUpdate({
+          action: 'start',
+          preset: selectedPresetId,
+          firstTransition: firstTransition,
+          totalTransitions: mockTransitions.length
+        });
+
         // If preset specifies a pattern, set it active
         const currentPreset = presets.find(p => p.id === selectedPresetId);
         if (patterns8D && currentPreset && (currentPreset as any).pattern_id) {
@@ -286,13 +340,13 @@ export const useTimerLogic = ({ audioEngine, patterns8D, onElectromagneticUpdate
             patterns8D.setActivePattern(realPattern);
           }
         }
-        
+
         // Set initial electromagnetic state (driven by real frequency)
         updateElectromagneticState(firstTransition);
       }
-      
+
       loadTimerStatus();
-      
+
     } catch (err) {
       setError('Error starting timer');
       console.error('Error starting timer:', err);
@@ -303,21 +357,24 @@ export const useTimerLogic = ({ audioEngine, patterns8D, onElectromagneticUpdate
 
   const controlTimer = async (action: TimerAction) => {
     if (!localTimer && action !== 'restart') return;
-    
+
     try {
       setLoading(true);
-      
+
       if (action === 'stop') {
-        if (enhancedAudioEngine) {
-          await enhancedAudioEngine.stopBinauralBeat();
+        if (audioEngine) {
+          await audioEngine.stopBinauralBeat();
         }
-        
+
+        // Send stop action via WebSocket
+        sendTimerUpdate({ action: 'stop' });
+
         // Clear visualizer pattern
         if (patterns8D) {
           console.log('🎨 Timer: Clearing active pattern from visualizer');
           patterns8D.clearActivePattern();
         }
-        
+
         // Clear electromagnetic state
         if (onElectromagneticUpdate) {
           onElectromagneticUpdate({
@@ -330,33 +387,35 @@ export const useTimerLogic = ({ audioEngine, patterns8D, onElectromagneticUpdate
             stability: 0
           });
         }
-        
+
         setLocalTimer(null);
         setTimerStatus(null);
         currentTransitionIndexRef.current = null;
-        
+
         // Notify parent that timer stopped
         if (onTimerStatusUpdate) {
           onTimerStatusUpdate(null);
         }
       } else if (action === 'pause') {
         setLocalTimer({...localTimer!, isPaused: true});
+        sendTimerUpdate({ action: 'pause' });
       } else if (action === 'resume') {
         setLocalTimer({...localTimer!, isPaused: false});
+        sendTimerUpdate({ action: 'resume' });
       } else if (action === 'restart') {
-        if (enhancedAudioEngine) {
-          await enhancedAudioEngine.stopBinauralBeat();
+        if (audioEngine) {
+          await audioEngine.stopBinauralBeat();
         }
-        
+
         // Clear visualizer pattern temporarily
         if (patterns8D) {
           patterns8D.clearActivePattern();
         }
-        
+
         setLocalTimer(null);
         setTimerStatus(null);
         currentTransitionIndexRef.current = null;
-        
+
         setTimeout(() => {
           if (selectedPresetId) {
             const currentPreset = presets.find(p => p.id === selectedPresetId);
@@ -365,7 +424,7 @@ export const useTimerLogic = ({ audioEngine, patterns8D, onElectromagneticUpdate
           }
         }, 100);
       }
-      
+
     } catch (err) {
       console.error(`Error ${action} timer:`, err);
     } finally {
@@ -377,7 +436,7 @@ export const useTimerLogic = ({ audioEngine, patterns8D, onElectromagneticUpdate
 
   const saveCustomPreset = (customPreset: CustomPresetForm) => {
     console.log('🔥 ATTEMPTING TO SAVE PRESET:', customPreset.name);
-    
+
     if (!customPreset.name.trim()) {
       setError('Please enter a preset name');
       return;
@@ -385,7 +444,7 @@ export const useTimerLogic = ({ audioEngine, patterns8D, onElectromagneticUpdate
 
     const totalDuration = customPreset.transitions.reduce((sum, t) => sum + t.duration_minutes, 0);
     const presetId = `custom-${Date.now()}-${crypto.randomUUID()}`;
-    
+
     const newPreset: TimerPreset = {
       id: presetId,
       name: customPreset.name,
@@ -402,9 +461,9 @@ export const useTimerLogic = ({ audioEngine, patterns8D, onElectromagneticUpdate
         ...prev,
         [presetId]: customPreset.transitions
       };
-      
+
       savePresetToStorage(presetId, newPreset, customPreset.transitions);
-      
+
       return updated;
     });
 
@@ -415,13 +474,13 @@ export const useTimerLogic = ({ audioEngine, patterns8D, onElectromagneticUpdate
 
     setSelectedPresetId(newPreset.id);
     setError(null);
-    
+
     console.log('🎉 PRESET SAVE COMPLETED SUCCESSFULLY!');
   };
 
   const updateCustomPreset = (presetId: string, updatedPreset: CustomPresetForm) => {
     console.log('🔄 ATTEMPTING TO UPDATE PRESET:', presetId);
-    
+
     if (!updatedPreset.name.trim()) {
       setError('Please enter a preset name');
       return false;
@@ -433,7 +492,7 @@ export const useTimerLogic = ({ audioEngine, patterns8D, onElectromagneticUpdate
     }
 
     const totalDuration = updatedPreset.transitions.reduce((sum, t) => sum + t.duration_minutes, 0);
-    
+
     const newPresetData: TimerPreset = {
       id: presetId,
       name: updatedPreset.name,
@@ -446,15 +505,15 @@ export const useTimerLogic = ({ audioEngine, patterns8D, onElectromagneticUpdate
     };
 
     const success = updatePresetInStorage(presetId, newPresetData, updatedPreset.transitions);
-    
+
     if (success) {
       setCustomPresetTransitions(prev => ({
         ...prev,
         [presetId]: updatedPreset.transitions
       }));
 
-      setPresets(prev => prev.map(p => 
-        p.id === presetId ? newPresetData : p
+      setPresets(prev => prev.map(p =>
+          p.id === presetId ? newPresetData : p
       ));
 
       setError(null);
@@ -468,14 +527,14 @@ export const useTimerLogic = ({ audioEngine, patterns8D, onElectromagneticUpdate
 
   const deleteCustomPreset = (presetId: string) => {
     console.log('🗑️ ATTEMPTING TO DELETE PRESET:', presetId);
-    
+
     if (!isCustomPreset(presetId)) {
       setError('Cannot delete built-in presets');
       return false;
     }
 
     const success = deletePresetFromStorage(presetId);
-    
+
     if (success) {
       setCustomPresetTransitions(prev => {
         const updated = { ...prev };
@@ -510,11 +569,11 @@ export const useTimerLogic = ({ audioEngine, patterns8D, onElectromagneticUpdate
       const checkInterval = () => {
         const now = Date.now();
         const elapsed = Math.floor((now - localTimer.startTime) / 1000 / 60);
-        
+
         // Check if we're within 1 minute of a transition boundary
         let timeToNextTransition = 0;
         let elapsedInTransitions = elapsed;
-        
+
         for (const transition of localTimer.transitions) {
           if (elapsedInTransitions >= transition.duration_minutes) {
             elapsedInTransitions -= transition.duration_minutes;
@@ -523,11 +582,11 @@ export const useTimerLogic = ({ audioEngine, patterns8D, onElectromagneticUpdate
             break;
           }
         }
-        
+
         // Check frequently if close to transition, otherwise check every 30s
         return timeToNextTransition <= 1 ? 5000 : 30000;
       };
-      
+
       const scheduleNext = () => {
         const nextCheck = checkInterval();
         interval = setTimeout(() => {
@@ -535,7 +594,7 @@ export const useTimerLogic = ({ audioEngine, patterns8D, onElectromagneticUpdate
           scheduleNext();
         }, nextCheck);
       };
-      
+
       scheduleNext();
     }
 
@@ -559,7 +618,6 @@ export const useTimerLogic = ({ audioEngine, patterns8D, onElectromagneticUpdate
     updateCustomPreset,
     deleteCustomPreset,
     customPresetTransitions,
-    webSocketStatus: webSocketIntegration.websocketState,
-    isWebSocketEnabled: webSocketIntegration.isWebSocketEnabled
+    isWebSocketConnected: isConnected // Simple boolean for WebSocket status
   };
 };

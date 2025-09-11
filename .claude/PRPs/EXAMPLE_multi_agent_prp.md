@@ -119,7 +119,7 @@ A CLI-based application where:
 # CRITICAL: Agent-as-tool pattern requires passing ctx.usage for token tracking
 # CRITICAL: Gmail drafts need base64 encoding with proper MIME formatting
 # CRITICAL: Always use absolute imports for cleaner code
-# CRITICAL: Store sensitive credentials in .env, never commit them
+# CRITICAL: Store sensitive credentials in .env, any commit them
 ```
 
 ## Implementation Blueprint

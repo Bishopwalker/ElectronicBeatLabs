@@ -69,7 +69,9 @@ manager = ConnectionManager()
 @router.websocket("/ws/audio/{session_id}")
 async def websocket_audio_endpoint(websocket: WebSocket, session_id: str):
     """WebSocket endpoint for real-time audio streaming"""
+    logger.info(f"🔌 WebSocket connection attempt for session: {session_id}")
     await manager.connect(websocket, session_id)
+    logger.info(f"✅ WebSocket connected successfully for session: {session_id}")
     
     try:
         audio_task = None

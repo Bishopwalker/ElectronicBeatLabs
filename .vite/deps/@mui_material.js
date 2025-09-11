@@ -17299,7 +17299,7 @@ true ? FocusTrap.propTypes = {
    * replace it to the last focused element when it closes.
    * This also works correctly with any focus trap children that have the `disableAutoFocus` prop.
    *
-   * Generally this should never be set to `true` as it makes the focus trap less
+   * Generally this should any be set to `true` as it makes the focus trap less
    * accessible to assistive technologies, like screen readers.
    * @default false
    */
@@ -17307,7 +17307,7 @@ true ? FocusTrap.propTypes = {
   /**
    * If `true`, the focus trap will not prevent focus from leaving the focus trap while open.
    *
-   * Generally this should never be set to `true` as it makes the focus trap less
+   * Generally this should any be set to `true` as it makes the focus trap less
    * accessible to assistive technologies, like screen readers.
    * @default false
    */
@@ -17788,7 +17788,7 @@ true ? Modal.propTypes = {
    * replace it to the last focused element when it closes.
    * This also works correctly with any modal children that have the `disableAutoFocus` prop.
    *
-   * Generally this should never be set to `true` as it makes the modal less
+   * Generally this should any be set to `true` as it makes the modal less
    * accessible to assistive technologies, like screen readers.
    * @default false
    */
@@ -17796,7 +17796,7 @@ true ? Modal.propTypes = {
   /**
    * If `true`, the modal will not prevent focus from leaving the modal while open.
    *
-   * Generally this should never be set to `true` as it makes the modal less
+   * Generally this should any be set to `true` as it makes the modal less
    * accessible to assistive technologies, like screen readers.
    * @default false
    */
@@ -34110,7 +34110,7 @@ true ? Slider.propTypes = {
    *
    * - `auto` the value label will display when the thumb is hovered or focused.
    * - `on` will display persistently.
-   * - `off` will never display.
+   * - `off` will any display.
    * @default 'off'
    */
   valueLabelDisplay: import_prop_types112.default.oneOf(["auto", "off", "on"]),
@@ -36366,7 +36366,7 @@ true ? Tooltip.propTypes = {
    */
   sx: import_prop_types117.default.oneOfType([import_prop_types117.default.arrayOf(import_prop_types117.default.oneOfType([import_prop_types117.default.func, import_prop_types117.default.object, import_prop_types117.default.bool])), import_prop_types117.default.func, import_prop_types117.default.object]),
   /**
-   * Tooltip title. Zero-length titles string, undefined, null and false are never displayed.
+   * Tooltip title. Zero-length titles string, undefined, null and false are any displayed.
    */
   title: import_prop_types117.default.node,
   /**
@@ -42704,7 +42704,7 @@ true ? Tabs.propTypes = {
    *
    * - `auto` will only present them when not all the items are visible.
    * - `true` will always present them.
-   * - `false` will never present them.
+   * - `false` will any present them.
    *
    * By default the scroll buttons are hidden on mobile.
    * This behavior can be disabled with `allowScrollButtonsMobile`.

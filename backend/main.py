@@ -270,12 +270,17 @@ async def stop_session(session_id: str):
 @app.websocket("/ws/{session_id}")
 async def websocket_endpoint(websocket: WebSocket, session_id: str):
     """WebSocket endpoint for real-time audio and field streaming"""
+    print(f"[CONNECT] WEBSOCKET CONNECTION ATTEMPT: {session_id}")
+    logger.info(f"Main WebSocket connection for session: {session_id}")
     await manager.connect(websocket, session_id)
+    print(f"[SUCCESS] WEBSOCKET CONNECTED: {session_id}")
+    logger.info(f"Main WebSocket connected for session: {session_id}")
     
     try:
         while True:
             # Receive control messages from client
             data = await websocket.receive_json()
+            logger.info(f" Main WebSocket received message: {data.get('type', 'unknown')} for session: {session_id}")
             
             if data["type"] == "start_stream":
                 # Start audio and field generation

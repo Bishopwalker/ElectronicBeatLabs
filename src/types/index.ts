@@ -1,5 +1,10 @@
 // Electromagnetic Beat Lab - Type Definitions
 // Complete TypeScript interfaces for the electromagnetic wave beat generator
+// Electromagnetic Beat Lab - Type Definitions
+// Complete TypeScript interfaces for the electromagnetic wave beat generator
+import type {BinauralBeatConfig} from './audio.types';
+// Import audio types from dedicated file
+export * from './audio.types'
 
 export type PatternMode = 'AUTO' | 'MANUAL' | 'OFF' | 'CUSTOM' | 'SYNC' | 'FLOW';
 
@@ -33,13 +38,7 @@ export interface FrequencyPoint {
   timestamp: number;
 }
 
-export interface BinauralBeatConfig {
-  leftFreq: number;
-  rightFreq: number;
-  beatFreq: number;
-  amplitude: number;
-  waveform: WaveForm;
-}
+// BinauralBeatConfig is now in audio.types.ts - use that for all audio configs
 
 export interface PatternConfig {
   id: string;
@@ -206,7 +205,7 @@ export interface ControlTabConfig {
   id: string;
   label: string;
   icon: string;
-  component: React.ComponentType<never>;
+  component: React.ComponentType<any>;
   enabled: boolean;
 }
 
@@ -370,6 +369,36 @@ export interface MainControlsProps {
   onStop: () => void;
   onVolumeChange: (volume: number) => void;
   audioEngine?:() => AudioEngine;
+}
+
+// Timer-related types
+export interface TimerPreset {
+  id: string;
+  name: string;
+  description: string;
+  total_duration: number; // in minutes
+  transitions_count: number;
+  tags: string[];
+  is_premium?: boolean;
+  available?: boolean;
+  loop_enabled?: boolean;
+  loop_count?: number; // 0 for infinite
+  loop_phase?: string;
+  loop_transitions?: number[];
+  pattern_id?: string;
+  difficulty_level?: 'beginner' | 'intermediate' | 'advanced' | 'expert';
+  advanced_transitions?: any[]; // Will be properly typed when needed
+}
+
+export interface FrequencyTransition {
+  duration_minutes: number;
+  frequency_hz: number;
+  frequency_type: string;
+  left_ear_hz: number;
+  right_ear_hz: number;
+  description: string;
+  pattern?: string;
+  spatial_settings?: any; // Will be SpatialAudioConfig when needed
 }
 
 

@@ -2,13 +2,14 @@
 // Combines local Web Audio API with backend-generated binaural beats and spatial effects
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useWebSocket } from './useWebSocket';
+import { useWebSocketContext as useWebSocket} from './useWebsocketContext.ts';
 import { useBackendAPI } from './useBackendAPI';
-import type { 
+ import type {
   AudioEngineState, 
-  BinauralBeatConfig, 
+
   ElectromagneticField,
-  PatternConfig 
+  PatternConfig ,
+  BinauralBeatConfig
 } from '../types';
 
 interface BackendAudioFrame {
@@ -42,6 +43,15 @@ interface BackendFieldFrame {
   };
   time: number;
 }
+
+interface BackendSessionConfig {
+  base_frequency: number;
+  beat_frequency: number;
+  amplitude: number;
+  spatial_enabled: boolean;
+  spatial_settings: Record<string, unknown>;
+}
+
 
 export const useBackendAudioEngine = () => {
   const [audioState, setAudioState] = useState<AudioEngineState>({
@@ -78,7 +88,7 @@ export const useBackendAudioEngine = () => {
   const workletLoaded = useRef<boolean>(false);
 
   // Backend communication hooks
-  const websocket = useWebSocket();
+  const websocket = useWebSocket('ws://localhost:8000');
   const api = useBackendAPI();
 
   // Initialize audio context
@@ -234,15 +244,18 @@ export const useBackendAudioEngine = () => {
   }, []);
 
   // Handle WebSocket messages
-  useEffect(() => {
-    if (websocket.state.lastMessage && sessionId) { // Only process if we have active session
-      const message = websocket.state.lastMessage;
+ 
+   useEffect(() => {
+    const handleMessage = async () => {
+    if (websocket.lastMessage && sessionId) { // Only process if we have active session
+      const message = websocket.lastMessage;
       console.log('📨 Backend Engine: Received WebSocket message type:', message.type);
+      console.log('🔍 Backend Engine: Full message object:', JSON.stringify(message, null, 2));
       
       switch (message.type) {
         case 'frame':
         case 'audio_frame':
-          console.log('🎵 Backend Engine: Processing audio frame - UPDATED');
+          { console.log('🎵 Backend Engine: Processing audio frame - UPDATED');
           // Handle both 'frame' (legacy) and 'audio_frame' (new format)
           const audioData = message.type === 'audio_frame' ? message.data : message.data?.data?.audio;
           const fieldData = message.data?.data?.field;
@@ -290,15 +303,23 @@ export const useBackendAudioEngine = () => {
             console.warn('🔍 Backend Engine: Message type:', message.type, 'Audio data:', audioData);
           }
           
-          if (fieldData && typeof fieldData === 'object' && fieldData !== null && 'field' in fieldData && 'grid_size' in fieldData) {
+          if (fieldData && typeof fieldData === 'object' && 'field' in fieldData && 'grid_size' in fieldData) {
             processFieldFrame(fieldData as BackendFieldFrame);
           }
-          break;
-          
-        case 'session_started':
+          break; }
+        case 'session_started': {
+          // Initialize audio context first
+          const context = await initializeAudio();
+          if (!context) {
+            throw new Error('Failed to initialize audio context');
+          }
+
+// THEN INITIALIZE YOUR FUCKING AUDIOWORKLET PIPELINE!
+          await initializePersistentAudio();
           console.log('✅ Backend Engine: Session started message received');
           setBackendConnected(true);
           break;
+        }
           
         case 'session_stopped':
           console.log('🛑 Backend Engine: Session stopped message received');
@@ -314,7 +335,10 @@ export const useBackendAudioEngine = () => {
           break;
       }
     }
-  }, [websocket.state.lastMessage, sessionId, processAudioFrame, processFieldFrame]);
+    };
+    
+    handleMessage();
+  }, [websocket.lastMessage, sessionId, processAudioFrame, processFieldFrame]);
 
   // Connect to backend (test health endpoint and set ready state)
   const connectBackend = useCallback(async () => {
@@ -324,7 +348,9 @@ export const useBackendAudioEngine = () => {
       const healthResponse = await api.healthCheck();
       if (healthResponse.status === 200) {
         setBackendConnected(true);
-        console.log('✅ Backend Engine: Connected successfully');
+        console.log('✅ Backend Engine: Connected successfully (backend health check passed)');
+        // DO NOT automatically create a session or connect WebSocket
+        // Sessions should only be created when the user actually starts playing audio
       } else {
         throw new Error('Backend health check failed');
       }
@@ -332,7 +358,7 @@ export const useBackendAudioEngine = () => {
       console.error('❌ Backend Engine: Connection failed:', error);
       setBackendConnected(false);
     }
-  }, []);
+  }, [api]);
 
   // Stop backend session
   const stopBackendSession = useCallback(async () => {
@@ -385,113 +411,57 @@ export const useBackendAudioEngine = () => {
     });
   }, [sessionId, websocket, api]);
 
-  // Start backend session (creates audio session)
+
+// Start backend session (creates audio session)
   const startBackendSession = useCallback(async (config?: BinauralBeatConfig & {
     spatial_enabled?: boolean;
     spatial_settings?: Record<string, unknown>
   }) => {
     console.log('🎧 Backend Engine: Starting session with config:', config);
-    
+
     // Clean up any existing session first
     if (sessionId) {
       console.log('🧹 Backend Engine: Cleaning up existing session before starting new one');
       await stopBackendSession();
       await new Promise(resolve => setTimeout(resolve, 100)); // Brief pause
     }
-    
+
     try {
-      // Use current audioState values as defaults if no config provided
-      const sessionConfig = config ? {
-        base_frequency: typeof config.leftFreq === 'number' && !isNaN(config.leftFreq) ? config.leftFreq : 440,
-        beat_frequency: typeof config.rightFreq === 'number' && !isNaN(config.rightFreq) && typeof config.leftFreq === 'number' && !isNaN(config.leftFreq) 
-          ? Math.abs(config.rightFreq - config.leftFreq) : 4,
-        amplitude: typeof config.amplitude === 'number' && !isNaN(config.amplitude) ? config.amplitude : 0.7,
+      // Convert frontend config (camelCase) to backend format (snake_case)
+      const sessionConfig: BackendSessionConfig = config ? {
+        // When config is provided, convert from camelCase to snake_case
+       /*     base_frequency: typeof config.baseFrequency === 'number' && !isNaN(config.baseFrequency) ? config.baseFrequency : 440,
+            433 +          beat_frequency: typeof config.beatFrequency === 'number' && !isNaN(config.beatFrequency) ? config.beatFrequency : 4,
+          434            amplitude: typeof config.amplitude === 'number' && !isNaN(config.amplitude) ? config.amplitude : 0.7,*/
+        base_frequency: !isNaN(config.baseFrequency) ? config.baseFrequency : 440,
+        beat_frequency: !isNaN(config.beatFrequency) ? config.beatFrequency : 4,
+        amplitude: !isNaN(config.amplitude) ? config.amplitude : 0.7,
         spatial_enabled: config.spatial_enabled || false,
         spatial_settings: config.spatial_settings || {}
       } : {
-        base_frequency: typeof audioState.leftFreq === 'number' && !isNaN(audioState.leftFreq) ? audioState.leftFreq : 440,
-        beat_frequency: typeof audioState.rightFreq === 'number' && !isNaN(audioState.rightFreq) && typeof audioState.leftFreq === 'number' && !isNaN(audioState.leftFreq)
-          ? Math.abs(audioState.rightFreq - audioState.leftFreq) : 4,
-        amplitude: typeof audioState.volume === 'number' && !isNaN(audioState.volume) ? audioState.volume : 0.3,
+        // When no config, calculate from audioState
+        // Remember: base_frequency = RIGHT ear, beat = right - left
+        base_frequency: isNaN(audioState.rightFreq) ? audioState.rightFreq : 440,
+        beat_frequency: ( !isNaN(audioState.rightFreq) && !isNaN(audioState.leftFreq))
+            ? Math.abs(audioState.rightFreq - audioState.leftFreq) : 4,
+        amplitude: !isNaN(audioState.volume) ? audioState.volume : 0.3,
         spatial_enabled: false,
         spatial_settings: {}
       };
 
-      console.log('🔧 Backend Engine: Creating WebSocket-only session with config:', sessionConfig);
-      
-      // Generate a unique session ID for WebSocket (don't use REST API)
-      const newSessionId = 'ws-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-      console.log('✅ Backend Engine: Generated WebSocket session ID:', newSessionId);
-      setSessionId(newSessionId);
-      
-      // Initialize audio context FIRST
-      console.log('🎵 Backend Engine: Initializing audio context');
-      await initializeAudio();
-      
-      // Initialize persistent audio pipeline
-      console.log('🔧 Backend Engine: Setting up persistent audio pipeline');
-      await initializePersistentAudio();
-      
-      // Connect WebSocket with our generated session ID
-      console.log('🔌 Backend Engine: Connecting WebSocket for session:', newSessionId);
-      websocket.connect(newSessionId);
-      
-      // Wait for WebSocket connection
-      let connectAttempts = 0;
-      while (!websocket.state.connected && connectAttempts < 10) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-        connectAttempts++;
-      }
-      
-      if (websocket.state.connected) {
-        console.log('✅ Backend Engine: WebSocket connected successfully');
-        
-        // Send session initialization immediately after connection
-        console.log('📡 Backend Engine: Sending start_session to create audio session');
-        websocket.sendMessage({
-          type: 'start_session',
-          settings: sessionConfig
-        });
-        
-        // Wait a moment for session to be set up on backend
-        await new Promise(resolve => setTimeout(resolve, 400));
-        
-        // Then send start streaming command
-        console.log('📡 Backend Engine: Sending start_stream command');
-        websocket.sendMessage({
-          type: 'start_stream',
-          data: {
-            settings: sessionConfig
-          }
-        });
+      // Now sessionConfig is properly typed as BackendSessionConfig
+      // Send it to your backend API or WebSocket
+      console.log('📤 Sending config to backend:', sessionConfig);
 
-        setAudioState(prev => ({
-          ...prev,
-          isPlaying: true,
-          context: audioContext.current,
-          leftFreq: sessionConfig.base_frequency,
-          rightFreq: sessionConfig.base_frequency + sessionConfig.beat_frequency
-        }));
-        
-        console.log('🚀 Backend Engine: Session started successfully');
-      } else {
-        throw new Error('Failed to establish WebSocket connection');
-      }
+      // ... rest of your function
     } catch (error) {
-      console.error('❌ Backend Engine: Failed to start backend session:', error);
-      // Clean up on failure
-      if (sessionId) {
-        setSessionId(null);
-        setBackendConnected(false);
-        websocket.disconnect();
-      }
-      throw error;
+      console.error('Failed to start backend session:', error);
     }
-  }, [api, websocket, initializeAudio, audioState, sessionId, stopBackendSession]);
+  }, [sessionId, stopBackendSession, audioState]);
 
   // Update settings in real-time
   const updateSettings = useCallback((settings: Record<string, unknown>) => {
-    if (websocket.state.connected) {
+    if (websocket.isConnected) {
       websocket.sendMessage({
         type: 'update_settings',
         data: {settings}
@@ -500,11 +470,10 @@ export const useBackendAudioEngine = () => {
   }, [websocket]);
 
   // Load pattern with backend integration
-const  loadPattern = useCallback(async(pattern: PatternConfig) => {
+  const loadPattern = useCallback(async(pattern: PatternConfig) => {
     const config: BinauralBeatConfig & { spatial_enabled?: boolean, spatial_settings?: Record<string, unknown> } = {
-      leftFreq: pattern.frequencies.carrier,
-      rightFreq: pattern.frequencies.carrier + pattern.frequencies.beat,
-      beatFreq: pattern.frequencies.beat,
+      baseFrequency: pattern.frequencies.carrier,  // BASE frequency (right ear)
+      beatFrequency: pattern.frequencies.beat,      // BEAT frequency
       amplitude: 0.5,
       waveform: 'sine',
       spatial_enabled: true,
@@ -516,29 +485,29 @@ const  loadPattern = useCallback(async(pattern: PatternConfig) => {
     };
 
     if (audioState.isPlaying) {
-   await stopBackendSession();
+      await stopBackendSession();
     }
-    
-   await startBackendSession(config);
+
+    await startBackendSession(config);
   }, [audioState.isPlaying, startBackendSession, stopBackendSession]);
 
-  // Update frequency
-  const updateFrequency = useCallback((leftFreq: number, rightFreq: number) => {
-    const beatFreq = Math.abs(rightFreq - leftFreq);
-    
+  const updateFrequency = useCallback((baseFreq: number, beatFreq: number) => {
+    // Backend expects base_frequency (right ear) and beat_frequency
     updateSettings({
-      base_frequency: leftFreq,
+      base_frequency: baseFreq,
       beat_frequency: beatFreq
     });
-    
+
+    // Calculate left/right for audio state
+    // RIGHT ear = base frequency
+    // LEFT ear = base - beat (to create the binaural beat)
     setAudioState(prev => ({
       ...prev,
-      leftFreq,
-      rightFreq,
-      beatFreq
+      leftFreq: baseFreq - beatFreq,  // LEFT ear frequency
+      rightFreq: baseFreq,            // RIGHT ear frequency (base)
+      beatFreq: beatFreq
     }));
   }, [updateSettings]);
-
   // Update volume
   const updateVolume = useCallback((volume: number) => {
     updateSettings({
@@ -590,48 +559,106 @@ const  loadPattern = useCallback(async(pattern: PatternConfig) => {
     console.log('✅ Backend Engine: Disconnected successfully');
   }, [sessionId, stopBackendSession]);
 
-  // Timer compatibility interface
-  const startBinauralBeat = useCallback(async (config: BinauralBeatConfig) => {
-    console.log('🔥 Backend Engine (Timer): Starting binaural beat with config:', config);
-    
-    try {
-      // Connect to backend if not already connected
-      if (!backendConnected) {
-        console.log('🔌 Backend Engine (Timer): Connecting to backend first...');
-        await connectBackend();
-        
-        // Wait a bit for connection to establish
-        await new Promise(resolve => setTimeout(resolve, 100));
+  const startBinauralBeat = useCallback(async (config: any) => {
+    // Build complete session config
+    const sessionConfig = {
+      base_frequency: config.leftFreq || 440,
+      beat_frequency: config.beatFreq || (config.rightFreq - config.leftFreq) || 15,
+      amplitude: config.amplitude || 0.7,
+      waveform: config.waveform || 'sine',
+      spatial_enabled: true,
+      spatial_settings: {
+        mode: 'binaural',
+        positioning: 'headphones',
+        room_size: 'medium'
       }
-      
-      // Start backend session with timer configuration
-      // IMPORTANT: Backend expects beat_frequency as the difference between left/right frequencies
-      const calculatedBeatFreq = Math.abs(config.rightFreq - config.leftFreq);
-      
-      const sessionConfig = {
-        base_frequency: config.leftFreq,           // Backend expects base_frequency
-        beat_frequency: calculatedBeatFreq,        // Backend expects beat_frequency  
-        amplitude: config.amplitude,               // ✅ Correct
-        spatial_enabled: true,                     // ✅ Correct
-        spatial_settings: {                        // ✅ Correct
-          pattern: 'tornado',
-          movement_speed: 0.33,
-          spatial_intensity: 0.85,
-          reverb_enabled: true
+    };
+
+    try {
+      // 1. Reuse existing connected session
+      if (sessionId && websocket.isConnected) {
+        console.log('♻️ Reusing existing session:', sessionId);
+        console.log('📡 Sending start_session with config:', sessionConfig);
+        
+        // Send start_session first to initialize audio on backend
+        websocket.sendMessage({
+          type: 'start_session',
+          data: sessionConfig
+        });
+        
+        // Then start the stream
+        await new Promise(resolve => setTimeout(resolve, 200));
+        websocket.sendMessage({
+          type: 'start_stream',
+          data: { settings: sessionConfig }
+        });
+        
+        setAudioState(prev => ({
+          ...prev,
+          isPlaying: true,
+          leftFreq: sessionConfig.base_frequency,
+          rightFreq: sessionConfig.base_frequency + sessionConfig.beat_frequency,
+          beatFreq: sessionConfig.beat_frequency,
+          volume: sessionConfig.amplitude
+        }));
+        
+        console.log('✅ Backend Engine: Started binaural beat on existing session');
+        return;
+      }
+
+      // 2. Session exists but disconnected - reconnect
+      if (sessionId && !websocket.isConnected) {
+        console.log('⏳ Reconnecting to session:', sessionId);
+        websocket.connect(sessionId);
+        
+        // Wait for reconnection
+        let attempts = 0;
+        while (!websocket.isConnected && attempts < 20) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+          attempts++;
         }
-      };
-      
-      console.log('🔧 Backend Engine (Timer): Frequency mapping - Timer wants', config.beatFreq, 'Hz binaural beat, sending', calculatedBeatFreq, 'Hz frequency difference');
-      
-      console.log('🎧 Backend Engine (Timer): Starting session with config:', sessionConfig);
-      await startBackendSession(sessionConfig);
-      console.log('✅ Backend Engine (Timer): Binaural beat session started successfully');
-      
+        
+        if (websocket.isConnected) {
+          // Now send the config
+          websocket.sendMessage({
+            type: 'start_session',
+            data: sessionConfig
+          });
+          
+          await new Promise(resolve => setTimeout(resolve, 200));
+          websocket.sendMessage({
+            type: 'start_stream',
+            data: { settings: sessionConfig }
+          });
+          
+          setAudioState(prev => ({
+            ...prev,
+            isPlaying: true,
+            leftFreq: sessionConfig.base_frequency,
+            rightFreq: sessionConfig.base_frequency + sessionConfig.beat_frequency,
+            beatFreq: sessionConfig.beat_frequency,
+            volume: sessionConfig.amplitude
+          }));
+          
+          console.log('✅ Backend Engine: Reconnected and started binaural beat');
+          return;
+        } else {
+          throw new Error('Failed to reconnect to session');
+        }
+      }
+
+      // 3. No session - create new
+      if (!sessionId) {
+        console.log('🆕 Creating new session with config');
+        await startBackendSession(config);
+        return;
+      }
     } catch (error) {
-      console.error('❌ Backend Engine (Timer): Failed to start binaural beat:', error);
+      console.error('❌ Failed:', error);
       throw error;
     }
-  }, [backendConnected, connectBackend, startBackendSession]);
+  }, [sessionId, websocket, startBackendSession]);
+
 
   const stopBinauralBeat = useCallback(async () => {
     console.log('🛑 Backend Engine (Timer): Stopping binaural beat session');
@@ -649,7 +676,11 @@ const  loadPattern = useCallback(async(pattern: PatternConfig) => {
     electromagnetic,
     sessionId,
     backendConnected,
-    websocketState: websocket.state,
+    websocketState: {
+      isConnected: websocket.isConnected,
+      isConnecting: websocket.isConnecting,
+      error: websocket.error
+    },
     connectBackend,
     disconnectBackend,
     startBackendSession,

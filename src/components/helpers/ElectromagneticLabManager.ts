@@ -1,7 +1,7 @@
 // Electromagnetic Beat Lab Manager - State and Logic Helper
 // Separates complex state management and business logic from UI component
 
-import type { AppState, ElectromagneticBeatLabProps, PatternMode } from '../../types';
+import type { AppState, ElectromagneticBeatLabProps, PatternMode, ElectromagneticFieldState } from '../../types';
 import { WAVE_PATTERNS } from '../../data/patterns';
 
 export interface ElectromagneticLabState {
@@ -70,7 +70,7 @@ export class ElectromagneticLabManager {
       phase: 0,
       coherence: 0.8,
       resonance: 0.7 + frequency / 40 * 0.3,
-      state: isPlaying ? 'ACTIVE' : 'STANDBY' as const,
+      state: (isPlaying ? 'ACTIVE' : 'INACTIVE') as ElectromagneticFieldState,
       stability: 0.9
     };
   }

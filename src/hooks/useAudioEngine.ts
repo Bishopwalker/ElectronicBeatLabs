@@ -443,7 +443,7 @@ export const useAudioEngine = () => {
     generateTestTones,
     frequencySweep,
     createGammaProtocol,
-    backendConnected: false, // Frontend engine is never connected to backend
+    backendConnected: false, // Frontend engine is any connected to backend
     sessionId: null,
     websocketState: { connected: false, connecting: false, error: null },
     isSupported: !!(window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)

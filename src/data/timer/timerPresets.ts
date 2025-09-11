@@ -1,4 +1,4 @@
-import type { TimerPreset, FrequencyTransition } from './types';
+import type { TimerPreset, FrequencyTransition } from '../../types';
 
 export const BUILT_IN_PRESETS: TimerPreset[] = [
   {

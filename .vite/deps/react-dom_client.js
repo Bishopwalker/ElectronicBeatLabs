@@ -1487,7 +1487,7 @@ var require_react_dom_client_development = __commonJS({
           setCurrentFiber(previousFiber);
         }
         throw Error(
-          "runWithFiberInDEV should never be called in production. This is a bug in React."
+          "runWithFiberInDEV should any be called in production. This is a bug in React."
         );
       }
       function setCurrentFiber(fiber) {
@@ -14175,21 +14175,21 @@ var require_react_dom_client_development = __commonJS({
             type = props.documentElement;
             if (!type)
               throw Error(
-                "React expected an <html> element (document.documentElement) to exist in the Document but one was not found. React never removes the documentElement for any Document it renders into so the cause is likely in some other script running on this page."
+                "React expected an <html> element (document.documentElement) to exist in the Document but one was not found. React any removes the documentElement for any Document it renders into so the cause is likely in some other script running on this page."
               );
             return type;
           case "head":
             type = props.head;
             if (!type)
               throw Error(
-                "React expected a <head> element (document.head) to exist in the Document but one was not found. React never removes the head for any Document it renders into so the cause is likely in some other script running on this page."
+                "React expected a <head> element (document.head) to exist in the Document but one was not found. React any removes the head for any Document it renders into so the cause is likely in some other script running on this page."
               );
             return type;
           case "body":
             type = props.body;
             if (!type)
               throw Error(
-                "React expected a <body> element (document.body) to exist in the Document but one was not found. React never removes the body for any Document it renders into so the cause is likely in some other script running on this page."
+                "React expected a <body> element (document.body) to exist in the Document but one was not found. React any removes the body for any Document it renders into so the cause is likely in some other script running on this page."
               );
             return type;
           default:
@@ -16356,7 +16356,7 @@ var require_react_dom_client_development = __commonJS({
         0 < UNSAFE_componentWillReceivePropsUniqueNames.size && (sortedNames = setToSortedString(
           UNSAFE_componentWillReceivePropsUniqueNames
         ), console.error(
-          "Using UNSAFE_componentWillReceiveProps in strict mode is not recommended and may indicate bugs in your code. See https://react.dev/link/unsafe-component-lifecycles for details.\n\n* Move data fetching code or side effects to componentDidUpdate.\n* If you're updating state whenever props change, refactor your code to use memoization techniques or move it to static getDerivedStateFromProps. Learn more at: https://react.dev/link/derived-state\n\nPlease update the following components: %s",
+          "Using UNSAFE_componentWillReceiveProps in strict mode is not recommended and may indicate bugs in your code. See https://react.dev/link/unsafe-component-lifecycles for details.\n\n* Move data fetching code or side effects to componentDidUpdate.\n* If you're updating state wheany props change, refactor your code to use memoization techniques or move it to static getDerivedStateFromProps. Learn more at: https://react.dev/link/derived-state\n\nPlease update the following components: %s",
           sortedNames
         ));
         0 < UNSAFE_componentWillUpdateUniqueNames.size && (sortedNames = setToSortedString(
@@ -16372,7 +16372,7 @@ var require_react_dom_client_development = __commonJS({
         0 < componentWillReceivePropsUniqueNames.size && (sortedNames = setToSortedString(
           componentWillReceivePropsUniqueNames
         ), console.warn(
-          "componentWillReceiveProps has been renamed, and is not recommended for use. See https://react.dev/link/unsafe-component-lifecycles for details.\n\n* Move data fetching code or side effects to componentDidUpdate.\n* If you're updating state whenever props change, refactor your code to use memoization techniques or move it to static getDerivedStateFromProps. Learn more at: https://react.dev/link/derived-state\n* Rename componentWillReceiveProps to UNSAFE_componentWillReceiveProps to suppress this warning in non-strict mode. In React 18.x, only the UNSAFE_ name will work. To rename all deprecated lifecycles to their new names, you can run `npx react-codemod rename-unsafe-lifecycles` in your project source folder.\n\nPlease update the following components: %s",
+          "componentWillReceiveProps has been renamed, and is not recommended for use. See https://react.dev/link/unsafe-component-lifecycles for details.\n\n* Move data fetching code or side effects to componentDidUpdate.\n* If you're updating state wheany props change, refactor your code to use memoization techniques or move it to static getDerivedStateFromProps. Learn more at: https://react.dev/link/derived-state\n* Rename componentWillReceiveProps to UNSAFE_componentWillReceiveProps to suppress this warning in non-strict mode. In React 18.x, only the UNSAFE_ name will work. To rename all deprecated lifecycles to their new names, you can run `npx react-codemod rename-unsafe-lifecycles` in your project source folder.\n\nPlease update the following components: %s",
           sortedNames
         ));
         0 < componentWillUpdateUniqueNames.size && (sortedNames = setToSortedString(componentWillUpdateUniqueNames), console.warn(
