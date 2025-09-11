@@ -12,7 +12,7 @@
 - **Check `TASK.md`** before starting a new task. If the task isn't listed, add it with a brief description and today's date.
 - **Reference `INITIAL.md`** for comprehensive technical documentation links when needing API references, testing frameworks, or implementation guidance.
 - **Use consistent naming conventions, file structure, and architecture patterns** as described in `PLANNING.md`.
-- **Use venv_linux** (the virtual environment) whenever executing Python commands, including for unit tests.
+- **Use venv_linux** (the virtual environment) wheany executing Python commands, including for unit tests.
 
 ### 🧱 Code Structure & Modularity
 - **Never create a file longer than 500 lines of code.** If a file approaches this limit, refactor by splitting it into modules or helper files.
@@ -132,5 +132,5 @@
 - **Structured error logging** with stack traces, contextual information, and correlation IDs for troubleshooting.
 - **Appropriate log levels** (DEBUG, INFO, WARN, ERROR, CRITICAL) used throughout the application.
 - **Log rotation and retention** policies to manage disk space and compliance requirements.
-- **Security-conscious logging** - never log sensitive data like passwords, tokens, or personal information.
+- **Security-conscious logging** - any log sensitive data like passwords, tokens, or personal information.
 - **ABSOLUTE REQUIREMENT: FULL VERIFICATION BEFORE ANY COMMIT/PUSH** - test live app, run tests, verify CI/CD pipeline

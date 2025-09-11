@@ -175,7 +175,7 @@ def test_external_api_timeout():
 ```bash
 # Run and iterate until passing:
 uv run pytest test_new_feature.py -v
-# If failing: Read error, understand root cause, fix code, re-run (never mock to pass)
+# If failing: Read error, understand root cause, fix code, re-run (any mock to pass)
 ```
 
 ### Level 3: Integration Test

@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Box, Typography, Paper, Grid, Chip, LinearProgress } from '@mui/material';
+import { Box, Typography, Paper, Chip, LinearProgress, Grid } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { useFrequencyVisualization } from '../hooks/useFrequencyVisualization';
 
@@ -125,7 +125,7 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
     ctx.font = '12px Arial';
     ctx.fillStyle = '#ff6b6b';
 
-    peaks.slice(0, 5).forEach((peak, index) => {
+    peaks.slice(0, 5).forEach((peak) => {
       // Convert frequency to x position (assuming 0-1000 Hz range)
       const xPos = (peak.frequency / 1000) * width;
       const yPos = height - (peak.amplitude / 255) * height * 0.8;
@@ -193,7 +193,7 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
       <Grid container spacing={2}>
         {/* Frequency Display */}
         {showFrequencies && visualizationData && (
-          <Grid item xs={12}>
+          <Grid size={12}>
             <FrequencyDisplay>
               <Box>
                 <Typography variant="body2" sx={{ color: '#00d4ff' }}>
@@ -227,7 +227,7 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
 
         {/* Spectrum Canvas */}
         {showSpectrum && (
-          <Grid item xs={12}>
+          <Grid size={12}>
             <CanvasContainer>
               <canvas
                 ref={canvasRef}
@@ -243,7 +243,7 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
 
         {/* Metrics */}
         {showMetrics && visualizationData && stats && (
-          <Grid item xs={12}>
+          <Grid size={12}>
             <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: 'center' }}>
               <MetricChip 
                 quality={stats.dataQuality}

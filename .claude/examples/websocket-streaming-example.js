@@ -39,7 +39,7 @@ class EBLWebSocketClient {
      * Connect to the WebSocket server
      * @param {string} sessionId - Unique session identifier
      */
-    async connect(sessionId = null) {
+    async connect(sessionId = '') {
         try {
             this.sessionId = sessionId || this.generateSessionId();
             const wsUrl = `${this.serverUrl}/ws/${this.sessionId}`;

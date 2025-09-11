@@ -91,7 +91,11 @@
       "Bash(clear)",
       "Bash(chmod:*)",
       "Bash(.claude/commands/init-context.sh:*)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(node analyze_dependencies.js)",
+      "Bash(node:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(netstat:*)"
     ],
     "deny": [],
     "ask": []

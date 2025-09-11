@@ -61,9 +61,12 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
   // Hybrid audio engines: Backend for advanced features, Frontend for fallback
   const backendEngine = useBackendAudioEngine();
   const frontendEngine = useAudioEngine();
-  
+  const [sessionId, setSessionId] = useState<string | null>(
+    backendEngine.sessionId
+  );
+
   // Smart audio engine selector - use backend if connected, fallback to frontend
-  const activeAudioEngine = backendEngine.backendConnected ? backendEngine : frontendEngine;
+  const activeAudioEngine = sessionId ? backendEngine : frontendEngine;
 
   // Timer status for preset tracking
   const [timerStatus, setTimerStatus] = useState<any>(null);
@@ -85,23 +88,24 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
     console.log('🔄 Backend connection state changed:', backendEngine.backendConnected);
   }, [backendEngine.backendConnected, backendEngine.sessionId]);
 
-  // Auto-connect to backend on startup
+  // Auto-connect to backend on startup (only once)
   useEffect(() => {
-    console.log('🔧 Audio engine selected:', backendEngine.backendConnected ? 'Backend' : 'Frontend');
-    backendEngine.connectBackend().then(()=>console.log("on"));
-    if (!backendEngine.backendConnected && backendEngine.connectBackend) {
+    let connectAttempted = false;
+    if (!connectAttempted && !backendEngine.backendConnected && backendEngine.connectBackend) {
+      connectAttempted = true;
       console.log('🔌 Auto-connecting to backend on startup...');
       backendEngine.connectBackend().catch((error) => {
         console.log('⚠️ Backend auto-connect failed (this is expected if backend is not running):', error.message);
       });
     }
-  }, []);
+    setSessionId(backendEngine.sessionId);
+  }, []); // Empty dependency array - only run once on mount
 
 
   // Bound handler functions with context
   const handlePatternSelectBound = useCallback((patternId: string) => {
     const patternsInterface = {
-      setActivePattern: (pattern: { name: never; }) => {
+      setActivePattern: (pattern: { name: any; }) => {
         console.log('🎨 Setting active pattern for visualizer:', pattern.name);
         updateAppState({ currentPattern: pattern });
       },
@@ -205,9 +209,9 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
           <Box sx={ElectromagneticLabStyles.tabContent}>
             <TabContentRenderer
               appState={appState}
-              audioEngine={audioEngine}
+              audioEngine={activeAudioEngine}
               backendEngine={backendEngine}
-              patterns8D={patterns8D}
+              patterns8D={WAVE_PATTERNS}
               onStateChange={updateAppState}
               onPatternSelect={handlePatternSelectBound}
               onFrequencyChange={handleFrequencyChangeBound}

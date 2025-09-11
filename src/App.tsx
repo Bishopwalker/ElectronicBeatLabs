@@ -2,19 +2,19 @@
 // Entry point for the electromagnetic wave generator application
 
 import { ThemeProvider as StyledThemeProvider } from 'styled-components';
-import { ThemeProvider as MuiThemeProvider } from '@mui/material/styles';
+import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import GlobalStyles from './styles/GlobalStyles';
 import ElectromagneticBeatLab from './components/ElectromagneticBeatLab';
 import SimpleAuth from './components/SimpleAuth';
 // import UsageTrackingExample from './components/UsageTrackingExample';
 import TimerTab from './components/tabs/TimerTab';
-import { BinauralVisualizerTest } from './components/BinauralVisualizerTest';
 import { AuthProvider } from './contexts/AuthContext';
 import { useAuth } from './hooks/useAuth';
 import { muiTheme } from './theme/muiTheme';
-import { Box, Alert, Tabs, Tab  } from '@mui/material';
+import { Box, Alert, Tabs, Tab, Typography } from '@mui/material';
 import React from 'react';
+import { WebSocketProvider } from './hooks/useWebsocketContext';
 
 // Styled Components theme configuration
 const styledTheme = {
@@ -223,7 +223,9 @@ const AppContent = () => {
           )}
           {activeTab === 2 && (
             <Box sx={{ p: 1, minHeight: 'calc(100vh - 64px)' }}>
-              <BinauralVisualizerTest />
+              <Typography variant="h6" sx={{ color: 'white', textAlign: 'center', mt: 4 }}>
+                Visualizer Test Component Removed - Under Maintenance
+              </Typography>
             </Box>
           )}
         </Box>
@@ -234,15 +236,17 @@ const AppContent = () => {
 
 function App() {
   return (
-    <MuiThemeProvider theme={muiTheme}>
+    <ThemeProvider theme={muiTheme}>
       <StyledThemeProvider theme={styledTheme}>
         <CssBaseline />
         <GlobalStyles />
         <AuthProvider>
-          <AppContent />
+          <WebSocketProvider>
+            <AppContent />
+          </WebSocketProvider>
         </AuthProvider>
       </StyledThemeProvider>
-    </MuiThemeProvider>
+    </ThemeProvider>
   );
 }
 

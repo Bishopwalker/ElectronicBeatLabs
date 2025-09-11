@@ -29,7 +29,6 @@ import { formatTime } from '../helpers/timer/timerUtils';
 import { useTimerLogic } from '../hooks/useTimerLogic';
 import CustomPresetDialog from './timer/CustomPresetDialog';
 
-
 interface TimerControlsProps {
   audioEngine?: AudioEngine;
   onTimerStatusUpdate?: (status: any) => void;
@@ -39,7 +38,6 @@ interface TimerControlsProps {
   };
   onElectromagneticUpdate?: (electromagnetic: any) => void;
 }
-
 
 const TimerControls: React.FC<TimerControlsProps> = ({ 
   audioEngine, 
@@ -71,13 +69,7 @@ const TimerControls: React.FC<TimerControlsProps> = ({
 
 
   });
-  const adaptedAudioEngine = audioEngine ? {
-    sessionId: audioEngine.sessionId || '', // Convert optional to required
-    startBinauralBeat: audioEngine.startBinauralBeat,
-    stopBinauralBeat: audioEngine.stopBinauralBeat,
-    updateFrequency: audioEngine.updateFrequency,
-    audioState: audioEngine.audioState
-  } : undefined;
+
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
