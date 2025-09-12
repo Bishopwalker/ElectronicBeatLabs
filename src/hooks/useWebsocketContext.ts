@@ -84,10 +84,21 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
         currentParamsRef.current = { baseFreq: baseFrequency, beatFreq: beatFrequency };
 
         try {
-            cleanup(); // Clean up any existing connection
-
+            // Clean up any existing connection first
+            if (wsRef.current) {
+                wsRef.current.close(1000, 'Reconnecting');
+                wsRef.current = null;
+            }
+            if (reconnectTimeoutRef.current) {
+                clearTimeout(reconnectTimeoutRef.current);
+                reconnectTimeoutRef.current = null;
+            }
+            setIsConnected(false);
+            
+            // Now set connecting state
             setIsConnecting(true);
             setError(null);
+            console.log('🔧 WebSocket: Starting connection process...');
 
             // Construct WebSocket URL - BACKEND EXPECTS base_frequency and beat_frequency!
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -106,6 +117,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
 
             const ws = new WebSocket(wsUrl);
             wsRef.current = ws;
+            console.log('📡 WebSocket object created, readyState:', ws.readyState);
 
             ws.onopen = () => {
                 console.log('✅ WebSocket connected successfully');
