@@ -19,7 +19,7 @@ interface WebSocketContextType {
 
 const WebSocketContext = createContext<WebSocketContextType | null>(null);
 
-export const useWebSocketContext = (p0: string) => {
+export const useWebSocketContext = () => {
     const context = useContext(WebSocketContext);
     if (!context) {
         throw new Error('useWebSocketContext must be used within WebSocketProvider');
@@ -94,10 +94,13 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
             const host = window.location.hostname;
             const port = import.meta.env.DEV ? '8000' : window.location.port;
             const baseUrl = `${protocol}//${host}:${port}`;
+            
+            // Generate a unique session ID if not provided
+            const currentSessionId = sessionId || `session-${Date.now()}`;
 
             // Backend calculates: left_ear = base_frequency - beat_frequency
             // Using main WebSocket endpoint that actually streams audio frames
-            const wsUrl = `${baseUrl}/ws/${sessionId}?base_frequency=${baseFrequency}&beat_frequency=${beatFrequency}`;
+            const wsUrl = `${baseUrl}/ws/${currentSessionId}?base_frequency=${baseFrequency}&beat_frequency=${beatFrequency}`;
 
             console.log('🚀 Connecting to WebSocket:', wsUrl);
 

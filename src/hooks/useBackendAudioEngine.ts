@@ -85,7 +85,7 @@ export const useBackendAudioEngine = () => {
   const workletLoaded = useRef<boolean>(false);
 
   // Backend communication hooks - FIXED IMPORT
-  const websocket = useWebSocketContext('ws://localhost:8000');
+  const websocket = useWebSocketContext();
   const api = useBackendAPI();
 
   // Initialize audio context
