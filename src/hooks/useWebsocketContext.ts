@@ -68,15 +68,15 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
 
     // Connect function
     const connect = useCallback((baseFrequency = 440, beatFrequency = 4) => {
-        // Don't connect if already connected or connecting
-        if (isConnected || isConnecting) {
-            console.log('🔄 WebSocket: Already connected or connecting');
+        // If already connected, just log and return
+        if (isConnected && wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+            console.log('✅ WebSocket: Already connected and ready');
             return;
         }
 
-        // Don't connect if we already have a WebSocket in CONNECTING state
-        if (wsRef.current && wsRef.current.readyState === WebSocket.CONNECTING) {
-            console.log('🔄 WebSocket: Connection already in progress');
+        // If connecting, log but continue (the backend will wait for it)
+        if (isConnecting || (wsRef.current && wsRef.current.readyState === WebSocket.CONNECTING)) {
+            console.log('⏳ WebSocket: Connection already in progress, will wait for completion');
             return;
         }
 
@@ -96,6 +96,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
             const baseUrl = `${protocol}//${host}:${port}`;
 
             // Backend calculates: left_ear = base_frequency - beat_frequency
+            // Using main WebSocket endpoint that actually streams audio frames
             const wsUrl = `${baseUrl}/ws/${sessionId}?base_frequency=${baseFrequency}&beat_frequency=${beatFrequency}`;
 
             console.log('🚀 Connecting to WebSocket:', wsUrl);
