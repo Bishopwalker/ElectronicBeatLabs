@@ -68,15 +68,19 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
 
     // Connect function
     const connect = useCallback((baseFrequency = 440, beatFrequency = 4) => {
-        // If already connected, just log and return
-        if (isConnected && wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-            console.log('✅ WebSocket: Already connected and ready');
+        console.log('🔌 WebSocket connect() called with:', { baseFrequency, beatFrequency });
+        
+        // Check WebSocket ref directly for state
+        if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+            console.log('✅ WebSocket: Already connected (readyState = OPEN)');
+            setIsConnected(true);  // Update state in case it's out of sync
+            setIsConnecting(false);
             return;
         }
 
-        // If connecting, log but continue (the backend will wait for it)
-        if (isConnecting || (wsRef.current && wsRef.current.readyState === WebSocket.CONNECTING)) {
-            console.log('⏳ WebSocket: Connection already in progress, will wait for completion');
+        // If connecting, log but don't return - let backend wait for it
+        if (wsRef.current && wsRef.current.readyState === WebSocket.CONNECTING) {
+            console.log('⏳ WebSocket: Connection already in progress (readyState = CONNECTING)');
             return;
         }
 
@@ -119,6 +123,18 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
             wsRef.current = ws;
             console.log('📡 WebSocket object created, readyState:', ws.readyState);
 
+            // Add immediate state check
+            setTimeout(() => {
+                console.log('🔍 WebSocket state after 100ms:', ws.readyState, 'CONNECTING=', WebSocket.CONNECTING, 'OPEN=', WebSocket.OPEN, 'CLOSING=', WebSocket.CLOSING, 'CLOSED=', WebSocket.CLOSED);
+            }, 100);
+
+            setTimeout(() => {
+                console.log('🔍 WebSocket state after 500ms:', ws.readyState);
+                if (ws.readyState === WebSocket.CONNECTING) {
+                    console.log('⚠️ Still connecting after 500ms...');
+                }
+            }, 500);
+
             ws.onopen = () => {
                 console.log('✅ WebSocket connected successfully');
                 setIsConnected(true);
@@ -142,6 +158,12 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
 
             ws.onerror = (event) => {
                 console.error('❌ WebSocket error:', event);
+                console.error('❌ Error details:', {
+                    readyState: ws.readyState,
+                    url: ws.url,
+                    protocol: ws.protocol,
+                    extensions: ws.extensions,
+                });
                 const wsError = new Error('WebSocket connection error');
                 setError(wsError);
             };
@@ -179,7 +201,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
             setError(connectionError);
             setIsConnecting(false);
         }
-    }, [sessionId, cleanup, isConnected, isConnecting]);
+    }, [sessionId]);
 
     // Send message function
     const sendMessage = useCallback((message: WebSocketMessage | string) => {
