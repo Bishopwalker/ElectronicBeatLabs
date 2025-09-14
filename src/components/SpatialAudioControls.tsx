@@ -105,7 +105,6 @@ const SpatialAudioControls: React.FC<SpatialAudioControlsProps> = ({
   };
 
   return (
-      backendConnected &&(
     <Paper
       sx={{
         p: 0.5,
@@ -405,7 +404,7 @@ const SpatialAudioControls: React.FC<SpatialAudioControlsProps> = ({
         </>
       )}
     </Paper>
-      )
-)};
+  );
+};
 
 export default SpatialAudioControls;

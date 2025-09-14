@@ -1,6 +1,6 @@
 // Electromagnetic Beat Lab - Settings Tab Component
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Box, Paper, Typography, Button } from '@mui/material';
 import SpatialAudioControls from '../SpatialAudioControls';
 import type { AppState, AudioEngine, Pattern8D } from '../../types';
@@ -17,6 +17,52 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
   audioEngine,
   onStateChange
 }) => {
+  // Local state to track audio context and connection states
+  const [audioContextState, setAudioContextState] = useState(
+    audioEngine.audioState?.context?.state || 'closed'
+  );
+  const [backendConnected, setBackendConnected] = useState(
+    audioEngine.backendConnected || false
+  );
+  const [websocketState, setWebsocketState] = useState({
+    connected: audioEngine.websocketState?.connected || false,
+    connecting: audioEngine.websocketState?.connecting || false,
+    error: audioEngine.websocketState?.error || null
+  });
+
+  // Monitor audio context state changes
+  useEffect(() => {
+    const checkAudioContext = () => {
+      const newState = audioEngine.audioState?.context?.state || 'closed';
+      if (newState !== audioContextState) {
+        setAudioContextState(newState);
+      }
+    };
+
+    // Check immediately and set up interval
+    checkAudioContext();
+    const intervalId = setInterval(checkAudioContext, 500);
+
+    return () => clearInterval(intervalId);
+  }, [audioEngine.audioState?.context, audioContextState]);
+
+  // Monitor backend connection state
+  useEffect(() => {
+    const checkConnectionState = () => {
+      setBackendConnected(audioEngine.backendConnected || false);
+      setWebsocketState({
+        connected: audioEngine.websocketState?.connected || false,
+        connecting: audioEngine.websocketState?.connecting || false,
+        error: audioEngine.websocketState?.error || null
+      });
+    };
+
+    // Check immediately and set up interval
+    checkConnectionState();
+    const intervalId = setInterval(checkConnectionState, 1000);
+
+    return () => clearInterval(intervalId);
+  }, [audioEngine.backendConnected, audioEngine.websocketState]);
   const handleSpatialSettingsChange = (spatialSettings: {
     enabled: boolean;
     movement_speed: number;
@@ -26,34 +72,72 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
     room_scale?: number;
     hf_damping?: number;
   }) => {
+    // Create full spatial config
+    const fullSpatialConfig = {
+      ...appState.spatialAudio,
+      ...spatialSettings
+    };
+    
     // Update spatial audio settings in app state
     onStateChange({
-      spatialAudio: {
-        ...appState.spatialAudio,
-        ...spatialSettings
-      }
+      spatialAudio: fullSpatialConfig,
+      lastUpdate: Date.now() // Force UI update
     });
 
     // Update backend settings if connected
-    if (audioEngine.updateSpatialSettings) {
-      const fullSpatialConfig = {
-        ...appState.spatialAudio,
-        ...spatialSettings
-      };
+    if (audioEngine.updateSpatialSettings && audioEngine.backendConnected) {
       audioEngine.updateSpatialSettings(fullSpatialConfig);
     }
   };
 
-  /*
-  const handleSystemSettingChange = (key: string, value: any) => {
-    onStateChange({
-      systemSettings: {
-        ...appState.systemSettings,
-        [key]: value
-      }
-    });
+  // Handler for WebSocket reconnection
+  const handleWebSocketReconnect = () => {
+    console.log('🔄 Manually reconnecting WebSocket...');
+    if (audioEngine.connectBackend) {
+      audioEngine.connectBackend();
+    } else if (audioEngine.reconnect) {
+      audioEngine.reconnect();
+    }
   };
-  */
+
+  // Handler for AudioContext resume
+  const handleAudioContextResume = async () => {
+    console.log('▶️ Resuming AudioContext...');
+    if (audioEngine.audioState?.context) {
+      try {
+        await audioEngine.audioState.context.resume();
+        // Force a state update to trigger UI re-render
+        onStateChange({ 
+          audioContextState: audioEngine.audioState.context.state,
+          // Add timestamp to force update
+          lastUpdate: Date.now()
+        });
+      } catch (error) {
+        console.error('Failed to resume AudioContext:', error);
+      }
+    }
+  };
+
+  // Handler for AudioContext reset
+  const handleAudioContextReset = async () => {
+    console.log('🔄 Resetting AudioContext...');
+    try {
+      if (audioEngine.resetAudioContext) {
+        await audioEngine.resetAudioContext();
+      } else if (audioEngine.initializeAudio) {
+        await audioEngine.initializeAudio();
+      }
+      // Force state update after reset
+      onStateChange({ 
+        audioContextState: audioEngine.audioState?.context?.state || 'closed',
+        lastUpdate: Date.now()
+      });
+    } catch (error) {
+      console.error('Failed to reset AudioContext:', error);
+    }
+  };
+
+
 
   return (
     <Box
@@ -94,7 +178,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
             hf_damping: appState.spatialAudio?.hf_damping || 0.5
           }}
           onChange={handleSpatialSettingsChange}
-          backendConnected={audioEngine.backendConnected}
+          backendConnected={backendConnected}
         />
       </Paper>
 
@@ -121,7 +205,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
           ⚡ Backend Connection
         </Typography>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-          {audioEngine.backendConnected ? (
+          {backendConnected ? (
             <Typography sx={{ color: '#00ff88' }}>
               ✅ Connected to backend (Session: {audioEngine.sessionId?.slice(-8)})
             </Typography>
@@ -132,11 +216,11 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
           )}
           
           <Button
-            variant={audioEngine.backendConnected ? "outlined" : "contained"}
-            color={audioEngine.backendConnected ? "error" : "success"}
+            variant={backendConnected ? "outlined" : "contained"}
+            color={backendConnected ? "error" : "success"}
             size="small"
             onClick={() => {
-              if (audioEngine.backendConnected) {
+              if (backendConnected) {
                 audioEngine.disconnectBackend?.();
               } else {
                 audioEngine.connectBackend?.();
@@ -144,20 +228,33 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
             }}
             sx={{ ml: 1 }}
           >
-            {audioEngine.backendConnected ? 'Disconnect' : 'Connect Backend'}
+            {backendConnected ? 'Disconnect' : 'Connect Backend'}
           </Button>
         </Box>
         
-        {audioEngine.websocketState && (
-          <Typography sx={{ mt: 0.5, fontSize: '0.9rem', color: '#e0e0e0' }}>
-            WebSocket: {audioEngine.websocketState.connected ? 'Connected' : 
-                      audioEngine.websocketState.connecting ? 'Connecting...' : 'Disconnected'}
-            {audioEngine.websocketState.error && (
-              <Typography component="div" sx={{ color: '#ff4444', mt: 0.25 }}>
-                Error: {audioEngine.websocketState.error}
+        {websocketState && (
+          <Box sx={{ mt: 0.5 }}>
+            <Typography sx={{ fontSize: '0.9rem', color: '#e0e0e0' }}>
+              WebSocket: {websocketState.connected ? '🟢 Connected' : 
+                        websocketState.connecting ? '🟡 Connecting...' : '🔴 Disconnected'}
+            </Typography>
+            {websocketState.error && (
+              <Typography component="div" sx={{ color: '#ff4444', mt: 0.25, fontSize: '0.85rem' }}>
+                Error: {websocketState.error}
               </Typography>
             )}
-          </Typography>
+            {!websocketState.connected && !websocketState.connecting && (
+              <Button
+                variant="outlined"
+                color="warning"
+                size="small"
+                onClick={handleWebSocketReconnect}
+                sx={{ mt: 0.5, fontSize: '0.75rem', py: 0.25 }}
+              >
+                🔄 Reconnect WebSocket
+              </Button>
+            )}
+          </Box>
         )}
       </Paper>
 
@@ -184,9 +281,50 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
           🔧 Audio Settings
         </Typography>
         <Box sx={{ color: '#e0e0e0', fontSize: '0.9rem' }}>
-          <Typography component="div">Sample Rate: {audioEngine.audioState?.context?.sampleRate || 44100} Hz</Typography>
-          <Typography component="div">Audio Context State: {audioEngine.audioState?.context?.state || 'Not initialized'}</Typography>
-          <Typography component="div">Web Audio Support: {audioEngine.isSupported ? '✅ Supported' : '❌ Not supported'}</Typography>
+          <Typography component="div" sx={{ mb: 0.5 }}>
+            Sample Rate: {audioEngine.audioState?.context?.sampleRate || 44100} Hz
+          </Typography>
+          <Typography component="div" sx={{ mb: 0.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+            Audio Context State: 
+            <Box component="span" sx={{ 
+              fontWeight: 600,
+              color: audioContextState === 'running' ? '#00ff88' :
+                     audioContextState === 'suspended' ? '#ff6b00' : '#ff4444'
+            }}>
+              {audioContextState === 'running' ? '🟢 Running' :
+               audioContextState === 'suspended' ? '🟡 Suspended' :
+               audioContextState === 'closed' ? '🔴 Closed' : '⚫ Not initialized'}
+            </Box>
+          </Typography>
+          <Typography component="div" sx={{ mb: 1 }}>
+            Web Audio Support: {audioEngine.isSupported ? '✅ Supported' : '❌ Not supported'}
+          </Typography>
+          
+          {/* AudioContext Control Buttons */}
+          <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+            {audioContextState === 'suspended' && (
+              <Button
+                variant="contained"
+                color="success"
+                size="small"
+                onClick={handleAudioContextResume}
+                sx={{ fontSize: '0.75rem', py: 0.25 }}
+              >
+                ▶️ Resume Audio
+              </Button>
+            )}
+            {audioContextState && audioContextState !== 'closed' && (
+              <Button
+                variant="outlined"
+                color="warning"
+                size="small"
+                onClick={handleAudioContextReset}
+                sx={{ fontSize: '0.75rem', py: 0.25 }}
+              >
+                🔄 Reset Audio Context
+              </Button>
+            )}
+          </Box>
         </Box>
       </Paper>
 

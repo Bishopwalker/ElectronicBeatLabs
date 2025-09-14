@@ -72,7 +72,7 @@ export interface PatternConfig {
 
 export interface AudioEngineState {
   isPlaying: boolean;
-  volume: number;
+  amplitude: number;
   leftFreq: number;
   rightFreq: number;
   beatFreq: number;
@@ -88,6 +88,7 @@ export interface WebSocketState {
   connected: boolean;
   connecting: boolean;
   error?: string;
+  updateState: (state: WebSocketState) => void;
 }
 
 export interface AudioEngine {
@@ -387,7 +388,7 @@ export interface TimerPreset {
   loop_transitions?: number[];
   pattern_id?: string;
   difficulty_level?: 'beginner' | 'intermediate' | 'advanced' | 'expert';
-  advanced_transitions?: any[]; // Will be properly typed when needed
+  transitions?: FrequencyTransition; // Will be properly typed when needed
 }
 
 export interface FrequencyTransition {
@@ -398,7 +399,7 @@ export interface FrequencyTransition {
   right_ear_hz: number;
   description: string;
   pattern?: string;
-  spatial_settings?: any; // Will be SpatialAudioConfig when needed
+  spatial_settings?: ActiveAudioStatus; // Will be SpatialAudioConfig when needed
 }
 
 

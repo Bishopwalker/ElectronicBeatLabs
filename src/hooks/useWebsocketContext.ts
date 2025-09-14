@@ -149,7 +149,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
                         ? JSON.parse(event.data)
                         : event.data;
 
-                    console.log('📨 WebSocket message received:', data);
+              //      console.log('📨 WebSocket message received:', data);
                     setLastMessage(data);
                 } catch (err) {
                     console.error('❌ Error parsing WebSocket message:', err);
