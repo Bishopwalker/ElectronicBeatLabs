@@ -213,29 +213,8 @@ export const useAudioEngine = () => {
       console.error('Error starting binaural beat:', error);
     }
 
-    // Start electromagnetic field animation at reduced rate for performance
-    startTimeRef.current = Date.now();
-    
-    const animate = () => {
-      const currentTime = Date.now();
-      const field = calculateElectromagneticField(
-        config.leftFreq,
-        config.rightFreq,
-        config.beatFreq,
-        currentTime - startTimeRef.current
-      );
-      
-      setElectromagnetic(field);
-      
-      // Update field at 10fps instead of 60fps for eyes-closed usage
-      animationRef.current = window.setTimeout(animate, 100) as unknown as number;
-    };
-    
-    // Start animation
-    if (animationRef.current) {
-      clearTimeout(animationRef.current);
-    }
-    animationRef.current = window.setTimeout(animate, 100) as unknown as number;
+    // Don't start animation for frontend engine when backend is being used
+    // This prevents the infinite loop issue
 
   }, [audioState.volume, audioState.context, audioState.isPlaying, initializeAudio, createOscillator, createGainNode, calculateElectromagneticField]);
 

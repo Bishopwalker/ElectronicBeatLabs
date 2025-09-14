@@ -312,15 +312,9 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
         console.log('🔥 Timer: Config:', config);
         console.log('🔥 Timer: Has backend session:', !!audioEngine?.sessionId);
 
-        // If backend is already connected with a session, just update frequencies
-        // Otherwise start the audio engine
-        if (audioEngine?.sessionId && audioEngine?.audioState?.isPlaying) {
-          console.log('✅ Timer: Backend already playing, just updating frequencies');
-          await audioEngine.updateFrequency(firstTransition.left_ear_hz, firstTransition.right_ear_hz);
-        } else {
-          console.log('🚀 Timer: Starting audio engine from scratch');
-          await audioEngine.startBinauralBeat(config);
-        }
+        // Start the audio engine (it will handle reusing existing sessions)
+        console.log('🚀 Timer: Starting audio engine with config:', config);
+        await audioEngine.startBinauralBeat(config);
 
         // Send initial timer state via WebSocket
         sendTimerUpdate({

@@ -95,7 +95,8 @@
       "Bash(node analyze_dependencies.js)",
       "Bash(node:*)",
       "mcp__ide__getDiagnostics",
-      "Bash(netstat:*)"
+      "Bash(netstat:*)",
+      "Bash(timeout:*)"
     ],
     "deny": [],
     "ask": []

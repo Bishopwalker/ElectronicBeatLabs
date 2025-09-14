@@ -237,17 +237,17 @@ export const getCountLoopPresets = (presets = ALL_TIMER_PRESETS) => {
   );
 };
 
-// export const getPresetsTransitions=(presets= ALL_TIMER_PRESETS)=>{
-//   return presets.map(presets => presets.id
-//   );
-// };
+export const getPresetTransition = (presets: TimerPreset[] = ALL_TIMER_PRESETS): FrequencyTransition[][] => {
+  return presets.map(preset => preset.transitions);
+};
+
 // ==================================================================
 // FREQUENCY ANALYSIS HELPERS  
 // ==================================================================
 
 export const getPresetsByFrequencyRange = (minHz: number, maxHz: number) => {
   return ALL_TIMER_PRESETS.filter(preset => {
-    const transitions = getPresetTransitions(preset.id);
+    const transitions = getPresetTransition([preset])[0];
     return transitions.some(transition => 
       transition.frequency_hz >= minHz && transition.frequency_hz <= maxHz
     );

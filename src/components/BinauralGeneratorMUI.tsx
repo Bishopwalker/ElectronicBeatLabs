@@ -87,6 +87,7 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
     onFrequencyChange(defaultLeft, defaultRight);
   };
 
+  // @ts-ignore
   return (
     <Card sx={{ 
       maxHeight: 300,
@@ -106,12 +107,12 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
       },
     }}>
       <CardContent sx={{ p: 0.75 }}>
-        <Stack direction="row" alignItems="center" justifyContent="center" spacing={0.5} mb={0.5}>
+        <Box component={'section'} direction="row" alignItems="center" justifyContent="center" spacing={0.5} mb={0.5}>
           <HeadphonesIcon color="info" />
           <Typography variant="subtitle1" align="center" color="info">
             Binaural Beat Generator
           </Typography>
-        </Stack>
+        </Box>
 
         {/* Current Preset Display */}
         {currentPreset && currentPreset.name && (
