@@ -2,14 +2,14 @@
 // Template that showcases ALL available functionality for creating powerful presets
 
 import type { 
-  FrequencyTransition,
-  TimerPreset,
   PatternConfig,
   SpatialAudioConfig,
   ElectromagneticField,
   VisualizationSettings,
-  ADHDProtocol 
-} from '../types';
+  ADHDProtocol,
+  TimerPreset,
+  FrequencyTransition
+} from '../../types';
 
 // ==================================================================
 // COMPREHENSIVE TIMER PRESET INTERFACE

@@ -139,7 +139,7 @@ const CustomPresetDialog: React.FC<CustomPresetDialogProps> = ({
               </Box>
               
               <Grid container spacing={2}>
-                <Grid item xs={6} md={3}>
+                <Grid size={{ xs: 6, md: 3 }}>
                   <TextField
                     fullWidth
                     label="Left Ear (Hz)"
@@ -152,7 +152,7 @@ const CustomPresetDialog: React.FC<CustomPresetDialogProps> = ({
                   />
                 </Grid>
                 
-                <Grid item xs={6} md={3}>
+                <Grid size={{ xs: 6, md: 3 }}>
                   <TextField
                     fullWidth
                     label="Right Ear (Hz)"
@@ -165,7 +165,7 @@ const CustomPresetDialog: React.FC<CustomPresetDialogProps> = ({
                   />
                 </Grid>
                 
-                <Grid item xs={6} md={3}>
+                <Grid size={{ xs: 6, md: 3 }}>
                   <TextField
                     fullWidth
                     label="Beat Frequency (Hz)"
@@ -183,7 +183,7 @@ const CustomPresetDialog: React.FC<CustomPresetDialogProps> = ({
                   />
                 </Grid>
                 
-                <Grid item xs={6} md={3}>
+                <Grid size={{ xs: 6, md: 3 }}>
                   <TextField
                     fullWidth
                     label="Wave Type"
@@ -200,7 +200,7 @@ const CustomPresetDialog: React.FC<CustomPresetDialogProps> = ({
                   />
                 </Grid>
                 
-                <Grid item xs={6} md={6}>
+                <Grid size={{ xs: 6, md: 6 }}>
                   <TextField
                     fullWidth
                     label={`Duration of Transition ${index + 1}`}
@@ -221,7 +221,7 @@ const CustomPresetDialog: React.FC<CustomPresetDialogProps> = ({
                   />
                 </Grid>
                 
-                <Grid item xs={6} md={6}>
+                <Grid size={{ xs: 6, md: 6 }}>
                   <TextField
                     fullWidth
                     label="Total Preset Duration"

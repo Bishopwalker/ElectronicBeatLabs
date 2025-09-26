@@ -62,3 +62,53 @@ export const savePresetToStorage = (presetId: string, preset: any, transitions: 
     return false;
   }
 };
+
+export const updatePresetInStorage = (presetId: string, updatedPreset: any, updatedTransitions: any[]) => {
+  try {
+    // Update transitions
+    const currentTransitions = JSON.parse(localStorage.getItem('ebl-custom-preset-transitions') || '{}');
+    currentTransitions[presetId] = updatedTransitions;
+    localStorage.setItem('ebl-custom-preset-transitions', JSON.stringify(currentTransitions));
+    
+    // Update preset
+    const currentPresets = JSON.parse(localStorage.getItem('ebl-custom-presets') || '[]');
+    const presetIndex = currentPresets.findIndex((p: any) => p.id === presetId);
+    
+    if (presetIndex !== -1) {
+      currentPresets[presetIndex] = updatedPreset;
+      localStorage.setItem('ebl-custom-presets', JSON.stringify(currentPresets));
+      console.log('✅ UPDATED PRESET IN LOCALSTORAGE:', presetId);
+      return true;
+    } else {
+      console.error('❌ PRESET NOT FOUND FOR UPDATE:', presetId);
+      return false;
+    }
+  } catch (err) {
+    console.error('❌ PRESET UPDATE FAILED:', err);
+    return false;
+  }
+};
+
+export const deletePresetFromStorage = (presetId: string) => {
+  try {
+    // Remove transitions
+    const currentTransitions = JSON.parse(localStorage.getItem('ebl-custom-preset-transitions') || '{}');
+    delete currentTransitions[presetId];
+    localStorage.setItem('ebl-custom-preset-transitions', JSON.stringify(currentTransitions));
+    
+    // Remove preset
+    const currentPresets = JSON.parse(localStorage.getItem('ebl-custom-presets') || '[]');
+    const filteredPresets = currentPresets.filter((p: any) => p.id !== presetId);
+    localStorage.setItem('ebl-custom-presets', JSON.stringify(filteredPresets));
+    
+    console.log('✅ DELETED PRESET FROM LOCALSTORAGE:', presetId);
+    return true;
+  } catch (err) {
+    console.error('❌ PRESET DELETE FAILED:', err);
+    return false;
+  }
+};
+
+export const isCustomPreset = (presetId: string) => {
+  return presetId.startsWith('custom-');
+};

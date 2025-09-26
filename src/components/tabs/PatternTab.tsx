@@ -32,7 +32,7 @@ const PatternTab: React.FC<PatternTabProps> = ({
   }, [patterns, onStateChange, onPatternSelect]);
 
   return (
-    <Box sx={{ py: 1 }}>
+    <Box  sx={{py: 1 }}>
       <Box sx={{ mb: 2 }}>
         <Typography
           variant="h6"
@@ -41,7 +41,7 @@ const PatternTab: React.FC<PatternTabProps> = ({
         >
           Electromagnetic Wave Patterns
         </Typography>
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 1 }}>
+        <Box sx={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 1 }}>
           {patterns.map((pattern) => (
             <Box key={pattern.id}>
               <Card

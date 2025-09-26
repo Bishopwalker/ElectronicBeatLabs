@@ -25,6 +25,8 @@ audio_engine.set_spatial_processor(spatial_processor)
 # Track active connections
 active_connections: Dict[str, WebSocket] = {}
 active_sessions: Set[str] = set()
+# Track WebSocket session ID to audio engine session ID mapping
+websocket_to_audio_session: Dict[str, str] = {}
 
 class ConnectionManager:
     def __init__(self):
@@ -41,8 +43,11 @@ class ConnectionManager:
             del self.active_connections[session_id]
         if session_id in active_sessions:
             active_sessions.remove(session_id)
-        # Stop audio session
-        audio_engine.stop_session(session_id)
+        # Stop audio session using correct audio engine session ID
+        if session_id in websocket_to_audio_session:
+            audio_engine_session_id = websocket_to_audio_session[session_id]
+            audio_engine.stop_session(audio_engine_session_id)
+            del websocket_to_audio_session[session_id]
         logger.info(f"WebSocket disconnected: {session_id}")
     
     async def send_personal_message(self, message: dict, session_id: str):
@@ -50,12 +55,13 @@ class ConnectionManager:
         if websocket:
             await websocket.send_text(json.dumps(message))
     
-    async def send_audio_frame(self, audio_data: dict, session_id: str):
+    async def send_control_message(self, message_type: str, data: dict, session_id: str):
         websocket = self.active_connections.get(session_id)
         if websocket:
             await websocket.send_text(json.dumps({
-                "type": "audio_frame",
-                "data": audio_data
+                "type": message_type,
+                "data": data,
+                "timestamp": asyncio.get_event_loop().time()
             }))
 
 manager = ConnectionManager()
@@ -63,17 +69,20 @@ manager = ConnectionManager()
 @router.websocket("/ws/audio/{session_id}")
 async def websocket_audio_endpoint(websocket: WebSocket, session_id: str):
     """WebSocket endpoint for real-time audio streaming"""
+    logger.info(f"🔌 WebSocket connection attempt for session: {session_id}")
     await manager.connect(websocket, session_id)
+    logger.info(f"✅ WebSocket connected successfully for session: {session_id}")
     
     try:
-        # Start background task for audio streaming
-        audio_task = asyncio.create_task(stream_audio(session_id))
+        audio_task = None
         
         # Handle incoming messages
         while True:
             try:
                 data = await asyncio.wait_for(websocket.receive_text(), timeout=0.1)
                 message = json.loads(data)
+                
+                # Handle control messages only (no audio streaming)
                 await handle_websocket_message(message, session_id)
             except asyncio.TimeoutError:
                 continue
@@ -86,57 +95,45 @@ async def websocket_audio_endpoint(websocket: WebSocket, session_id: str):
     except Exception as e:
         logger.error(f"WebSocket error for {session_id}: {e}")
     finally:
-        # Cancel audio streaming task
-        if 'audio_task' in locals():
-            audio_task.cancel()
+        # Clean disconnection (no audio streaming to cancel)
         manager.disconnect(session_id)
 
-async def stream_audio(session_id: str):
-    """Background task to stream audio frames at 60 FPS"""
-    frame_interval = 1.0 / 60.0  # 60 FPS
-    
-    try:
-        while session_id in active_sessions:
-            start_time = asyncio.get_event_loop().time()
-            
-            # Generate audio frame
-            frame_data = await audio_engine.generate_frame(session_id)
-            
-            # Send frame to client
-            await manager.send_audio_frame(frame_data, session_id)
-            
-            # Calculate sleep time to maintain 60 FPS
-            elapsed = asyncio.get_event_loop().time() - start_time
-            sleep_time = max(0, frame_interval - elapsed)
-            
-            if sleep_time > 0:
-                await asyncio.sleep(sleep_time)
-            
-    except asyncio.CancelledError:
-        logger.info(f"Audio streaming cancelled for session {session_id}")
-    except Exception as e:
-        logger.error(f"Error in audio streaming for {session_id}: {e}")
+async def send_frequency_transition(session_id: str, transition_data: dict):
+    """Send frequency transition command to frontend"""
+    await manager.send_personal_message({
+        "type": "frequency_transition",
+        "data": transition_data
+    }, session_id)
 
 async def handle_websocket_message(message: dict, session_id: str):
     """Handle incoming WebSocket messages"""
     message_type = message.get("type")
     
     try:
-        if message_type == "start_session":
+        if message_type == "start_session" or message_type == "start_stream":
             # Start audio session
-            settings = message.get("settings", {})
+            settings = message.get("data", {}).get("settings", {}) if message.get("data") else message.get("settings", {})
             validated_settings = audio_engine.validate_frequencies(settings)
-            session_id_returned = audio_engine.start_session(validated_settings)
+            audio_engine_session_id = audio_engine.start_session(validated_settings)
+            
+            # Store the mapping between WebSocket session ID and audio engine session ID
+            websocket_to_audio_session[session_id] = audio_engine_session_id
+            logger.info(f"🎵 Audio session started: WebSocket={session_id}, AudioEngine={audio_engine_session_id}")
+            logger.info(f"🗂️ Current session mappings: {websocket_to_audio_session}")
+            logger.info(f"🔧 AudioEngine active sessions: {list(audio_engine.sessions.keys())}")
             
             await manager.send_personal_message({
                 "type": "session_started",
-                "session_id": session_id_returned,
+                "session_id": audio_engine_session_id,
                 "settings": validated_settings
             }, session_id)
         
-        elif message_type == "stop_session":
-            # Stop audio session
-            audio_engine.stop_session(session_id)
+        elif message_type == "stop_session" or message_type == "stop_stream":
+            # Stop audio session using correct audio engine session ID
+            if session_id in websocket_to_audio_session:
+                audio_engine_session_id = websocket_to_audio_session[session_id]
+                audio_engine.stop_session(audio_engine_session_id)
+                del websocket_to_audio_session[session_id]
             await manager.send_personal_message({
                 "type": "session_stopped",
                 "session_id": session_id

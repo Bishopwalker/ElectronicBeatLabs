@@ -1,72 +1,46 @@
-# Initialize Project Context
+# Context Initialization Automation
+# Auto-executes mandatory context reading workflow
 
-Read and understand the project context by systematically going through key documentation and configuration files.
+## Mandatory Context Files (Execute in Order)
+1. .claude/INDEX.md - Navigation guide
+2. .claude/CLAUDE.md - Development standards
+3. .claude/INITIAL.md - Technical specifications
+4. PLANNING.md - Architecture & workflow
+5. TASK.md - Current sprint work
 
-## Step 1: Read Core Documentation Files
+## Auto-Execution Commands
+```bash
+# Read all mandatory context files in proper order
+echo "=== CONTEXT INITIALIZATION ==="
+echo "Reading mandatory context files..."
 
-1. Read the main CLAUDE.md file at the project root to understand project instructions
-2. Read the .claude/CLAUDE.md file for detailed development standards and rules
-3. Read the .claude/INITIAL.md file for technical specifications and API references
-4. Read the PLANNING.md file to understand project architecture and goals
-5. Read the TASK.md file to see current sprint planning and tasks
+echo "1/5: INDEX.md (Navigation Guide)"
+cat .claude/INDEX.md
 
-## Step 2: Understand Project Structure
+echo "2/5: CLAUDE.md (Development Standards)"
+cat .claude/CLAUDE.md
 
-Use `tree -d -L 2` to get directory structure, then examine:
-- src/ folder structure for frontend components and hooks
-- backend/ folder structure for API and processing modules
-- Key configuration files (package.json, requirements.txt, tsconfig.json)
+echo "3/5: INITIAL.md (Technical Specifications)"
+cat .claude/INITIAL.md
 
-## Step 3: Check Current State
+echo "4/5: PLANNING.md (Architecture)"
+cat PLANNING.md
 
-1. Run `git status` to see current working branch and changes
-2. Run `git log --oneline -10` to see recent commits
-3. Check if development servers are running with:
-   - `netstat -ano | findstr :5173` (frontend)
-   - `netstat -ano | findstr :8000` (backend)
+echo "5/5: TASK.md (Current Tasks)"
+cat TASK.md
 
-## Step 4: Identify Key Technologies
+echo "=== CONTEXT LOADED - READY FOR WORK ==="
+```
 
-Based on configuration files, identify:
-- Frontend: React, TypeScript, Vite, Material-UI
-- Backend: FastAPI, Python, WebSocket, Audio processing
-- Database: SQLite/PostgreSQL with SQLAlchemy
-- Real-time: WebSocket for audio streaming
-- Testing: Jest, Pytest, Cucumber
+## Usage
+- Execute at start of every conversation
+- Required before any development work
+- Ensures proper context foundation
+- Prevents time waste from missing context
 
-## Step 5: Summarize Context
-
-After reading all files, provide a comprehensive summary including:
-
-### Project Overview
-- **Name**: Electromagnetic Beat Laboratory (EBL)
-- **Purpose**: Advanced binaural beat and 8D spatial audio application
-- **Architecture**: Dual audio engine system (frontend Web Audio API + backend NumPy/SciPy)
-
-### Key Features
-- Binaural beat generation with precise frequency control
-- 8D spatial audio with electromagnetic field integration
-- Real-time WebSocket audio streaming
-- Timer and preset management system
-- AI audio agent for personalized experiences
-
-### Development Standards
-- Mandatory full verification before commits
-- Modular code structure (<500 lines per file)
-- Comprehensive testing requirements
-- Specific communication style rules
-- Windows-specific development considerations
-
-### Current Task Status
-- Active branch and recent changes
-- Running services and port availability
-- Any pending tasks from TASK.md
-
-### Critical Rules
-- Never commit without live testing
-- Always check port availability before starting servers
-- Use venv_linux for Python commands
-- Follow audio quality standards (±0.1Hz accuracy)
-- Maintain >80% backend and >70% frontend test coverage
-
-This systematic context initialization ensures complete understanding of the project before making any changes.
+## Validation Checklist
+- [ ] All 5 files read successfully
+- [ ] Current task status understood
+- [ ] Development standards internalized
+- [ ] Architecture patterns clear
+- [ ] Technical specs referenced
