@@ -13,6 +13,7 @@ export const ADVANCED_HEALING_PROTOCOL: ComprehensiveTimerPreset = {
   name: '💚 Advanced Healing Protocol - 60min',
   description: 'Complete cellular regeneration journey with 528Hz love frequency, toroidal field healing, and 8D spatial immersion',
   total_duration: 60,
+
   transitions_count: 5,
   tags: ['healing', 'regeneration', '528Hz', 'toroidal', '8D', 'advanced'],
   is_premium: true,

@@ -43,6 +43,7 @@ export {
   type ComprehensiveTimerPreset,
   type AdvancedFrequencyTransition,
   type PatternProgression,
+    type PatternConfig,
   type Spatial8DConfig,
   type ElectromagneticProgression,
   type VisualizationProgression,
@@ -50,16 +51,62 @@ export {
   type SessionActivity
 } from './comprehensiveTimerTemplate';
 
-// Core types
+// Core types - imported from main types folder
 export { 
   type TimerPreset,
-  type FrequencyTransition,
-  type TimerSession,
-  type TimerStatus,
-  type LocalTimer,
-  type CustomPresetForm,
-  type TimerAction
-} from './types';
+  type FrequencyTransition
+} from '../../types';
+
+// Additional timer-specific types that may need to be defined
+export interface TimerSession {
+  presetId: string;
+  startTime: number;
+  currentPhase: number;
+  isPaused: boolean;
+  loopCount?: number;
+  session_id?: string; // Added for websocket integration
+}
+
+export interface TimerStatus {
+  isRunning: boolean;
+  isPaused: boolean;
+  currentTime: number;
+  totalTime: number;
+  progress: number;
+  session?: TimerSession;
+}
+
+export interface LocalTimer {
+  id: string;
+  preset: TimerPreset;
+  status: TimerStatus;
+  session?: TimerSession;
+  // Direct properties used by useTimerLogic
+  startTime: number;
+  currentTransitionIndex: number;
+  transitions: FrequencyTransition[];
+  isActive: boolean;
+  isPaused: boolean;
+  forceLoop?: boolean;
+}
+
+export interface CustomPresetForm {
+  name: string;
+  description: string;
+  duration: number;
+  transitions: FrequencyTransition[];
+  tags: string[];
+}
+
+export type TimerAction = 
+  | 'start' 
+  | 'pause' 
+  | 'resume' 
+  | 'stop' 
+  | 'reset' 
+  | 'restart'
+  | 'next_phase' 
+  | 'previous_phase';
 
 // ==================================================================
 // MASTER PRESET COLLECTIONS
@@ -137,7 +184,7 @@ export const searchPresets = (query: string, presets = ALL_TIMER_PRESETS) => {
   return presets.filter(preset => 
     preset.name.toLowerCase().includes(searchTerm) ||
     preset.description.toLowerCase().includes(searchTerm) ||
-    preset.tags.some(tag => tag.toLowerCase().includes(searchTerm))
+    preset.tags.some((tag: string) => tag.toLowerCase().includes(searchTerm))
   );
 };
 
@@ -190,13 +237,17 @@ export const getCountLoopPresets = (presets = ALL_TIMER_PRESETS) => {
   );
 };
 
+export const getPresetTransition = (presets: TimerPreset[] = ALL_TIMER_PRESETS): FrequencyTransition[][] => {
+  return presets.map(preset => preset.transitions);
+};
+
 // ==================================================================
 // FREQUENCY ANALYSIS HELPERS  
 // ==================================================================
 
 export const getPresetsByFrequencyRange = (minHz: number, maxHz: number) => {
   return ALL_TIMER_PRESETS.filter(preset => {
-    const transitions = getPresetTransitions(preset.id);
+    const transitions = getPresetTransition([preset])[0];
     return transitions.some(transition => 
       transition.frequency_hz >= minHz && transition.frequency_hz <= maxHz
     );

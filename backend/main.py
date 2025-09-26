@@ -268,21 +268,43 @@ async def stop_session(session_id: str):
         )
 
 @app.websocket("/ws/{session_id}")
-async def websocket_endpoint(websocket: WebSocket, session_id: str):
+async def websocket_endpoint(
+    websocket: WebSocket, 
+    session_id: str,
+    base_frequency: int = 440,
+    beat_frequency: int = 4
+):
     """WebSocket endpoint for real-time audio and field streaming"""
+    print(f"[CONNECT] WEBSOCKET CONNECTION ATTEMPT: {session_id}")
+    print(f"[PARAMS] base_frequency={base_frequency}, beat_frequency={beat_frequency}")
+    logger.info(f"Main WebSocket connection for session: {session_id}, base_freq={base_frequency}, beat_freq={beat_frequency}")
     await manager.connect(websocket, session_id)
+    print(f"[SUCCESS] WEBSOCKET CONNECTED: {session_id}")
+    logger.info(f"Main WebSocket connected for session: {session_id}")
+    
+    # Store initial frequency parameters in session
+    if session_id in manager.sessions:
+        manager.sessions[session_id]["initial_base_frequency"] = base_frequency
+        manager.sessions[session_id]["initial_beat_frequency"] = beat_frequency
     
     try:
         while True:
             # Receive control messages from client
             data = await websocket.receive_json()
+            logger.info(f" Main WebSocket received message: {data.get('type', 'unknown')} for session: {session_id}")
             
             if data["type"] == "start_stream":
                 # Start audio and field generation
                 settings = data.get("settings", {})
                 
-                # Store settings in session
+                # Use initial frequencies from connection if not provided in settings
                 if session_id in manager.sessions:
+                    if "base_frequency" not in settings and "initial_base_frequency" in manager.sessions[session_id]:
+                        settings["base_frequency"] = manager.sessions[session_id]["initial_base_frequency"]
+                    if "beat_frequency" not in settings and "initial_beat_frequency" in manager.sessions[session_id]:
+                        settings["beat_frequency"] = manager.sessions[session_id]["initial_beat_frequency"]
+                    
+                    # Store settings in session
                     manager.sessions[session_id]["settings"] = settings
                 
                 # Configure generators

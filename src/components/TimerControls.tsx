@@ -12,15 +12,41 @@ import {
   CardContent,
   LinearProgress,
   Chip,
-  CircularProgress
+  CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  FormControlLabel,
+  Checkbox
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import type { TimerControlsProps, CustomPresetForm } from '../data/timer/types';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import type { AudioEngine } from '../types';
+import type { CustomPresetForm } from '../data/timer';
 import { formatTime } from '../helpers/timer/timerUtils';
 import { useTimerLogic } from '../hooks/useTimerLogic';
 import CustomPresetDialog from './timer/CustomPresetDialog';
 
-const TimerControls: React.FC<TimerControlsProps> = ({ audioEngine }) => {
+
+interface TimerControlsProps {
+  audioEngine?: AudioEngine;
+  onTimerStatusUpdate?: (status: any) => void;
+  patterns8D?: {
+    setActivePattern: (pattern: any) => void;
+    clearActivePattern: () => void;
+  };
+  onElectromagneticUpdate?: (electromagnetic: any) => void;
+}
+
+
+const TimerControls: React.FC<TimerControlsProps> = ({ 
+  audioEngine, 
+  patterns8D, 
+  onElectromagneticUpdate,
+  onTimerStatusUpdate 
+}) => {
   // const { user } = useAuth();
   const {
     presets,
@@ -33,13 +59,36 @@ const TimerControls: React.FC<TimerControlsProps> = ({ audioEngine }) => {
     setHideSession,
     startTimer,
     controlTimer,
-    saveCustomPreset
-  } = useTimerLogic({ audioEngine });
+    saveCustomPreset,
+    updateCustomPreset,
+    deleteCustomPreset,
+    customPresetTransitions
+  } = useTimerLogic({ 
+    audioEngine, 
+    patterns8D, 
+    onElectromagneticUpdate,
+    onTimerStatusUpdate
 
+
+  });
+  const adaptedAudioEngine = audioEngine ? {
+    sessionId: audioEngine.sessionId || '', // Convert optional to required
+    startBinauralBeat: audioEngine.startBinauralBeat,
+    stopBinauralBeat: audioEngine.stopBinauralBeat,
+    updateFrequency: audioEngine.updateFrequency,
+    audioState: audioEngine.audioState
+  } : undefined;
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [editingPresetId, setEditingPresetId] = useState<string | null>(null);
+  const [deletingPresetId, setDeletingPresetId] = useState<string | null>(null);
+  const [loopEnabled, setLoopEnabled] = useState(false);
   const [customPreset, setCustomPreset] = useState<CustomPresetForm>({
     name: '',
     description: '',
+    duration: 10,
+    tags: [],
     transitions: [
       {
         duration_minutes: 10,
@@ -58,6 +107,8 @@ const TimerControls: React.FC<TimerControlsProps> = ({ audioEngine }) => {
     setCustomPreset({
       name: '',
       description: '',
+      duration: 10,
+      tags: [],
       transitions: [{
         duration_minutes: 10,
         frequency_hz: 10,
@@ -67,6 +118,68 @@ const TimerControls: React.FC<TimerControlsProps> = ({ audioEngine }) => {
         description: 'Alpha waves'
       }]
     });
+  };
+
+  const handleEditPreset = (presetId: string) => {
+    const preset = presets.find(p => p.id === presetId);
+    if (preset && presetId.startsWith('custom-')) {
+      const transitions = customPresetTransitions[presetId] || [{
+        duration_minutes: 10,
+        frequency_hz: 10,
+        frequency_type: 'Alpha',
+        left_ear_hz: 440,
+        right_ear_hz: 450,
+        description: 'Alpha waves'
+      }];
+      setCustomPreset({
+        name: preset.name,
+        description: preset.description || '',
+        duration: transitions.reduce((sum, t) => sum + t.duration_minutes, 0),
+        tags: [],
+        transitions
+      });
+      setEditingPresetId(presetId);
+      setShowEditDialog(true);
+    }
+  };
+
+  const handleSaveEditPreset = () => {
+    if (editingPresetId) {
+      const success = updateCustomPreset(editingPresetId, customPreset);
+      if (success) {
+        setShowEditDialog(false);
+        setEditingPresetId(null);
+        setCustomPreset({
+          name: '',
+          description: '',
+          duration: 10,
+          tags: [],
+          transitions: [{
+            duration_minutes: 10,
+            frequency_hz: 10,
+            frequency_type: 'Alpha',
+            left_ear_hz: 440,
+            right_ear_hz: 450,
+            description: 'Alpha waves'
+          }]
+        });
+      }
+    }
+  };
+
+  const handleDeletePreset = (presetId: string) => {
+    if (presetId.startsWith('custom-')) {
+      setDeletingPresetId(presetId);
+      setShowDeleteDialog(true);
+    }
+  };
+
+  const confirmDeletePreset = () => {
+    if (deletingPresetId) {
+      deleteCustomPreset(deletingPresetId);
+      setShowDeleteDialog(false);
+      setDeletingPresetId(null);
+    }
   };
 
   // if (!user) {
@@ -111,34 +224,30 @@ const TimerControls: React.FC<TimerControlsProps> = ({ audioEngine }) => {
               id="preset-select"
               value={selectedPresetId}
               label="Choose Preset"
-              onChange={(e) => setSelectedPresetId(e.target.value)}
-              disabled={loading || timerStatus?.session?.is_active}
+              onChange={(e) => {
+                console.log('🔄 Timer preset selected:', e.target.value);
+                setSelectedPresetId(e.target.value);
+              }}
+              disabled={false}
+              MenuProps={{
+                disablePortal: true,
+                keepMounted: false
+              }}
             >
               {presets.map((preset) => (
                 <MenuItem 
                   key={preset.id} 
                   value={preset.id}
-                  disabled={!preset.available}
                 >
-                  <Box>
-                    <Typography variant="body2">
+                  <Box sx={{ width: '100%' }}>
+                    <Typography component="div" variant="body2" sx={{ fontWeight: selectedPresetId === preset.id ? 'bold' : 'normal' }}>
                       {preset.name}
+                      {preset.id.startsWith('custom-') && <Chip label="Custom" size="small" color="secondary" sx={{ ml: 1 }} />}
                       {preset.is_premium && <Chip label="Premium" size="small" color="warning" sx={{ ml: 1 }} />}
                       {preset.loop_enabled && <Chip label="Loop" size="small" color="info" sx={{ ml: 1 }} />}
-                      {'difficulty_level' in preset && <Chip 
-                        label={(preset as any).difficulty_level} 
-                        size="small" 
-                        color={'difficulty_level' in preset && (preset as any).difficulty_level === 'expert' ? 'error' : 'secondary'} 
-                        sx={{ ml: 1 }} 
-                      />}
                     </Typography>
                     <Typography variant="caption" color="textSecondary">
                       {preset.description} ({preset.total_duration} min)
-                      {preset.loop_enabled && (
-                        <Box component="span" sx={{ color: '#00bfff', ml: 1 }}>
-                          • {preset.loop_count === 0 ? '∞ Loop' : `${preset.loop_count} Loops`}
-                        </Box>
-                      )}
                     </Typography>
                   </Box>
                 </MenuItem>
@@ -146,12 +255,68 @@ const TimerControls: React.FC<TimerControlsProps> = ({ audioEngine }) => {
             </Select>
           </FormControl>
 
+          {/* Custom Preset Actions */}
+          {selectedPresetId && selectedPresetId.startsWith('custom-') && (
+            <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+              <Button
+                size="small"
+                startIcon={<EditIcon />}
+                onClick={() => handleEditPreset(selectedPresetId)}
+                disabled={loading || timerStatus?.session?.is_active}
+                sx={{ color: '#00bfff' }}
+              >
+                Edit
+              </Button>
+              <Button
+                size="small"
+                startIcon={<DeleteIcon />}
+                onClick={() => handleDeletePreset(selectedPresetId)}
+                disabled={loading || timerStatus?.session?.is_active}
+                sx={{ color: '#ff6b6b' }}
+              >
+                Delete
+              </Button>
+            </Box>
+          )}
+
+          {/* Loop Control */}
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={loopEnabled || (timerStatus?.session?.preset?.loop_enabled || false)}
+                onChange={(e) => setLoopEnabled(e.target.checked)}
+                disabled={loading || timerStatus?.session?.is_active}
+                sx={{
+                  color: '#00bfff',
+                  '&.Mui-checked': { color: '#00bfff' }
+                }}
+              />
+            }
+            label={
+              <Typography variant="body2" sx={{ color: '#00bfff' }}>
+                🔄 Enable Loop for this session
+                {timerStatus?.session?.is_active && (loopEnabled || (timerStatus?.session?.preset?.loop_enabled || false)) && (
+                  <Box component="span" sx={{ color: '#00ff88', ml: 1, fontWeight: 'bold' }}>
+                    (ACTIVE)
+                  </Box>
+                )}
+              </Typography>
+            }
+            sx={{ mb: 2 }}
+          />
 
           <Button
             variant="contained"
             fullWidth
-            onClick={startTimer}
-            disabled={!selectedPresetId || loading || timerStatus?.session?.is_active}
+            onClick={() => {
+              console.log('🚀 Start Timer clicked! Selected preset:', selectedPresetId, 'Loop enabled:', loopEnabled);
+              if (!selectedPresetId) {
+                console.log('❌ No preset selected');
+                return;
+              }
+              startTimer(loopEnabled);
+            }}
+            disabled={!selectedPresetId}
             sx={{ mb: 2 }}
           >
             {loading ? <CircularProgress size={20} /> : 'Start Timer Session'}
@@ -317,6 +482,58 @@ const TimerControls: React.FC<TimerControlsProps> = ({ audioEngine }) => {
         onSave={handleSaveCustomPreset}
         loading={loading}
       />
+
+      {/* Edit Custom Preset Dialog */}
+      <CustomPresetDialog
+        open={showEditDialog}
+        onClose={() => {
+          setShowEditDialog(false);
+          setEditingPresetId(null);
+        }}
+        customPreset={customPreset}
+        setCustomPreset={setCustomPreset}
+        onSave={handleSaveEditPreset}
+        loading={loading}
+        title="Edit Custom Preset"
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog 
+        open={showDeleteDialog} 
+        onClose={() => setShowDeleteDialog(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ color: '#ff6b6b' }}>
+          🗑️ Delete Custom Preset
+        </DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to delete this custom preset? This action cannot be undone.
+          </Typography>
+          {deletingPresetId && (
+            <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
+              Preset: {presets.find(p => p.id === deletingPresetId)?.name}
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={() => setShowDeleteDialog(false)}
+            disabled={loading}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={confirmDeletePreset}
+            color="error"
+            variant="contained"
+            disabled={loading}
+          >
+            {loading ? <CircularProgress size={20} /> : 'Delete'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

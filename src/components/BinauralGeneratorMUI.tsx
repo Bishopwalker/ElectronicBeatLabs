@@ -7,7 +7,6 @@ import {
   CardContent,
   Typography,
   TextField,
-  Button,
   Box,
   Stack,
   Paper,
@@ -15,29 +14,38 @@ import {
   IconButton,
 } from '@mui/material';
 import HeadphonesIcon from '@mui/icons-material/Headphones';
-import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import StopIcon from '@mui/icons-material/Stop';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import { useAudioEngine } from '../hooks/useAudioEngine';
 import type { BinauralTestProps } from '../types';
 
-const BinauralGeneratorMUI: React.FC<BinauralTestProps> = ({
+interface BinauralGeneratorProps extends BinauralTestProps {
+  currentPreset?: {
+    name?: string;
+    description?: string;
+    isActive?: boolean;
+    source?: 'timer' | 'pattern' | 'manual';
+  };
+}
+
+const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
   leftFreq,
   rightFreq,
-  onFrequencyChange
+  onFrequencyChange,
+  currentPreset
 }) => {
   // Local state for typing - allows smooth input
   const [leftInput, setLeftInput] = useState(leftFreq.toString());
   const [rightInput, setRightInput] = useState(rightFreq.toString());
   
-  const audioEngine = useAudioEngine();
+  // Remove independent audio engine - parent handles all audio
 
   // Update local state when props change (from external sources)
   useEffect(() => {
+    console.log('🎛️ BinauralGenerator: Left frequency changed to:', leftFreq);
     setLeftInput(leftFreq.toString());
   }, [leftFreq]);
 
   useEffect(() => {
+    console.log('🎛️ BinauralGenerator: Right frequency changed to:', rightFreq);
     setRightInput(rightFreq.toString());
   }, [rightFreq]);
 
@@ -67,28 +75,7 @@ const BinauralGeneratorMUI: React.FC<BinauralTestProps> = ({
     }
   };
 
-    const handleTest = () => {
-        if (audioEngine.audioState.isPlaying) {
-            // Stop audio
-            audioEngine.stopBinauralBeat();
-        } else {
-            // Use current prop values (which come from parent state)
-            const leftValue = leftFreq;
-            const rightValue = rightFreq;
-            
-            console.log('🎛️ Starting binaural beat:', leftValue, 'Hz /', rightValue, 'Hz');
-            
-            // Start audio with current frequencies
-            const config = {
-                leftFreq: leftValue,
-                rightFreq: rightValue,
-                beatFreq: Math.abs(rightValue - leftValue),
-                amplitude: 0.5,
-                waveform: 'sine' as const
-            };
-            audioEngine.startBinauralBeat(config);
-        }
-    };
+    // Removed local audio handling - parent controls all audio through unified backend engine
   // Calculate beat frequency directly from props
   const beatFrequency = Math.abs(rightFreq - leftFreq);
 
@@ -100,6 +87,7 @@ const BinauralGeneratorMUI: React.FC<BinauralTestProps> = ({
     onFrequencyChange(defaultLeft, defaultRight);
   };
 
+  // @ts-ignore
   return (
     <Card sx={{ 
       maxHeight: 300,
@@ -119,12 +107,76 @@ const BinauralGeneratorMUI: React.FC<BinauralTestProps> = ({
       },
     }}>
       <CardContent sx={{ p: 0.75 }}>
-        <Stack direction="row" alignItems="center" justifyContent="center" spacing={0.5} mb={0.5}>
+        <Box component={'section'} direction="row" alignItems="center" justifyContent="center" spacing={0.5} mb={0.5}>
           <HeadphonesIcon color="info" />
           <Typography variant="subtitle1" align="center" color="info">
             Binaural Beat Generator
           </Typography>
-        </Stack>
+        </Box>
+
+        {/* Current Preset Display */}
+        {currentPreset && currentPreset.name && (
+          <Paper
+            elevation={0}
+            sx={{
+              p: 0.75,
+              mb: 1,
+              textAlign: 'center',
+              background: currentPreset.source === 'timer' 
+                ? 'rgba(255, 107, 0, 0.1)' 
+                : currentPreset.source === 'pattern'
+                ? 'rgba(138, 43, 226, 0.1)'
+                : 'rgba(0, 191, 255, 0.1)',
+              border: `1px solid ${currentPreset.source === 'timer' 
+                ? 'rgba(255, 107, 0, 0.3)' 
+                : currentPreset.source === 'pattern'
+                ? 'rgba(138, 43, 226, 0.3)'
+                : 'rgba(0, 191, 255, 0.3)'}`,
+            }}
+          >
+            <Stack direction="row" alignItems="center" justifyContent="center" spacing={0.5}>
+              <Chip 
+                label={currentPreset.source === 'timer' ? '⏰' : currentPreset.source === 'pattern' ? '🌀' : '🎛️'}
+                size="small"
+                sx={{ 
+                  fontSize: '0.7rem',
+                  height: '20px',
+                  background: 'transparent',
+                  border: 'none'
+                }}
+              />
+              <Typography variant="caption" color="text.primary" sx={{ fontWeight: 600 }}>
+                {currentPreset.name}
+              </Typography>
+              {currentPreset.isActive && (
+                <Chip 
+                  label="ACTIVE"
+                  size="small"
+                  color="success"
+                  sx={{ 
+                    fontSize: '0.6rem',
+                    height: '18px',
+                    fontWeight: 700
+                  }}
+                />
+              )}
+            </Stack>
+            {currentPreset.description && (
+              <Typography 
+                variant="caption" 
+                color="text.secondary" 
+                sx={{ 
+                  display: 'block',
+                  mt: 0.25,
+                  fontSize: '0.7rem',
+                  fontStyle: 'italic'
+                }}
+              >
+                {currentPreset.description}
+              </Typography>
+            )}
+          </Paper>
+        )}
         
         <Stack spacing={0.75}>
           <Stack direction="row" spacing={0.5}>
@@ -228,28 +280,7 @@ const BinauralGeneratorMUI: React.FC<BinauralTestProps> = ({
             </Typography>
           </Paper>
           
-          <Stack direction="row" spacing={0.5}>
-            <Button
-              variant="contained"
-              color={audioEngine.audioState.isPlaying ? "error" : "info"}
-              onClick={handleTest}
-              startIcon={audioEngine.audioState.isPlaying ? <StopIcon /> : <PlayArrowIcon />}
-              fullWidth
-              size="small"
-              sx={{
-                background: audioEngine.audioState.isPlaying
-                  ? 'linear-gradient(45deg, #ff0066, #ff6b00)'
-                  : 'linear-gradient(45deg, #00bfff, #8a2be2)',
-                '&:hover': {
-                  background: audioEngine.audioState.isPlaying
-                    ? 'linear-gradient(45deg, #ff3388, #ff8533)'
-                    : 'linear-gradient(45deg, #33ccff, #9944d9)',
-                }
-              }}
-            >
-                {audioEngine.audioState.isPlaying ? 'Stop' : 'Play'}
-            </Button>
-            
+          <Stack direction="row" spacing={0.5} justifyContent="center">
             <IconButton 
               onClick={handleReset}
               color="default"
@@ -268,8 +299,8 @@ const BinauralGeneratorMUI: React.FC<BinauralTestProps> = ({
           <Stack direction="row" spacing={0.5} justifyContent="center">
             <Chip label="20Hz - 20kHz Range" size="small" sx={{ fontSize: '0.65rem' }} />
             <Chip
-                label={audioEngine.audioState.isPlaying ? "Playing..." : "Ready"}
-                color={audioEngine.audioState.isPlaying ? "success" : "default"}
+                label="Frequency Display"
+                color="primary"
               size="small"
               sx={{ fontSize: '0.65rem' }}
             />
