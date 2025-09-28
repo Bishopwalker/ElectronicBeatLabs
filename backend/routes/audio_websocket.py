@@ -18,8 +18,8 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 # Global instances
-audio_engine = AudioEngine(sample_rate=44100)
-spatial_processor = SpatialAudioProcessor(sample_rate=44100)
+audio_engine = AudioEngine(sample_rate=48000)
+spatial_processor = SpatialAudioProcessor(sample_rate=48000)
 audio_engine.set_spatial_processor(spatial_processor)
 
 # Track active connections
@@ -66,36 +66,62 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
+async def stream_audio_frames(websocket: WebSocket, session_id: str):
+    """Stream audio frames to client at 60 FPS"""
+    frame_duration = 1.0 / 60  # 60 FPS
+
+    try:
+        while True:
+            # Generate audio frame
+            frame = await audio_engine.generate_frame(session_id)
+
+            if frame:
+                # Send frame to client
+                await websocket.send_json({
+                    "type": "frame",
+                    "data": frame,
+                    "timestamp": asyncio.get_event_loop().time()
+                })
+
+            # Wait for next frame time
+            await asyncio.sleep(frame_duration)
+
+    except Exception as e:
+        logger.error(f"Audio streaming error for session {session_id}: {e}")
+
 @router.websocket("/ws/audio/{session_id}")
 async def websocket_audio_endpoint(websocket: WebSocket, session_id: str):
     """WebSocket endpoint for real-time audio streaming"""
     logger.info(f"🔌 WebSocket connection attempt for session: {session_id}")
     await manager.connect(websocket, session_id)
     logger.info(f"✅ WebSocket connected successfully for session: {session_id}")
-    
+
+    audio_task = None  # Track audio streaming task
+
     try:
-        audio_task = None
-        
         # Handle incoming messages
         while True:
             try:
                 data = await asyncio.wait_for(websocket.receive_text(), timeout=0.1)
                 message = json.loads(data)
-                
-                # Handle control messages only (no audio streaming)
-                await handle_websocket_message(message, session_id)
+
+                # Pass audio_task reference to handler
+                audio_task = await handle_websocket_message(message, session_id, websocket, audio_task)
             except asyncio.TimeoutError:
                 continue
             except Exception as e:
                 logger.error(f"Error processing message: {e}")
                 break
-    
+
     except WebSocketDisconnect:
         logger.info(f"Client {session_id} disconnected")
     except Exception as e:
         logger.error(f"WebSocket error for {session_id}: {e}")
     finally:
-        # Clean disconnection (no audio streaming to cancel)
+        # Cancel audio streaming if still running
+        if audio_task and not audio_task.done():
+            audio_task.cancel()
+            logger.info(f"🛑 Cancelled audio streaming for {session_id}")
         manager.disconnect(session_id)
 
 async def send_frequency_transition(session_id: str, transition_data: dict):
@@ -105,7 +131,7 @@ async def send_frequency_transition(session_id: str, transition_data: dict):
         "data": transition_data
     }, session_id)
 
-async def handle_websocket_message(message: dict, session_id: str):
+async def handle_websocket_message(message: dict, session_id: str, websocket: WebSocket = None, audio_task=None):
     """Handle incoming WebSocket messages"""
     message_type = message.get("type")
     
@@ -122,6 +148,11 @@ async def handle_websocket_message(message: dict, session_id: str):
             logger.info(f"🗂️ Current session mappings: {websocket_to_audio_session}")
             logger.info(f"🔧 AudioEngine active sessions: {list(audio_engine.sessions.keys())}")
             
+            # Start audio streaming task
+            if websocket:
+                audio_task = asyncio.create_task(stream_audio_frames(websocket, audio_engine_session_id))
+                logger.info(f"🎵 Started audio streaming task for session {audio_engine_session_id}")
+
             await manager.send_personal_message({
                 "type": "session_started",
                 "session_id": audio_engine_session_id,
@@ -199,13 +230,15 @@ async def handle_websocket_message(message: dict, session_id: str):
         
         else:
             logger.warning(f"Unknown message type: {message_type}")
-    
+
     except Exception as e:
         logger.error(f"Error handling message {message_type}: {e}")
         await manager.send_personal_message({
             "type": "error",
             "message": str(e)
         }, session_id)
+
+    return audio_task  # Return the audio task (may be None)
 
 @router.get("/audio/protocols")
 async def get_available_protocols():

@@ -248,7 +248,7 @@ const SpatialAudioControls: React.FC<SpatialAudioControlsProps> = ({
                   min={0.1}
                   max={0.9}
                   step={0.05}
-                  value={settings.reverberance || 0.5}
+                  value={settings.reverberance ?? 0.5}
                   onChange={(_, value) => handleSliderChange('reverberance', value as number)}
                   sx={{
                     color: '#ff6b00',
@@ -271,7 +271,7 @@ const SpatialAudioControls: React.FC<SpatialAudioControlsProps> = ({
                   min={0.3}
                   max={2.0}
                   step={0.1}
-                  value={settings.room_scale || 1.0}
+                  value={settings.room_scale ?? 1.0}
                   onChange={(_, value) => handleSliderChange('room_scale', value as number)}
                   sx={{
                     color: '#ff6b00',
@@ -294,7 +294,7 @@ const SpatialAudioControls: React.FC<SpatialAudioControlsProps> = ({
                   min={0.1}
                   max={0.9}
                   step={0.05}
-                  value={settings.hf_damping || 0.5}
+                  value={settings.hf_damping ?? 0.5}
                   onChange={(_, value) => handleSliderChange('hf_damping', value as number)}
                   sx={{
                     color: '#ff6b00',

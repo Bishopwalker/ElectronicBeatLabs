@@ -14,7 +14,7 @@ interface WebSocketContextType {
     sendMessage: (message: WebSocketMessage | string) => void;
     connect: (baseFrequency?: number, beatFrequency?: number) => void;
     disconnect: () => void;
-
+    registerFrameHandler: (handler: (message: any) => void) => void;
 }
 
 const WebSocketContext = createContext<WebSocketContextType | null>(null);
@@ -49,6 +49,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     const maxReconnectAttempts = 3; // Reduced for better UX
     const reconnectDelay = 2000;
     const currentParamsRef = useRef<{ baseFreq?: number; beatFreq?: number }>({});
+    const frameMessageHandlerRef = useRef<{ handler?: (message: any) => void; lastUpdate?: number } | null>(null);
 
     // Cleanup function
     const cleanup = useCallback(() => {
@@ -67,7 +68,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     }, []);
 
     // Connect function
-    const connect = useCallback((baseFrequency = 440, beatFrequency = 4) => {
+    const connect = useCallback((baseFrequency = 140, beatFrequency = 4) => {
         console.log('🔌 WebSocket connect() called with:', { baseFrequency, beatFrequency });
         
         // Check WebSocket ref directly for state
@@ -150,7 +151,29 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
                         : event.data;
 
               //      console.log('📨 WebSocket message received:', data);
-                    setLastMessage(data);
+
+                    // Optimize: Throttle frame message updates to prevent infinite re-renders
+                    if (data.type === 'frame' || data.type === 'audio_frame') {
+                        // For frame messages, only update state occasionally to prevent render loops
+                        const now = Date.now();
+                        const timeSinceLastFrameUpdate = now - (frameMessageHandlerRef.current?.lastUpdate || 0);
+
+                        if (timeSinceLastFrameUpdate > 100) { // Only update every 100ms max
+                            if (!frameMessageHandlerRef.current) {
+                                frameMessageHandlerRef.current = { lastUpdate: now };
+                            } else {
+                                frameMessageHandlerRef.current.lastUpdate = now;
+                            }
+                            setLastMessage(data);
+                        }
+                        // Still call direct handlers for real-time processing
+                        if (frameMessageHandlerRef.current?.handler) {
+                            frameMessageHandlerRef.current.handler(data);
+                        }
+                    } else {
+                        // Non-frame messages update state immediately
+                        setLastMessage(data);
+                    }
                 } catch (err) {
                     console.error('❌ Error parsing WebSocket message:', err);
                 }
@@ -230,6 +253,13 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
         cleanup();
     }, [cleanup]);
 
+    const registerFrameHandler = useCallback((handler: (message: any) => void) => {
+        frameMessageHandlerRef.current = {
+            ...frameMessageHandlerRef.current,
+            handler
+        };
+    }, []);
+
     // Auto-connect on mount if enabled
     useEffect(() => {
         if (autoConnect) {
@@ -240,7 +270,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
         return () => {
             disconnect();
         };
-    }, []); // Empty deps - only run on mount/unmount
+    }, [autoConnect, connect, disconnect]); // Empty deps - only run on mount/unmount
 
     const value: WebSocketContextType = {
         isConnected,
@@ -250,6 +280,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
         sendMessage,
         connect,
         disconnect,
+        registerFrameHandler,
     };
 
     return React.createElement(

@@ -25,14 +25,14 @@ export const WAVE_PATTERNS: PatternConfig[] = [
       'Deep meditative states'
     ],
     frequencies: {
-      carrier: 432,
-      beat: 40,
+      carrier: 144,
+      beat: 30,
       range: 'gamma'
     },
     duration: 20,
     electromagnetic: {
       fieldStrength: 0.95,
-      resonanceFreq: 40,
+      resonanceFreq: 30,
       coherence: 0.98
     },
     visualization: {
@@ -55,7 +55,7 @@ export const WAVE_PATTERNS: PatternConfig[] = [
       'Immune system boost'
     ],
     frequencies: {
-      carrier: 528,
+      carrier: 144,
       beat: 7.83,
       range: 'theta'
     },
@@ -87,7 +87,7 @@ export const WAVE_PATTERNS: PatternConfig[] = [
       'Attention span increase'
     ],
     frequencies: {
-      carrier: 440,
+      carrier: 144,
       beat: 12,
       range: 'alpha'
     },
@@ -122,7 +122,7 @@ export const WAVE_PATTERNS: PatternConfig[] = [
       'Imagination expansion'
     ],
     frequencies: {
-      carrier: 396,
+      carrier: 144,
       beat: 8,
       range: 'alpha'
     },
@@ -154,7 +154,7 @@ export const WAVE_PATTERNS: PatternConfig[] = [
       'Life pattern evolution'
     ],
     frequencies: {
-      carrier: 741,
+      carrier: 144,
       beat: 6,
       range: 'theta'
     },
@@ -186,7 +186,7 @@ export const WAVE_PATTERNS: PatternConfig[] = [
       'Evolutionary advancement'
     ],
     frequencies: {
-      carrier: 528,
+      carrier: 144,
       beat: 2.675,
       range: 'delta'
     },
@@ -218,7 +218,7 @@ export const WAVE_PATTERNS: PatternConfig[] = [
       'Inner peace'
     ],
     frequencies: {
-      carrier: 432,
+      carrier: 144,
       beat: 10,
       range: 'alpha'
     },
@@ -250,7 +250,7 @@ export const WAVE_PATTERNS: PatternConfig[] = [
       'Transcendental experiences'
     ],
     frequencies: {
-      carrier: 432,
+      carrier: 144,
       beat: 4,
       range: 'theta'
     },
@@ -441,14 +441,14 @@ export const WAVEGUIDE_CONFIGS: WaveGuideConfig[] = [
     type: 'circular',
     dimensions: { width: 150, height: 150, depth: 50 },
     material: 'silver',
-    resonance: 432,
+    resonance: 144,
     impedance: 300
   },
   {
     type: 'elliptical',
     dimensions: { width: 180, height: 120, depth: 60 },
     material: 'gold',
-    resonance: 528,
+    resonance: 144,
     impedance: 250
   },
   {
@@ -527,7 +527,7 @@ def extract_audio_sync(video_id, start_time=0):
     
     return f'temp_audio_{video_id}.wav'
 
-def sync_with_binaural(audio_file, beat_freq=40):
+def sync_with_binaural(audio_file, beat_freq=30):
     """Synchronize extracted audio with binaural beats"""
     sample_rate, audio_data = wavfile.read(audio_file)
     duration = len(audio_data) / sample_rate

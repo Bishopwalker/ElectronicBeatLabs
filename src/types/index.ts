@@ -70,19 +70,8 @@ export interface PatternConfig {
   };
 }
 
-export interface AudioEngineState {
-  isPlaying: boolean;
-  amplitude: number;
-  leftFreq: number;
-  rightFreq: number;
-  beatFreq: number;
-  waveform: 'sine' | 'square' | 'triangle' | 'sawtooth';
-  gainL: GainNode | null;
-  gainR: GainNode | null;
-  oscillatorL: OscillatorNode | null;
-  oscillatorR: OscillatorNode | null;
-  context: AudioContext | null;
-}
+// AudioEngineState is now defined in audio.types.ts - import from there
+// This removes the old leftFreq/rightFreq confusion
 
 export interface WebSocketState {
   connected: boolean;
@@ -361,6 +350,12 @@ export interface QuickStartProps {
     connectBackend?: () => Promise<void>;
     disconnectBackend?: () => Promise<void>;
     sessionId?: string | null;
+  };
+  onToggleEngine?: (engineType: 'binaural' | 'backend' | 'spatial', enabled: boolean) => void;
+  appState?: {
+    spatialAudio?: {
+      enabled: boolean;
+    };
   };
 }
 export interface MainControlsProps {

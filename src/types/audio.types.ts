@@ -70,32 +70,25 @@ export interface AudioEngineState {
 // CONVERSION FUNCTIONS - USE THESE EVERYWHERE
 // ============================================
 
-/**
- * Convert frontend config to backend API format
- */
-export const toBackendConfig = (config: BinauralBeatConfig): BackendAudioConfig => ({
-    base_frequency: config.baseFrequency,
-    beat_frequency: config.beatFrequency,
-    amplitude: config.amplitude,
-    waveform: config.waveform,
-    spatial_enabled: config.spatial?.enabled || false,
-    spatial_settings: config.spatial ? {
-        mode: config.spatial.mode,
-        positioning: config.spatial.positioning,
-        room_size: config.spatial.roomSize
-    } : undefined
-});
 
 /**
  * Convert timer config to standard binaural config
  */
+/**
+ * FREQUENCY CALCULATION FUNCTIONS FOR UI DISPLAY ONLY
+ * Internal audio processing uses baseFrequency + beatFrequency
+ * These are ONLY for UI display purposes
+ */
+export const calculateLeftFreq = (baseFrequency: number): number => baseFrequency;
+export const calculateRightFreq = (baseFrequency: number, beatFrequency: number): number => baseFrequency - beatFrequency;
+
 /**
  * Convert timer config to standard binaural config
  * Using unknown is safer than any
  */
 export const fromTimerConfig = (timer: unknown): BinauralBeatConfig => {
     // Type guard to ensure it's an object
-    const t = timer as Record<string, any>;
+    const t = timer as Record<string, number>;
 
     return {
         baseFrequency: t?.leftFreq || t?.baseFreq || 440,

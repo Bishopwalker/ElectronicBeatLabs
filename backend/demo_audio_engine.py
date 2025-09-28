@@ -17,8 +17,8 @@ async def demo_audio_engine():
     
     # Initialize audio engine and spatial processor
     print("Initializing audio engine...")
-    audio_engine = AudioEngine(sample_rate=44100)
-    spatial_processor = SpatialAudioProcessor(sample_rate=44100)
+    audio_engine = AudioEngine(sample_rate=48000)
+    spatial_processor = SpatialAudioProcessor(sample_rate=48000)
     audio_engine.set_spatial_processor(spatial_processor)
     
     print(f"+ Audio engine initialized at {audio_engine.sample_rate}Hz")

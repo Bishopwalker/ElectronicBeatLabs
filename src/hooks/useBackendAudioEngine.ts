@@ -53,17 +53,22 @@ interface BackendSessionConfig {
 
 export const useBackendAudioEngine = () => {
   const [audioState, setAudioState] = useState<AudioEngineState>({
+    error: '',
+    sessionId: '',
+    connected: false,
     isPlaying: false,
-    amplitude: 0.3,
-    leftFreq: 440,
-    rightFreq: 444,
-    beatFreq: 4,
-    waveform: 'sine',
-    gainL: null,
-    gainR: null,
-    oscillatorL: null,
-    oscillatorR: null,
-    context: null
+    config: {
+      amplitude: 0.3,
+      beatFrequency: 4,
+      baseFrequency: 144,
+      waveform: 'sine',
+      spatial: {
+        enabled: true,
+        mode: '3d',
+        positioning: 'headphones',
+        roomSize: 'small'
+      }
+    }
   });
 
   const [electromagnetic, setElectromagnetic] = useState<ElectromagneticField>({
@@ -124,7 +129,7 @@ export const useBackendAudioEngine = () => {
       // Load AudioWorklet processor if not already loaded
       if (!workletLoaded.current) {
         try {
-          await audioContext.current.audioWorklet.addModule('/backend-audio-processor.js');
+          await audioContext.current.audioWorklet.addModule(`/backend-audio-processor.js?v=${Date.now()}`);
           workletLoaded.current = true;
           console.log('✅ Backend Engine: AudioWorklet processor loaded successfully');
         } catch (error) {
@@ -136,7 +141,7 @@ export const useBackendAudioEngine = () => {
       // Create persistent gain node
       if (!gainNode.current) {
         gainNode.current = audioContext.current.createGain();
-        gainNode.current.gain.value = audioState.amplitude;
+        gainNode.current.gain.value = audioState.config?.amplitude || 0.3;
         gainNode.current.connect(audioContext.current.destination);
       }
 
@@ -151,7 +156,7 @@ export const useBackendAudioEngine = () => {
               numberOfOutputs: 1,
               outputChannelCount: [2], // Stereo output
               processorOptions: {
-                amplitude: audioState.amplitude
+                amplitude: audioState.config?.amplitude || 0.3
               }
             }
         );
@@ -179,7 +184,7 @@ export const useBackendAudioEngine = () => {
     } catch (error) {
       console.error('❌ Backend Engine: Failed to initialize AudioWorklet audio:', error);
     }
-  }, [audioState.amplitude]);
+  }, [audioState.config?.amplitude]);
 
   // Process backend audio frame (send to AudioWorklet)
   const processAudioFrame = useCallback((frame: BackendAudioFrame) => {
@@ -212,25 +217,27 @@ export const useBackendAudioEngine = () => {
       const volumeParam = audioWorkletNode.current.parameters.get('volume');
       if (volumeParam) {
         volumeParam.setValueAtTime(
-            audioState.amplitude,
+            audioState.config?.amplitude || 0.3,
             audioContext.current.currentTime
         );
       }
 
-      console.log('🔊 Backend Engine: Audio frame sent to AudioWorklet, amplitude:', audioState.amplitude);
+      console.log('🔊 Backend Engine: Audio frame sent to AudioWorklet, amplitude:', audioState.config?.amplitude || 0.3);
 
-      // Update frequency state
+      // Update frequency state in config
       setAudioState(prev => ({
         ...prev,
-        leftFreq: frame.frequencies.left,
-        rightFreq: frame.frequencies.right,
-        beatFreq: frame.frequencies.beat
+        config: {
+          ...prev.config!,
+          baseFrequency: frame.frequencies.left,
+          beatFrequency: frame.frequencies.beat
+        }
       }));
 
     } catch (error) {
       console.error('❌ Backend Engine: Failed to process audio frame:', error);
     }
-  }, [audioState.amplitude]);
+  }, [audioState.config?.amplitude]);
 
   // Process backend field frame
   const processFieldFrame = useCallback((frame: BackendFieldFrame) => {
@@ -268,7 +275,7 @@ export const useBackendAudioEngine = () => {
       if (websocket.lastMessage && sessionId) { // Only process if we have active session
         const message = websocket.lastMessage;
         console.log('📨 Backend Engine: Received WebSocket message type:', message.type);
-        console.log('🔍 Backend Engine: Full message object:', JSON.stringify(message, null, 2));
+     //   console.log('🔍 Backend Engine: Full message object:', JSON.stringify(message, null, 2));
 
         switch (message.type) {
           case 'frame':
@@ -354,8 +361,8 @@ export const useBackendAudioEngine = () => {
       }
     };
 
-    handleMessage();
-  }, [websocket.lastMessage, sessionId, processAudioFrame, processFieldFrame, initializeAudio, initializePersistentAudio]);
+    handleMessage().then();
+  }, [websocket.lastMessage, sessionId, processAudioFrame, processFieldFrame, initializeAudio, initializePersistentAudio, websocket]);
 
   // Connect to backend
   const connectBackend = useCallback(async () => {
@@ -376,41 +383,42 @@ export const useBackendAudioEngine = () => {
 
   // Stop backend session
   const stopBackendSession = useCallback(async () => {
+    console.log('🛑 stopBackendSession: Starting - sessionId:', sessionId);
     if (sessionId) {
       // Send stop commands via WebSocket
+      console.log('📨 stopBackendSession: Sending stop_stream message');
       websocket.sendMessage({
         type: 'stop_stream'
       });
 
+      console.log('📨 stopBackendSession: Sending stop_session message');
       websocket.sendMessage({
         type: 'stop_session'
       });
 
       // Don't disconnect WebSocket - keep it alive for future operations
-      // Just clear the session state
-      setSessionId(null);
-      setBackendConnected(false);
+      // DON'T clear sessionId - this causes Advanced Controls to switch to frontend engine!
+      console.log('🔄 stopBackendSession: Keeping session state so Advanced Controls stay connected to backend');
+      // setSessionId(null);  // REMOVED - this breaks Advanced Controls
+      setBackendConnected(true); // KEEP backend connected for Advanced Controls
     }
 
-    // Stop persistent audio pipeline
+    // ONLY clear the audio buffer - keep AudioWorklet alive for restart
     if (audioWorkletNode.current) {
+      console.log('🧹 stopBackendSession: Clearing AudioWorklet buffer but keeping pipeline alive');
       audioWorkletNode.current.port.postMessage({ type: 'clearBuffer' });
-      audioWorkletNode.current.disconnect();
-      audioWorkletNode.current = null;
+      // DON'T disconnect - keep the pipeline ready for next session
     }
+
+    // Also mute the gain node to ensure no humming
     if (gainNode.current) {
-      gainNode.current.disconnect();
-      gainNode.current = null;
+      console.log('🔇 stopBackendSession: Muting gain node to eliminate humming');
+      gainNode.current.gain.setValueAtTime(0, audioContext.current!.currentTime);
     }
 
     setAudioState(prev => ({
       ...prev,
-      isPlaying: false,
-      gainL: null,
-      gainR: null,
-      oscillatorL: null,
-      oscillatorR: null,
-      context: null
+      isPlaying: false
     }));
 
     setElectromagnetic({
@@ -462,13 +470,16 @@ export const useBackendAudioEngine = () => {
         spatial_enabled: config.spatial_enabled || false,
         spatial_settings: config.spatial_settings || {}
       } : {
-        // When no config, calculate from audioState with proper NaN checks
-        base_frequency: (!isNaN(audioState.rightFreq)) ? audioState.rightFreq : 440,
-        beat_frequency: (!isNaN(audioState.rightFreq) && !isNaN(audioState.leftFreq))
-            ? Math.abs(audioState.rightFreq - audioState.leftFreq) : 4,
-        amplitude: (!isNaN(audioState.amplitude)) ? audioState.amplitude : 0.3,
-        spatial_enabled: false,
-        spatial_settings: {}
+        // When no config, use current audioState.config with proper fallbacks
+        base_frequency: audioState.config?.baseFrequency || 144,
+        beat_frequency: audioState.config?.beatFrequency || 4,
+        amplitude: audioState.config?.amplitude || 0.3,
+        spatial_enabled: audioState.config?.spatial?.enabled || false,
+        spatial_settings: {
+          mode: audioState.config?.spatial?.mode || 'binaural',
+          positioning: audioState.config?.spatial?.positioning || 'headphones',
+          room_size: audioState.config?.spatial?.roomSize || 'small'
+        }
       };
 
       console.log('📤 Backend Engine: Sending config to backend:', sessionConfig);
@@ -611,16 +622,24 @@ export const useBackendAudioEngine = () => {
         const context = await initializeAudio();
         if (context) {
           await initializePersistentAudio();
+
+          // Unmute gain node for playback
+          if (gainNode.current) {
+            console.log('🔊 startBackendSession: Unmuting gain node for playback');
+            gainNode.current.gain.setValueAtTime(sessionConfig.amplitude, context.currentTime);
+          }
         }
 
-        // Update audio state
+        // Update audio state to match backend calculation
         setAudioState(prev => ({
           ...prev,
           isPlaying: true,
-          leftFreq: sessionConfig.base_frequency - sessionConfig.beat_frequency,
-          rightFreq: sessionConfig.base_frequency,
-          beatFreq: sessionConfig.beat_frequency,
-          volume: sessionConfig.amplitude
+          config: {
+            ...prev.config!,
+            baseFrequency: sessionConfig.base_frequency,
+            beatFrequency: sessionConfig.beat_frequency,
+            amplitude: sessionConfig.amplitude
+          }
         }));
       }
       
@@ -668,27 +687,36 @@ export const useBackendAudioEngine = () => {
   // Update frequency
   const updateFrequency = useCallback((baseFreq: number, beatFreq: number) => {
     updateSettings({
-      base_frequ1ency: baseFreq,
+      base_frequency: baseFreq,
       beat_frequency: beatFreq
     });
 
     setAudioState(prev => ({
       ...prev,
-      leftFreq: baseFreq - beatFreq,
-      rightFreq: baseFreq,
-      beatFreq: beatFreq
+      config: {
+        ...prev.config!,
+        baseFrequency: baseFreq,
+        beatFrequency: beatFreq
+      }
     }));
   }, [updateSettings]);
 
   // Update volume
   const updateVolume = useCallback((volume: number) => {
+    // Protect against NaN and invalid values
+    const safeVolume = isNaN(volume) ? 0.3 : Math.max(0, Math.min(1, volume));
+    console.log('🎵 Backend updateVolume:', { original: volume, safe: safeVolume });
+
     updateSettings({
-      amplitude: volume
+      amplitude: safeVolume
     });
 
     setAudioState(prev => ({
       ...prev,
-      volume
+      config: {
+        ...prev.config!,
+        amplitude: safeVolume
+      }
     }));
   }, [updateSettings]);
 
@@ -742,10 +770,12 @@ export const useBackendAudioEngine = () => {
         setAudioState(prev => ({
           ...prev,
           isPlaying: true,
-          leftFreq: sessionConfig.baseFrequency,
-          rightFreq: sessionConfig.baseFrequency + sessionConfig.beatFrequency,
-          beatFreq: sessionConfig.beatFrequency,
-          volume: sessionConfig.amplitude
+          config: {
+            ...prev.config!,
+            baseFrequency: sessionConfig.baseFrequency,
+            beatFrequency: sessionConfig.beatFrequency,
+            amplitude: sessionConfig.amplitude
+          }
         }));
 
         console.log('✅ Backend Engine: Started binaural beat');
@@ -762,10 +792,10 @@ export const useBackendAudioEngine = () => {
   }, [sessionId, websocket, startBackendSession, audioState, stopBackendSession]);
 
   const stopBinauralBeat = useCallback(async () => {
-    console.log('🛑 Backend Engine: Stopping binaural beat');
+    console.log('🛑 Backend Engine: Stopping binaural beat - ONLY CLEARING BUFFER, KEEPING WEBSOCKET ALIVE');
     try {
       await stopBackendSession();
-      console.log('✅ Backend Engine: Binaural beat stopped');
+      console.log('✅ Backend Engine: Binaural beat stopped - WebSocket and AudioWorklet should still be connected');
     } catch (error) {
       console.error('❌ Backend Engine: Failed to stop binaural beat:', error);
       throw error;

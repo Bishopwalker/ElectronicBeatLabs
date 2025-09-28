@@ -42,11 +42,11 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
     <Paper
       elevation={3}
       sx={{
-        p: 2,
+        p: 1.5,
         background: 'linear-gradient(45deg, rgba(255, 107, 0, 0.1), rgba(138, 43, 226, 0.1))',
-        border: '2px solid',
+        border: '1px solid',
         borderColor: '#ff6b00',
-        borderRadius: 2,
+        borderRadius: 1,
         position: 'relative',
         overflow: 'hidden',
         '&::before': {
@@ -63,14 +63,14 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
     >
       <Box sx={{ position: 'relative', zIndex: 1 }}>
         {/* Header */}
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <TimerIcon sx={{ color: '#ff6b00' }} />
-            <Typography variant="h6" sx={{ color: '#ff6b00', fontWeight: 'bold' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <TimerIcon sx={{ color: '#ff6b00', fontSize: '1.2rem' }} />
+            <Typography variant="body1" sx={{ color: '#ff6b00', fontWeight: 'bold', fontSize: '0.9rem' }}>
               {preset?.name || 'Timer Session'}
             </Typography>
           </Box>
-          
+
           <Chip
             icon={<PlayArrowIcon />}
             label="ACTIVE"
@@ -80,67 +80,67 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
             sx={{
               fontWeight: 'bold',
               animation: 'pulse 2s infinite',
-              boxShadow: '0 0 8px rgba(0, 255, 0, 0.4)'
+              boxShadow: '0 0 8px rgba(0, 255, 0, 0.4)',
+              height: '20px',
+              fontSize: '0.7rem'
             }}
           />
         </Box>
 
-        {/* Current Transition Info */}
-        <Box sx={{ mb: 2 }}>
-          <Typography variant="body2" color="text.secondary" gutterBottom>
-            Transition {currentIndex + 1} of {totalTransitions}
+        {/* Current Transition Info - More Compact */}
+        <Box sx={{ mb: 1 }}>
+          <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
+            Step {currentIndex + 1}/{totalTransitions}: {currentTransition?.description}
           </Typography>
-          <Typography variant="body1" sx={{ fontWeight: 600, mb: 1 }}>
-            {currentTransition?.description}
-          </Typography>
-          <Typography variant="caption" color="secondary">
-            {currentTransition?.frequency_hz}Hz {currentTransition?.frequency_type} • 
-            {currentTransition?.left_ear_hz}Hz / {currentTransition?.right_ear_hz}Hz
+          <Typography variant="caption" color="secondary" sx={{ display: 'block', fontSize: '0.65rem' }}>
+            {currentTransition?.frequency_hz}Hz • {currentTransition?.left_ear_hz}/{currentTransition?.right_ear_hz}Hz
           </Typography>
         </Box>
 
-        {/* Progress Bar */}
-        <Box sx={{ mb: 2 }}>
+        {/* Progress Bar - Thinner */}
+        <Box sx={{ mb: 1 }}>
           <LinearProgress
             variant="determinate"
             value={Math.min(100, Math.max(0, transitionProgress))}
             sx={{
-              height: 8,
-              borderRadius: 4,
+              height: 4,
+              borderRadius: 2,
               backgroundColor: 'rgba(255, 255, 255, 0.1)',
               '& .MuiLinearProgress-bar': {
-                borderRadius: 4,
+                borderRadius: 2,
                 background: 'linear-gradient(45deg, #ff6b00, #8a2be2)'
               }
             }}
           />
         </Box>
 
-        {/* Time Display */}
+        {/* Time Display - Compact */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Box sx={{ textAlign: 'center' }}>
-            <Typography variant="h4" sx={{ 
-              fontFamily: 'monospace', 
+            <Typography variant="h5" sx={{
+              fontFamily: 'monospace',
               fontWeight: 'bold',
               color: '#ff6b00',
+              fontSize: '1.3rem',
               textShadow: '0 0 10px rgba(255, 107, 0, 0.5)'
             }}>
               {formatTime(timeRemainingCurrent)}
             </Typography>
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
               Current Step
             </Typography>
           </Box>
-          
+
           <Box sx={{ textAlign: 'center' }}>
-            <Typography variant="h5" sx={{ 
+            <Typography variant="h6" sx={{
               fontFamily: 'monospace',
               fontWeight: 'bold',
-              color: '#8a2be2'
+              color: '#8a2be2',
+              fontSize: '1.1rem'
             }}>
               {formatTime(timeRemainingTotal)}
             </Typography>
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
               Total Remaining
             </Typography>
           </Box>

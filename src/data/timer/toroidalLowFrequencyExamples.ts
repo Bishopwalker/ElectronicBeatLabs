@@ -44,8 +44,8 @@ export const DELTA_HEALING_TOROIDAL: ComprehensiveTimerPreset = {
       duration_minutes: 10,
       frequency_hz: 8,
       frequency_type: 'Alpha',
-      left_ear_hz: 432,
-      right_ear_hz: 440,
+      left_ear_hz: 144,
+      right_ear_hz: 150,
       description: '🧘 Phase 1: Alpha Preparation (8Hz) - Toroidal Field Activation',
       
       pattern_id: 'toroidal-max-resonance',
@@ -96,8 +96,8 @@ export const DELTA_HEALING_TOROIDAL: ComprehensiveTimerPreset = {
       duration_minutes: 15,
       frequency_hz: 4,
       frequency_type: 'Theta',
-      left_ear_hz: 432,
-      right_ear_hz: 436,
+      left_ear_hz: 144,
+      right_ear_hz: 148,
       description: '✨ Phase 2: Theta Gateway (4Hz) - Maximum Resonance Toroidal Healing',
       
       pattern_id: 'toroidal-max-resonance',
@@ -149,8 +149,8 @@ export const DELTA_HEALING_TOROIDAL: ComprehensiveTimerPreset = {
       duration_minutes: 20,
       frequency_hz: 2,
       frequency_type: 'Delta',
-      left_ear_hz: 432,
-      right_ear_hz: 434,
+      left_ear_hz: 144,
+      right_ear_hz: 146,
       description: '💎 Phase 3: Deep Delta (2Hz) - MAXIMUM RESONANCE TOROIDAL - Ultimate Healing',
       
       pattern_id: 'toroidal-max-resonance', // ✅ TOROIDAL AT LOW FREQUENCY!
@@ -330,8 +330,8 @@ export const THETA_CREATIVITY_TOROIDAL: ComprehensiveTimerPreset = {
       duration_minutes: 10,
       frequency_hz: 10,
       frequency_type: 'Alpha',
-      left_ear_hz: 432,
-      right_ear_hz: 442,
+      left_ear_hz: 144,
+      right_ear_hz: 150,
       description: '🌟 Phase 1: Alpha Creativity (10Hz) - Toroidal Field Inspiration',
       
       pattern_id: 'toroidal-max-resonance',
@@ -382,8 +382,8 @@ export const THETA_CREATIVITY_TOROIDAL: ComprehensiveTimerPreset = {
       duration_minutes: 20,
       frequency_hz: 6,
       frequency_type: 'Theta',
-      left_ear_hz: 432,
-      right_ear_hz: 438,
+      left_ear_hz: 144,
+      right_ear_hz: 148,
       description: '🎨 Phase 2: Theta Creative Flow (6Hz) - MAXIMUM RESONANCE TOROIDAL - Pure Inspiration',
       
       pattern_id: 'toroidal-max-resonance', // ✅ TOROIDAL AT THETA FREQUENCY!
@@ -552,8 +552,8 @@ export const ALPHA_FOCUS_TOROIDAL: ComprehensiveTimerPreset = {
       duration_minutes: 5,
       frequency_hz: 12,
       frequency_type: 'Alpha',
-      left_ear_hz: 432,
-      right_ear_hz: 444,
+      left_ear_hz: 144,
+      right_ear_hz: 150,
       description: '🚀 Phase 1: Focus Activation (12Hz) - Toroidal Field Preparation',
       
       pattern_id: 'toroidal-max-resonance',
@@ -604,8 +604,8 @@ export const ALPHA_FOCUS_TOROIDAL: ComprehensiveTimerPreset = {
       duration_minutes: 20,
       frequency_hz: 10,
       frequency_type: 'Alpha',
-      left_ear_hz: 432,
-      right_ear_hz: 442,
+      left_ear_hz: 144,
+      right_ear_hz: 150,
       description: '🎯 Phase 2: Sustained Focus (10Hz) - MAXIMUM RESONANCE TOROIDAL - Loops for Extended Work',
       
       pattern_id: 'toroidal-max-resonance', // ✅ TOROIDAL AT ALPHA FREQUENCY WITH LOOP!

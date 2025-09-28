@@ -32,8 +32,8 @@ export const ADVANCED_HEALING_PROTOCOL: ComprehensiveTimerPreset = {
       duration_minutes: 10,
       frequency_hz: 7.83,
       frequency_type: 'Alpha',
-      left_ear_hz: 432,
-      right_ear_hz: 439.83,
+      left_ear_hz: 144,
+      right_ear_hz: 150,
       description: '🌍 Phase 1: Schumann Resonance Grounding - Earth Connection',
       
       pattern_id: 'interference-balance',
@@ -83,10 +83,10 @@ export const ADVANCED_HEALING_PROTOCOL: ComprehensiveTimerPreset = {
     {
       // Phase 2: Love Frequency Activation (528Hz)
       duration_minutes: 20,
-      frequency_hz: 4, // 4Hz binaural beat with 528Hz base
+      frequency_hz: 4, // 4Hz binaural beat with 144Hz base
       frequency_type: 'Theta',
-      left_ear_hz: 528,
-      right_ear_hz: 532,
+      left_ear_hz: 144,
+      right_ear_hz: 148,
       description: '💚 Phase 2: Love Frequency (528Hz + 4Hz) - DNA Repair & Heart Opening',
       
       pattern_id: 'toroidal-healing',
@@ -144,8 +144,8 @@ export const ADVANCED_HEALING_PROTOCOL: ComprehensiveTimerPreset = {
       duration_minutes: 15,
       frequency_hz: 7.5,
       frequency_type: 'Theta',
-      left_ear_hz: 432,
-      right_ear_hz: 439.5,
+      left_ear_hz: 144,
+      right_ear_hz: 150,
       description: '🌟 Phase 3: Deep Healing Theta (7.5Hz) - Cellular Repair & Immune Boost',
       
       pattern_id: 'spiral-transformation',
@@ -197,10 +197,10 @@ export const ADVANCED_HEALING_PROTOCOL: ComprehensiveTimerPreset = {
     {
       // Phase 4: Gamma Healing Integration (40Hz)
       duration_minutes: 10,
-      frequency_hz: 40,
+      frequency_hz: 30,
       frequency_type: 'Gamma',
-      left_ear_hz: 432,
-      right_ear_hz: 472,
+      left_ear_hz: 144,
+      right_ear_hz: 150,
       description: '⚡ Phase 4: Gamma Integration (40Hz) - Neural Optimization & Healing Completion',
       
       pattern_id: 'toroidal-max-resonance',
@@ -252,8 +252,8 @@ export const ADVANCED_HEALING_PROTOCOL: ComprehensiveTimerPreset = {
       duration_minutes: 5,
       frequency_hz: 8,
       frequency_type: 'Alpha',
-      left_ear_hz: 432,
-      right_ear_hz: 440,
+      left_ear_hz: 144,
+      right_ear_hz: 140,
       description: '🌱 Phase 5: Integration (8Hz) - Healing Stabilization',
       
       pattern_id: 'helix-dna-activation',
@@ -444,8 +444,8 @@ export const ADHD_GAMMA_FOCUS_BLAST: ComprehensiveTimerPreset = {
       duration_minutes: 5,
       frequency_hz: 16,
       frequency_type: 'Beta',
-      left_ear_hz: 440,
-      right_ear_hz: 456,
+      left_ear_hz: 144,
+      right_ear_hz: 150,
       description: '🚀 Phase 1: Beta Activation (16Hz) - Mental Alertness Boost',
       
       pattern_id: 'vortex-focus-enhancement',
@@ -496,8 +496,8 @@ export const ADHD_GAMMA_FOCUS_BLAST: ComprehensiveTimerPreset = {
       duration_minutes: 8,
       frequency_hz: 20,
       frequency_type: 'Beta',
-      left_ear_hz: 440,
-      right_ear_hz: 460,
+      left_ear_hz: 144,
+      right_ear_hz: 150,
       description: '🎯 Phase 2: High Beta (20Hz) - Peak Concentration',
       
       pattern_id: 'toroidal-max-resonance',
@@ -546,10 +546,10 @@ export const ADHD_GAMMA_FOCUS_BLAST: ComprehensiveTimerPreset = {
     {
       // Phase 3: Gamma Hyperfocus 
       duration_minutes: 12,
-      frequency_hz: 40,
+      frequency_hz: 30,
       frequency_type: 'Gamma',
-      left_ear_hz: 440,
-      right_ear_hz: 480,
+      left_ear_hz: 144,
+      right_ear_hz: 150,
       description: '⚡ Phase 3: Gamma Hyperocus (40Hz) - Ultimate ADHD Focus',
       
       pattern_id: 'adhd-focus-gamma',
@@ -600,8 +600,8 @@ export const ADHD_GAMMA_FOCUS_BLAST: ComprehensiveTimerPreset = {
       duration_minutes: 5,
       frequency_hz: 12,
       frequency_type: 'Alpha',
-      left_ear_hz: 440,
-      right_ear_hz: 452,
+      left_ear_hz: 144,
+      right_ear_hz: 150,
       description: '🧠 Phase 4: Sustained Focus (12Hz) - Calm Concentration',
       
       pattern_id: 'interference-balance',

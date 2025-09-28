@@ -9,14 +9,14 @@ import type {
   ElectromagneticFieldState,
   PatternConfig,
   ADHDProtocol 
-} from '../types/index';
+} from '../types';
 
 export const useAudioEngine = () => {
   const [audioState, setAudioState] = useState<AudioEngineState>({
     isPlaying: false,
-    volume: 0.3,
-    leftFreq: 440,
-    rightFreq: 444,
+    amplitude: 0.3,
+    leftFreq: 144,
+    rightFreq: 148,
     beatFreq: 4,
     waveform: 'sine',
     gainL: null,
@@ -158,13 +158,17 @@ export const useAudioEngine = () => {
         await context.resume();
       }
 
+      // Calculate actual frequencies from config
+      const leftFreq = config.baseFrequency;
+      const rightFreq = config.baseFrequency + config.beatFrequency;
+
       // Create oscillators
-      const oscL = createOscillator(context, config.leftFreq, config.waveform as 'sine' | 'square' | 'triangle' | 'sawtooth');
-      const oscR = createOscillator(context, config.rightFreq, config.waveform as 'sine' | 'square' | 'triangle' | 'sawtooth');
+      const oscL = createOscillator(context, leftFreq, config.waveform as 'sine' | 'square' | 'triangle' | 'sawtooth');
+      const oscR = createOscillator(context, rightFreq, config.waveform as 'sine' | 'square' | 'triangle' | 'sawtooth');
 
       // Create gain nodes
-      const gainL = createGainNode(context, config.amplitude * audioState.volume);
-      const gainR = createGainNode(context, config.amplitude * audioState.volume);
+      const gainL = createGainNode(context, config.amplitude * audioState.amplitude);
+      const gainR = createGainNode(context, config.amplitude * audioState.amplitude);
 
       // Create channel merger for proper stereo separation
       const merger = context.createChannelMerger(2);
@@ -193,15 +197,15 @@ export const useAudioEngine = () => {
       oscL.start(context.currentTime);
       oscR.start(context.currentTime);
 
-      console.log(`Starting binaural beat: ${config.leftFreq}Hz (L) / ${config.rightFreq}Hz (R) = ${config.beatFreq}Hz beat`);
+      console.log(`Starting binaural beat: ${leftFreq}Hz (L) / ${rightFreq}Hz (R) = ${config.beatFrequency}Hz beat`);
 
       // Update state
       setAudioState(prev => ({
         ...prev,
         isPlaying: true,
-        leftFreq: config.leftFreq,
-        rightFreq: config.rightFreq,
-        beatFreq: config.beatFreq,
+        leftFreq: leftFreq,
+        rightFreq: rightFreq,
+        beatFreq: config.beatFrequency,
         waveform: config.waveform as 'sine' | 'square' | 'triangle' | 'sawtooth',
         gainL,
         gainR,
@@ -216,7 +220,7 @@ export const useAudioEngine = () => {
     // Don't start animation for frontend engine when backend is being used
     // This prevents the infinite loop issue
 
-  }, [audioState.volume, audioState.context, audioState.isPlaying, initializeAudio, createOscillator, createGainNode, calculateElectromagneticField]);
+  }, [audioState.amplitude, audioState.context, audioState.isPlaying, initializeAudio, createOscillator, createGainNode, calculateElectromagneticField]);
 
   // Stop binaural beat playback
   const stopBinauralBeat = useCallback(() => {
@@ -294,15 +298,19 @@ export const useAudioEngine = () => {
 
   // Update volume
   const updateVolume = useCallback((volume: number) => {
+    // Protect against NaN and invalid values
+    const safeVolume = isNaN(volume) ? 0.3 : Math.max(0, Math.min(1, volume));
+    console.log('🎶 Frontend updateVolume:', { original: volume, safe: safeVolume });
+
     if (audioState.gainL && audioState.gainR && audioState.context) {
       const now = audioState.context.currentTime;
-      audioState.gainL.gain.setValueAtTime(volume, now);
-      audioState.gainR.gain.setValueAtTime(volume, now);
+      audioState.gainL.gain.setValueAtTime(safeVolume, now);
+      audioState.gainR.gain.setValueAtTime(safeVolume, now);
     }
-    
+
     setAudioState(prev => ({
       ...prev,
-      volume
+      amplitude: safeVolume
     }));
   }, [audioState.gainL, audioState.gainR, audioState.context]);
 
@@ -322,9 +330,8 @@ export const useAudioEngine = () => {
   // Load pattern configuration
   const loadPattern = useCallback((pattern: PatternConfig) => {
     const config: BinauralBeatConfig = {
-      leftFreq: pattern.frequencies.carrier,
-      rightFreq: pattern.frequencies.carrier + pattern.frequencies.beat,
-      beatFreq: pattern.frequencies.beat,
+      baseFrequency: pattern.frequencies.carrier,
+      beatFrequency: pattern.frequencies.beat,
       amplitude: 0.5,
       waveform: 'sine'
     };
@@ -335,9 +342,8 @@ export const useAudioEngine = () => {
   // Generate binaural test tones
   const generateTestTones = useCallback((leftFreq: number, rightFreq: number, duration: number = 5000) => {
     const config: BinauralBeatConfig = {
-      leftFreq,
-      rightFreq,
-      beatFreq: Math.abs(rightFreq - leftFreq),
+      baseFrequency: leftFreq,
+      beatFrequency: Math.abs(rightFreq - leftFreq),
       amplitude: 0.3,
       waveform: 'sine'
     };
@@ -375,9 +381,8 @@ export const useAudioEngine = () => {
   // Create gamma wave protocol for ADHD
   const createGammaProtocol = useCallback((protocol: ADHDProtocol) => {
     const config: BinauralBeatConfig = {
-      leftFreq: 200,
-      rightFreq: 200 + protocol.gammaFreq,
-      beatFreq: protocol.gammaFreq,
+      baseFrequency: 144,
+      beatFrequency: protocol.gammaFreq,
       amplitude: protocol.intensity / 100, // Convert percentage to amplitude
       waveform: 'sine'
     };

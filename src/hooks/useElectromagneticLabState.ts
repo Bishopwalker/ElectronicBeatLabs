@@ -61,7 +61,7 @@ export const useElectromagneticLabState = (initialPattern?: string, autoStart: b
       currentElectromagnetic !== lastElectromagneticRef.current ||
       currentAudioState !== lastAudioStateRef.current ||
       currentAudioState.isPlaying !== lastAudioStateRef.current?.isPlaying ||
-      currentAudioState.volume !== lastAudioStateRef.current?.volume ||
+      currentAudioState.amplitude !== lastAudioStateRef.current?.amplitude ||
       currentAudioState.beatFreq !== lastAudioStateRef.current?.beatFreq
     ) {
       lastElectromagneticRef.current = currentElectromagnetic;
@@ -78,7 +78,7 @@ export const useElectromagneticLabState = (initialPattern?: string, autoStart: b
           ...prev.appState,
           electromagnetic: enhancedElectromagnetic,
           isPlaying: currentAudioState.isPlaying,
-          volume: currentAudioState.volume,
+          volume: isNaN(currentAudioState.amplitude) ? prev.appState.volume : currentAudioState.amplitude,
           frequency: currentAudioState.beatFreq
         }
       }));

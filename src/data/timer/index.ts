@@ -6,7 +6,9 @@
 // ==================================================================
 
 // Basic built-in presets
-export { 
+import type {FrequencyTransition, TimerPreset} from "../../types";
+
+export {
   BUILT_IN_PRESETS, 
   getPresetTransitions 
 } from './timerPresets';
@@ -78,7 +80,7 @@ export interface TimerStatus {
 
 export interface LocalTimer {
   id: string;
-  preset: TimerPreset;
+  preset: CustomPresetForm;
   status: TimerStatus;
   session?: TimerSession;
   // Direct properties used by useTimerLogic

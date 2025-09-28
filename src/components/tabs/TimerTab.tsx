@@ -11,14 +11,15 @@ import type {
     ElectromagneticField,
     Pattern8D, PatternConfig
 } from '../../types';
+import type {TimerStatus} from "../../data/timer";
 
 interface TimerTabProps {
     appState: AppState,
     patterns8D: Pattern8D[],
     onStateChange: (state: Partial<AppState>) => void,
-    onTimerStatusUpdate?: (status: any) => void,
+    onTimerStatusUpdate?: (status: TimerStatus) => void,
     audioEngine?: {
-        startBinauralBeat: (config: any) => Promise<void>;
+        startBinauralBeat: (config:BinauralBeatConfig) => Promise<void>;
         stopBinauralBeat: () => Promise<void>;
         updateFrequency: (left: number, right: number) => void;
         audioState: {

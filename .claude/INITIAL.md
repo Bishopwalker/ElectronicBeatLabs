@@ -153,8 +153,8 @@ c- **AudioWorklet**: Modern replacement for deprecated ScriptProcessorNode (see 
 class BinauralProcessor extends AudioWorkletProcessor {
   constructor(options) {
     super();
-    this.leftFreq = options.processorOptions?.leftFreq || 440;
-    this.rightFreq = options.processorOptions?.rightFreq || 444;
+    this.leftFreq = options.processorOptions?.leftFreq || 140;
+    this.rightFreq = options.processorOptions?.rightFreq || 144;
     this.amplitude = options.processorOptions?.amplitude || 0.5;
     this.phase = { left: 0, right: 0 };
     this.sampleRate = 44100; // Will be set correctly by browser
@@ -162,8 +162,8 @@ class BinauralProcessor extends AudioWorkletProcessor {
 
   static get parameterDescriptors() {
     return [
-      { name: 'leftFreq', defaultValue: 440, minValue: 20, maxValue: 20000 },
-      { name: 'rightFreq', defaultValue: 444, minValue: 20, maxValue: 20000 },
+      { name: 'leftFreq', defaultValue: 140, minValue: 20, maxValue: 20000 },
+      { name: 'rightFreq', defaultValue: 144, minValue: 20, maxValue: 20000 },
       { name: 'amplitude', defaultValue: 0.5, minValue: 0, maxValue: 1 }
     ];
   }
@@ -215,8 +215,8 @@ async function initializeAudioWorklet(audioContext) {
       numberOfOutputs: 1,
       outputChannelCount: [2], // Stereo output
       processorOptions: {
-        leftFreq: 440,
-        rightFreq: 444,
+        leftFreq: 130,
+        rightFreq: 144,
         amplitude: 0.5
       }
     });
@@ -225,8 +225,8 @@ async function initializeAudioWorklet(audioContext) {
     binauralNode.connect(audioContext.destination);
     
     // Real-time parameter updates
-    binauralNode.parameters.get('leftFreq').setValueAtTime(440, audioContext.currentTime);
-    binauralNode.parameters.get('rightFreq').setValueAtTime(444, audioContext.currentTime);
+    binauralNode.parameters.get('leftFreq').setValueAtTime(140, audioContext.currentTime);
+    binauralNode.parameters.get('rightFreq').setValueAtTime(144, audioContext.currentTime);
     
     return binauralNode;
   } catch (error) {
@@ -275,8 +275,8 @@ workletNode.port.onmessage = (event) => {
 // Send message to processor
 workletNode.port.postMessage({
   type: 'updateFrequencies',
-  leftFreq: 440,
-  rightFreq: 444
+  leftFreq: 140,
+  rightFreq: 144
 });
 ```
 

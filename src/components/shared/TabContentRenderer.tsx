@@ -34,28 +34,29 @@ const TabContentRenderer: React.FC<TabContentRendererProps> = ({
   onPatternSelect,
   onFrequencyChange
 }) => {
-  // Common props for most tabs
+  // Common props for ALL tabs - include both engines so tabs know what's running
   const commonProps = {
     appState,
-    audioEngine,
+    audioEngine,  // Active audio engine (might be frontend or backend)
+    backendEngine,  // Backend engine reference
+    frontendEngine: audioEngine,  // Frontend engine reference
     patterns8D: patterns8D.patterns,
-    onStateChange
+    onStateChange,
+    // Helper flags so tabs know what's running
+    isBackendActive: backendEngine?.backendConnected || false,
+    isFrontendActive: !backendEngine?.backendConnected || false
   };
-  
-  // Special props for timer tab that needs backend engine for binaural beat generation
+
+  // Timer tab uses backend engine primarily
   const timerProps = {
-    appState,
-    audioEngine: backendEngine,
-    patterns8D: patterns8D.patterns,
-    onStateChange
+    ...commonProps,
+    audioEngine: backendEngine  // Override with backend for timer
   };
-  
-  // Special props for settings tab that needs backend engine for spatial audio
+
+  // Settings tab uses backend engine for spatial audio
   const settingsProps = {
-    appState,
-    audioEngine: backendEngine, // Use backend engine for spatial audio
-    patterns8D: patterns8D.patterns,
-    onStateChange
+    ...commonProps,
+    audioEngine: backendEngine  // Override with backend for settings
   };
 
   switch (appState.activeTab) {

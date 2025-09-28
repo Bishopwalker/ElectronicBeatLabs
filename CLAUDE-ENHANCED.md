@@ -71,7 +71,7 @@ class BinauralBeatGenerator:
     def __init__(self):
         self.p = pyaudio.PyAudio()
         self.stream = None
-        self.base_frequency = 440.0
+        self.base_frequency = 140.0
         self.beat_frequency = 5.0
         
     def generate_chunk(self, duration: float = 0.023) -> np.ndarray:
@@ -586,7 +586,7 @@ asyncio.run(test_binaural())
 # Test frequency accuracy
 def test_frequency_accuracy():
     generator = BinauralBeatGenerator()
-    generator.base_frequency = 440
+    generator.base_frequency = 140
     chunk = generator.generate_chunk()
     
     # FFT to verify frequency
@@ -594,7 +594,7 @@ def test_frequency_accuracy():
     freqs = np.fft.fftfreq(len(chunk), 1/44100)
     peak_freq = freqs[np.argmax(np.abs(fft))]
     
-    assert abs(peak_freq - 440) < 1  # Within 1Hz accuracy
+    assert abs(peak_freq - 140) < 1  # Within 1Hz accuracy
 ```
 
 ### WebSocket Stream Tests

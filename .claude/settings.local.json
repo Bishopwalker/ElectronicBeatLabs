@@ -96,7 +96,9 @@
       "Bash(node:*)",
       "mcp__ide__getDiagnostics",
       "Bash(netstat:*)",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "SlashCommand(/context-init)",
+      "Bash(findstr:*)"
     ],
     "deny": [],
     "ask": []
