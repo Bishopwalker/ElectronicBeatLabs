@@ -1,16 +1,18 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Box, Typography, Paper, Chip, LinearProgress, Grid } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { useFrequencyVisualization } from '../hooks/useFrequencyVisualization';
+import { useBinauralVisualization } from '../hooks/useBinauralVisualization';
+import type { BinauralBeatConfig } from '../types';
 
 interface FrequencyVisualizerProps {
-  getVisualizationData: (() => any) | null;
+  config?: BinauralBeatConfig;
   title?: string;
   showSpectrum?: boolean;
   showFrequencies?: boolean;
   showMetrics?: boolean;
   height?: number;
   width?: number;
+  autoStart?: boolean;
 }
 
 const VisualizerContainer = styled(Paper)(({ theme }) => ({
@@ -59,16 +61,25 @@ const MetricChip = styled(Chip)<{ quality: string }>(({ quality }) => ({
 }));
 
 export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
-  getVisualizationData,
+  config,
   title = 'Binaural Beat Frequency Visualizer',
   showSpectrum = true,
   showFrequencies = true,
   showMetrics = true,
   height = 200,
-  width = 800
+  width = 800,
+  autoStart = false
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { visualizationData, stats } = useFrequencyVisualization(getVisualizationData);
+  const {
+    visualizationData,
+    stats,
+    audioState,
+    createBinauralBeats,
+    stopBinauralBeats,
+    isPlaying,
+    isSupported
+  } = useBinauralVisualization({ enabled: true, updateRate: 60 });
   const [animationId, setAnimationId] = useState<number | null>(null);
 
   // Main visualization drawing function
@@ -164,6 +175,14 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
 
     ctx.setLineDash([]);
   };
+
+  // Auto-start binaural beats if config provided
+  useEffect(() => {
+    if (autoStart && config && isSupported && !isPlaying) {
+      console.log('🎵 FrequencyVisualizer: Auto-starting with config:', config);
+      createBinauralBeats(config);
+    }
+  }, [autoStart, config, isSupported, isPlaying, createBinauralBeats]);
 
   // Animation loop
   useEffect(() => {

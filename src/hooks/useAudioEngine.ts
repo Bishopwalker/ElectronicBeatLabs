@@ -2,17 +2,20 @@
 // Advanced binaural beats generator with electromagnetic field simulation
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { 
-  AudioEngineState, 
-  BinauralBeatConfig, 
+import type {
+  FrontendAudioEngineState,
+  BinauralBeatConfig,
   ElectromagneticField,
   ElectromagneticFieldState,
   PatternConfig,
-  ADHDProtocol 
+  ADHDProtocol, WaveForm
 } from '../types';
 
 export const useAudioEngine = () => {
-  const [audioState, setAudioState] = useState<AudioEngineState>({
+  // Persistent audio context that survives start/stop cycles
+  const audioContextRef = useRef<AudioContext | null>(null);
+
+  const [audioState, setAudioState] = useState<FrontendAudioEngineState>({
     isPlaying: false,
     amplitude: 0.3,
     leftFreq: 144,
@@ -25,6 +28,7 @@ export const useAudioEngine = () => {
     oscillatorR: null,
     context: null
   });
+
 
   const [electromagnetic, setElectromagnetic] = useState<ElectromagneticField>({
     strength: 0,
@@ -39,15 +43,30 @@ export const useAudioEngine = () => {
   const animationRef = useRef<number | undefined>(undefined);
   const startTimeRef = useRef<number>(0);
 
-  // Initialize Web Audio API with user gesture handling
+  // Initialize Web Audio API with user gesture handling (persistent context)
   const initializeAudio = useCallback(async (): Promise<AudioContext | null> => {
     try {
-      console.log('🎵 Initializing Web Audio API...');
-      
-      // Create audio context
+      // Return existing context if already initialized and running
+      if (audioContextRef.current && audioContextRef.current.state === 'running') {
+        console.log('🎵 Using existing audio context:', audioContextRef.current.state);
+        return audioContextRef.current;
+      }
+
+      // Resume existing context if suspended
+      if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
+        console.log('🎵 Resuming suspended audio context...');
+        await audioContextRef.current.resume();
+
+
+        console.log('🎵 Audio context resumed, new state:', audioContextRef.current.state);
+        return audioContextRef.current;
+      }
+
+      // Create new context only if none exists
+      console.log('🎵 Creating new persistent audio context...');
       const context = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
       console.log('🎵 Audio context created, state:', context.state);
-      
+
       // Resume if suspended (required for user gesture)
       if (context.state === 'suspended') {
         console.log('🎵 Audio context suspended, resuming...');
@@ -67,19 +86,50 @@ export const useAudioEngine = () => {
         oscillator.stop(context.currentTime + 0.01);
       }
 
-      console.log('✅ Audio context initialized successfully');
+      setElectromagnetic(prev=>({
+        ...prev,
+        state:'ACTIVE'
+      }));
+
+      // Store the persistent context
+      audioContextRef.current = context;
+      console.log('✅ Persistent audio context initialized successfully');
       return context;
     } catch (error) {
       console.error('❌ Failed to initialize audio context:', error);
       return null;
+
     }
   }, []);
+
+  // Initialize audio context on component mount (requires user gesture)
+  useEffect(() => {
+    const initAudioContextOnMount = async () => {
+      if (!audioState.context) {
+        console.log('🎵 Frontend Engine: Initializing audio context on mount...');
+        try {
+          const context = await initializeAudio();
+          if (context) {
+            setAudioState(prev => ({
+              ...prev,
+              context
+            }));
+            console.log('✅ Frontend Engine: Audio context initialized and stored in state, state:', context.state);
+          }
+        } catch (error) {
+          console.log('⚠️ Frontend Engine: Audio context initialization requires user gesture:', error);
+        }
+      }
+    };
+
+    initAudioContextOnMount();
+  }, [initializeAudio]); // Include initializeAudio in deps
 
   // Create oscillator with specified waveform
   const createOscillator = useCallback((
       context: AudioContext,
       frequency: number,
-      waveform: 'sine' | 'square' | 'triangle' | 'sawtooth'
+      waveform: WaveForm,
   ): OscillatorNode => {
     const oscillator = context.createOscillator();
     oscillator.type = waveform as OscillatorType;
@@ -147,7 +197,8 @@ export const useAudioEngine = () => {
         await new Promise(resolve => setTimeout(resolve, 100));
       }
 
-      const context = audioState.context || await initializeAudio();
+      // Use persistent context or initialize if needed
+      const context = audioContextRef.current || await initializeAudio();
       if (!context) {
         console.error('Failed to initialize audio context');
         return;
@@ -163,8 +214,8 @@ export const useAudioEngine = () => {
       const rightFreq = config.baseFrequency + config.beatFrequency;
 
       // Create oscillators
-      const oscL = createOscillator(context, leftFreq, config.waveform as 'sine' | 'square' | 'triangle' | 'sawtooth');
-      const oscR = createOscillator(context, rightFreq, config.waveform as 'sine' | 'square' | 'triangle' | 'sawtooth');
+      const oscL = createOscillator(context, leftFreq, config.waveform);
+      const oscR = createOscillator(context, rightFreq, config.waveform);
 
       // Create gain nodes
       const gainL = createGainNode(context, config.amplitude * audioState.amplitude);
@@ -198,20 +249,20 @@ export const useAudioEngine = () => {
       oscR.start(context.currentTime);
 
       console.log(`Starting binaural beat: ${leftFreq}Hz (L) / ${rightFreq}Hz (R) = ${config.beatFrequency}Hz beat`);
-
-      // Update state
+      calculateElectromagneticField(leftFreq,rightFreq, config.beatFrequency,context.currentTime);
+      // Update state with persistent context
       setAudioState(prev => ({
         ...prev,
         isPlaying: true,
         leftFreq: leftFreq,
         rightFreq: rightFreq,
         beatFreq: config.beatFrequency,
-        waveform: config.waveform as 'sine' | 'square' | 'triangle' | 'sawtooth',
+        waveform: config.waveform,
         gainL,
         gainR,
         oscillatorL: oscL,
         oscillatorR: oscR,
-        context
+        context: audioContextRef.current // Always use the persistent context
       }));
     } catch (error) {
       console.error('Error starting binaural beat:', error);
@@ -220,7 +271,7 @@ export const useAudioEngine = () => {
     // Don't start animation for frontend engine when backend is being used
     // This prevents the infinite loop issue
 
-  }, [audioState.amplitude, audioState.context, audioState.isPlaying, initializeAudio, createOscillator, createGainNode, calculateElectromagneticField]);
+  }, [audioState.isPlaying, audioState.context, audioState.amplitude, audioState.oscillatorL, audioState.oscillatorR, initializeAudio, createOscillator, createGainNode]);
 
   // Stop binaural beat playback
   const stopBinauralBeat = useCallback(() => {
@@ -246,7 +297,7 @@ export const useAudioEngine = () => {
         gainR: null,
         oscillatorL: null,
         oscillatorR: null,
-        context: prev.context // Keep context alive for reuse
+        context: audioContextRef.current // Keep persistent context alive
       }));
 
       setElectromagnetic({
@@ -354,14 +405,14 @@ export const useAudioEngine = () => {
     setTimeout(() => {
       stopBinauralBeat();
     }, duration);
-  }, [startBinauralBeat, stopBinauralBeat]);
+  }, [startBinauralBeat]);
 
   // Advanced frequency sweeping
   const frequencySweep = useCallback((
     startFreq: number,
     endFreq: number,
     duration: number,
-    beatFreq: number = 4
+    beatFreq: number
   ) => {
     if (!audioState.context || !audioState.oscillatorL || !audioState.oscillatorR) return;
 
@@ -427,7 +478,9 @@ export const useAudioEngine = () => {
     generateTestTones,
     frequencySweep,
     createGammaProtocol,
-    backendConnected: false, // Frontend engine is any connected to backend
+    initializeAudio,
+    setAudioState,
+    backendConnected: false, // Frontend engine is never connected to backend
     sessionId: null,
     websocketState: { connected: false, connecting: false, error: null },
     isSupported: !!(window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)

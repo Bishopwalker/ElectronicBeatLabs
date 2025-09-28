@@ -32,79 +32,80 @@ interface SpatialAudioControlsProps {
     hf_damping?: number;
   }) => void;
   backendConnected?: boolean;
+  webSocket?: boolean;
 }
 
 
 const SpatialAudioControls: React.FC<SpatialAudioControlsProps> = ({
   settings,
   onChange,
-  backendConnected = false
 }) => {
-  const handleToggle = (key: string) => {
-    console.log(`🎧 Spatial Audio: Toggling ${key} from ${settings[key as keyof typeof settings]} to ${!settings[key as keyof typeof settings]}`);
-    onChange({
-      ...settings,
-      [key]: !settings[key as keyof typeof settings]
-    });
-  };
 
-  const handleSliderChange = (key: string, value: number) => {
-    onChange({
-      ...settings,
-      [key]: value
-    });
-  };
-
-  const applyPreset = (preset: string) => {
-    console.log(`🎧 Spatial Audio: Applying preset "${preset}"`);
-    const presets = {
-      off: {
-        enabled: false,
-        movement_speed: 0,
-        spatial_intensity: 0,
-        reverb_enabled: false
-      },
-      subtle: {
-        enabled: true,
-        movement_speed: 0.04,
-        spatial_intensity: 0.3,
-        reverb_enabled: true,
-        reverberance: 0.3,
-        room_scale: 0.6
-      },
-      standard: {
-        enabled: true,
-        movement_speed: 0.08,
-        spatial_intensity: 0.85,
-        reverb_enabled: true,
-        reverberance: 0.5,
-        room_scale: 1.0
-      },
-      intense: {
-        enabled: true,
-        movement_speed: 0.25,  // Much faster movement
-        spatial_intensity: 1.0,
-        reverb_enabled: true,
-        reverberance: 0.8,
-        room_scale: 2.0  // Bigger room
-      },
-      extreme: {
-        enabled: true,
-        movement_speed: 0.5,   // Very dramatic circular motion
-        spatial_intensity: 1.0,
-        reverb_enabled: true,
-        reverberance: 0.9,
-        room_scale: 3.0
-      }
+    const handleToggle = (key: string) => {
+        console.log(`🎧 Spatial Audio: Toggling ${key} from ${settings[key as keyof typeof settings]} to ${!settings[key as keyof typeof settings]}`);
+        onChange({
+            ...settings,
+            [key]: !settings[key as keyof typeof settings]
+        });
     };
 
-    onChange({
-      ...settings,
-      ...presets[preset as keyof typeof presets]
-    });
-  };
 
-  return (
+    const handleSliderChange = (key: string, value: number) => {
+        onChange({
+            ...settings,
+            [key]: value
+        });
+    };
+
+    const applyPreset = (preset: string) => {
+        console.log(`🎧 Spatial Audio: Applying preset "${preset}"`);
+        const presets = {
+            off: {
+                enabled: false,
+                movement_speed: 0,
+                spatial_intensity: 0,
+                reverb_enabled: false
+            },
+            subtle: {
+                enabled: true,
+                movement_speed: 0.04,
+                spatial_intensity: 0.3,
+                reverb_enabled: true,
+                reverberance: 0.3,
+                room_scale: 0.6
+            },
+            standard: {
+                enabled: true,
+                movement_speed: 0.08,
+                spatial_intensity: 0.85,
+                reverb_enabled: true,
+                reverberance: 0.5,
+                room_scale: 1.0
+            },
+            intense: {
+                enabled: true,
+                movement_speed: 0.25,  // Much faster movement
+                spatial_intensity: 1.0,
+                reverb_enabled: true,
+                reverberance: 0.8,
+                room_scale: 2.0  // Bigger room
+            },
+            extreme: {
+                enabled: true,
+                movement_speed: 0.5,   // Very dramatic circular motion
+                spatial_intensity: 1.0,
+                reverb_enabled: true,
+                reverberance: 0.9,
+                room_scale: 3.0
+            }
+        };
+
+        onChange({
+            ...settings,
+            ...presets[preset as keyof typeof presets]
+        });
+    };
+    return (
     <Paper
       sx={{
         p: 0.5,
@@ -113,7 +114,7 @@ const SpatialAudioControls: React.FC<SpatialAudioControlsProps> = ({
         border: '1px solid rgba(255, 107, 0, 0.2)',
         maxHeight: 250,
         overflowY: 'auto',
-        overflowX: 'hidden'
+        overflowX: 'scroll'
       }}
     >
       <Typography

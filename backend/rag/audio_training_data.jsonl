@@ -1,0 +1,524 @@
+{"sentence1": "ConnectionManager implementation", "sentence2": "class ConnectionManager:\n    def __init__(self):\n        self.active_connections: Dict[str, WebSocket] = {}\n    \n    async def connect(self, websocket: WebSocket, session_id: str):\n        await webso", "label": 1}
+{"sentence1": "frequency slider", "sentence2": "pattern selector", "label": 1}
+{"sentence1": "meditation", "sentence2": "relaxation", "label": 1}
+{"sentence1": "def websocket_connect(event, context):\n    \"\"\"Handle WebSocket connection\"\"\"\n    connection_id = event['requestContext']['connectionId']\n    \n    try:\n        # Store connection in DynamoDB\n        co", "sentence2": "import React, { useState, useEffect, useContext, type ReactNode } from 'react';\nimport { AuthContext, type User, type UsageInfo, type AuthContextType } from './auth';", "label": 0}
+{"sentence1": "phase difference", "sentence2": "3d audio", "label": 1}
+{"sentence1": "buffer underrun", "sentence2": "audio streaming", "label": 1}
+{"sentence1": "def test_anonymous_usage_tracking(setup_db):\n    \"\"\"Test anonymous usage tracking by IP\"\"\"\n    client = TestClient(app)\n    \n    # Record anonymous usage\n    response = client.post(\"/api/usage/anonymo", "sentence2": "class OAuthLogin(BaseModel):\n    token: str\n    provider: str", "label": 0}
+{"sentence1": "audio worklet", "sentence2": "dsp", "label": 1}
+{"sentence1": "web audio api", "sentence2": "gain node", "label": 1}
+{"sentence1": "tone generation", "sentence2": "fundamental frequency", "label": 1}
+{"sentence1": "audio graph", "sentence2": "dsp", "label": 1}
+{"sentence1": "def test_user_creation(setup_db):\n    \"\"\"Test user model creation\"\"\"\n    from backend.database.models import User\n    \n    db = TestingSessionLocal()\n    \n    # Create a user\n    user = User(\n        ", "sentence2": "from authlib.integrations.starlette_client import OAuth\nfrom starlette.config import Config\nfrom starlette.requests import Request\nimport httpx\nimport os\nfrom typing import Dict, Any, Optional", "label": 0}
+{"sentence1": "audio node", "sentence2": "audio pipeline", "label": 1}
+{"sentence1": "TimerStatusResponse implementation", "sentence2": "class TimerStatusResponse(BaseModel):\n    \"\"\"Timer session status response.\"\"\"\n    session: Optional[TimerSession]\n    current_transition: Optional[FrequencyTransition]\n    next_transition: Optional[F", "label": 1}
+{"sentence1": "streaming", "sentence2": "webrtc", "label": 1}
+{"sentence1": "create User object", "sentence2": "class User(Base):\n    \"\"\"\n    Simple user model - just OAuth email and subscription status\n    \"\"\"\n    __tablename__ = \"users\"\n    \n    id = Column(String, primary_key=True, default=lambda: str(uuid.u", "label": 1}
+{"sentence1": "define FrequencyTransition class", "sentence2": "class FrequencyTransition(BaseModel):\n    \"\"\"\n    Represents a single frequency transition in a timer sequence.\n    \n    Args:\n        duration_minutes: Duration in minutes for this frequency\n        ", "label": 1}
+{"sentence1": "define SpatialAudioProcessor class", "sentence2": "class SpatialAudioProcessor:\n    def __init__(self, sample_rate: int = 44100):\n        self.sample_rate = sample_rate\n        self.sessions: Dict[str, dict] = {}\n        \n    def configure_session(sel", "label": 1}
+{"sentence1": "def main():\n    \"\"\"Start the development server with enhanced logging\"\"\"\n    \n    # Set environment for development\n    os.environ['EBL_ENV'] = 'development'\n    \n    print(\"\ud83c\udfb5 Starting Electromagnetic", "sentence2": "class UserService:\n    \"\"\"\n    Service class for user management operations\n    \"\"\"\n    \n    def __init__(self):\n        self.stripe_service = StripeService()\n    \n    async def create_user(\n        s", "label": 0}
+{"sentence1": "audio_handler example code", "sentence2": "def audio_handler(event, context):\n    \"\"\"Handle audio API requests\"\"\"\n    try:\n        http_method = event['httpMethod']\n        path = event['path']\n        \n        if path == '/audio/protocols' an", "label": 1}
+{"sentence1": "TestAudioEngine implementation", "sentence2": "class TestAudioEngine:\n    \"\"\"Test cases for the AudioEngine class\"\"\"\n    \n    def setup_method(self):\n        \"\"\"Setup test fixtures\"\"\"\n        self.audio_engine = AudioEngine(sample_rate=44100)\n    ", "label": 1}
+{"sentence1": "web audio api", "sentence2": "audio worklet", "label": 1}
+{"sentence1": "compression", "sentence2": "eq", "label": 1}
+{"sentence1": "audio processing", "sentence2": "dsp", "label": 1}
+{"sentence1": "binaural", "sentence2": "panning", "label": 1}
+{"sentence1": "synthesis", "sentence2": "fundamental frequency", "label": 1}
+{"sentence1": "FieldSimulator implementation", "sentence2": "class FieldSimulator:\n    def __init__(self):\n        self.sessions: Dict[str, dict] = {}\n        self.running = False\n        self.grid_size = (64, 64)  # Field visualization grid\n        \n    def is", "label": 1}
+{"sentence1": "ADHDProtocols implementation", "sentence2": "class ADHDProtocols:\n    def __init__(self):\n        self.protocols = self._initialize_protocols()\n    \n    def _initialize_protocols(self) -> Dict[str, dict]:\n        \"\"\"Initialize ADHD-specific trea", "label": 1}
+{"sentence1": "low pass", "sentence2": "envelope", "label": 1}
+{"sentence1": "adhd", "sentence2": "meditation", "label": 1}
+{"sentence1": "audio context", "sentence2": "gain node", "label": 1}
+{"sentence1": "sine wave", "sentence2": "tone generation", "label": 1}
+{"sentence1": "panning", "sentence2": "phase difference", "label": 1}
+{"sentence1": "neurofeedback", "sentence2": "attention training", "label": 1}
+{"sentence1": "def audio_handler(event, context):\n    \"\"\"Handle audio API requests\"\"\"\n    try:\n        http_method = event['httpMethod']\n        path = event['path']\n        \n        if path == '/audio/protocols' an", "sentence2": "import pytest\nimport tempfile\nimport os\nfrom fastapi.testclient import TestClient\nfrom sqlalchemy import create_engine\nfrom sqlalchemy.orm import sessionmaker\nfrom backend.database.database import Bas", "label": 0}
+{"sentence1": "audio controls", "sentence2": "preset management", "label": 1}
+{"sentence1": "import asyncio\nimport time\nfrom datetime import datetime\nfrom typing import Dict, List\nimport psutil\nfrom fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request\nfrom fastapi.middleware.cors i", "sentence2": "def setup_db():\n    \"\"\"Setup test database\"\"\"\n    Base.metadata.create_all(bind=engine)\n    yield\n    Base.metadata.drop_all(bind=engine)", "label": 0}
+{"sentence1": "carrier frequency", "sentence2": "modulation", "label": 1}
+{"sentence1": "import requests\nimport json\nimport jwt\nfrom datetime import datetime, timedelta, UTC", "sentence2": "import pytest\nimport tempfile\nimport os\nfrom fastapi.testclient import TestClient\nfrom sqlalchemy import create_engine\nfrom sqlalchemy.orm import sessionmaker\nfrom backend.database.database import Bas", "label": 0}
+{"sentence1": "adsr", "sentence2": "echo", "label": 1}
+{"sentence1": "oscillator", "sentence2": "modulation", "label": 1}
+{"sentence1": "def test_anonymous_usage_limits(setup_db):\n    \"\"\"Test anonymous free tier usage limits\"\"\"\n    client = TestClient(app)\n    \n    # Record usage that exceeds limit\n    response = client.post(\"/api/usag", "sentence2": "from fastapi import APIRouter, Depends, HTTPException, status, Request\nfrom sqlalchemy.orm import Session\nfrom database.database import get_db\nfrom database.models import User, Subscription\nfrom schem", "label": 0}
+{"sentence1": "binaural", "sentence2": "phase difference", "label": 1}
+{"sentence1": "audio node", "sentence2": "gain node", "label": 1}
+{"sentence1": "spatial audio", "sentence2": "interaural", "label": 1}
+{"sentence1": "beat frequency", "sentence2": "3d audio", "label": 1}
+{"sentence1": "implement websocket_disconnect", "sentence2": "def websocket_disconnect(event, context):\n    \"\"\"Handle WebSocket disconnection\"\"\"\n    connection_id = event['requestContext']['connectionId']\n    \n    try:\n        # Remove connection from DynamoDB\n ", "label": 1}
+{"sentence1": "real-time", "sentence2": "webrtc", "label": 1}
+{"sentence1": "stereo", "sentence2": "phase difference", "label": 1}
+{"sentence1": "def test_anonymous_usage_limits(setup_db):\n    \"\"\"Test anonymous free tier usage limits\"\"\"\n    client = TestClient(app)\n    \n    # Record usage that exceeds limit\n    response = client.post(\"/api/usag", "sentence2": "class UserService:\n    \"\"\"\n    Service class for user management operations\n    \"\"\"\n    \n    def __init__(self):\n        self.stripe_service = StripeService()\n    \n    async def create_user(\n        s", "label": 0}
+{"sentence1": "modulation", "sentence2": "fundamental frequency", "label": 1}
+{"sentence1": "TestSpatialAudioProcessor implementation", "sentence2": "class TestSpatialAudioProcessor:\n    \"\"\"Test cases for the SpatialAudioProcessor class\"\"\"\n    \n    def setup_method(self):\n        \"\"\"Setup test fixtures\"\"\"\n        self.spatial_processor = SpatialAud", "label": 1}
+{"sentence1": "websocket", "sentence2": "live audio", "label": 1}
+{"sentence1": "websocket", "sentence2": "webrtc", "label": 1}
+{"sentence1": "SessionStart implementation", "sentence2": "class SessionStart(BaseModel):\n    \"\"\"\n    Session start request\n    \"\"\"\n    session_type: str = \"binaural\"\n    frequency_left: Optional[float] = None\n    frequency_right: Optional[float] = None\n    b", "label": 1}
+{"sentence1": "import requests\nimport json\nimport sys", "sentence2": "import React, { useState } from 'react';\nimport { Box, Button, Card, CardContent, Typography, Alert, CircularProgress } from '@mui/material';\nimport { useAuth } from '../hooks/useAuth';\n\nexport const ", "label": 0}
+{"sentence1": "buffer underrun", "sentence2": "live audio", "label": 1}
+{"sentence1": "bandpass", "sentence2": "distortion", "label": 1}
+{"sentence1": "sample rate", "sentence2": "real-time", "label": 1}
+{"sentence1": "how to main", "sentence2": "def main():\n    \"\"\"Start the development server with enhanced logging\"\"\"\n    \n    # Set environment for development\n    os.environ['EBL_ENV'] = 'development'\n    \n    print(\"\ud83c\udfb5 Starting Electromagnetic", "label": 1}
+{"sentence1": "cognitive enhancement", "sentence2": "sleep aid", "label": 1}
+{"sentence1": "reverb", "sentence2": "eq", "label": 1}
+{"sentence1": "audio processing", "sentence2": "audio pipeline", "label": 1}
+{"sentence1": "frequency", "sentence2": "synthesis", "label": 1}
+{"sentence1": "streaming", "sentence2": "live audio", "label": 1}
+{"sentence1": "class ConnectionManager:\n    def __init__(self):\n        self.active_connections: List[WebSocket] = []\n        self.sessions: Dict[str, dict] = {}\n\n    async def connect(self, websocket: WebSocket, se", "sentence2": "def setup_db():\n    \"\"\"Setup test database\"\"\"\n    Base.metadata.create_all(bind=engine)\n    yield\n    Base.metadata.drop_all(bind=engine)", "label": 0}
+{"sentence1": "web audio api", "sentence2": "real-time", "label": 1}
+{"sentence1": "audio controls", "sentence2": "frequency slider", "label": 1}
+{"sentence1": "envelope", "sentence2": "compression", "label": 1}
+{"sentence1": "audio context", "sentence2": "buffer", "label": 1}
+{"sentence1": "create SpatialAudioProcessor object", "sentence2": "class SpatialAudioProcessor:\n    def __init__(self, sample_rate: int = 44100):\n        self.sample_rate = sample_rate\n        self.sessions: Dict[str, dict] = {}\n        \n    def configure_session(sel", "label": 1}
+{"sentence1": "audio context", "sentence2": "dsp", "label": 1}
+{"sentence1": "adhd", "sentence2": "brainwave entrainment", "label": 1}
+{"sentence1": "create ConnectionManager object", "sentence2": "class ConnectionManager:\n    def __init__(self):\n        self.active_connections: Dict[str, WebSocket] = {}\n    \n    async def connect(self, websocket: WebSocket, session_id: str):\n        await webso", "label": 1}
+{"sentence1": "hertz", "sentence2": "carrier frequency", "label": 1}
+{"sentence1": "websocket_connect example code", "sentence2": "def websocket_connect(event, context):\n    \"\"\"Handle WebSocket connection\"\"\"\n    connection_id = event['requestContext']['connectionId']\n    \n    try:\n        # Store connection in DynamoDB\n        co", "label": 1}
+{"sentence1": "adhd", "sentence2": "neurofeedback", "label": 1}
+{"sentence1": "implement test_user_usage_tracking", "sentence2": "def test_user_usage_tracking(setup_db):\n    \"\"\"Test usage tracking for logged in users\"\"\"\n    client = TestClient(app)\n    \n    # Record user usage\n    response = client.post(\"/api/usage/user\", json={", "label": 1}
+{"sentence1": "frequency", "sentence2": "hz", "label": 1}
+{"sentence1": "how to auth_handler", "sentence2": "def auth_handler(event, context):\n    \"\"\"Handle authentication requests\"\"\"\n    try:\n        # For now, simple auth - extend as needed\n        return lambda_response(200, {\n            'authenticated':", "label": 1}
+{"sentence1": "audio worklet", "sentence2": "audio graph", "label": 1}
+{"sentence1": "gain node", "sentence2": "audio graph", "label": 1}
+{"sentence1": "auth_handler example code", "sentence2": "def auth_handler(event, context):\n    \"\"\"Handle authentication requests\"\"\"\n    try:\n        # For now, simple auth - extend as needed\n        return lambda_response(200, {\n            'authenticated':", "label": 1}
+{"sentence1": "tone generation", "sentence2": "pitch", "label": 1}
+{"sentence1": "phase difference", "sentence2": "beat frequency", "label": 1}
+{"sentence1": "UsageRecord implementation", "sentence2": "class UsageRecord(Base):\n    \"\"\"\n    Simple usage tracking for free tier (3 hours/month limit)\n    Track by IP address initially, email only after login required\n    \"\"\"\n    __tablename__ = \"usage_rec", "label": 1}
+{"sentence1": "useaudioengine", "sentence2": "volume control", "label": 1}
+{"sentence1": "compression", "sentence2": "delay", "label": 1}
+{"sentence1": "left channel", "sentence2": "3d audio", "label": 1}
+{"sentence1": "bandpass", "sentence2": "delay", "label": 1}
+{"sentence1": "implement test_endpoint", "sentence2": "def test_endpoint(endpoint, method=\"GET\", headers=None, data=None):\n    \"\"\"Test a single endpoint\"\"\"\n    url = f\"{BASE_URL}{endpoint}\"\n    print(f\"\\n=== Testing {method} {endpoint} ===\")\n    \n    try:", "label": 1}
+{"sentence1": "brainwave entrainment", "sentence2": "relaxation", "label": 1}
+{"sentence1": "spatial audio", "sentence2": "panning", "label": 1}
+{"sentence1": "buffer", "sentence2": "dsp", "label": 1}
+{"sentence1": "right channel", "sentence2": "3d audio", "label": 1}
+{"sentence1": "def auth_handler(event, context):\n    \"\"\"Handle authentication requests\"\"\"\n    try:\n        # For now, simple auth - extend as needed\n        return lambda_response(200, {\n            'authenticated':", "sentence2": "def extract_oauth_info(provider: str, user_info: Dict[str, Any]) -> Dict[str, Any]:\n    \"\"\"\n    Extract standardized user info from OAuth provider response\n    \"\"\"\n    if provider == \"google\":\n       ", "label": 0}
+{"sentence1": "def websocket_default(event, context):\n    \"\"\"Handle WebSocket messages\"\"\"\n    connection_id = event['requestContext']['connectionId']\n    \n    try:\n        # Parse message\n        body = json.loads(e", "sentence2": "from backend.database.database import engine\nfrom backend.database.models import Base\nfrom sqlalchemy import inspect", "label": 0}
+{"sentence1": "def websocket_connect(event, context):\n    \"\"\"Handle WebSocket connection\"\"\"\n    connection_id = event['requestContext']['connectionId']\n    \n    try:\n        # Store connection in DynamoDB\n        co", "sentence2": "from fastapi import APIRouter, Depends, HTTPException, status, Request\nfrom sqlalchemy.orm import Session\nfrom database.database import get_db\nfrom database.models import User, Subscription\nfrom schem", "label": 0}
+{"sentence1": "stereo", "sentence2": "beat frequency", "label": 1}
+{"sentence1": "audio streaming", "sentence2": "peer connection", "label": 1}
+{"sentence1": "low pass", "sentence2": "echo", "label": 1}
+{"sentence1": "import asyncio\nimport time\nfrom datetime import datetime\nfrom typing import Dict, List\nimport psutil\nfrom fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request\nfrom fastapi.middleware.cors i", "sentence2": "def lambda_response(status_code: int, body: Dict[str, Any]) -> Dict[str, Any]:\n    \"\"\"Standard Lambda response format\"\"\"\n    return {\n        'statusCode': status_code,\n        'headers': {\n          ", "label": 0}
+{"sentence1": "modulation", "sentence2": "tone generation", "label": 1}
+{"sentence1": "hz", "sentence2": "synthesis", "label": 1}
+{"sentence1": "attention training", "sentence2": "sleep aid", "label": 1}
+{"sentence1": "envelope", "sentence2": "echo", "label": 1}
+{"sentence1": "real-time", "sentence2": "buffer underrun", "label": 1}
+{"sentence1": "oscillator", "sentence2": "sine wave", "label": 1}
+{"sentence1": "modulation", "sentence2": "pitch", "label": 1}
+{"sentence1": "frequency slider", "sentence2": "ui components", "label": 1}
+{"sentence1": "stereo", "sentence2": "left channel", "label": 1}
+{"sentence1": "frequency slider", "sentence2": "preset management", "label": 1}
+{"sentence1": "react hooks", "sentence2": "useaudioengine", "label": 1}
+{"sentence1": "create ConnectionManager object", "sentence2": "class ConnectionManager:\n    def __init__(self):\n        self.active_connections: List[WebSocket] = []\n        self.sessions: Dict[str, dict] = {}\n\n    async def connect(self, websocket: WebSocket, se", "label": 1}
+{"sentence1": "phase difference", "sentence2": "interaural", "label": 1}
+{"sentence1": "filter", "sentence2": "delay", "label": 1}
+{"sentence1": "bandpass", "sentence2": "echo", "label": 1}
+{"sentence1": "def test_user_usage_tracking(setup_db):\n    \"\"\"Test usage tracking for logged in users\"\"\"\n    client = TestClient(app)\n    \n    # Record user usage\n    response = client.post(\"/api/usage/user\", json={", "sentence2": "import { useContext } from 'react';\nimport { AuthContext } from '../contexts/auth';", "label": 0}
+{"sentence1": "audio graph", "sentence2": "audio processing", "label": 1}
+{"sentence1": "audio worklet", "sentence2": "audio pipeline", "label": 1}
+{"sentence1": "define ConnectionManager class", "sentence2": "class ConnectionManager:\n    def __init__(self):\n        self.active_connections: Dict[str, WebSocket] = {}\n    \n    async def connect(self, websocket: WebSocket, session_id: str):\n        await webso", "label": 1}
+{"sentence1": "filter", "sentence2": "high pass", "label": 1}
+{"sentence1": "implement main", "sentence2": "def main():\n    \"\"\"Start the development server with enhanced logging\"\"\"\n    \n    # Set environment for development\n    os.environ['EBL_ENV'] = 'development'\n    \n    print(\"\ud83c\udfb5 Starting Electromagnetic", "label": 1}
+{"sentence1": "define SessionStart class", "sentence2": "class SessionStart(BaseModel):\n    \"\"\"\n    Session start request\n    \"\"\"\n    session_type: str = \"binaural\"\n    frequency_left: Optional[float] = None\n    frequency_right: Optional[float] = None\n    b", "label": 1}
+{"sentence1": "filter", "sentence2": "compression", "label": 1}
+{"sentence1": "interaural", "sentence2": "3d audio", "label": 1}
+{"sentence1": "audio context", "sentence2": "audio processing", "label": 1}
+{"sentence1": "bandpass", "sentence2": "eq", "label": 1}
+{"sentence1": "low pass", "sentence2": "eq", "label": 1}
+{"sentence1": "def websocket_disconnect(event, context):\n    \"\"\"Handle WebSocket disconnection\"\"\"\n    connection_id = event['requestContext']['connectionId']\n    \n    try:\n        # Remove connection from DynamoDB\n ", "sentence2": "class OAuthCallback(BaseModel):\n    \"\"\"\n    OAuth callback data\n    \"\"\"\n    code: str\n    state: Optional[str] = None", "label": 0}
+{"sentence1": "frequency", "sentence2": "modulation", "label": 1}
+{"sentence1": "PasswordReset implementation", "sentence2": "class PasswordReset(BaseModel):\n    \"\"\"\n    Password reset request\n    \"\"\"\n    email: EmailStr", "label": 1}
+{"sentence1": "binaural", "sentence2": "stereo", "label": 1}
+{"sentence1": "from authlib.integrations.starlette_client import OAuth\nfrom starlette.config import Config\nfrom starlette.requests import Request\nimport httpx\nimport os\nfrom typing import Dict, Any, Optional", "sentence2": "from sqlalchemy import Column, Integer, String, Boolean, DateTime, Float, Text, ForeignKey\nfrom sqlalchemy.orm import relationship\nfrom sqlalchemy.sql import func\nfrom database.database import Base\nim", "label": 0}
+{"sentence1": "useaudioengine", "sentence2": "audio controls", "label": 1}
+{"sentence1": "def main():\n    \"\"\"Start the development server with enhanced logging\"\"\"\n    \n    # Set environment for development\n    os.environ['EBL_ENV'] = 'development'\n    \n    print(\"\ud83c\udfb5 Starting Electromagnetic", "sentence2": "class UserResponse(BaseModel):\n    \"\"\"\n    User response schema\n    \"\"\"\n    id: str\n    email: str\n    full_name: Optional[str] = None\n    is_active: bool\n    is_verified: bool\n    subscription_status", "label": 0}
+{"sentence1": "oscillator", "sentence2": "carrier frequency", "label": 1}
+{"sentence1": "import requests\nimport json\nimport jwt\nfrom datetime import datetime, timedelta, UTC", "sentence2": "class OAuthCallback(BaseModel):\n    \"\"\"\n    OAuth callback data\n    \"\"\"\n    code: str\n    state: Optional[str] = None", "label": 0}
+{"sentence1": "import requests\nimport json\nimport jwt\nfrom datetime import datetime, timedelta, UTC", "sentence2": "def init_db():\n    \"\"\"\n    Create database tables\n    \"\"\"\n    Base.metadata.create_all(bind=engine)", "label": 0}
+{"sentence1": "from authlib.integrations.starlette_client import OAuth\nfrom starlette.config import Config\nfrom starlette.requests import Request\nimport httpx\nimport os\nfrom typing import Dict, Any, Optional", "sentence2": "import { useContext } from 'react';\nimport { AuthContext } from '../contexts/auth';", "label": 0}
+{"sentence1": "buffer", "sentence2": "audio graph", "label": 1}
+{"sentence1": "useaudioengine", "sentence2": "preset management", "label": 1}
+{"sentence1": "react hooks", "sentence2": "audio controls", "label": 1}
+{"sentence1": "def websocket_connect(event, context):\n    \"\"\"Handle WebSocket connection\"\"\"\n    connection_id = event['requestContext']['connectionId']\n    \n    try:\n        # Store connection in DynamoDB\n        co", "sentence2": "class SimpleAuthService:\n    \"\"\"Simple auth service using OAuth providers directly\"\"\"\n    \n    def __init__(self):\n        self.google_client_id = os.getenv(\"GOOGLE_CLIENT_ID\")\n        self.facebook_a", "label": 0}
+{"sentence1": "def test_webhook_event_logging(setup_db):\n    \"\"\"Test webhook event logging\"\"\"\n    from backend.database.models import WebhookEvent\n    \n    db = TestingSessionLocal()\n    \n    # Create a webhook even", "sentence2": "from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks\nfrom typing import List, Dict, Any\nimport logging\nfrom services.timer_service import timer_service\nfrom services.simple_auth impo", "label": 0}
+{"sentence1": "class TestSpatialAudioProcessor:\n    \"\"\"Test cases for the SpatialAudioProcessor class\"\"\"\n    \n    def setup_method(self):\n        \"\"\"Setup test fixtures\"\"\"\n        self.spatial_processor = SpatialAud", "sentence2": "from fastapi import Depends, HTTPException, status\nfrom fastapi.security import HTTPBearer, HTTPAuthorizationCredentials\nfrom sqlalchemy.orm import Session\nfrom backend.database.database import get_db", "label": 0}
+{"sentence1": "binaural", "sentence2": "beat frequency", "label": 1}
+{"sentence1": "distortion", "sentence2": "eq", "label": 1}
+{"sentence1": "filter", "sentence2": "echo", "label": 1}
+{"sentence1": "class TestAudioEngine:\n    \"\"\"Test cases for the AudioEngine class\"\"\"\n    \n    def setup_method(self):\n        \"\"\"Setup test fixtures\"\"\"\n        self.audio_engine = AudioEngine(sample_rate=44100)\n    ", "sentence2": "import os\nimport requests\nimport logging\nfrom datetime import datetime, UTC\nfrom sqlalchemy.orm import Session\nfrom fastapi import HTTPException, Depends, status\nfrom fastapi.security import HTTPBeare", "label": 0}
+{"sentence1": "def get_apigateway_client(event):\n    \"\"\"Get API Gateway Management API client for WebSocket\"\"\"\n    global apigateway_client\n    if not apigateway_client:\n        domain_name = event['requestContext']", "sentence2": "import React, { useState } from 'react';\nimport { Box, Button, Card, CardContent, Typography, Alert, CircularProgress } from '@mui/material';\nimport { useAuth } from '../hooks/useAuth';", "label": 0}
+{"sentence1": "class ConnectionManager:\n    def __init__(self):\n        self.active_connections: List[WebSocket] = []\n        self.sessions: Dict[str, dict] = {}\n\n    async def connect(self, websocket: WebSocket, se", "sentence2": "def init_db():\n    \"\"\"\n    Create database tables\n    \"\"\"\n    Base.metadata.create_all(bind=engine)", "label": 0}
+{"sentence1": "how to get_user_usage_stats", "sentence2": "def get_user_usage_stats(user: User, db: Session) -> dict:\n    \"\"\"\n    Get usage statistics for a user\n    \"\"\"\n    now = datetime.utcnow()\n    current_month = now.month\n    current_year = now.year\n   ", "label": 1}
+{"sentence1": "web audio api", "sentence2": "buffer", "label": 1}
+{"sentence1": "def websocket_default(event, context):\n    \"\"\"Handle WebSocket messages\"\"\"\n    connection_id = event['requestContext']['connectionId']\n    \n    try:\n        # Parse message\n        body = json.loads(e", "sentence2": "from fastapi import APIRouter, Depends, HTTPException, status, Request, Response\nfrom fastapi.security import HTTPBearer\nfrom sqlalchemy.orm import Session\nfrom database.database import get_db\nfrom da", "label": 0}
+{"sentence1": "class AudioEngine:\n    def __init__(self, sample_rate: int = 44100):\n        self.sample_rate = sample_rate\n        self.sessions: Dict[str, dict] = {}\n        self.running = False\n        self.spatia", "sentence2": "def lambda_response(status_code: int, body: Dict[str, Any]) -> Dict[str, Any]:\n    \"\"\"Standard Lambda response format\"\"\"\n    return {\n        'statusCode': status_code,\n        'headers': {\n          ", "label": 0}
+{"sentence1": "right channel", "sentence2": "spatial audio", "label": 1}
+{"sentence1": "implement websocket_default", "sentence2": "def websocket_default(event, context):\n    \"\"\"Handle WebSocket messages\"\"\"\n    connection_id = event['requestContext']['connectionId']\n    \n    try:\n        # Parse message\n        body = json.loads(e", "label": 1}
+{"sentence1": "focus", "sentence2": "neurofeedback", "label": 1}
+{"sentence1": "compression", "sentence2": "distortion", "label": 1}
+{"sentence1": "reverb", "sentence2": "distortion", "label": 1}
+{"sentence1": "sample rate", "sentence2": "audio processing", "label": 1}
+{"sentence1": "def websocket_disconnect(event, context):\n    \"\"\"Handle WebSocket disconnection\"\"\"\n    connection_id = event['requestContext']['connectionId']\n    \n    try:\n        # Remove connection from DynamoDB\n ", "sentence2": "def auth_handler(event, context):\n    \"\"\"Handle authentication requests\"\"\"\n    try:\n        # For now, simple auth - extend as needed\n        return lambda_response(200, {\n            'authenticated':", "label": 0}
+{"sentence1": "how to get_apigateway_client", "sentence2": "def get_apigateway_client(event):\n    \"\"\"Get API Gateway Management API client for WebSocket\"\"\"\n    global apigateway_client\n    if not apigateway_client:\n        domain_name = event['requestContext']", "label": 1}
+{"sentence1": "web audio api", "sentence2": "dsp", "label": 1}
+{"sentence1": "User implementation", "sentence2": "class User(Base):\n    \"\"\"\n    Simple user model - just OAuth email and subscription status\n    \"\"\"\n    __tablename__ = \"users\"\n    \n    id = Column(String, primary_key=True, default=lambda: str(uuid.u", "label": 1}
+{"sentence1": "create UsageRecord object", "sentence2": "class UsageRecord(Base):\n    \"\"\"\n    Simple usage tracking for free tier (3 hours/month limit)\n    Track by IP address initially, email only after login required\n    \"\"\"\n    __tablename__ = \"usage_rec", "label": 1}
+{"sentence1": "frequency", "sentence2": "tone generation", "label": 1}
+{"sentence1": "real-time", "sentence2": "audio streaming", "label": 1}
+{"sentence1": "left channel", "sentence2": "beat frequency", "label": 1}
+{"sentence1": "modulation", "sentence2": "synthesis", "label": 1}
+{"sentence1": "def check_usage_limits(user: User, session_duration: float, db: Session) -> bool:\n    \"\"\"\n    Check if user has exceeded usage limits for free tier\n    Returns True if usage is allowed, False otherwis", "sentence2": "def main():\n    print(\"Timer Route Testing Script\")\n    print(\"=\" * 50)\n    \n    # Test basic health\n    test_endpoint(\"/health\")\n    \n    # Test root endpoint\n    test_endpoint(\"/\")\n    \n    # Test t", "label": 0}
+{"sentence1": "buffer underrun", "sentence2": "webrtc", "label": 1}
+{"sentence1": "streaming", "sentence2": "audio streaming", "label": 1}
+{"sentence1": "adsr", "sentence2": "distortion", "label": 1}
+{"sentence1": "real-time", "sentence2": "latency", "label": 1}
+{"sentence1": "create OAuthStart object", "sentence2": "class OAuthStart(BaseModel):\n    \"\"\"\n    OAuth flow start request\n    \"\"\"\n    provider: str\n    redirect_uri: Optional[str] = None\n    \n    @validator('provider')\n    def validate_provider(cls, v):\n  ", "label": 1}
+{"sentence1": "carrier frequency", "sentence2": "pitch", "label": 1}
+{"sentence1": "SpatialAudioProcessor implementation", "sentence2": "class SpatialAudioProcessor:\n    def __init__(self, sample_rate: int = 44100):\n        self.sample_rate = sample_rate\n        self.sessions: Dict[str, dict] = {}\n        \n    def configure_session(sel", "label": 1}
+{"sentence1": "AudioEngine implementation", "sentence2": "class AudioEngine:\n    def __init__(self, sample_rate: int = 44100):\n        self.sample_rate = sample_rate\n        self.sessions: Dict[str, dict] = {}\n        self.running = False\n        self.spatia", "label": 1}
+{"sentence1": "audio worklet", "sentence2": "gain node", "label": 1}
+{"sentence1": "CreatePresetRequest implementation", "sentence2": "class CreatePresetRequest(BaseModel):\n    \"\"\"Request to create a new timer preset.\"\"\"\n    preset: TimerPreset", "label": 1}
+{"sentence1": "adhd", "sentence2": "attention training", "label": 1}
+{"sentence1": "echo", "sentence2": "eq", "label": 1}
+{"sentence1": "spatial audio", "sentence2": "3d audio", "label": 1}
+{"sentence1": "audio worklet", "sentence2": "real-time", "label": 1}
+{"sentence1": "define CreatePresetRequest class", "sentence2": "class CreatePresetRequest(BaseModel):\n    \"\"\"Request to create a new timer preset.\"\"\"\n    preset: TimerPreset", "label": 1}
+{"sentence1": "web audio api", "sentence2": "audio processing", "label": 1}
+{"sentence1": "hertz", "sentence2": "pitch", "label": 1}
+{"sentence1": "cognitive enhancement", "sentence2": "attention training", "label": 1}
+{"sentence1": "hz", "sentence2": "carrier frequency", "label": 1}
+{"sentence1": "synthesis", "sentence2": "pitch", "label": 1}
+{"sentence1": "implement websocket_connect", "sentence2": "def websocket_connect(event, context):\n    \"\"\"Handle WebSocket connection\"\"\"\n    connection_id = event['requestContext']['connectionId']\n    \n    try:\n        # Store connection in DynamoDB\n        co", "label": 1}
+{"sentence1": "hz", "sentence2": "tone generation", "label": 1}
+{"sentence1": "meditation", "sentence2": "cognitive enhancement", "label": 1}
+{"sentence1": "class FieldSimulator:\n    def __init__(self):\n        self.sessions: Dict[str, dict] = {}\n        self.running = False\n        self.grid_size = (64, 64)  # Field visualization grid\n        \n    def is", "sentence2": "from fastapi import APIRouter, Depends, HTTPException, status, Request, Response\nfrom fastapi.security import HTTPBearer\nfrom sqlalchemy.orm import Session\nfrom database.database import get_db\nfrom da", "label": 0}
+{"sentence1": "frequency", "sentence2": "carrier frequency", "label": 1}
+{"sentence1": "create SessionStart object", "sentence2": "class SessionStart(BaseModel):\n    \"\"\"\n    Session start request\n    \"\"\"\n    session_type: str = \"binaural\"\n    frequency_left: Optional[float] = None\n    frequency_right: Optional[float] = None\n    b", "label": 1}
+{"sentence1": "low pass", "sentence2": "bandpass", "label": 1}
+{"sentence1": "real-time", "sentence2": "streaming", "label": 1}
+{"sentence1": "def test_endpoint(endpoint, method=\"GET\", headers=None, data=None):\n    \"\"\"Test a single endpoint\"\"\"\n    url = f\"{BASE_URL}{endpoint}\"\n    print(f\"\\n=== Testing {method} {endpoint} ===\")\n    \n    try:", "sentence2": "def auth_handler(event, context):\n    \"\"\"Handle authentication requests\"\"\"\n    try:\n        # For now, simple auth - extend as needed\n        return lambda_response(200, {\n            'authenticated':", "label": 0}
+{"sentence1": "websocket_disconnect example code", "sentence2": "def websocket_disconnect(event, context):\n    \"\"\"Handle WebSocket disconnection\"\"\"\n    connection_id = event['requestContext']['connectionId']\n    \n    try:\n        # Remove connection from DynamoDB\n ", "label": 1}
+{"sentence1": "pitch", "sentence2": "fundamental frequency", "label": 1}
+{"sentence1": "audio graph", "sentence2": "audio pipeline", "label": 1}
+{"sentence1": "gain node", "sentence2": "sample rate", "label": 1}
+{"sentence1": "websocket", "sentence2": "latency", "label": 1}
+{"sentence1": "define UsageRecord class", "sentence2": "class UsageRecord(Base):\n    \"\"\"\n    Simple usage tracking for free tier (3 hours/month limit)\n    Track by IP address initially, email only after login required\n    \"\"\"\n    __tablename__ = \"usage_rec", "label": 1}
+{"sentence1": "left channel", "sentence2": "right channel", "label": 1}
+{"sentence1": "TimerPreset implementation", "sentence2": "class TimerPreset(BaseModel):\n    \"\"\"\n    Timer preset with multiple frequency transitions.\n    \n    Args:\n        name: Preset name\n        description: Preset description\n        transitions: List o", "label": 1}
+{"sentence1": "def get_apigateway_client(event):\n    \"\"\"Get API Gateway Management API client for WebSocket\"\"\"\n    global apigateway_client\n    if not apigateway_client:\n        domain_name = event['requestContext']", "sentence2": "import { useContext } from 'react';\nimport { AuthContext } from '../contexts/auth';", "label": 0}
+{"sentence1": "create TestSpatialAudioProcessor object", "sentence2": "class TestSpatialAudioProcessor:\n    \"\"\"Test cases for the SpatialAudioProcessor class\"\"\"\n    \n    def setup_method(self):\n        \"\"\"Setup test fixtures\"\"\"\n        self.spatial_processor = SpatialAud", "label": 1}
+{"sentence1": "left channel", "sentence2": "spatial audio", "label": 1}
+{"sentence1": "audio node", "sentence2": "sample rate", "label": 1}
+{"sentence1": "test_anonymous_usage_tracking example code", "sentence2": "def test_anonymous_usage_tracking(setup_db):\n    \"\"\"Test anonymous usage tracking by IP\"\"\"\n    client = TestClient(app)\n    \n    # Record anonymous usage\n    response = client.post(\"/api/usage/anonymo", "label": 1}
+{"sentence1": "focus", "sentence2": "brainwave entrainment", "label": 1}
+{"sentence1": "latency", "sentence2": "audio streaming", "label": 1}
+{"sentence1": "def audio_handler(event, context):\n    \"\"\"Handle audio API requests\"\"\"\n    try:\n        http_method = event['httpMethod']\n        path = event['path']\n        \n        if path == '/audio/protocols' an", "sentence2": "from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks\nfrom typing import List, Dict, Any\nimport logging\nfrom services.timer_service import timer_service\nfrom services.simple_auth impo", "label": 0}
+{"sentence1": "focus", "sentence2": "cognitive enhancement", "label": 1}
+{"sentence1": "how to websocket_connect", "sentence2": "def websocket_connect(event, context):\n    \"\"\"Handle WebSocket connection\"\"\"\n    connection_id = event['requestContext']['connectionId']\n    \n    try:\n        # Store connection in DynamoDB\n        co", "label": 1}
+{"sentence1": "buffer", "sentence2": "audio processing", "label": 1}
+{"sentence1": "audio controls", "sentence2": "volume control", "label": 1}
+{"sentence1": "define TimerControlRequest class", "sentence2": "class TimerControlRequest(BaseModel):\n    \"\"\"Request to control timer session.\"\"\"\n    action: str = Field(pattern=\"^(start|pause|resume|stop|next|previous)$\")\n    session_id: Optional[str] = None\n    ", "label": 1}
+{"sentence1": "how to test_user_usage_tracking", "sentence2": "def test_user_usage_tracking(setup_db):\n    \"\"\"Test usage tracking for logged in users\"\"\"\n    client = TestClient(app)\n    \n    # Record user usage\n    response = client.post(\"/api/usage/user\", json={", "label": 1}
+{"sentence1": "stereo", "sentence2": "3d audio", "label": 1}
+{"sentence1": "create TimerStatusResponse object", "sentence2": "class TimerStatusResponse(BaseModel):\n    \"\"\"Timer session status response.\"\"\"\n    session: Optional[TimerSession]\n    current_transition: Optional[FrequencyTransition]\n    next_transition: Optional[F", "label": 1}
+{"sentence1": "brainwave entrainment", "sentence2": "neurofeedback", "label": 1}
+{"sentence1": "adhd", "sentence2": "sleep aid", "label": 1}
+{"sentence1": "create TimerPreset object", "sentence2": "class TimerPreset(BaseModel):\n    \"\"\"\n    Timer preset with multiple frequency transitions.\n    \n    Args:\n        name: Preset name\n        description: Preset description\n        transitions: List o", "label": 1}
+{"sentence1": "test_anonymous_usage_limits example code", "sentence2": "def test_anonymous_usage_limits(setup_db):\n    \"\"\"Test anonymous free tier usage limits\"\"\"\n    client = TestClient(app)\n    \n    # Record usage that exceeds limit\n    response = client.post(\"/api/usag", "label": 1}
+{"sentence1": "define FieldSimulator class", "sentence2": "class FieldSimulator:\n    def __init__(self):\n        self.sessions: Dict[str, dict] = {}\n        self.running = False\n        self.grid_size = (64, 64)  # Field visualization grid\n        \n    def is", "label": 1}
+{"sentence1": "frequency", "sentence2": "hertz", "label": 1}
+{"sentence1": "audio context", "sentence2": "audio worklet", "label": 1}
+{"sentence1": "carrier frequency", "sentence2": "tone generation", "label": 1}
+{"sentence1": "high pass", "sentence2": "compression", "label": 1}
+{"sentence1": "filter", "sentence2": "eq", "label": 1}
+{"sentence1": "def test_user_creation(setup_db):\n    \"\"\"Test user model creation\"\"\"\n    from backend.database.models import User\n    \n    db = TestingSessionLocal()\n    \n    # Create a user\n    user = User(\n        ", "sentence2": "def setup_db():\n    \"\"\"Setup test database\"\"\"\n    Base.metadata.create_all(bind=engine)\n    yield\n    Base.metadata.drop_all(bind=engine)", "label": 0}
+{"sentence1": "hertz", "sentence2": "tone generation", "label": 1}
+{"sentence1": "carrier frequency", "sentence2": "synthesis", "label": 1}
+{"sentence1": "low pass", "sentence2": "high pass", "label": 1}
+{"sentence1": "create CreatePresetRequest object", "sentence2": "class CreatePresetRequest(BaseModel):\n    \"\"\"Request to create a new timer preset.\"\"\"\n    preset: TimerPreset", "label": 1}
+{"sentence1": "implement test_webhook_event_logging", "sentence2": "def test_webhook_event_logging(setup_db):\n    \"\"\"Test webhook event logging\"\"\"\n    from backend.database.models import WebhookEvent\n    \n    db = TestingSessionLocal()\n    \n    # Create a webhook even", "label": 1}
+{"sentence1": "frequency", "sentence2": "oscillator", "label": 1}
+{"sentence1": "sine wave", "sentence2": "fundamental frequency", "label": 1}
+{"sentence1": "def get_user_usage_stats(user: User, db: Session) -> dict:\n    \"\"\"\n    Get usage statistics for a user\n    \"\"\"\n    now = datetime.utcnow()\n    current_month = now.month\n    current_year = now.year\n   ", "sentence2": "class OAuthLogin(BaseModel):\n    token: str\n    provider: str", "label": 0}
+{"sentence1": "implement get_subscription_benefits", "sentence2": "def get_subscription_benefits():\n    \"\"\"\n    Get detailed subscription benefits for timer features.\n    \"\"\"\n    return {\n        \"free_features\": {\n            \"presets\": 2,\n            \"custom_preset", "label": 1}
+{"sentence1": "websocket", "sentence2": "streaming", "label": 1}
+{"sentence1": "how to test_authenticated_endpoints", "sentence2": "def test_authenticated_endpoints():\n    \"\"\"Test authenticated timer endpoints\"\"\"\n    token = create_test_token()\n    headers = {\"Authorization\": f\"Bearer {token}\"}\n    \n    print(\"Timer Authentication", "label": 1}
+{"sentence1": "react hooks", "sentence2": "preset management", "label": 1}
+{"sentence1": "audio worklet", "sentence2": "audio node", "label": 1}
+{"sentence1": "volume control", "sentence2": "ui components", "label": 1}
+{"sentence1": "define TestSpatialAudioProcessor class", "sentence2": "class TestSpatialAudioProcessor:\n    \"\"\"Test cases for the SpatialAudioProcessor class\"\"\"\n    \n    def setup_method(self):\n        \"\"\"Setup test fixtures\"\"\"\n        self.spatial_processor = SpatialAud", "label": 1}
+{"sentence1": "hz", "sentence2": "sine wave", "label": 1}
+{"sentence1": "how to get_subscription_benefits", "sentence2": "def get_subscription_benefits():\n    \"\"\"\n    Get detailed subscription benefits for timer features.\n    \"\"\"\n    return {\n        \"free_features\": {\n            \"presets\": 2,\n            \"custom_preset", "label": 1}
+{"sentence1": "def websocket_default(event, context):\n    \"\"\"Handle WebSocket messages\"\"\"\n    connection_id = event['requestContext']['connectionId']\n    \n    try:\n        # Parse message\n        body = json.loads(e", "sentence2": "import { useContext } from 'react';\nimport { AuthContext } from '../contexts/auth';\n\nexport const useAuth = () => {\n  const context = useContext(AuthContext);\n  if (!context) {\n    throw new Error('us", "label": 0}
+{"sentence1": "audio node", "sentence2": "dsp", "label": 1}
+{"sentence1": "synthesis", "sentence2": "tone generation", "label": 1}
+{"sentence1": "neurofeedback", "sentence2": "cognitive enhancement", "label": 1}
+{"sentence1": "create SessionEnd object", "sentence2": "class SessionEnd(BaseModel):\n    \"\"\"\n    Session end request\n    \"\"\"\n    session_duration: float  # Duration in minutes\n    session_metadata: Optional[Dict[str, Any]] = None", "label": 1}
+{"sentence1": "create CreateSubscription object", "sentence2": "class CreateSubscription(BaseModel):\n    \"\"\"\n    Create subscription request\n    \"\"\"\n    price_id: str\n    payment_method_id: Optional[str] = None", "label": 1}
+{"sentence1": "real-time", "sentence2": "dsp", "label": 1}
+{"sentence1": "streaming", "sentence2": "peer connection", "label": 1}
+{"sentence1": "spatial audio", "sentence2": "beat frequency", "label": 1}
+{"sentence1": "audio context", "sentence2": "real-time", "label": 1}
+{"sentence1": "how to audio_handler", "sentence2": "def audio_handler(event, context):\n    \"\"\"Handle audio API requests\"\"\"\n    try:\n        http_method = event['httpMethod']\n        path = event['path']\n        \n        if path == '/audio/protocols' an", "label": 1}
+{"sentence1": "binaural", "sentence2": "left channel", "label": 1}
+{"sentence1": "latency", "sentence2": "buffer underrun", "label": 1}
+{"sentence1": "left channel", "sentence2": "panning", "label": 1}
+{"sentence1": "low pass", "sentence2": "delay", "label": 1}
+{"sentence1": "neurofeedback", "sentence2": "relaxation", "label": 1}
+{"sentence1": "def get_user_usage_stats(user: User, db: Session) -> dict:\n    \"\"\"\n    Get usage statistics for a user\n    \"\"\"\n    now = datetime.utcnow()\n    current_month = now.month\n    current_year = now.year\n   ", "sentence2": "def test_user_creation(setup_db):\n    \"\"\"Test user model creation\"\"\"\n    from backend.database.models import User\n    \n    db = TestingSessionLocal()\n    \n    # Create a user\n    user = User(\n        ", "label": 0}
+{"sentence1": "sine wave", "sentence2": "modulation", "label": 1}
+{"sentence1": "meditation", "sentence2": "sleep aid", "label": 1}
+{"sentence1": "create FrequencyTransition object", "sentence2": "class FrequencyTransition(BaseModel):\n    \"\"\"\n    Represents a single frequency transition in a timer sequence.\n    \n    Args:\n        duration_minutes: Duration in minutes for this frequency\n        ", "label": 1}
+{"sentence1": "sample rate", "sentence2": "audio pipeline", "label": 1}
+{"sentence1": "stereo", "sentence2": "interaural", "label": 1}
+{"sentence1": "def websocket_disconnect(event, context):\n    \"\"\"Handle WebSocket disconnection\"\"\"\n    connection_id = event['requestContext']['connectionId']\n    \n    try:\n        # Remove connection from DynamoDB\n ", "sentence2": "def test_user_creation(setup_db):\n    \"\"\"Test user model creation\"\"\"\n    from backend.database.models import User\n    \n    db = TestingSessionLocal()\n    \n    # Create a user\n    user = User(\n        ", "label": 0}
+{"sentence1": "BinauralBeatGenerator implementation", "sentence2": "class BinauralBeatGenerator:\n    def __init__(self):\n        self.presets = self._initialize_presets()\n    \n    def _initialize_presets(self) -> Dict[str, dict]:\n        \"\"\"Initialize binaural beat pr", "label": 1}
+{"sentence1": "FrequencyType implementation", "sentence2": "class FrequencyType(str, Enum):\n    \"\"\"Brainwave frequency types.\"\"\"\n    DELTA = \"delta\"      # 0.5-4 Hz - Deep sleep\n    THETA = \"theta\"      # 4-8 Hz - REM sleep, meditation\n    ALPHA = \"alpha\"     ", "label": 1}
+{"sentence1": "audio graph", "sentence2": "real-time", "label": 1}
+{"sentence1": "test_authenticated_endpoints example code", "sentence2": "def test_authenticated_endpoints():\n    \"\"\"Test authenticated timer endpoints\"\"\"\n    token = create_test_token()\n    headers = {\"Authorization\": f\"Bearer {token}\"}\n    \n    print(\"Timer Authentication", "label": 1}
+{"sentence1": "filter", "sentence2": "adsr", "label": 1}
+{"sentence1": "low pass", "sentence2": "compression", "label": 1}
+{"sentence1": "class FieldSimulator:\n    def __init__(self):\n        self.sessions: Dict[str, dict] = {}\n        self.running = False\n        self.grid_size = (64, 64)  # Field visualization grid\n        \n    def is", "sentence2": "def init_db():\n    \"\"\"\n    Create database tables\n    \"\"\"\n    Base.metadata.create_all(bind=engine)", "label": 0}
+{"sentence1": "audio controls", "sentence2": "ui components", "label": 1}
+{"sentence1": "adsr", "sentence2": "delay", "label": 1}
+{"sentence1": "volume control", "sentence2": "pattern selector", "label": 1}
+{"sentence1": "focus", "sentence2": "relaxation", "label": 1}
+{"sentence1": "class TestAudioEngine:\n    \"\"\"Test cases for the AudioEngine class\"\"\"\n    \n    def setup_method(self):\n        \"\"\"Setup test fixtures\"\"\"\n        self.audio_engine = AudioEngine(sample_rate=44100)\n    ", "sentence2": "import React, { useState } from 'react';\nimport { Box, Button, Card, CardContent, Typography, Alert, CircularProgress } from '@mui/material';\nimport { useAuth } from '../hooks/useAuth';", "label": 0}
+{"sentence1": "from authlib.integrations.starlette_client import OAuth\nfrom starlette.config import Config\nfrom starlette.requests import Request\nimport httpx\nimport os\nfrom typing import Dict, Any, Optional", "sentence2": "class OAuthLogin(BaseModel):\n    token: str\n    provider: str", "label": 0}
+{"sentence1": "hertz", "sentence2": "oscillator", "label": 1}
+{"sentence1": "stereo", "sentence2": "panning", "label": 1}
+{"sentence1": "audio worklet", "sentence2": "sample rate", "label": 1}
+{"sentence1": "right channel", "sentence2": "beat frequency", "label": 1}
+{"sentence1": "live audio", "sentence2": "webrtc", "label": 1}
+{"sentence1": "sample rate", "sentence2": "dsp", "label": 1}
+{"sentence1": "high pass", "sentence2": "bandpass", "label": 1}
+{"sentence1": "def test_endpoint(endpoint, method=\"GET\", headers=None, data=None):\n    \"\"\"Test a single endpoint\"\"\"\n    url = f\"{BASE_URL}{endpoint}\"\n    print(f\"\\n=== Testing {method} {endpoint} ===\")\n    \n    try:", "sentence2": "import { useContext } from 'react';\nimport { AuthContext } from '../contexts/auth';", "label": 0}
+{"sentence1": "class AudioEngine:\n    def __init__(self, sample_rate: int = 44100):\n        self.sample_rate = sample_rate\n        self.sessions: Dict[str, dict] = {}\n        self.running = False\n        self.spatia", "sentence2": "export interface AuthContextType {\n  user: User | null;", "label": 0}
+{"sentence1": "how to websocket_disconnect", "sentence2": "def websocket_disconnect(event, context):\n    \"\"\"Handle WebSocket disconnection\"\"\"\n    connection_id = event['requestContext']['connectionId']\n    \n    try:\n        # Remove connection from DynamoDB\n ", "label": 1}
+{"sentence1": "hz", "sentence2": "hertz", "label": 1}
+{"sentence1": "FrequencyTransition implementation", "sentence2": "class FrequencyTransition(BaseModel):\n    \"\"\"\n    Represents a single frequency transition in a timer sequence.\n    \n    Args:\n        duration_minutes: Duration in minutes for this frequency\n        ", "label": 1}
+{"sentence1": "audio node", "sentence2": "audio graph", "label": 1}
+{"sentence1": "websocket", "sentence2": "peer connection", "label": 1}
+{"sentence1": "test_endpoint example code", "sentence2": "def test_endpoint(endpoint, method=\"GET\", headers=None, data=None):\n    \"\"\"Test a single endpoint\"\"\"\n    url = f\"{BASE_URL}{endpoint}\"\n    print(f\"\\n=== Testing {method} {endpoint} ===\")\n    \n    try:", "label": 1}
+{"sentence1": "latency", "sentence2": "webrtc", "label": 1}
+{"sentence1": "gain node", "sentence2": "audio pipeline", "label": 1}
+{"sentence1": "def check_usage_limits(user: User, session_duration: float, db: Session) -> bool:\n    \"\"\"\n    Check if user has exceeded usage limits for free tier\n    Returns True if usage is allowed, False otherwis", "sentence2": "class OAuthCallback(BaseModel):\n    \"\"\"\n    OAuth callback data\n    \"\"\"\n    code: str\n    state: Optional[str] = None", "label": 0}
+{"sentence1": "meditation", "sentence2": "attention training", "label": 1}
+{"sentence1": "check_usage_limits example code", "sentence2": "def check_usage_limits(user: User, session_duration: float, db: Session) -> bool:\n    \"\"\"\n    Check if user has exceeded usage limits for free tier\n    Returns True if usage is allowed, False otherwis", "label": 1}
+{"sentence1": "filter", "sentence2": "envelope", "label": 1}
+{"sentence1": "adhd", "sentence2": "relaxation", "label": 1}
+{"sentence1": "web audio api", "sentence2": "audio pipeline", "label": 1}
+{"sentence1": "implement test_user_creation", "sentence2": "def test_user_creation(setup_db):\n    \"\"\"Test user model creation\"\"\"\n    from backend.database.models import User\n    \n    db = TestingSessionLocal()\n    \n    # Create a user\n    user = User(\n        ", "label": 1}
+{"sentence1": "hertz", "sentence2": "modulation", "label": 1}
+{"sentence1": "def test_anonymous_usage_limits(setup_db):\n    \"\"\"Test anonymous free tier usage limits\"\"\"\n    client = TestClient(app)\n    \n    # Record usage that exceeds limit\n    response = client.post(\"/api/usag", "sentence2": "import React, { useState } from 'react';\nimport { Box, Button, Card, CardContent, Typography, Alert, CircularProgress } from '@mui/material';\nimport { useAuth } from '../hooks/useAuth';", "label": 0}
+{"sentence1": "import asyncio\nimport time\nfrom datetime import datetime\nfrom typing import Dict, List\nimport psutil\nfrom fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request\nfrom fastapi.middleware.cors i", "sentence2": "from fastapi import APIRouter, Depends, HTTPException, status, Request\nfrom sqlalchemy.orm import Session\nfrom database.database import get_db\nfrom database.models import User, Subscription\nfrom schem", "label": 0}
+{"sentence1": "envelope", "sentence2": "reverb", "label": 1}
+{"sentence1": "def test_user_usage_tracking(setup_db):\n    \"\"\"Test usage tracking for logged in users\"\"\"\n    client = TestClient(app)\n    \n    # Record user usage\n    response = client.post(\"/api/usage/user\", json={", "sentence2": "def auth_handler(event, context):\n    \"\"\"Handle authentication requests\"\"\"\n    try:\n        # For now, simple auth - extend as needed\n        return lambda_response(200, {\n            'authenticated':", "label": 0}
+{"sentence1": "class FieldSimulator:\n    def __init__(self):\n        self.sessions: Dict[str, dict] = {}\n        self.running = False\n        self.grid_size = (64, 64)  # Field visualization grid\n        \n    def is", "sentence2": "def verify_token(token: str) -> Dict[str, Any]:\n    \"\"\"\n    Verify and decode a JWT token\n    \"\"\"\n    try:\n        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])\n        return payloa", "label": 0}
+{"sentence1": "create ADHDProtocols object", "sentence2": "class ADHDProtocols:\n    def __init__(self):\n        self.protocols = self._initialize_protocols()\n    \n    def _initialize_protocols(self) -> Dict[str, dict]:\n        \"\"\"Initialize ADHD-specific trea", "label": 1}
+{"sentence1": "frequency", "sentence2": "sine wave", "label": 1}
+{"sentence1": "pattern selector", "sentence2": "preset management", "label": 1}
+{"sentence1": "frequency", "sentence2": "fundamental frequency", "label": 1}
+{"sentence1": "test_user_usage_tracking example code", "sentence2": "def test_user_usage_tracking(setup_db):\n    \"\"\"Test usage tracking for logged in users\"\"\"\n    client = TestClient(app)\n    \n    # Record user usage\n    response = client.post(\"/api/usage/user\", json={", "label": 1}
+{"sentence1": "def main():\n    \"\"\"Start the development server with enhanced logging\"\"\"\n    \n    # Set environment for development\n    os.environ['EBL_ENV'] = 'development'\n    \n    print(\"\ud83c\udfb5 Starting Electromagnetic", "sentence2": "from fastapi import APIRouter, Depends, HTTPException, status, Request, Response\nfrom fastapi.security import HTTPBearer\nfrom sqlalchemy.orm import Session\nfrom database.database import get_db\nfrom da", "label": 0}
+{"sentence1": "define FrequencyType class", "sentence2": "class FrequencyType(str, Enum):\n    \"\"\"Brainwave frequency types.\"\"\"\n    DELTA = \"delta\"      # 0.5-4 Hz - Deep sleep\n    THETA = \"theta\"      # 4-8 Hz - REM sleep, meditation\n    ALPHA = \"alpha\"     ", "label": 1}
+{"sentence1": "def test_user_usage_tracking(setup_db):\n    \"\"\"Test usage tracking for logged in users\"\"\"\n    client = TestClient(app)\n    \n    # Record user usage\n    response = client.post(\"/api/usage/user\", json={", "sentence2": "def init_db():\n    \"\"\"\n    Create database tables\n    \"\"\"\n    Base.metadata.create_all(bind=engine)", "label": 0}
+{"sentence1": "reverb", "sentence2": "echo", "label": 1}
+{"sentence1": "react hooks", "sentence2": "frequency slider", "label": 1}
+{"sentence1": "buffer", "sentence2": "audio pipeline", "label": 1}
+{"sentence1": "envelope", "sentence2": "eq", "label": 1}
+{"sentence1": "audio context", "sentence2": "audio graph", "label": 1}
+{"sentence1": "binaural", "sentence2": "3d audio", "label": 1}
+{"sentence1": "interaural", "sentence2": "beat frequency", "label": 1}
+{"sentence1": "implement audio_handler", "sentence2": "def audio_handler(event, context):\n    \"\"\"Handle audio API requests\"\"\"\n    try:\n        http_method = event['httpMethod']\n        path = event['path']\n        \n        if path == '/audio/protocols' an", "label": 1}
+{"sentence1": "implement get_user_usage_stats", "sentence2": "def get_user_usage_stats(user: User, db: Session) -> dict:\n    \"\"\"\n    Get usage statistics for a user\n    \"\"\"\n    now = datetime.utcnow()\n    current_month = now.month\n    current_year = now.year\n   ", "label": 1}
+{"sentence1": "create TimerControlRequest object", "sentence2": "class TimerControlRequest(BaseModel):\n    \"\"\"Request to control timer session.\"\"\"\n    action: str = Field(pattern=\"^(start|pause|resume|stop|next|previous)$\")\n    session_id: Optional[str] = None\n    ", "label": 1}
+{"sentence1": "panning", "sentence2": "3d audio", "label": 1}
+{"sentence1": "def test_user_creation(setup_db):\n    \"\"\"Test user model creation\"\"\"\n    from backend.database.models import User\n    \n    db = TestingSessionLocal()\n    \n    # Create a user\n    user = User(\n        ", "sentence2": "def get_db():\n    \"\"\"\n    Dependency to get database session\n    \"\"\"\n    db = SessionLocal()\n    try:\n        yield db\n    finally:\n        db.close()", "label": 0}
+{"sentence1": "filter", "sentence2": "low pass", "label": 1}
+{"sentence1": "bandpass", "sentence2": "envelope", "label": 1}
+{"sentence1": "delay", "sentence2": "eq", "label": 1}
+{"sentence1": "delay", "sentence2": "echo", "label": 1}
+{"sentence1": "binaural", "sentence2": "interaural", "label": 1}
+{"sentence1": "hertz", "sentence2": "fundamental frequency", "label": 1}
+{"sentence1": "compression", "sentence2": "reverb", "label": 1}
+{"sentence1": "binaural", "sentence2": "right channel", "label": 1}
+{"sentence1": "implement auth_handler", "sentence2": "def auth_handler(event, context):\n    \"\"\"Handle authentication requests\"\"\"\n    try:\n        # For now, simple auth - extend as needed\n        return lambda_response(200, {\n            'authenticated':", "label": 1}
+{"sentence1": "websocket", "sentence2": "buffer underrun", "label": 1}
+{"sentence1": "bandpass", "sentence2": "reverb", "label": 1}
+{"sentence1": "audio node", "sentence2": "audio processing", "label": 1}
+{"sentence1": "hz", "sentence2": "modulation", "label": 1}
+{"sentence1": "real-time", "sentence2": "audio pipeline", "label": 1}
+{"sentence1": "audio node", "sentence2": "real-time", "label": 1}
+{"sentence1": "web audio api", "sentence2": "audio graph", "label": 1}
+{"sentence1": "binaural", "sentence2": "spatial audio", "label": 1}
+{"sentence1": "low pass", "sentence2": "reverb", "label": 1}
+{"sentence1": "adsr", "sentence2": "compression", "label": 1}
+{"sentence1": "def test_authenticated_endpoints():\n    \"\"\"Test authenticated timer endpoints\"\"\"\n    token = create_test_token()\n    headers = {\"Authorization\": f\"Bearer {token}\"}\n    \n    print(\"Timer Authentication", "sentence2": "import { ThemeProvider as StyledThemeProvider } from 'styled-components';\nimport { ThemeProvider } from '@mui/material/styles';\nimport CssBaseline from '@mui/material/CssBaseline';\nimport GlobalStyles", "label": 0}
+{"sentence1": "relaxation", "sentence2": "sleep aid", "label": 1}
+{"sentence1": "class AudioEngine:\n    def __init__(self, sample_rate: int = 44100):\n        self.sample_rate = sample_rate\n        self.sessions: Dict[str, dict] = {}\n        self.running = False\n        self.spatia", "sentence2": "def verify_token(token: str) -> Dict[str, Any]:\n    \"\"\"\n    Verify and decode a JWT token\n    \"\"\"\n    try:\n        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])\n        return payloa", "label": 0}
+{"sentence1": "adsr", "sentence2": "eq", "label": 1}
+{"sentence1": "def test_endpoint(endpoint, method=\"GET\", headers=None, data=None):\n    \"\"\"Test a single endpoint\"\"\"\n    url = f\"{BASE_URL}{endpoint}\"\n    print(f\"\\n=== Testing {method} {endpoint} ===\")\n    \n    try:", "sentence2": "import { useContext } from 'react';\nimport { AuthContext } from '../contexts/auth';\n\nexport const useAuth = () => {\n  const context = useContext(AuthContext);\n  if (!context) {\n    throw new Error('us", "label": 0}
+{"sentence1": "create TestAudioEngine object", "sentence2": "class TestAudioEngine:\n    \"\"\"Test cases for the AudioEngine class\"\"\"\n    \n    def setup_method(self):\n        \"\"\"Setup test fixtures\"\"\"\n        self.audio_engine = AudioEngine(sample_rate=44100)\n    ", "label": 1}
+{"sentence1": "hz", "sentence2": "oscillator", "label": 1}
+{"sentence1": "volume control", "sentence2": "frequency slider", "label": 1}
+{"sentence1": "cognitive enhancement", "sentence2": "relaxation", "label": 1}
+{"sentence1": "how to test_anonymous_usage_tracking", "sentence2": "def test_anonymous_usage_tracking(setup_db):\n    \"\"\"Test anonymous usage tracking by IP\"\"\"\n    client = TestClient(app)\n    \n    # Record anonymous usage\n    response = client.post(\"/api/usage/anonymo", "label": 1}
+{"sentence1": "how to test_anonymous_usage_limits", "sentence2": "def test_anonymous_usage_limits(setup_db):\n    \"\"\"Test anonymous free tier usage limits\"\"\"\n    client = TestClient(app)\n    \n    # Record usage that exceeds limit\n    response = client.post(\"/api/usag", "label": 1}
+{"sentence1": "define AudioEngine class", "sentence2": "class AudioEngine:\n    def __init__(self, sample_rate: int = 44100):\n        self.sample_rate = sample_rate\n        self.sessions: Dict[str, dict] = {}\n        self.running = False\n        self.spatia", "label": 1}
+{"sentence1": "adhd", "sentence2": "cognitive enhancement", "label": 1}
+{"sentence1": "define PasswordReset class", "sentence2": "class PasswordReset(BaseModel):\n    \"\"\"\n    Password reset request\n    \"\"\"\n    email: EmailStr", "label": 1}
+{"sentence1": "get_user_usage_stats example code", "sentence2": "def get_user_usage_stats(user: User, db: Session) -> dict:\n    \"\"\"\n    Get usage statistics for a user\n    \"\"\"\n    now = datetime.utcnow()\n    current_month = now.month\n    current_year = now.year\n   ", "label": 1}
+{"sentence1": "def auth_handler(event, context):\n    \"\"\"Handle authentication requests\"\"\"\n    try:\n        # For now, simple auth - extend as needed\n        return lambda_response(200, {\n            'authenticated':", "sentence2": "class SimpleAuthService:\n    \"\"\"Simple auth service using OAuth providers directly\"\"\"\n    \n    def __init__(self):\n        self.google_client_id = os.getenv(\"GOOGLE_CLIENT_ID\")\n        self.facebook_a", "label": 0}
+{"sentence1": "define TestAudioEngine class", "sentence2": "class TestAudioEngine:\n    \"\"\"Test cases for the AudioEngine class\"\"\"\n    \n    def setup_method(self):\n        \"\"\"Setup test fixtures\"\"\"\n        self.audio_engine = AudioEngine(sample_rate=44100)\n    ", "label": 1}
+{"sentence1": "websocket_default example code", "sentence2": "def websocket_default(event, context):\n    \"\"\"Handle WebSocket messages\"\"\"\n    connection_id = event['requestContext']['connectionId']\n    \n    try:\n        # Parse message\n        body = json.loads(e", "label": 1}
+{"sentence1": "brainwave entrainment", "sentence2": "sleep aid", "label": 1}
+{"sentence1": "oscillator", "sentence2": "fundamental frequency", "label": 1}
+{"sentence1": "hz", "sentence2": "fundamental frequency", "label": 1}
+{"sentence1": "define OAuthStart class", "sentence2": "class OAuthStart(BaseModel):\n    \"\"\"\n    OAuth flow start request\n    \"\"\"\n    provider: str\n    redirect_uri: Optional[str] = None\n    \n    @validator('provider')\n    def validate_provider(cls, v):\n  ", "label": 1}
+{"sentence1": "adhd", "sentence2": "focus", "label": 1}
+{"sentence1": "def test_webhook_event_logging(setup_db):\n    \"\"\"Test webhook event logging\"\"\"\n    from backend.database.models import WebhookEvent\n    \n    db = TestingSessionLocal()\n    \n    # Create a webhook even", "sentence2": "// Electromagnetic Beat Lab - Main App Component\n// Entry point for the electromagnetic wave generator application\n\nimport { ThemeProvider as StyledThemeProvider } from 'styled-components';\nimport { T", "label": 0}
+{"sentence1": "web audio api", "sentence2": "sample rate", "label": 1}
+{"sentence1": "create FieldSimulator object", "sentence2": "class FieldSimulator:\n    def __init__(self):\n        self.sessions: Dict[str, dict] = {}\n        self.running = False\n        self.grid_size = (64, 64)  # Field visualization grid\n        \n    def is", "label": 1}
+{"sentence1": "audio controls", "sentence2": "pattern selector", "label": 1}
+{"sentence1": "high pass", "sentence2": "distortion", "label": 1}
+{"sentence1": "audio context", "sentence2": "sample rate", "label": 1}
+{"sentence1": "sample rate", "sentence2": "audio graph", "label": 1}
+{"sentence1": "react hooks", "sentence2": "pattern selector", "label": 1}
+{"sentence1": "OAuthStart implementation", "sentence2": "class OAuthStart(BaseModel):\n    \"\"\"\n    OAuth flow start request\n    \"\"\"\n    provider: str\n    redirect_uri: Optional[str] = None\n    \n    @validator('provider')\n    def validate_provider(cls, v):\n  ", "label": 1}
+{"sentence1": "define TimerStatusResponse class", "sentence2": "class TimerStatusResponse(BaseModel):\n    \"\"\"Timer session status response.\"\"\"\n    session: Optional[TimerSession]\n    current_transition: Optional[FrequencyTransition]\n    next_transition: Optional[F", "label": 1}
+{"sentence1": "left channel", "sentence2": "interaural", "label": 1}
+{"sentence1": "oscillator", "sentence2": "pitch", "label": 1}
+{"sentence1": "define CreateSubscription class", "sentence2": "class CreateSubscription(BaseModel):\n    \"\"\"\n    Create subscription request\n    \"\"\"\n    price_id: str\n    payment_method_id: Optional[str] = None", "label": 1}
+{"sentence1": "latency", "sentence2": "peer connection", "label": 1}
+{"sentence1": "focus", "sentence2": "sleep aid", "label": 1}
+{"sentence1": "audio context", "sentence2": "audio node", "label": 1}
+{"sentence1": "real-time", "sentence2": "live audio", "label": 1}
+{"sentence1": "def test_authenticated_endpoints():\n    \"\"\"Test authenticated timer endpoints\"\"\"\n    token = create_test_token()\n    headers = {\"Authorization\": f\"Bearer {token}\"}\n    \n    print(\"Timer Authentication", "sentence2": "export interface AuthContextType {\n  user: User | null;", "label": 0}
+{"sentence1": "audio worklet", "sentence2": "audio processing", "label": 1}
+{"sentence1": "real-time", "sentence2": "peer connection", "label": 1}
+{"sentence1": "get_subscription_benefits example code", "sentence2": "def get_subscription_benefits():\n    \"\"\"\n    Get detailed subscription benefits for timer features.\n    \"\"\"\n    return {\n        \"free_features\": {\n            \"presets\": 2,\n            \"custom_preset", "label": 1}
+{"sentence1": "def test_authenticated_endpoints():\n    \"\"\"Test authenticated timer endpoints\"\"\"\n    token = create_test_token()\n    headers = {\"Authorization\": f\"Bearer {token}\"}\n    \n    print(\"Timer Authentication", "sentence2": "def setup_db():\n    \"\"\"Setup test database\"\"\"\n    Base.metadata.create_all(bind=engine)\n    yield\n    Base.metadata.drop_all(bind=engine)", "label": 0}
+{"sentence1": "create FrequencyType object", "sentence2": "class FrequencyType(str, Enum):\n    \"\"\"Brainwave frequency types.\"\"\"\n    DELTA = \"delta\"      # 0.5-4 Hz - Deep sleep\n    THETA = \"theta\"      # 4-8 Hz - REM sleep, meditation\n    ALPHA = \"alpha\"     ", "label": 1}
+{"sentence1": "how to test_endpoint", "sentence2": "def test_endpoint(endpoint, method=\"GET\", headers=None, data=None):\n    \"\"\"Test a single endpoint\"\"\"\n    url = f\"{BASE_URL}{endpoint}\"\n    print(f\"\\n=== Testing {method} {endpoint} ===\")\n    \n    try:", "label": 1}
+{"sentence1": "def test_anonymous_usage_tracking(setup_db):\n    \"\"\"Test anonymous usage tracking by IP\"\"\"\n    client = TestClient(app)\n    \n    # Record anonymous usage\n    response = client.post(\"/api/usage/anonymo", "sentence2": "import { useContext } from 'react';\nimport { AuthContext } from '../contexts/auth';\n\nexport const useAuth = () => {\n  const context = useContext(AuthContext);\n  if (!context) {\n    throw new Error('us", "label": 0}
+{"sentence1": "live audio", "sentence2": "peer connection", "label": 1}
+{"sentence1": "low pass", "sentence2": "adsr", "label": 1}
+{"sentence1": "def test_webhook_event_logging(setup_db):\n    \"\"\"Test webhook event logging\"\"\"\n    from backend.database.models import WebhookEvent\n    \n    db = TestingSessionLocal()\n    \n    # Create a webhook even", "sentence2": "class UserService:\n    \"\"\"\n    Service class for user management operations\n    \"\"\"\n    \n    def __init__(self):\n        self.stripe_service = StripeService()\n    \n    async def create_user(\n        s", "label": 0}
+{"sentence1": "test_webhook_event_logging example code", "sentence2": "def test_webhook_event_logging(setup_db):\n    \"\"\"Test webhook event logging\"\"\"\n    from backend.database.models import WebhookEvent\n    \n    db = TestingSessionLocal()\n    \n    # Create a webhook even", "label": 1}
+{"sentence1": "define TimerPreset class", "sentence2": "class TimerPreset(BaseModel):\n    \"\"\"\n    Timer preset with multiple frequency transitions.\n    \n    Args:\n        name: Preset name\n        description: Preset description\n        transitions: List o", "label": 1}
+{"sentence1": "sine wave", "sentence2": "pitch", "label": 1}
+{"sentence1": "audio worklet", "sentence2": "buffer", "label": 1}
+{"sentence1": "implement get_apigateway_client", "sentence2": "def get_apigateway_client(event):\n    \"\"\"Get API Gateway Management API client for WebSocket\"\"\"\n    global apigateway_client\n    if not apigateway_client:\n        domain_name = event['requestContext']", "label": 1}
+{"sentence1": "def get_apigateway_client(event):\n    \"\"\"Get API Gateway Management API client for WebSocket\"\"\"\n    global apigateway_client\n    if not apigateway_client:\n        domain_name = event['requestContext']", "sentence2": "export interface AuthContextType {\n  user: User | null;", "label": 0}
+{"sentence1": "gain node", "sentence2": "dsp", "label": 1}
+{"sentence1": "how to test_user_creation", "sentence2": "def test_user_creation(setup_db):\n    \"\"\"Test user model creation\"\"\"\n    from backend.database.models import User\n    \n    db = TestingSessionLocal()\n    \n    # Create a user\n    user = User(\n        ", "label": 1}
+{"sentence1": "useaudioengine", "sentence2": "pattern selector", "label": 1}
+{"sentence1": "audio streaming", "sentence2": "live audio", "label": 1}
+{"sentence1": "def check_usage_limits(user: User, session_duration: float, db: Session) -> bool:\n    \"\"\"\n    Check if user has exceeded usage limits for free tier\n    Returns True if usage is allowed, False otherwis", "sentence2": "def get_oauth_redirect_uri(provider: str, base_url: str = \"http://localhost:8000\") -> str:\n    \"\"\"\n    Get OAuth redirect URI for provider\n    \"\"\"\n    return f\"{base_url}/auth/{provider}/callback\"", "label": 0}
+{"sentence1": "implement test_authenticated_endpoints", "sentence2": "def test_authenticated_endpoints():\n    \"\"\"Test authenticated timer endpoints\"\"\"\n    token = create_test_token()\n    headers = {\"Authorization\": f\"Bearer {token}\"}\n    \n    print(\"Timer Authentication", "label": 1}
+{"sentence1": "bandpass", "sentence2": "compression", "label": 1}
+{"sentence1": "panning", "sentence2": "interaural", "label": 1}
+{"sentence1": "oscillator", "sentence2": "tone generation", "label": 1}
+{"sentence1": "sine wave", "sentence2": "carrier frequency", "label": 1}
+{"sentence1": "class TestSpatialAudioProcessor:\n    \"\"\"Test cases for the SpatialAudioProcessor class\"\"\"\n    \n    def setup_method(self):\n        \"\"\"Setup test fixtures\"\"\"\n        self.spatial_processor = SpatialAud", "sentence2": "def lambda_response(status_code: int, body: Dict[str, Any]) -> Dict[str, Any]:\n    \"\"\"Standard Lambda response format\"\"\"\n    return {\n        'statusCode': status_code,\n        'headers': {\n          ", "label": 0}
+{"sentence1": "how to test_webhook_event_logging", "sentence2": "def test_webhook_event_logging(setup_db):\n    \"\"\"Test webhook event logging\"\"\"\n    from backend.database.models import WebhookEvent\n    \n    db = TestingSessionLocal()\n    \n    # Create a webhook even", "label": 1}
+{"sentence1": "envelope", "sentence2": "adsr", "label": 1}
+{"sentence1": "websocket", "sentence2": "real-time", "label": 1}
+{"sentence1": "SessionEnd implementation", "sentence2": "class SessionEnd(BaseModel):\n    \"\"\"\n    Session end request\n    \"\"\"\n    session_duration: float  # Duration in minutes\n    session_metadata: Optional[Dict[str, Any]] = None", "label": 1}
+{"sentence1": "audio streaming", "sentence2": "webrtc", "label": 1}
+{"sentence1": "web audio api", "sentence2": "audio node", "label": 1}
+{"sentence1": "meditation", "sentence2": "neurofeedback", "label": 1}
+{"sentence1": "react hooks", "sentence2": "volume control", "label": 1}
+{"sentence1": "stereo", "sentence2": "spatial audio", "label": 1}
+{"sentence1": "define User class", "sentence2": "class User(Base):\n    \"\"\"\n    Simple user model - just OAuth email and subscription status\n    \"\"\"\n    __tablename__ = \"users\"\n    \n    id = Column(String, primary_key=True, default=lambda: str(uuid.u", "label": 1}
+{"sentence1": "useaudioengine", "sentence2": "frequency slider", "label": 1}
+{"sentence1": "adsr", "sentence2": "reverb", "label": 1}
+{"sentence1": "create AudioEngine object", "sentence2": "class AudioEngine:\n    def __init__(self, sample_rate: int = 44100):\n        self.sample_rate = sample_rate\n        self.sessions: Dict[str, dict] = {}\n        self.running = False\n        self.spatia", "label": 1}
+{"sentence1": "audio node", "sentence2": "buffer", "label": 1}
+{"sentence1": "ConnectionManager implementation", "sentence2": "class ConnectionManager:\n    def __init__(self):\n        self.active_connections: List[WebSocket] = []\n        self.sessions: Dict[str, dict] = {}\n\n    async def connect(self, websocket: WebSocket, se", "label": 1}
+{"sentence1": "how to websocket_default", "sentence2": "def websocket_default(event, context):\n    \"\"\"Handle WebSocket messages\"\"\"\n    connection_id = event['requestContext']['connectionId']\n    \n    try:\n        # Parse message\n        body = json.loads(e", "label": 1}
+{"sentence1": "filter", "sentence2": "bandpass", "label": 1}
+{"sentence1": "low pass", "sentence2": "distortion", "label": 1}
+{"sentence1": "gain node", "sentence2": "real-time", "label": 1}
+{"sentence1": "high pass", "sentence2": "adsr", "label": 1}
+{"sentence1": "class TestAudioEngine:\n    \"\"\"Test cases for the AudioEngine class\"\"\"\n    \n    def setup_method(self):\n        \"\"\"Setup test fixtures\"\"\"\n        self.audio_engine = AudioEngine(sample_rate=44100)\n    ", "sentence2": "import React, { useState } from 'react';\nimport { Box, Button, Card, CardContent, Typography, Alert, CircularProgress } from '@mui/material';\nimport { useAuth } from '../hooks/useAuth';\n\nexport const ", "label": 0}
+{"sentence1": "high pass", "sentence2": "delay", "label": 1}
+{"sentence1": "gain node", "sentence2": "audio processing", "label": 1}
+{"sentence1": "right channel", "sentence2": "interaural", "label": 1}
+{"sentence1": "how to check_usage_limits", "sentence2": "def check_usage_limits(user: User, session_duration: float, db: Session) -> bool:\n    \"\"\"\n    Check if user has exceeded usage limits for free tier\n    Returns True if usage is allowed, False otherwis", "label": 1}
+{"sentence1": "test_user_creation example code", "sentence2": "def test_user_creation(setup_db):\n    \"\"\"Test user model creation\"\"\"\n    from backend.database.models import User\n    \n    db = TestingSessionLocal()\n    \n    # Create a user\n    user = User(\n        ", "label": 1}
+{"sentence1": "import requests\nimport json\nimport sys", "sentence2": "import React, { useState } from 'react';\nimport { Box, Button, Card, CardContent, Typography, Alert, CircularProgress } from '@mui/material';\nimport { useAuth } from '../hooks/useAuth';", "label": 0}
+{"sentence1": "implement check_usage_limits", "sentence2": "def check_usage_limits(user: User, session_duration: float, db: Session) -> bool:\n    \"\"\"\n    Check if user has exceeded usage limits for free tier\n    Returns True if usage is allowed, False otherwis", "label": 1}
+{"sentence1": "webrtc", "sentence2": "peer connection", "label": 1}
+{"sentence1": "filter", "sentence2": "reverb", "label": 1}
+{"sentence1": "get_apigateway_client example code", "sentence2": "def get_apigateway_client(event):\n    \"\"\"Get API Gateway Management API client for WebSocket\"\"\"\n    global apigateway_client\n    if not apigateway_client:\n        domain_name = event['requestContext']", "label": 1}
+{"sentence1": "high pass", "sentence2": "eq", "label": 1}
+{"sentence1": "high pass", "sentence2": "reverb", "label": 1}
+{"sentence1": "neurofeedback", "sentence2": "sleep aid", "label": 1}
+{"sentence1": "envelope", "sentence2": "delay", "label": 1}
+{"sentence1": "carrier frequency", "sentence2": "fundamental frequency", "label": 1}
+{"sentence1": "audio context", "sentence2": "audio pipeline", "label": 1}
+{"sentence1": "implement test_anonymous_usage_limits", "sentence2": "def test_anonymous_usage_limits(setup_db):\n    \"\"\"Test anonymous free tier usage limits\"\"\"\n    client = TestClient(app)\n    \n    # Record usage that exceeds limit\n    response = client.post(\"/api/usag", "label": 1}
+{"sentence1": "right channel", "sentence2": "panning", "label": 1}
+{"sentence1": "create PasswordReset object", "sentence2": "class PasswordReset(BaseModel):\n    \"\"\"\n    Password reset request\n    \"\"\"\n    email: EmailStr", "label": 1}
+{"sentence1": "brainwave entrainment", "sentence2": "cognitive enhancement", "label": 1}
+{"sentence1": "CreateSubscription implementation", "sentence2": "class CreateSubscription(BaseModel):\n    \"\"\"\n    Create subscription request\n    \"\"\"\n    price_id: str\n    payment_method_id: Optional[str] = None", "label": 1}
+{"sentence1": "streaming", "sentence2": "latency", "label": 1}
+{"sentence1": "left channel", "sentence2": "phase difference", "label": 1}
+{"sentence1": "compression", "sentence2": "echo", "label": 1}
+{"sentence1": "latency", "sentence2": "live audio", "label": 1}
+{"sentence1": "streaming", "sentence2": "buffer underrun", "label": 1}
+{"sentence1": "buffer", "sentence2": "sample rate", "label": 1}
+{"sentence1": "def audio_handler(event, context):\n    \"\"\"Handle audio API requests\"\"\"\n    try:\n        http_method = event['httpMethod']\n        path = event['path']\n        \n        if path == '/audio/protocols' an", "sentence2": "class UserResponse(BaseModel):\n    \"\"\"\n    User response schema\n    \"\"\"\n    id: str\n    email: str\n    full_name: Optional[str] = None\n    is_active: bool\n    is_verified: bool\n    subscription_status", "label": 0}
+{"sentence1": "reverb", "sentence2": "delay", "label": 1}
+{"sentence1": "pattern selector", "sentence2": "ui components", "label": 1}
+{"sentence1": "import requests\nimport json\nimport sys", "sentence2": "interface AuthProviderProps {\n  children: ReactNode;", "label": 0}
+{"sentence1": "hertz", "sentence2": "sine wave", "label": 1}
+{"sentence1": "define ConnectionManager class", "sentence2": "class ConnectionManager:\n    def __init__(self):\n        self.active_connections: List[WebSocket] = []\n        self.sessions: Dict[str, dict] = {}\n\n    async def connect(self, websocket: WebSocket, se", "label": 1}
+{"sentence1": "def test_anonymous_usage_tracking(setup_db):\n    \"\"\"Test anonymous usage tracking by IP\"\"\"\n    client = TestClient(app)\n    \n    # Record anonymous usage\n    response = client.post(\"/api/usage/anonymo", "sentence2": "from backend.database.database import engine\nfrom backend.database.models import Base\nfrom sqlalchemy import inspect", "label": 0}
+{"sentence1": "attention training", "sentence2": "relaxation", "label": 1}
+{"sentence1": "websocket", "sentence2": "audio streaming", "label": 1}
+{"sentence1": "def get_user_usage_stats(user: User, db: Session) -> dict:\n    \"\"\"\n    Get usage statistics for a user\n    \"\"\"\n    now = datetime.utcnow()\n    current_month = now.month\n    current_year = now.year\n   ", "sentence2": "from fastapi import APIRouter, Depends, HTTPException, status, Request, Response\nfrom fastapi.security import HTTPBearer\nfrom sqlalchemy.orm import Session\nfrom database.database import get_db\nfrom da", "label": 0}
+{"sentence1": "spatial audio", "sentence2": "phase difference", "label": 1}
+{"sentence1": "bandpass", "sentence2": "adsr", "label": 1}
+{"sentence1": "focus", "sentence2": "attention training", "label": 1}
+{"sentence1": "define SessionEnd class", "sentence2": "class SessionEnd(BaseModel):\n    \"\"\"\n    Session end request\n    \"\"\"\n    session_duration: float  # Duration in minutes\n    session_metadata: Optional[Dict[str, Any]] = None", "label": 1}
+{"sentence1": "implement test_anonymous_usage_tracking", "sentence2": "def test_anonymous_usage_tracking(setup_db):\n    \"\"\"Test anonymous usage tracking by IP\"\"\"\n    client = TestClient(app)\n    \n    # Record anonymous usage\n    response = client.post(\"/api/usage/anonymo", "label": 1}
+{"sentence1": "main example code", "sentence2": "def main():\n    \"\"\"Start the development server with enhanced logging\"\"\"\n    \n    # Set environment for development\n    os.environ['EBL_ENV'] = 'development'\n    \n    print(\"\ud83c\udfb5 Starting Electromagnetic", "label": 1}
+{"sentence1": "useaudioengine", "sentence2": "ui components", "label": 1}
+{"sentence1": "define BinauralBeatGenerator class", "sentence2": "class BinauralBeatGenerator:\n    def __init__(self):\n        self.presets = self._initialize_presets()\n    \n    def _initialize_presets(self) -> Dict[str, dict]:\n        \"\"\"Initialize binaural beat pr", "label": 1}
+{"sentence1": "stereo", "sentence2": "right channel", "label": 1}
+{"sentence1": "right channel", "sentence2": "phase difference", "label": 1}
+{"sentence1": "TimerControlRequest implementation", "sentence2": "class TimerControlRequest(BaseModel):\n    \"\"\"Request to control timer session.\"\"\"\n    action: str = Field(pattern=\"^(start|pause|resume|stop|next|previous)$\")\n    session_id: Optional[str] = None\n    ", "label": 1}
+{"sentence1": "react hooks", "sentence2": "ui components", "label": 1}
+{"sentence1": "define ADHDProtocols class", "sentence2": "class ADHDProtocols:\n    def __init__(self):\n        self.protocols = self._initialize_protocols()\n    \n    def _initialize_protocols(self) -> Dict[str, dict]:\n        \"\"\"Initialize ADHD-specific trea", "label": 1}
+{"sentence1": "volume control", "sentence2": "preset management", "label": 1}
+{"sentence1": "preset management", "sentence2": "ui components", "label": 1}
+{"sentence1": "delay", "sentence2": "distortion", "label": 1}
+{"sentence1": "class TestSpatialAudioProcessor:\n    \"\"\"Test cases for the SpatialAudioProcessor class\"\"\"\n    \n    def setup_method(self):\n        \"\"\"Setup test fixtures\"\"\"\n        self.spatial_processor = SpatialAud", "sentence2": "from fastapi import APIRouter, Depends, HTTPException, status, Request, Response\nfrom fastapi.security import HTTPBearer\nfrom sqlalchemy.orm import Session\nfrom database.database import get_db\nfrom da", "label": 0}
+{"sentence1": "real-time", "sentence2": "audio processing", "label": 1}
+{"sentence1": "gain node", "sentence2": "buffer", "label": 1}
+{"sentence1": "envelope", "sentence2": "distortion", "label": 1}
+{"sentence1": "brainwave entrainment", "sentence2": "attention training", "label": 1}
+{"sentence1": "class ConnectionManager:\n    def __init__(self):\n        self.active_connections: List[WebSocket] = []\n        self.sessions: Dict[str, dict] = {}\n\n    async def connect(self, websocket: WebSocket, se", "sentence2": "import { ThemeProvider as StyledThemeProvider } from 'styled-components';\nimport { ThemeProvider } from '@mui/material/styles';\nimport CssBaseline from '@mui/material/CssBaseline';\nimport GlobalStyles", "label": 0}
+{"sentence1": "hz", "sentence2": "pitch", "label": 1}
+{"sentence1": "panning", "sentence2": "beat frequency", "label": 1}
+{"sentence1": "filter", "sentence2": "distortion", "label": 1}
+{"sentence1": "hertz", "sentence2": "synthesis", "label": 1}
+{"sentence1": "frequency", "sentence2": "pitch", "label": 1}
+{"sentence1": "create BinauralBeatGenerator object", "sentence2": "class BinauralBeatGenerator:\n    def __init__(self):\n        self.presets = self._initialize_presets()\n    \n    def _initialize_presets(self) -> Dict[str, dict]:\n        \"\"\"Initialize binaural beat pr", "label": 1}
+{"sentence1": "audio context", "sentence2": "web audio api", "label": 1}
+{"sentence1": "echo", "sentence2": "distortion", "label": 1}
+{"sentence1": "sine wave", "sentence2": "synthesis", "label": 1}
+{"sentence1": "high pass", "sentence2": "envelope", "label": 1}
+{"sentence1": "buffer underrun", "sentence2": "peer connection", "label": 1}
+{"sentence1": "buffer", "sentence2": "real-time", "label": 1}
+{"sentence1": "focus", "sentence2": "meditation", "label": 1}
+{"sentence1": "dsp", "sentence2": "audio pipeline", "label": 1}
+{"sentence1": "oscillator", "sentence2": "synthesis", "label": 1}
+{"sentence1": "def auth_handler(event, context):\n    \"\"\"Handle authentication requests\"\"\"\n    try:\n        # For now, simple auth - extend as needed\n        return lambda_response(200, {\n            'authenticated':", "sentence2": "import { useContext } from 'react';\nimport { AuthContext } from '../contexts/auth';", "label": 0}
+{"sentence1": "high pass", "sentence2": "echo", "label": 1}
+{"sentence1": "meditation", "sentence2": "brainwave entrainment", "label": 1}

@@ -34,7 +34,6 @@ import { formatTime } from '../helpers/timer/timerUtils';
 import CollapsibleSection from './shared/CollapsibleSection';
 import TabContentRenderer from './shared/TabContentRenderer';
 import SystemStatusChips from './shared/SystemStatusChips';
-import TimerCountdownDisplay from "./TimerCountdownDisplay.tsx";
 
 const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
   initialPattern,
@@ -71,7 +70,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
   const activeAudioEngine = sessionId ? backendEngine : frontendEngine;
 
   // Timer status for preset tracking
-  const [timerStatus, setTimerStatus] = useState<any>(null);
+  const [timerStatus, setTimerStatus] = useState<TimerStatus>(null);
 
   // Current preset tracking
   const { currentPreset } = useCurrentPresetTracker({
@@ -161,10 +160,32 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
     handleVolumeChange(volume, activeAudioEngine);
   }, [handleVolumeChange, activeAudioEngine]);
 
-  const handlePlayBound = useCallback(() => {
-    // Use the active audio engine (backend if connected, otherwise frontend fallback)
+  const handlePlayBound = useCallback(async () => {
+    console.log('▶️ Play button pressed - initializing audio context...');
+
+    // Initialize frontend audio context first (requires user gesture)
+    if (frontendEngine.initializeAudio) {
+      try {
+        console.log('🎵 Initializing frontend audio context...');
+        const audioContext = await frontendEngine.initializeAudio();
+        if (audioContext) {
+          console.log('✅ Frontend audio context initialized:', audioContext.state);
+          // Update the frontend engine's audio state with the context
+          if (frontendEngine.setAudioState) {
+            frontendEngine.setAudioState(prev => ({
+              ...prev,
+              context: audioContext
+            }));
+          }
+        }
+      } catch (error) {
+        console.warn('⚠️ Frontend audio context initialization failed:', error);
+      }
+    }
+
+    // Now proceed with normal play logic
     handlePlay(activeAudioEngine, backendEngine, activeAudioEngine);
-  }, [handlePlay, activeAudioEngine, backendEngine]);
+  }, [handlePlay, activeAudioEngine, backendEngine, frontendEngine]);
 
   const handleStop = useCallback(async () => {
     console.log('🛑 Master Stop: Stopping all audio engines');
@@ -193,18 +214,28 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
   }, [toggleAdvancedControls, backendEngine]);
 
   // Handle engine toggle changes
-  const handleEngineToggle = useCallback(async (engineType: 'binaural' | 'backend' | 'spatial', enabled: boolean) => {
+  const handleEngineToggle = useCallback(async (engineType: 'binaural' | 'backend' | 'spatial' | 'frontend', enabled: boolean) => {
     console.log(`🔄 Engine Toggle: ${engineType} -> ${enabled}`);
 
     try {
       switch (engineType) {
         case 'binaural':
+        case 'frontend':
           // FRONTEND ENGINE - explicit fallback only
           if (enabled) {
             console.log('▶️ Starting frontend binaural engine (explicit fallback)...');
+            // First stop backend if it's running
+            if (backendEngine.backendConnected) {
+              console.log('⏹️ Stopping backend to switch to frontend...');
+              await backendEngine.stopBackendSession();
+              if (backendEngine.disconnectBackend) {
+                await backendEngine.disconnectBackend();
+              }
+            }
+            // Start frontend engine
             await frontendEngine.startBinauralBeat({
-              leftFreq: appState.frequency || 144,
-              rightFreq: (appState.frequency || 144) + 4,
+              baseFrequency: appState.frequency || 144,
+              beatFrequency: 4,
               amplitude: appState.volume || 0.3,
               waveform: 'sine'
             });
@@ -217,6 +248,11 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
         case 'backend':
           // BACKEND ENGINE - this is the main binaural engine
           if (enabled) {
+            // First stop frontend if it's running
+            if (frontendEngine.audioState.isPlaying) {
+              console.log('⏹️ Stopping frontend to switch to backend...');
+              await frontendEngine.stopBinauralBeat();
+            }
             // Connect to backend and start session
             if (!backendEngine.backendConnected && backendEngine.connectBackend) {
               console.log('🔌 Connecting to backend (main binaural engine)...');
@@ -312,38 +348,13 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
               onTabChange={handleTabChange}
             />
 
-            {/* Timer Status Display - Under tabs, same level as title */}
-            {timerStatus && timerStatus.session && timerStatus.current_transition && (
-              <Box sx={{
-                mt: 1,
-                mb: 1,
-                bgcolor: 'rgba(0,0,0,0.3)',
-                border: '1px solid #ff6b00',
-                borderRadius: 1,
-                p: 1.5,
-                maxWidth: '600px'
-              }}>
-                <Typography variant="subtitle2" gutterBottom sx={{color: '#00ff88', fontSize: '0.9rem'}}>
-                  🎧 ACTIVE: {timerStatus.current_transition.description}
-                </Typography>
-                <Typography variant="body2" color="textSecondary" gutterBottom sx={{ fontSize: '0.8rem' }}>
-                  <Box component="span" sx={{color: '#ff6b00', fontWeight: 'bold'}}>
-                    {timerStatus.current_transition.frequency_hz}Hz
-                  </Box> •
-                  {timerStatus.current_transition.frequency_type} waves •
-                  <Box component="span" sx={{color: '#00bfff'}}>
-                    {timerStatus.current_transition.left_ear_hz}Hz L
-                    / {timerStatus.current_transition.right_ear_hz}Hz R
-                  </Box>
-                </Typography>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
-                  <Typography variant="caption" sx={{ fontSize: '0.75rem' }}>
-                    Current: {formatTime(timerStatus.time_remaining_current)}
-                  </Typography>
-                  <Typography variant="caption" sx={{ fontSize: '0.75rem' }}>
-                    Total: {formatTime(timerStatus.time_remaining_total)}
-                  </Typography>
-                </Box>
+
+            {/* DEBUG: Show timer status */}
+            {timerStatus && (
+              <Box sx={{ mb: 1, p: 0.5, bgcolor: 'rgba(255,0,0,0.1)', fontSize: '0.7rem' }}>
+                Timer Status: {timerStatus?.session?.is_active ? 'ACTIVE' : 'INACTIVE'} |
+                Has Session: {timerStatus?.session ? 'YES' : 'NO'} |
+                Has Transition: {timerStatus?.current_transition ? 'YES' : 'NO'}
               </Box>
             )}
           </Box>
@@ -353,6 +364,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
               appState={appState}
               audioEngine={activeAudioEngine}
               backendEngine={backendEngine}
+              frontendEngine={frontendEngine}
               patterns8D={WAVE_PATTERNS}
               onStateChange={updateAppState}
               onPatternSelect={handlePatternSelectBound}
@@ -366,17 +378,43 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
       <Paper elevation={0} sx={ElectromagneticLabStyles.headerPaper}>
         <Box sx={ElectromagneticLabStyles.titleStatusRow}>
           <Box sx={{ flex: 1 }}>
-            <Typography
-              variant={timerStatus?.session?.is_active ? "h5" : "h4"}
-              sx={{
-                ...ElectromagneticLabStyles.mainTitle,
-                fontSize: timerStatus?.session?.is_active ? '1.5rem' : '2rem'
-              }}
-            >
-              Bishop's Electromagnetic Beat Lab
-            </Typography>
+            {/* TIMER REPLACES MAIN TITLE when active */}
+            {timerStatus?.session?.is_active && timerStatus?.current_transition ? (
+              <Box sx={{
+                bgcolor: 'rgba(0,0,0,0.5)',
+                border: '2px solid #ff6b00',
+                borderRadius: 1,
+                p: 2,
+                maxWidth: '700px',
+                boxShadow: '0 0 15px rgba(255, 107, 0, 0.3)'
+              }}>
+                <Typography variant="h5" gutterBottom sx={{color: '#00ff88', fontSize: '1.2rem', fontWeight: 'bold'}}>
+                  🎧 TIMER ACTIVE: {timerStatus.current_transition.description}
+                </Typography>
+                <Typography variant="body1" color="textSecondary" gutterBottom sx={{ fontSize: '0.9rem' }}>
+                  <Box component="span" sx={{color: '#ff6b00', fontWeight: 'bold', fontSize: '1rem'}}>
+                    {timerStatus.current_transition.frequency_hz}Hz
+                  </Box> •
+                  {timerStatus.current_transition.frequency_type} waves •
+                  <Box component="span" sx={{color: '#00bfff', fontWeight: 'bold'}}>
+                    {timerStatus.current_transition.left_ear_hz}Hz L / {timerStatus.current_transition.right_ear_hz}Hz R
+                  </Box>
+                </Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
+                  <Typography variant="body2" sx={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#ffd700' }}>
+                    Current: {formatTime(timerStatus.time_remaining_current)}
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#ffd700' }}>
+                    Total: {formatTime(timerStatus.time_remaining_total)}
+                  </Typography>
+                </Box>
+              </Box>
+            ) : (
+              <Typography variant="h4" sx={ElectromagneticLabStyles.mainTitle}>
+                Bishop's Electromagnetic Beat Lab
+              </Typography>
+            )}
           </Box>
-
 
           <Box sx={{ display: 'flex', gap: 0.25, alignItems: 'center', fontSize: '0.75rem' }}>
             <ElectromagneticStatus
@@ -400,7 +438,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
             
             <SystemStatusChips
               appState={appState}
-              audioEngine={backendEngine}
+              audioEngine={activeAudioEngine}
               patterns8D={WAVE_PATTERNS}
               onStateChange={updateAppState}
               onToggleEngine={handleEngineToggle}
@@ -409,11 +447,6 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
         )}
       </Paper>
 
-      {/* Timer Countdown Display - Always visible when timer is active */}
-      <TimerCountdownDisplay 
-        timerStatus={timerStatus}
-        isVisible={true}
-      />
 
       {/* Dynamic Flex Layout */}
       <Box sx={ElectromagneticLabStyles.mainLayoutContainer(closedSections)}>

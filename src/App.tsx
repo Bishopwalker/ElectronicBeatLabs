@@ -210,8 +210,8 @@ const AppContent = () => {
                   updateFrequency: (left: number, right: number) => console.log('Updating frequency:', left, right),
                   audioState: {
                     isPlaying: false,
-                    leftFreq: 440,
-                    rightFreq: 444,
+                    leftFreq: 140,
+                    rightFreq: 144,
                     beatFreq: 4,
                     volume: 0.3
                   }

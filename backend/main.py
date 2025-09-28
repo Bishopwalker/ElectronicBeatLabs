@@ -140,15 +140,28 @@ class ConnectionManager:
 
     async def send_data(self, websocket: WebSocket, data: dict):
         try:
+            # Check if WebSocket is still in active connections
+            if websocket not in self.active_connections:
+                return
+
+            # Check WebSocket state before sending
+            if websocket.client_state.name != 'CONNECTED':
+                return
+
             await websocket.send_json(data)
             MetricsCollector.track_websocket_message("sent", data.get("type", "unknown"))
         except Exception as e:
-            logger.error(f"Failed to send WebSocket message: {e}")
+            # Remove from active connections if send fails
+            if websocket in self.active_connections:
+                self.active_connections.remove(websocket)
+            logger.debug(f"WebSocket send failed (connection likely closed): {e}")
             MetricsCollector.track_error("websocket_send", "connection_manager")
 
     async def broadcast(self, data: dict):
-        for connection in self.active_connections:
-            await connection.send_json(data)
+        # Create a copy of the connections list to avoid modification during iteration
+        connections_copy = self.active_connections.copy()
+        for connection in connections_copy:
+            await self.send_data(connection, data)
 
 manager = ConnectionManager()
 

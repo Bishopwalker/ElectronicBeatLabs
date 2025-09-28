@@ -29,7 +29,7 @@ async def demo_audio_engine():
     print("-" * 40)
     
     settings = {
-        "base_frequency": 200,
+        "base_frequency": 144,
         "beat_frequency": 4,
         "amplitude": 0.5,
         "envelope_type": "constant"
@@ -132,7 +132,7 @@ async def demo_audio_engine():
     print("-" * 40)
     
     metrics_session = audio_engine.start_session({
-        "base_frequency": 300,
+        "base_frequency": 100,
         "beat_frequency": 10,
         "amplitude": 0.6
     })

@@ -19,6 +19,7 @@ interface TabContentRendererProps {
   appState: AppState;
   audioEngine: any;
   backendEngine: any;
+  frontendEngine?: any;
   patterns8D: any;
   onStateChange: (partialState: Partial<AppState>) => void;
   onPatternSelect: (patternId: string) => void;
@@ -29,6 +30,7 @@ const TabContentRenderer: React.FC<TabContentRendererProps> = ({
   appState,
   audioEngine,
   backendEngine,
+  frontendEngine,
   patterns8D,
   onStateChange,
   onPatternSelect,
@@ -39,7 +41,7 @@ const TabContentRenderer: React.FC<TabContentRendererProps> = ({
     appState,
     audioEngine,  // Active audio engine (might be frontend or backend)
     backendEngine,  // Backend engine reference
-    frontendEngine: audioEngine,  // Frontend engine reference
+    frontendEngine: frontendEngine || audioEngine,  // Frontend engine reference
     patterns8D: patterns8D.patterns,
     onStateChange,
     // Helper flags so tabs know what's running
@@ -53,10 +55,13 @@ const TabContentRenderer: React.FC<TabContentRendererProps> = ({
     audioEngine: backendEngine  // Override with backend for timer
   };
 
-  // Settings tab uses backend engine for spatial audio
+  // Settings tab gets both engines properly
   const settingsProps = {
     ...commonProps,
-    audioEngine: backendEngine  // Override with backend for settings
+    // Keep audioEngine as active audio engine for compatibility
+    // But pass specific engine refs for connection monitoring
+    backendEngine,
+    frontendEngine
   };
 
   switch (appState.activeTab) {

@@ -2,7 +2,7 @@
 // Extracted complex state logic from main component
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import type { AppState, PatternMode } from '../types';
+import type {AppState, AudioEngine, BackendAudioConfig, PatternMode} from '../types';
 import { WAVE_PATTERNS } from '../data/patterns';
 import { DEFAULT_APP_STATE, DEFAULT_CLOSED_SECTIONS } from '../components/config/ElectromagneticLabConfig';
 import { ElectromagneticLabManager, type ElectromagneticLabState } from '../components/helpers/ElectromagneticLabManager';
@@ -51,9 +51,8 @@ export const useElectromagneticLabState = (initialPattern?: string, autoStart: b
   }, []); // Only run on mount
 
   // Update electromagnetic state with audio engine data
-  const updateElectromagneticState = useCallback((backendEngine: any) => {
-    const activeEngine = backendEngine;
-    
+  const updateElectromagneticState = useCallback((activeEngine: any) => {
+    // Use the provided active engine (could be frontend or backend)
     const currentElectromagnetic = activeEngine.electromagnetic;
     const currentAudioState = activeEngine.audioState;
     
@@ -79,11 +78,13 @@ export const useElectromagneticLabState = (initialPattern?: string, autoStart: b
           electromagnetic: enhancedElectromagnetic,
           isPlaying: currentAudioState.isPlaying,
           volume: isNaN(currentAudioState.amplitude) ? prev.appState.volume : currentAudioState.amplitude,
-          frequency: currentAudioState.beatFreq
+          baseFrequency: currentAudioState.baseFrequency,
+          beatFrequency: currentAudioState.beatFrequence
+          
         }
       }));
     }
-  }, [state.appState.spatialAudio?.enabled]);
+  }, [manager]);
 
   // Force electromagnetic field update when pattern changes
   const updateElectromagneticForPattern = useCallback(() => {
@@ -151,19 +152,19 @@ export const useElectromagneticLabState = (initialPattern?: string, autoStart: b
     ...state,
     
     // Manager methods
-    handlePatternSelect: (patternId: string, audioEngine: any, patterns8D: any) => 
+    handlePatternSelect: (patternId: string, audioEngine: AudioEngine, patterns8D: PatternMode) =>
       manager.handlePatternSelect(patternId, audioEngine, patterns8D),
     
-    handleModeChange: (mode: PatternMode, masterAudio: any) => 
+    handleModeChange: (mode: PatternMode, masterAudio: any) =>
       manager.handleModeChange(mode, masterAudio),
     
-    handleFrequencyChange: (frequency: number, audioEngine: any) => 
+    handleFrequencyChange: (frequency: number, audioEngine: AudioEngine) =>
       manager.handleFrequencyChange(frequency, audioEngine),
     
-    handleVolumeChange: (volume: number, audioEngine: any) => 
+    handleVolumeChange: (volume: number, audioEngine: AudioEngine) =>
       manager.handleVolumeChange(volume, audioEngine),
     
-    handlePlay: (audioEngine: any, backendEngine: any, patterns8D: any) => 
+    handlePlay: (audioEngine: AudioEngine, backendEngine: BackendAudioConfig, patterns8D: PatternMode) =>
       manager.handlePlay(audioEngine, backendEngine, patterns8D),
     
     handleTabChange: (tabId: string) => manager.handleTabChange(tabId),
@@ -172,7 +173,7 @@ export const useElectromagneticLabState = (initialPattern?: string, autoStart: b
     
     handleSectionRestore: (id: string) => manager.handleSectionRestore(id),
     
-    toggleAdvancedControls: (backendEngine?: any) => manager.toggleAdvancedControls(backendEngine),
+    toggleAdvancedControls: (backendEngine?: BackendAudioConfig) => manager.toggleAdvancedControls(backendEngine),
     
     toggleDarkScreen: () => manager.toggleDarkScreen(),
     

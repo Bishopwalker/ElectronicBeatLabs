@@ -1,9 +1,5 @@
 // Electromagnetic Beat Lab - Type Definitions
-// Complete TypeScript interfaces for the electromagnetic wave beat generator
-// Electromagnetic Beat Lab - Type Definitions
-// Complete TypeScript interfaces for the electromagnetic wave beat generator
 import type {BinauralBeatConfig} from './audio.types';
-// Import audio types from dedicated file
 export * from './audio.types'
 
 export type PatternMode = 'AUTO' | 'MANUAL' | 'OFF' | 'CUSTOM' | 'SYNC' | 'FLOW';
@@ -104,6 +100,30 @@ export interface AudioEngine {
   stopBackendSession?: () => Promise<void>;
   updateSettings?: (settings: Record<string, unknown>) => void;
 }
+
+export interface FrontendAudioEngine {
+  audioState: FrontendAudioEngineState;
+  electromagnetic: ElectromagneticField;
+  startBinauralBeat: (config: BinauralBeatConfig) => Promise<void>;
+  stopBinauralBeat: () => void;
+  updateFrequency: (left: number, right: number) => void;
+  updateVolume: (volume: number) => void;
+  updateWaveform: (waveForm: WaveForm) => void;
+  loadPattern: (pattern: PatternConfig) => void;
+  generateTestTones: (leftFreq: number, rightFreq: number, duration?: number) => void;
+  frequencySweep: (startFreq: number, endFreq: number, duration: number) => void;
+  createGammaProtocol: (protocol: ADHDProtocol) => void;
+  isSupported: boolean;
+  initializeAudio: () => Promise<AudioContext | null>;
+  setAudioState?: (updater: (prev: FrontendAudioEngineState) => FrontendAudioEngineState) => void;
+  // Required properties for compatibility
+  backendConnected: false;
+  sessionId: null;
+  websocketState: WebSocketState;
+}
+
+// Union type for either audio engine
+export type AnyAudioEngine = AudioEngine | FrontendAudioEngine;
 
 export interface Pattern8D {
   id: string;

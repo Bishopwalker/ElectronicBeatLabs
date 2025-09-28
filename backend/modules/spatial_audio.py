@@ -9,7 +9,7 @@ from typing import Dict, Tuple, Optional
 import asyncio
 
 class SpatialAudioProcessor:
-    def __init__(self, sample_rate: int = 44100):
+    def __init__(self, sample_rate: int = 48000):
         self.sample_rate = sample_rate
         self.sessions: Dict[str, dict] = {}
         

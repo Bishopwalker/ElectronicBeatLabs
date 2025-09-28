@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from modules.spatial_audio import SpatialAudioProcessor
 
 class AudioEngine:
-    def __init__(self, sample_rate: int = 44100):
+    def __init__(self, sample_rate: int = 48000):
         self.sample_rate = sample_rate
         self.sessions: Dict[str, dict] = {}
         self.running = False
@@ -80,7 +80,7 @@ class AudioEngine:
         settings = session["settings"]
         
         # Get frequency parameters with validation
-        base_freq = max(20, min(20000, settings.get("base_frequency", 200)))
+        base_freq = max(20, min(20000, settings.get("base_frequency", 140)))
         beat_freq = max(0.1, min(100, settings.get("beat_frequency", 4)))
         amplitude = max(0.0, min(1.0, settings.get("amplitude", 0.5)))
         

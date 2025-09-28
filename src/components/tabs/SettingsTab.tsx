@@ -10,30 +10,39 @@ interface SettingsTabProps {
   audioEngine: AudioEngine;
   patterns8D: Pattern8D[];
   onStateChange: (state: Partial<AppState>) => void;
+  backendEngine?: any; // Backend audio engine for WebSocket state
+  frontendEngine?: any; // Frontend audio engine for audio context state
 }
 
 const SettingsTab: React.FC<SettingsTabProps> = ({
   appState,
   audioEngine,
-  onStateChange
+  onStateChange,
+  backendEngine,
+  frontendEngine
 }) => {
+  // Use specific engines for their purposes
+  const audioContextEngine = frontendEngine; // Always use frontend for audio context
+  const connectionEngine = backendEngine;     // Always use backend for connection status
+
   // Local state to track audio context and connection states
   const [audioContextState, setAudioContextState] = useState(
-    audioEngine.audioState?.context?.state || 'closed'
+    audioContextEngine?.audioState?.context?.state || 'closed'
   );
+
   const [backendConnected, setBackendConnected] = useState(
-    audioEngine.backendConnected || false
+    connectionEngine?.backendConnected || false
   );
   const [websocketState, setWebsocketState] = useState({
-    connected: audioEngine.websocketState?.connected || false,
-    connecting: audioEngine.websocketState?.connecting || false,
-    error: audioEngine.websocketState?.error || null
+    connected: connectionEngine?.websocketState?.connected || false,
+    connecting: connectionEngine?.websocketState?.connecting || false,
+    error: connectionEngine?.websocketState?.error || null
   });
 
   // Monitor audio context state changes
   useEffect(() => {
     const checkAudioContext = () => {
-      const newState = audioEngine.audioState?.context?.state || 'closed';
+      const newState = audioContextEngine?.audioState?.context?.state || 'closed';
       if (newState !== audioContextState) {
         setAudioContextState(newState);
       }
@@ -41,20 +50,23 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
 
     // Check immediately and set up interval
     checkAudioContext();
-    const intervalId = setInterval(checkAudioContext, 10000);
+    const intervalId = setInterval(checkAudioContext, 1000);
 
     return () => clearInterval(intervalId);
-  }, [audioEngine.audioState?.context, audioContextState]);
+  }, [audioContextEngine?.audioState?.context, audioContextState]);
 
   // Monitor backend connection state
   useEffect(() => {
     const checkConnectionState = () => {
-      setBackendConnected(audioEngine.backendConnected || false);
-      setWebsocketState({
-        connected: audioEngine.websocketState?.connected || false,
-        connecting: audioEngine.websocketState?.connecting || false,
-        error: audioEngine.websocketState?.error || null
-      });
+      const newBackendConnected = connectionEngine?.backendConnected || false;
+      const newWebsocketState = {
+        connected: connectionEngine?.websocketState?.connected || false,
+        connecting: connectionEngine?.websocketState?.connecting || false,
+        error: connectionEngine?.websocketState?.error || null
+      };
+
+      setBackendConnected(newBackendConnected);
+      setWebsocketState(newWebsocketState);
     };
 
     // Check immediately and set up interval
@@ -62,7 +74,31 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
     const intervalId = setInterval(checkConnectionState, 1000);
 
     return () => clearInterval(intervalId);
-  }, [audioEngine.backendConnected, audioEngine.websocketState?.connected || undefined]);
+  }, [connectionEngine?.backendConnected, connectionEngine?.websocketState, backendConnected]);
+
+  // Initialize audio context if it's closed/undefined and we have a frontend engine
+  useEffect(() => {
+    const tryInitializeAudioContext = async () => {
+      if (audioContextState === 'closed' && audioContextEngine?.initializeAudio) {
+        console.log('🎵 SettingsTab: Attempting to initialize audio context...');
+        try {
+          const context = await audioContextEngine.initializeAudio();
+          if (context) {
+            console.log('✅ SettingsTab: Audio context initialized successfully');
+            setAudioContextState(context.state);
+          }
+        } catch (error) {
+          console.error('❌ SettingsTab: Failed to initialize audio context:', error);
+        }
+      }
+    };
+
+    // Only try once when component mounts
+    if ( audioContextState === 'closed') {
+       tryInitializeAudioContext();
+    }
+  }, [ audioContextState.connected == 'closed']); // Empty deps - only run on mount
+
   const handleSpatialSettingsChange = (spatialSettings: {
     enabled: boolean;
     movement_speed: number;
@@ -85,19 +121,19 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
     });
 
     // Update backend settings if connected
-    if (audioEngine.updateSpatialSettings && audioEngine.backendConnected) {
-      audioEngine.updateSpatialSettings(fullSpatialConfig);
+    if (connectionEngine?.updateSpatialSettings && connectionEngine?.backendConnected) {
+      connectionEngine.updateSpatialSettings(fullSpatialConfig);
     }
   };
 
   // Handler for WebSocket reconnection
   const handleWebSocketReconnect = () => {
     console.log('🔄 Manually reconnecting WebSocket...');
-    if (audioEngine.connectBackend && audioEngine.disconnectBackend) {
+    if (connectionEngine?.connectBackend && connectionEngine?.disconnectBackend) {
       // Disconnect first, then reconnect
-      audioEngine.disconnectBackend();
+      connectionEngine.disconnectBackend();
       setTimeout(() => {
-        audioEngine.connectBackend();
+        connectionEngine.connectBackend();
       }, 1000);
     } else {
       console.warn('⚠️ No backend connection methods available');
@@ -107,12 +143,13 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
   // Handler for AudioContext resume
   const handleAudioContextResume = async () => {
     console.log('▶️ Resuming AudioContext...');
-    if (audioEngine.audioState?.context) {
+    if (audioContextEngine?.audioState?.context) {
       try {
-        await audioEngine.audioState.context.resume();
+        await audioContextEngine.audioState.context.resume();
+        setAudioContextState(audioContextEngine.audioState.context.state);
         // Force a state update to trigger UI re-render
-        onStateChange({ 
-          audioContextState: audioEngine.audioState.context.state,
+        onStateChange({
+          audioContextState: audioContextEngine.audioState.context.state,
           // Add timestamp to force update
           lastUpdate: Date.now()
         });
@@ -126,18 +163,51 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
   const handleAudioContextReset = async () => {
     console.log('🔄 Resetting AudioContext...');
     try {
-      if (audioEngine.resetAudioContext) {
-        await audioEngine.resetAudioContext();
-      } else if (audioEngine.initializeAudio) {
-        await audioEngine.initializeAudio();
+      if (audioContextEngine?.resetAudioContext) {
+        await audioContextEngine.resetAudioContext();
+      } else if (audioContextEngine?.initializeAudio) {
+        const context = await audioContextEngine.initializeAudio();
+        if (context) {
+          // For frontend engine, we need to update the audio state directly
+          if (audioContextEngine.setAudioState) {
+            audioContextEngine.setAudioState((prev: any) => ({
+              ...prev,
+              context
+            }));
+          }
+          setAudioContextState(context.state);
+        }
       }
       // Force state update after reset
-      onStateChange({ 
-        audioContextState: audioEngine.audioState?.context?.state || 'closed',
+      onStateChange({
+        audioContextState: audioContextEngine?.audioState?.context?.state || 'closed',
         lastUpdate: Date.now()
       });
     } catch (error) {
       console.error('Failed to reset AudioContext:', error);
+    }
+  };
+
+  // Handler for AudioContext initialization (user gesture)
+  const handleAudioContextInit = async () => {
+    console.log('🎵 Manually initializing AudioContext...');
+    try {
+      if (audioContextEngine?.initializeAudio) {
+        const context = await audioContextEngine.initializeAudio();
+        if (context) {
+          // For frontend engine, we need to update the audio state directly
+          if (audioContextEngine.setAudioState) {
+            audioContextEngine.setAudioState((prev: any) => ({
+              ...prev,
+              context
+            }));
+          }
+          setAudioContextState(context.state);
+          console.log('✅ Audio context initialized with user gesture:', context.state);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to initialize AudioContext:', error);
     }
   };
 
@@ -211,7 +281,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
           {backendConnected ? (
             <Typography sx={{ color: '#00ff88' }}>
-              ✅ Connected to backend (Session: {audioEngine.sessionId?.slice(-8)})
+              ✅ Connected to backend (Session: {connectionEngine?.sessionId?.slice(-8)})
             </Typography>
           ) : (
             <Typography sx={{ color: '#ff6b00' }}>
@@ -225,9 +295,9 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
             size="small"
             onClick={() => {
               if (backendConnected) {
-                audioEngine.disconnectBackend?.();
+                connectionEngine?.disconnectBackend?.();
               } else {
-                audioEngine.connectBackend?.();
+                connectionEngine?.connectBackend?.();
               }
             }}
             sx={{ ml: 1 }}
@@ -286,11 +356,11 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
         </Typography>
         <Box sx={{ color: '#e0e0e0', fontSize: '0.9rem' }}>
           <Typography component="div" sx={{ mb: 0.5 }}>
-            Sample Rate: {audioEngine.audioState?.context?.sampleRate || 44100} Hz
+            Sample Rate: {audioContextEngine?.audioState?.context?.sampleRate || 44100} Hz
           </Typography>
           <Typography component="div" sx={{ mb: 0.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-            Audio Context State: 
-            <Box component="span" sx={{ 
+            Audio Context State:
+            <Box component="span" sx={{
               fontWeight: 600,
               color: audioContextState === 'running' ? '#00ff88' :
                      audioContextState === 'suspended' ? '#ff6b00' : '#ff4444'
@@ -300,12 +370,26 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
                audioContextState === 'closed' ? '🔴 Closed' : '⚫ Not initialized'}
             </Box>
           </Typography>
+          <Typography component="div" sx={{ mb: 0.5 }}>
+            Active Engine: {backendConnected ? '🔗 Backend (Python DSP)' : '⚡ Frontend (Web Audio)'}
+          </Typography>
           <Typography component="div" sx={{ mb: 1 }}>
-            Web Audio Support: {audioEngine.isSupported ? '✅ Supported' : '❌ Not supported'}
+            Web Audio Support: {audioContextEngine?.isSupported ? '✅ Supported' : '❌ Not supported'}
           </Typography>
           
           {/* AudioContext Control Buttons */}
           <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+            {audioContextState === 'closed' && (
+              <Button
+                variant="contained"
+                color="primary"
+                size="small"
+                onClick={handleAudioContextInit}
+                sx={{ fontSize: '0.75rem', py: 0.25 }}
+              >
+                🎵 Initialize Audio Context
+              </Button>
+            )}
             {audioContextState === 'suspended' && (
               <Button
                 variant="contained"
