@@ -27,7 +27,7 @@ class TestAudioEngine:
     def test_start_session(self):
         """Test starting an audio session"""
         settings = {
-            "base_frequency": 200,
+            "base_frequency": 144,
             "beat_frequency": 4,
             "amplitude": 0.5
         }
@@ -66,7 +66,7 @@ class TestAudioEngine:
         """Test frequency validation"""
         # Test normal frequencies
         settings = {
-            "base_frequency": 200,
+            "base_frequency": 144,
             "beat_frequency": 4,
             "amplitude": 0.5
         }
@@ -99,7 +99,7 @@ class TestAudioEngine:
     async def test_generate_frame(self):
         """Test audio frame generation"""
         settings = {
-            "base_frequency": 200,
+            "base_frequency": 144,
             "beat_frequency": 4,
             "amplitude": 0.5
         }
@@ -140,7 +140,7 @@ class TestAudioEngine:
     async def test_generate_frame_with_spatial(self):
         """Test audio frame generation with spatial audio"""
         settings = {
-            "base_frequency": 200,
+            "base_frequency": 144,
             "beat_frequency": 4,
             "amplitude": 0.5,
             "spatial_enabled": True,
@@ -202,7 +202,7 @@ class TestAudioEngine:
     async def test_phase_continuity(self):
         """Test that phases are continuous between frames"""
         settings = {
-            "base_frequency": 200,
+            "base_frequency": 144,
             "beat_frequency": 4,
             "amplitude": 0.5
         }

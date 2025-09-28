@@ -24,7 +24,7 @@ class ADHDProtocols:
                     },
                     {
                         "duration_minutes": 20,
-                        "base_frequency": 200,
+                        "base_frequency": 144,
                         "beat_frequency": 14,
                         "description": "Core SMR training"
                     },
@@ -45,19 +45,19 @@ class ADHDProtocols:
                 "stages": [
                     {
                         "duration_minutes": 10,
-                        "base_frequency": 220,
+                        "base_frequency": 160,
                         "beat_frequency": 15,
                         "description": "Beta enhancement"
                     },
                     {
                         "duration_minutes": 15,
-                        "base_frequency": 250,
+                        "base_frequency": 150,
                         "beat_frequency": 18,
                         "description": "Sustained beta focus"
                     },
                     {
                         "duration_minutes": 5,
-                        "base_frequency": 200,
+                        "base_frequency": 144,
                         "beat_frequency": 12,
                         "description": "SMR stabilization"
                     }
@@ -72,25 +72,25 @@ class ADHDProtocols:
                 "stages": [
                     {
                         "duration_minutes": 5,
-                        "base_frequency": 200,
+                        "base_frequency": 144,
                         "beat_frequency": 10,
                         "description": "Alpha baseline"
                     },
                     {
                         "duration_minutes": 10,
-                        "base_frequency": 280,
+                        "base_frequency": 180,
                         "beat_frequency": 20,
                         "description": "Beta activation"
                     },
                     {
                         "duration_minutes": 10,
-                        "base_frequency": 300,
+                        "base_frequency": 100,
                         "beat_frequency": 40,
                         "description": "Gamma for cognitive processing"
                     },
                     {
                         "duration_minutes": 5,
-                        "base_frequency": 220,
+                        "base_frequency": 160,
                         "beat_frequency": 14,
                         "description": "SMR integration"
                     }
@@ -111,7 +111,7 @@ class ADHDProtocols:
                     },
                     {
                         "duration_minutes": 14,
-                        "base_frequency": 200,
+                        "base_frequency": 144,
                         "beat_frequency": 12,
                         "description": "SMR for calm alertness"
                     },
@@ -138,13 +138,13 @@ class ADHDProtocols:
                     },
                     {
                         "duration_minutes": 7,
-                        "base_frequency": 250,
+                        "base_frequency": 150,
                         "beat_frequency": 18,
                         "description": "Beta activation"
                     },
                     {
                         "duration_minutes": 5,
-                        "base_frequency": 280,
+                        "base_frequency": 180,
                         "beat_frequency": 25,
                         "description": "High beta energy"
                     }
@@ -159,13 +159,13 @@ class ADHDProtocols:
                 "stages": [
                     {
                         "duration_minutes": 5,
-                        "base_frequency": 200,
+                        "base_frequency": 144,
                         "beat_frequency": 12,
                         "description": "SMR preparation"
                     },
                     {
                         "duration_minutes": 40,
-                        "base_frequency": 220,
+                        "base_frequency": 160,
                         "beat_frequency": 14,
                         "description": "Sustained SMR focus"
                     },
@@ -198,7 +198,7 @@ class ADHDProtocols:
                     },
                     {
                         "duration_minutes": 10,
-                        "base_frequency": 200,
+                        "base_frequency": 144,
                         "beat_frequency": 12,
                         "description": "SMR stabilization"
                     }

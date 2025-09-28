@@ -62,8 +62,27 @@ export interface AudioEngineState {
     isPlaying: boolean;
     config: BinauralBeatConfig | null;
     sessionId: string | null;
+    webSocket?: boolean;
     connected: boolean;
     error: string | null;
+}
+
+/**
+ * FRONTEND AUDIO ENGINE STATE (Web Audio API)
+ * Used by the frontend fallback engine only
+ */
+export interface FrontendAudioEngineState {
+    isPlaying: boolean;
+    amplitude: number;
+    leftFreq: number;
+    rightFreq: number;
+    beatFreq: number;
+    waveform: 'sine' | 'square' | 'triangle' | 'sawtooth';
+    gainL: GainNode | null;
+    gainR: GainNode | null;
+    oscillatorL: OscillatorNode | null;
+    oscillatorR: OscillatorNode | null;
+    context: AudioContext | null;
 }
 
 // ============================================
@@ -80,7 +99,7 @@ export interface AudioEngineState {
  * These are ONLY for UI display purposes
  */
 export const calculateLeftFreq = (baseFrequency: number): number => baseFrequency;
-export const calculateRightFreq = (baseFrequency: number, beatFrequency: number): number => baseFrequency - beatFrequency;
+export const calculateRightFreq = (baseFrequency: number, beatFrequency: number): number => baseFrequency + beatFrequency;
 
 /**
  * Convert timer config to standard binaural config

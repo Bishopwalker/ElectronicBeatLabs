@@ -124,18 +124,63 @@ const SystemStatusChips: React.FC<SystemStatusChipsProps> = ({
         }}
       />
 
+      {/* Frontend Engine - Web Audio API */}
+      <Chip
+        label={!audioEngine.backendConnected ? "⚡ Frontend ON" : "⚡ Frontend OFF"}
+        size="small"
+        color={!audioEngine.backendConnected ? "success" : "default"}
+        variant={!audioEngine.backendConnected ? "filled" : "outlined"}
+        onClick={onToggleEngine ? () => {
+          console.log(`🔄 SystemStatusChips: Toggling frontend engine - currently backend connected:`, audioEngine.backendConnected);
+          // If backend is connected, enable frontend (switch to frontend)
+          // If backend is not connected, we're already using frontend so this would disable it
+          onToggleEngine('frontend', !audioEngine.backendConnected);
+        } : undefined}
+        sx={{
+          ...ElectromagneticLabStyles.statusChip(!audioEngine.backendConnected),
+          ...(!audioEngine.backendConnected && {
+            background: 'linear-gradient(45deg, #ff8533, #9944d9) !important',
+            fontWeight: 'bold',
+            boxShadow: '0 0 8px rgba(255, 133, 51, 0.4)'
+          }),
+          ...(onToggleEngine && {
+            cursor: 'pointer',
+            '&:hover': {
+              transform: 'scale(1.02)',
+            },
+            transition: 'all 0.2s ease-in-out'
+          })
+        }}
+      />
+
       {/* Spatial Audio */}
       <Chip
         label={appState.spatialAudio?.enabled ? "🎧 Spatial ON" : "🎧 Spatial OFF"}
         size="small"
-        color={(appState.spatialAudio?.enabled && audioEngine.backendConnected) ? "success" : "default"}
-        variant={(appState.spatialAudio?.enabled && audioEngine.backendConnected) ? "filled" : "outlined"}
+        color={
+          appState.spatialAudio?.enabled
+            ? (audioEngine.backendConnected ? "success" : "warning")
+            : "default"
+        }
+        variant={appState.spatialAudio?.enabled ? "filled" : "outlined"}
         onClick={onToggleEngine ? () => {
           console.log(`🔄 SystemStatusChips: Toggling spatial audio:`, !appState.spatialAudio?.enabled);
-          onToggleEngine('spatial', !!appState.spatialAudio?.enabled);
+          onToggleEngine('spatial', !appState.spatialAudio?.enabled);
         } : undefined}
         sx={{
-          ...ElectromagneticLabStyles.statusChip(!!(appState.spatialAudio?.enabled && audioEngine.backendConnected)),
+          ...ElectromagneticLabStyles.statusChip(!!appState.spatialAudio?.enabled),
+          // Special styling for spatial audio enabled but backend not connected
+          ...(appState.spatialAudio?.enabled && !audioEngine.backendConnected && {
+            background: 'linear-gradient(45deg, #ff8533, #ffaa00) !important',
+            fontWeight: 'bold',
+            boxShadow: '0 0 8px rgba(255, 133, 51, 0.4)'
+          }),
+          // Special styling for spatial audio enabled and backend connected
+          ...(appState.spatialAudio?.enabled && audioEngine.backendConnected && {
+            background: 'linear-gradient(45deg, #00ff00, #00dd00) !important',
+            fontWeight: 'bold',
+            boxShadow: '0 0 10px rgba(0, 255, 0, 0.5)'
+          }),
           ...(onToggleEngine && {
             cursor: 'pointer',
             '&:hover': {

@@ -1,0 +1,48 @@
+[
+  {
+    "query": "audio engine frequency generation",
+    "expected_files": [
+      "useAudioEngine",
+      "AudioEngine",
+      "frequency"
+    ],
+    "description": "Should find audio processing and frequency generation code"
+  },
+  {
+    "query": "binaural beat calculator",
+    "expected_files": [
+      "binaural",
+      "beat",
+      "frequency"
+    ],
+    "description": "Should find binaural beat generation algorithms"
+  },
+  {
+    "query": "React hook for audio control",
+    "expected_files": [
+      "useAudioEngine",
+      "hook",
+      "audio"
+    ],
+    "description": "Should find React hooks for audio functionality"
+  },
+  {
+    "query": "WebSocket real-time streaming",
+    "expected_files": [
+      "websocket",
+      "stream",
+      "real-time"
+    ],
+    "description": "Should find WebSocket and streaming implementations"
+  },
+  {
+    "query": "ADHD frequency protocols",
+    "expected_files": [
+      "adhd",
+      "protocol",
+      "frequency",
+      "pattern"
+    ],
+    "description": "Should find ADHD treatment frequency patterns"
+  }
+]

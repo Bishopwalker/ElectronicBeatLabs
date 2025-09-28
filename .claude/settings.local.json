@@ -98,7 +98,9 @@
       "Bash(netstat:*)",
       "Bash(timeout:*)",
       "SlashCommand(/context-init)",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Bash(tasklist)",
+      "Bash(stop-dev.bat)"
     ],
     "deny": [],
     "ask": []

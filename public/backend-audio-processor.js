@@ -13,7 +13,7 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
     this.volume = isNaN(initialVolume) ? 0.5 : initialVolume; // Protect against NaN
 
     // CRITICAL CHANGE #1: Use a ring buffer for efficiency - sized based on actual sample rate
-    this.bufferSize = this.sampleRate * 4; // 4 seconds of buffer space
+    this.bufferSize = this.sampleRate * 6; // 6 seconds of buffer space for stability
     this._audioBuffer = {
       left: new Float32Array(this.bufferSize),
       right: new Float32Array(this.bufferSize),
@@ -22,15 +22,16 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
       availableSamples: 0
     };
 
-    // CRITICAL CHANGE #2: Optimized buffering for 60 FPS WebSocket frames (735 samples per frame)
-    // At 60 FPS, we get ~735 samples every 16.67ms, so we need buffer thresholds that work with this rate
-    this.frameSamples = 735; // Expected samples per WebSocket frame at 60 FPS
+    // CRITICAL CHANGE #2: Dynamic frame size calculation based on actual sample rate
+    // Backend sends at 60 FPS with precise timing
+    this.frameSamples = Math.floor(this.sampleRate / 60); // Expected samples per WebSocket frame at 60 FPS
     this.framesPerSecond = 60;
 
-    this.minBufferSize = this.frameSamples * 12; // ~12 frames minimum (200ms) - more stable
-    this.targetBufferSize = this.frameSamples * 24; // ~24 frames target (400ms) - more conservative
-    this.maxBufferSize = this.frameSamples * 60; // ~60 frames max (1000ms) - prevent excessive buffering
-    this.restartThreshold = this.frameSamples * 8; // ~8 frames (133ms) - restart when critically low
+    // Optimized buffer thresholds for 48kHz/800 samples per frame
+    this.minBufferSize = this.frameSamples * 8; // ~8 frames minimum (133ms) - stable startup
+    this.targetBufferSize = this.frameSamples * 16; // ~16 frames target (267ms) - balanced buffer
+    this.maxBufferSize = this.frameSamples * 100; // ~100 frames max (1667ms) - prevent excessive buffering
+    this.restartThreshold = this.frameSamples * 6; // ~6 frames (100ms) - stable restart
 
     // Playback state management
     this.isPlaying = false;
@@ -84,6 +85,17 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
       case 'clearBuffer':
         this.clearBuffer();
         break;
+      case 'start':
+        console.log('🔊 AudioWorklet: Manual start command received');
+        this.isPrimed = true; // Force prime to allow immediate playback
+        break;
+      case 'stop':
+        console.log('⏹️ AudioWorklet: Stop command received');
+        this.isPlaying = false;
+        this.isPrimed = false;
+        this.fadingIn = false;
+        this.fadingOut = false;
+        break;
       default:
         console.warn('🎵 BackendAudioProcessor: Unknown message type:', message.type);
     }
@@ -129,7 +141,12 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
       const samplesReceived = frameData.left.length;
       const bufferBefore = this._audioBuffer.availableSamples;
 
-      // Add samples to ring buffer
+      // Validate expected frame size to catch timing issues
+      if (samplesReceived !== this.frameSamples) {
+        console.warn(`⚠️ Frame size mismatch: expected ${this.frameSamples}, got ${samplesReceived}`);
+      }
+
+      // Add samples to ring buffer with improved conversion
       let addedCount = 0;
       for (let i = 0; i < samplesReceived; i++) {
         // FIXED: Proper 16-bit PCM to float conversion with clamping
@@ -137,6 +154,7 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
         const rightRaw = Math.max(-32768, Math.min(32767, frameData.right[i]));
 
         // Convert from int16 range [-32768, 32767] to float [-1.0, 1.0]
+        // Use 32768.0 for proper normalization (not 32767)
         const leftSample = leftRaw / 32768.0;
         const rightSample = rightRaw / 32768.0;
 
@@ -146,14 +164,14 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
 
       this.totalSamplesReceived += addedCount;
 
-      // Only log significant events
+      // Auto-prime when we have enough buffer for the first time
       if (bufferBefore < this.minBufferSize && this._audioBuffer.availableSamples >= this.minBufferSize) {
-        console.log(`✅ Buffer reached minimum threshold: ${this._audioBuffer.availableSamples} samples`);
+        console.log(`✅ Buffer reached minimum threshold: ${this._audioBuffer.availableSamples} samples - auto-priming`);
         this.isPrimed = true;
       }
 
       // Warn if buffer is getting too full
-      if (this._audioBuffer.availableSamples > this.maxBufferSize * 0.9) {
+      if (this._audioBuffer.availableSamples > this.maxBufferSize * 0.85) {
         console.warn(`⚠️ Buffer near maximum: ${this._audioBuffer.availableSamples}/${this.maxBufferSize}`);
       }
 
@@ -164,6 +182,7 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
           frameSize: samplesReceived,
           bufferSize: this._audioBuffer.availableSamples,
           bufferHealth: this.getBufferHealth(),
+          expectedFrameSize: this.frameSamples,
           timestamp: currentTime
         }
       });
@@ -221,12 +240,13 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
     // Buffer state management
     const availableSamples = this._audioBuffer.availableSamples;
 
-    // Start playing only when we have enough buffer AND we've been primed
-    if (!this.isPlaying && this.isPrimed && availableSamples >= this.minBufferSize) {
+    // Start playing when primed and we have sufficient buffer
+    // Use target buffer size for more stable startup
+    if (!this.isPlaying && this.isPrimed && availableSamples >= this.targetBufferSize) {
       this.isPlaying = true;
       this.fadingIn = true;
       this.currentFade = 0;
-      console.log(`▶️ Starting playback with fade-in, buffer: ${availableSamples} samples`);
+      console.log(`▶️ Starting playback with fade-in: ${availableSamples} samples (target: ${this.targetBufferSize})`);
     }
 
     // Stop playing if buffer runs too low (but don't reset isPrimed)
@@ -235,8 +255,16 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
         this.fadingOut = true;
         this.currentFade = 0;
         this.underrunCount++;
-        console.warn(`⚠️ UNDERRUN #${this.underrunCount}! Buffer below ${this.restartThreshold} samples (${availableSamples} available), starting fade-out`);
+        console.warn(`⚠️ UNDERRUN #${this.underrunCount}! Buffer below ${this.restartThreshold} samples (${availableSamples} available), starting fade-out. Will restart when buffer reaches ${this.targetBufferSize}`);
       }
+    }
+
+    // Restart playback when buffer recovers to target level after underrun
+    if (!this.isPlaying && this.isPrimed && !this.fadingOut && availableSamples >= this.targetBufferSize) {
+      this.isPlaying = true;
+      this.fadingIn = true;
+      this.currentFade = 0;
+      console.log(`🔄 Restarting playback after buffer recovery: ${availableSamples} samples`);
     }
 
     // Fill output buffer with smooth transitions
@@ -279,17 +307,17 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
     // Increment frame counter
     this.frameCount++;
 
-    // Periodic status update (every 10 seconds, and only when playing or has issues)
-    if (this.frameCount % 3440 === 0) { // 3440 * 128 = 440320 ≈ 10 seconds
+    // Periodic status update (every 5 seconds for better monitoring)
+    if (this.frameCount % 1720 === 0) { // 1720 * 128 = 220160 ≈ 5 seconds at 44.1kHz
       const bufferMs = Math.round((this._audioBuffer.availableSamples / this.sampleRate) * 1000);
       const bufferFrames = Math.round(this._audioBuffer.availableSamples / this.frameSamples);
       const bufferHealth = this.getBufferHealth();
 
-      // Only log when playing or when there are issues
+      // Log more frequently to help debug timing issues
       if (this.isPlaying || bufferHealth === 'critical' || bufferHealth === 'low' || this.underrunCount > 0) {
         console.log(`📊 Status: Buffer=${bufferMs}ms (~${bufferFrames} frames, ${this._audioBuffer.availableSamples} samples), ` +
             `Health=${bufferHealth}, Playing=${this.isPlaying}, ` +
-            `Underruns=${this.underrunCount}`);
+            `Underruns=${this.underrunCount}, Received=${this.totalSamplesReceived}, Played=${this.totalSamplesPlayed}`);
       }
 
       // Always send status to main thread for UI updates

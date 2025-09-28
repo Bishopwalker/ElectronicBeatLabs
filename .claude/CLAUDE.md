@@ -88,6 +88,13 @@
 - **Audio quality is paramount** over visual graphics or UI complexity.
 - **Test audio generation thoroughly** to ensure precise frequency generation and binaural beat accuracy.
 
+### 🔊 Audio Technical Specifications
+- **Sample Rate**: 48kHz (backend) and dynamic frontend (48kHz preferred for user's system)
+- **Frame Rate**: 60 FPS WebSocket streaming (800 samples per frame at 48kHz)
+- **Frequency Defaults**: All frequency defaults must be ≤ 199Hz (e.g., 440Hz → 140Hz, 450Hz → 150Hz)
+- **Buffer Management**: AudioWorklet uses ring buffer with 16-90 frame capacity for smooth playback
+- **Bit Depth**: 16-bit PCM for WebSocket transmission, 32-bit float for Web Audio processing
+
 ### 🧪 Enhanced Testing & Validation
 - **Always test each feature live** by running it in bash and reading output.
 - **Use Windows MCP server** to actually run the website when bash output isn't adequate for proper validation.

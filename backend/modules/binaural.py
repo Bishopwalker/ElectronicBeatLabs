@@ -30,7 +30,7 @@ class BinauralBeatGenerator:
             },
             "relaxation": {
                 "name": "Relaxation",
-                "base_frequency": 200,
+                "base_frequency": 144,
                 "beat_frequency": 10,
                 "description": "Alpha waves for calm relaxation",
                 "category": "relaxation",
@@ -38,7 +38,7 @@ class BinauralBeatGenerator:
             },
             "focus": {
                 "name": "Focus",
-                "base_frequency": 250,
+                "base_frequency": 150,
                 "beat_frequency": 18,
                 "description": "Beta waves for concentration and focus",
                 "category": "focus",
@@ -46,7 +46,7 @@ class BinauralBeatGenerator:
             },
             "high_focus": {
                 "name": "High Focus",
-                "base_frequency": 300,
+                "base_frequency": 100,
                 "beat_frequency": 40,
                 "description": "Gamma waves for peak performance",
                 "category": "focus",
@@ -54,7 +54,7 @@ class BinauralBeatGenerator:
             },
             "adhd_focus": {
                 "name": "ADHD Focus",
-                "base_frequency": 200,
+                "base_frequency": 144,
                 "beat_frequency": 14,
                 "description": "SMR waves for ADHD symptom management",
                 "category": "therapeutic",
@@ -70,7 +70,7 @@ class BinauralBeatGenerator:
             },
             "energy_boost": {
                 "name": "Energy Boost",
-                "base_frequency": 280,
+                "base_frequency": 180,
                 "beat_frequency": 25,
                 "description": "High beta for energy and alertness",
                 "category": "energy",
@@ -86,7 +86,7 @@ class BinauralBeatGenerator:
             },
             "memory_enhancement": {
                 "name": "Memory Enhancement",
-                "base_frequency": 220,
+                "base_frequency": 160,
                 "beat_frequency": 12,
                 "description": "Alpha-beta transition for memory consolidation",
                 "category": "cognitive",

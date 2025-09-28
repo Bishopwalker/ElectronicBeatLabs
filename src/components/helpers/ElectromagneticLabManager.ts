@@ -1,7 +1,13 @@
 // Electromagnetic Beat Lab Manager - State and Logic Helper
 // Separates complex state management and business logic from UI component
 
-import type { AppState, ElectromagneticBeatLabProps, PatternMode, ElectromagneticFieldState } from '../../types';
+import type {
+  AppState,
+  ElectromagneticBeatLabProps,
+  PatternMode,
+  ElectromagneticFieldState,
+  AudioEngine, PatternConfig, Pattern8D
+} from '../../types';
 import { WAVE_PATTERNS } from '../../data/patterns';
 
 export interface ElectromagneticLabState {
@@ -127,58 +133,68 @@ export class ElectromagneticLabManager {
   // Handle play
   handlePlay(audioEngine: any, backendEngine: any, patterns8D: any) {
     console.log('🎛️ HandlePlay called - Current Pattern:', this.state.appState.currentPattern?.name, 'Is Playing:', this.state.appState.isPlaying);
-    
+
+    // Get pattern or use default frequencies
+    const pattern = this.state.appState.currentPattern || {
+      frequencies: {
+        carrier: this.state.appState.frequency || 144,
+        beat: 4
+      }
+    };
+
     // Always proceed with play - let the audio engine handle the actual audio state
-    if (this.state.appState.currentPattern) {
-      // Choose engine based on spatial audio settings
-      const useSpatialAudio = this.state.appState.spatialAudio?.enabled && backendEngine.backendConnected;
-      
-      if (useSpatialAudio) {
-        console.log('🎧 Using Backend Engine for 8D Spatial Audio');
-        if (backendEngine.loadPattern) {
-          backendEngine.loadPattern(this.state.appState.currentPattern);
-        }
-        if (backendEngine.startBinauralBeat) {
-          const config = {
-            leftFreq: this.state.appState.currentPattern.frequencies.carrier,
-            rightFreq: this.state.appState.currentPattern.frequencies.carrier + this.state.appState.currentPattern.frequencies.beat,
-            beatFreq: this.state.appState.currentPattern.frequencies.beat,
-            amplitude: this.state.appState.volume || 0.3,
-            waveform: 'sine' as const
-          };
-          backendEngine.startBinauralBeat(config);
-        }
-      } else {
-        console.log('🎵 Using Frontend Engine for Basic Binaural Beats');
-        if (audioEngine.loadPattern) {
-          audioEngine.loadPattern(this.state.appState.currentPattern);
-        }
-        if (audioEngine.startBinauralBeat) {
-          const config = {
-            leftFreq: this.state.appState.currentPattern.frequencies.carrier,
-            rightFreq: this.state.appState.currentPattern.frequencies.carrier + this.state.appState.currentPattern.frequencies.beat,
-            beatFreq: this.state.appState.currentPattern.frequencies.beat,
-            amplitude: this.state.appState.volume || 0.3,
-            waveform: 'sine' as const
-          };
-          audioEngine.startBinauralBeat(config);
-        }
+    // Choose engine based on spatial audio settings
+    const useSpatialAudio = this.state.appState.spatialAudio?.enabled && backendEngine.backendConnected;
+
+    if (useSpatialAudio) {
+      console.log('🎧 Using Backend Engine for 8D Spatial Audio');
+      if (backendEngine.loadPattern && this.state.appState.currentPattern) {
+        backendEngine.loadPattern(this.state.appState.currentPattern);
       }
-      
-      // Set pattern for visualizer
-      if (patterns8D && patterns8D.setActivePattern) {
-        patterns8D.setActivePattern(this.state.appState.currentPattern);
+      if (backendEngine.startBinauralBeat) {
+        // Both engines now use consistent BinauralBeatConfig format
+        const config = {
+          baseFrequency: pattern.frequencies.carrier,
+          beatFrequency: pattern.frequencies.beat,
+          amplitude: this.state.appState.volume || 0.3,
+          waveform: 'sine' as const,
+          spatial: {
+            enabled: true,
+            mode: '3d' as const,
+            positioning: 'headphones' as const,
+            roomSize: 'small' as const
+          }
+        };
+        backendEngine.startBinauralBeat(config);
       }
-      
-      this.updateAppState({ isPlaying: true });
-      console.log('✅ Play completed successfully');
     } else {
-      console.log('❌ No pattern selected - please select a pattern first');
+      console.log('🎵 Using Frontend Engine for Basic Binaural Beats');
+      if (audioEngine.loadPattern && this.state.appState.currentPattern) {
+        audioEngine.loadPattern(this.state.appState.currentPattern);
+      }
+      if (audioEngine.startBinauralBeat) {
+        // Both engines now use consistent BinauralBeatConfig format
+        const config = {
+          baseFrequency: pattern.frequencies.carrier,
+          beatFrequency: pattern.frequencies.beat,
+          amplitude: this.state.appState.volume || 0.3,
+          waveform: 'sine' as const
+        };
+        audioEngine.startBinauralBeat(config);
+      }
     }
+
+    // Set pattern for visualizer (only if real pattern)
+    if (patterns8D && patterns8D.setActivePattern && this.state.appState.currentPattern) {
+      patterns8D.setActivePattern(this.state.appState.currentPattern);
+    }
+
+    this.updateAppState({ isPlaying: true });
+    console.log('✅ Play completed successfully');
   }
 
   // Handle stop
-  handleStop(audioEngine: any, backendEngine: any, patterns8D: any) {
+  handleStop(audioEngine: AudioEngine, backendEngine: any, patterns8D: any) {
     console.log('🛑 HandleStop called');
     
     // Stop both audio engines
@@ -224,14 +240,16 @@ export class ElectromagneticLabManager {
     this.setState(prev => {
       const willOpen = !prev.advancedControlsOpen;
       
-      // Auto-connect backend when opening advanced controls
-      if (willOpen && backendEngine && !backendEngine.backendConnected) {
+      // Auto-connect backend when opening advanced controls (only if not connected and not connecting)
+      if (willOpen && backendEngine && !backendEngine.backendConnected && !backendEngine.websocketState?.connecting) {
         console.log('🔌 Advanced Controls: Auto-connecting to backend engine...');
         try {
           backendEngine.connectBackend();
         } catch (error) {
           console.error('❌ Advanced Controls: Failed to auto-connect backend:', error);
         }
+      } else if (willOpen && backendEngine?.websocketState?.connecting) {
+        console.log('⏳ Advanced Controls: Backend connection already in progress, skipping auto-connect');
       }
       
       return {

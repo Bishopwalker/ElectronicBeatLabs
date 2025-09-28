@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-# Global instances
+# Global instances - Use 48kHz to match user's system
 audio_engine = AudioEngine(sample_rate=48000)
 spatial_processor = SpatialAudioProcessor(sample_rate=48000)
 audio_engine.set_spatial_processor(spatial_processor)
@@ -67,24 +67,42 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 async def stream_audio_frames(websocket: WebSocket, session_id: str):
-    """Stream audio frames to client at 60 FPS"""
-    frame_duration = 1.0 / 60  # 60 FPS
+    """Stream audio frames to client at precise 60 FPS with timing correction"""
+    target_fps = 60
+    frame_duration = 1.0 / target_fps  # 16.666ms target
+
+    # Track timing for precision
+    start_time = asyncio.get_event_loop().time()
+    frame_count = 0
+    next_frame_time = start_time
 
     try:
         while True:
+            frame_start = asyncio.get_event_loop().time()
+
             # Generate audio frame
             frame = await audio_engine.generate_frame(session_id)
 
             if frame:
-                # Send frame to client
+                # Send frame to client with precise timing
                 await websocket.send_json({
                     "type": "frame",
                     "data": frame,
-                    "timestamp": asyncio.get_event_loop().time()
+                    "timestamp": frame_start,
+                    "frame_count": frame_count
                 })
 
-            # Wait for next frame time
-            await asyncio.sleep(frame_duration)
+            frame_count += 1
+            next_frame_time = start_time + (frame_count * frame_duration)
+
+            # Calculate precise sleep time to maintain 60 FPS
+            current_time = asyncio.get_event_loop().time()
+            sleep_time = next_frame_time - current_time
+
+            if sleep_time > 0:
+                await asyncio.sleep(sleep_time)
+            elif sleep_time < -0.002:  # If more than 2ms behind, log warning
+                logger.warning(f"Frame timing drift: {sleep_time*1000:.1f}ms behind target")
 
     except Exception as e:
         logger.error(f"Audio streaming error for session {session_id}: {e}")

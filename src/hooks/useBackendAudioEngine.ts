@@ -185,11 +185,11 @@ export const useBackendAudioEngine = () => {
       console.error('❌ Backend Engine: Failed to initialize AudioWorklet audio:', error);
     }
   }, [audioState.config?.amplitude]);
-
+/* console.log('🎧 Backend Engine: Processing audio frame with', frame.frame_size, 'samples',
+    //     'Left:', frame.frequencies.left, 'Hz Right:', frame.frequencies.right, 'Hz Beat:', frame.frequencies.beat, 'Hz');
+*/
   // Process backend audio frame (send to AudioWorklet)
   const processAudioFrame = useCallback((frame: BackendAudioFrame) => {
-    // console.log('🎧 Backend Engine: Processing audio frame with', frame.frame_size, 'samples',
-    //     'Left:', frame.frequencies.left, 'Hz Right:', frame.frequencies.right, 'Hz Beat:', frame.frequencies.beat, 'Hz');
 
     if (!audioContext.current) {
       console.error('❌ Backend Engine: No audio context available for frame processing');
@@ -251,8 +251,8 @@ export const useBackendAudioEngine = () => {
       phase: (frame.time * 360) % 360,
       coherence: 1 - frame.metrics.std,
       resonance: Math.min(1, fieldEnergy / 100),
-      state: fieldStrength > 0.8 ? 'CRITICAL' :
-          fieldStrength > 0.6 ? 'RESONANT' :
+      state: fieldStrength > 80 ? 'CRITICAL' :
+          fieldStrength > 0.7 ? 'RESONANT' :
               fieldStrength > 0.4 ? 'ACTIVE' :
                   fieldStrength > 0.2 ? 'CHARGING' : 'INACTIVE',
       stability: 1 - Math.abs(frame.metrics.std)
@@ -266,14 +266,27 @@ export const useBackendAudioEngine = () => {
       connectionPromiseRef.current(true);
       connectionPromiseRef.current = null;
       setWaitingForConnection(false);
+
     }
   }, [websocket.isConnected, waitingForConnection]);
 
-  // Handle WebSocket messages
+  // Handle WebSocket messages with debouncing for frame messages
+  const lastProcessedMessageRef = useRef<number>(0);
+
   useEffect(() => {
     const handleMessage = async () => {
       if (websocket.lastMessage && sessionId) { // Only process if we have active session
         const message = websocket.lastMessage;
+
+        // Debounce frame messages to prevent infinite loops
+        if (message.type === 'frame' || message.type === 'audio_frame') {
+          const now = Date.now();
+          if (now - lastProcessedMessageRef.current < 16) { // Max 60 FPS processing
+            return;
+          }
+          lastProcessedMessageRef.current = now;
+        }
+
         console.log('📨 Backend Engine: Received WebSocket message type:', message.type);
      //   console.log('🔍 Backend Engine: Full message object:', JSON.stringify(message, null, 2));
 
@@ -340,6 +353,7 @@ export const useBackendAudioEngine = () => {
 
             // Initialize AudioWorklet pipeline
             await initializePersistentAudio();
+
             console.log('✅ Backend Engine: Session started message received');
             setBackendConnected(true);
             break;
@@ -364,22 +378,70 @@ export const useBackendAudioEngine = () => {
     handleMessage().then();
   }, [websocket.lastMessage, sessionId, processAudioFrame, processFieldFrame, initializeAudio, initializePersistentAudio, websocket]);
 
-  // Connect to backend
+  // Connect to backend with auto WebSocket connection
   const connectBackend = useCallback(async () => {
+    // Prevent multiple simultaneous connection attempts
+    if (backendConnected || websocket.isConnecting) {
+      console.log('⏭️ Backend Engine: Connection already established or in progress, skipping...');
+      return;
+    }
+
     console.log('🔌 Backend Engine: Connecting to backend...');
     try {
+      // First check backend health
       const healthResponse = await api.healthCheck();
-      if (healthResponse.status === 200) {
-        setBackendConnected(true);
-        console.log('✅ Backend Engine: Connected successfully');
-      } else {
+      if (healthResponse.status !== 200) {
         throw new Error('Backend health check failed');
       }
+
+      console.log('✅ Backend Engine: Backend is healthy, establishing WebSocket connection...');
+
+      // Auto-connect WebSocket when backend connects
+      if (!websocket.isConnected && !websocket.isConnecting) {
+        console.log('🔗 Backend Engine: Auto-starting WebSocket connection...');
+        websocket.connect(144, 4); // Default frequencies for initial connection
+
+        // Wait for WebSocket connection with timeout
+        const wsConnected = await new Promise<boolean>((resolve) => {
+          const timeout = setTimeout(() => {
+            console.log('⚠️ Backend Engine: WebSocket connection timeout during backend connect');
+            resolve(false);
+          }, 1000); // Increased to 10 seconds
+
+          const checkConnection = () => {
+            if (websocket.isConnected) {
+              clearTimeout(timeout);
+              resolve(true);
+            } else {
+              setTimeout(checkConnection, 100);
+            }
+          };
+
+          checkConnection();
+        });
+
+        if (!wsConnected) {
+          console.warn('⚠️ Backend Engine: WebSocket connection failed, but backend is available');
+        }
+      }
+
+      setBackendConnected(true);
+      console.log('✅ Backend Engine: Connected successfully with WebSocket state:', {
+        connected: websocket.isConnected,
+        connecting: websocket.isConnecting,
+        backendConnected: true,
+        sessionId:websocket.sessionId
+      });
+      console.log('🆔 Backend Engine: Current session ID after connection:', sessionId);
+
+      // Force a re-render by updating a timestamp
+      console.log('🔄 Backend Engine: Forcing component re-render after connection');
     } catch (error) {
       console.error('❌ Backend Engine: Connection failed:', error);
       setBackendConnected(false);
+      throw error;
     }
-  }, [api]);
+  }, [api, backendConnected, sessionId, websocket]);
 
   // Stop backend session
   const stopBackendSession = useCallback(async () => {
@@ -462,7 +524,7 @@ export const useBackendAudioEngine = () => {
       const sessionConfig: BackendSessionConfig = config ? {
         // When config is provided, check if values are valid numbers
         base_frequency: (!isNaN(config.baseFrequency))
-            ? config.baseFrequency : 440,
+            ? config.baseFrequency : 140,
         beat_frequency: ( !isNaN(config.beatFrequency))
             ? config.beatFrequency : 4,
         amplitude: ( !isNaN(config.amplitude))
@@ -483,7 +545,6 @@ export const useBackendAudioEngine = () => {
       };
 
       console.log('📤 Backend Engine: Sending config to backend:', sessionConfig);
-
       // Connect WebSocket if not connected
       console.log('🔍 Backend Engine: WebSocket state:', { 
         isConnected: websocket.isConnected, 
@@ -510,16 +571,16 @@ export const useBackendAudioEngine = () => {
           // Also set a timeout
           const timeout = setTimeout(() => {
             if (connectionPromiseRef.current) {
-              console.log('❌ Backend Engine: WebSocket connection timeout after 5000ms');
-              console.log('Final WebSocket state:', { 
-                isConnected: websocket.isConnected, 
-                isConnecting: websocket.isConnecting 
+              console.log('❌ Backend Engine: WebSocket connection timeout after 10000ms');
+              console.log('Final WebSocket state:', {
+                isConnected: websocket.isConnected,
+                isConnecting: websocket.isConnecting
               });
               connectionPromiseRef.current(false);
               connectionPromiseRef.current = null;
               setWaitingForConnection(false);
             }
-          }, 5000);
+          }, 10000);
           
           // Check if already connected
           if (websocket.isConnected) {
@@ -544,16 +605,16 @@ export const useBackendAudioEngine = () => {
           // Set a timeout
           const timeout = setTimeout(() => {
             if (connectionPromiseRef.current) {
-              console.log('❌ Backend Engine: WebSocket connection timeout after 5000ms (isConnecting case)');
-              console.log('Final WebSocket state:', { 
-                isConnected: websocket.isConnected, 
-                isConnecting: websocket.isConnecting 
+              console.log('❌ Backend Engine: WebSocket connection timeout after 10000ms (isConnecting case)');
+              console.log('Final WebSocket state:', {
+                isConnected: websocket.isConnected,
+                isConnecting: websocket.isConnecting
               });
               connectionPromiseRef.current(false);
               connectionPromiseRef.current = null;
               setWaitingForConnection(false);
             }
-          }, 5000);
+          }, 10000);
           
           // Check if already connected (race condition where it connected between checks)
           if (websocket.isConnected) {
@@ -587,7 +648,7 @@ export const useBackendAudioEngine = () => {
               connectionPromiseRef.current = null;
               setWaitingForConnection(false);
             }
-          }, 5000);
+          }, 10000);
           
           if (websocket.isConnected) {
             clearTimeout(timeout);
@@ -604,8 +665,10 @@ export const useBackendAudioEngine = () => {
 
       // Only proceed if WebSocket is connected
       if (websocket.isConnected) {
-        // Generate session ID
-        const newSessionId = `session-${Date.now()}`;
+        // Use the WebSocket's session ID or generate one
+        const wsSessionId = websocket.sessionId;
+        const newSessionId = wsSessionId || `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        console.log('🆔 Backend Engine: Using session ID from WebSocket:', wsSessionId, '| Final ID:', newSessionId);
         setSessionId(newSessionId);
 
         // Wait for WebSocket to be ready
@@ -627,6 +690,12 @@ export const useBackendAudioEngine = () => {
           if (gainNode.current) {
             console.log('🔊 startBackendSession: Unmuting gain node for playback');
             gainNode.current.gain.setValueAtTime(sessionConfig.amplitude, context.currentTime);
+          }
+
+          // Send start command to AudioWorklet to enable immediate playback
+          if (audioWorkletNode.current) {
+            console.log('🔊 startBackendSession: Sending start command to AudioWorklet');
+            audioWorkletNode.current.port.postMessage({ type: 'start' });
           }
         }
 
@@ -730,25 +799,37 @@ export const useBackendAudioEngine = () => {
   // Disconnect from backend
   const disconnectBackend = useCallback(async () => {
     console.log('🔌 Backend Engine: Disconnecting from backend...');
+
+    // Stop any active session first
     if (sessionId) {
       await stopBackendSession();
     }
+
+    // Disconnect WebSocket
+    if (websocket.isConnected) {
+      console.log('🔗 Backend Engine: Disconnecting WebSocket...');
+      websocket.disconnect();
+    }
+
+    // Clear session and connection state
+    setSessionId(null);
     setBackendConnected(false);
+
     console.log('✅ Backend Engine: Disconnected successfully');
-  }, [sessionId, stopBackendSession]);
+  }, [sessionId, stopBackendSession, websocket]);
 
   // Timer compatibility methods
-  const startBinauralBeat = useCallback(async (config: AudioEngineState) => {
+  const startBinauralBeat = useCallback(async (config: BinauralBeatConfig) => {
     const sessionConfig = {
-      baseFrequency: config.leftFreq || 80,
-      beatFrequency: config.beatFreq || 15,
+      baseFrequency: config.baseFrequency || 80,
+      beatFrequency: config.beatFrequency || 15,
       amplitude: config.amplitude || 0.3,
       waveform: config.waveform || 'sine',
-      spatial_enabled: true,
+      spatial_enabled: config.spatial?.enabled || true,
       spatial_settings: {
-        mode: 'binaural',
-        positioning: 'headphones',
-        room_size: 'small'
+        mode: config.spatial?.mode || 'binaural',
+        positioning: config.spatial?.positioning || 'headphones',
+        room_size: config.spatial?.roomSize || 'small'
       }
     };
 
@@ -802,6 +883,80 @@ export const useBackendAudioEngine = () => {
     }
   }, [stopBackendSession]);
 
+  // AudioEngine interface compatibility methods
+  const updateWaveform = useCallback((waveform: 'sine' | 'square' | 'triangle' | 'sawtooth') => {
+    updateSettings({ waveform });
+  }, [updateSettings]);
+
+  const generateTestTones = useCallback((leftFreq: number, rightFreq: number, duration: number = 5000) => {
+    const config: BinauralBeatConfig = {
+      baseFrequency: leftFreq,
+      beatFrequency: Math.abs(rightFreq - leftFreq),
+      amplitude: 0.3,
+      waveform: 'sine'
+    };
+
+    startBinauralBeat(config);
+
+    // Auto-stop after duration
+    setTimeout(() => {
+      stopBinauralBeat();
+    }, duration);
+  }, [startBinauralBeat, stopBinauralBeat]);
+
+  const frequencySweep = useCallback(async (startFreq: number, endFreq: number, duration: number) => {
+    console.log(`🌊 Starting frequency sweep: ${startFreq}Hz → ${endFreq}Hz over ${duration}ms`);
+
+    if (!sessionId || !websocket.isConnected) {
+      console.warn('⚠️ Cannot perform frequency sweep: backend not connected');
+      return;
+    }
+
+    const steps = Math.max(10, Math.floor(duration / 100)); // Update every 100ms minimum
+    const stepDuration = duration / steps;
+    const freqStep = (endFreq - startFreq) / steps;
+
+    try {
+      for (let i = 0; i <= steps; i++) {
+        const currentFreq = startFreq + (freqStep * i);
+        const progress = i / steps;
+
+        console.log(`🌊 Frequency sweep step ${i}/${steps}: ${currentFreq.toFixed(1)}Hz (${(progress * 100).toFixed(1)}%)`);
+
+        // Update backend frequency
+        await updateSettings({
+          baseFrequency: currentFreq,
+          beatFrequency: 4 // Keep beat frequency constant during sweep
+        });
+
+        // Wait for step duration
+        if (i < steps) {
+          await new Promise(resolve => setTimeout(resolve, stepDuration));
+        }
+      }
+
+      console.log(`✅ Frequency sweep completed: ${startFreq}Hz → ${endFreq}Hz`);
+    } catch (error) {
+      console.error('❌ Frequency sweep failed:', error);
+    }
+  }, [sessionId, websocket.isConnected, updateSettings]);
+
+  const createGammaProtocol = useCallback((protocol: any) => {
+    const config: BinauralBeatConfig = {
+      baseFrequency: 144,
+      beatFrequency: protocol.gammaFreq || 40,
+      amplitude: (protocol.intensity || 70) / 100,
+      waveform: 'sine'
+    };
+
+    startBinauralBeat(config);
+
+    // Auto-stop after protocol duration
+    setTimeout(() => {
+      stopBinauralBeat();
+    }, (protocol.duration || 10) * 60 * 1000);
+  }, [startBinauralBeat, stopBinauralBeat]);
+
   // Cleanup on unmount ONLY - not on sessionId changes
   useEffect(() => {
     return () => {
@@ -839,8 +994,12 @@ export const useBackendAudioEngine = () => {
     stopBinauralBeat,
     updateFrequency,
     updateVolume,
+    updateWaveform,
     updateSpatialSettings,
     loadPattern,
+    generateTestTones,
+    frequencySweep,
+    createGammaProtocol,
     updateSettings,
     isSupported: !!(window.AudioContext || (window as any).webkitAudioContext)
   };

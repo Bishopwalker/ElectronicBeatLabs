@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
+import {cleanup} from "@testing-library/react";
 
 interface WebSocketMessage {
     type: string;
@@ -11,6 +12,7 @@ interface WebSocketContextType {
     isConnecting: boolean;
     error: Error | null;
     lastMessage: WebSocketMessage | null;
+    sessionId: string | null;
     sendMessage: (message: WebSocketMessage | string) => void;
     connect: (baseFrequency?: number, beatFrequency?: number) => void;
     disconnect: () => void;
@@ -35,13 +37,14 @@ interface WebSocketProviderProps {
 
 export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
                                                                         children,
-                                                                        sessionId = 'default-session',
+                                                                        sessionId,
                                                                         autoConnect = false
                                                                     }) => {
     const [isConnected, setIsConnected] = useState(false);
     const [isConnecting, setIsConnecting] = useState(false);
     const [error, setError] = useState<Error | null>(null);
     const [lastMessage, setLastMessage] = useState<WebSocketMessage | null>(null);
+    const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
 
     const wsRef = useRef<WebSocket | null>(null);
     const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -65,17 +68,19 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
 
         setIsConnected(false);
         setIsConnecting(false);
+        setCurrentSessionId(null); // Clear session ID on cleanup
     }, []);
 
     // Connect function
     const connect = useCallback((baseFrequency = 140, beatFrequency = 4) => {
-        console.log('🔌 WebSocket connect() called with:', { baseFrequency, beatFrequency });
-        
+        console.log('🔌 WebSocket connect() called with:', {baseFrequency, beatFrequency});
+
         // Check WebSocket ref directly for state
         if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
             console.log('✅ WebSocket: Already connected (readyState = OPEN)');
             setIsConnected(true);  // Update state in case it's out of sync
             setIsConnecting(false);
+            setCurrentSessionId(wsRef.current.sessionId)
             return;
         }
 
@@ -86,7 +91,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
         }
 
         // Store parameters for potential reconnection
-        currentParamsRef.current = { baseFreq: baseFrequency, beatFreq: beatFrequency };
+        currentParamsRef.current = {baseFreq: baseFrequency, beatFreq: beatFrequency};
 
         try {
             // Clean up any existing connection first
@@ -99,7 +104,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
                 reconnectTimeoutRef.current = null;
             }
             setIsConnected(false);
-            
+
             // Now set connecting state
             setIsConnecting(true);
             setError(null);
@@ -110,9 +115,10 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
             const host = window.location.hostname;
             const port = import.meta.env.DEV ? '8000' : window.location.port;
             const baseUrl = `${protocol}//${host}:${port}`;
-            
+
             // Generate a unique session ID if not provided
-            const currentSessionId = sessionId || `session-${Date.now()}`;
+            const currentSessionId = sessionId || `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            console.log('🆔 WebSocket: Using session ID:', currentSessionId);
 
             // Backend calculates: left_ear = base_frequency - beat_frequency
             // Using main WebSocket endpoint that actually streams audio frames
@@ -126,7 +132,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
 
             // Add immediate state check
             setTimeout(() => {
-                console.log('🔍 WebSocket state after 100ms:', ws.readyState, 'CONNECTING=', WebSocket.CONNECTING, 'OPEN=', WebSocket.OPEN, 'CLOSING=', WebSocket.CLOSING, 'CLOSED=', WebSocket.CLOSED);
+                console.log('🔍 WebSocket state after 10ms:', ws.readyState, 'CONNECTING=', WebSocket.CONNECTING, 'OPEN=', WebSocket.OPEN, 'CLOSING=', WebSocket.CLOSING, 'CLOSED=', WebSocket.CLOSED);
             }, 100);
 
             setTimeout(() => {
@@ -138,11 +144,21 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
 
             ws.onopen = () => {
                 console.log('✅ WebSocket connected successfully');
-                setIsConnected(true);
-                setIsConnecting(false);
-                setError(null);
-                reconnectAttemptsRef.current = 0;
-            };
+                // Extract session ID from URL: /ws/session-123?params -> session-123
+                const extractedSessionId = wsUrl.split('/').pop()?.split('?')[0];
+                console.log('🆔 WebSocket Session ID from URL:', extractedSessionId);
+
+                if (extractedSessionId)
+                    setCurrentSessionId(extractedSessionId);
+                console.log('💾 Session ID stored in WebSocket context:', extractedSessionId);
+            }
+
+            setIsConnected(true);
+            setIsConnecting(false);
+            setError(null);
+            reconnectAttemptsRef.current = 0;
+
+
 
             ws.onmessage = (event) => {
                 try {
@@ -195,6 +211,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
                 console.log('🔌 WebSocket disconnected:', event.code, event.reason);
                 setIsConnected(false);
                 setIsConnecting(false);
+                setCurrentSessionId(null); // Clear session ID on disconnect
                 wsRef.current = null;
 
                 // Only attempt reconnect for abnormal closures
@@ -277,6 +294,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
         isConnecting,
         error,
         lastMessage,
+        sessionId: currentSessionId,
         sendMessage,
         connect,
         disconnect,

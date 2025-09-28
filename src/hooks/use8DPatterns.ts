@@ -6,7 +6,7 @@ import type {
   Pattern8D, 
   Position3D, 
   WavePattern 
-} from '../types/index';
+} from '../types';
 
 export const use8DPatterns = () => {
   const [patterns, setPatterns] = useState<Pattern8D[]>([]);

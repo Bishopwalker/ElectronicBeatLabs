@@ -108,6 +108,29 @@ const QuickStart: React.FC<QuickStartProps> = ({
           </Alert>
         )}
 
+        {/* Frontend Audio Control */}
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="subtitle1" sx={{ mb: 1, color: '#ffd700' }}>
+            🎵 Frontend Audio
+          </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <Button
+              variant={activeStatus.binauralEngine ? "outlined" : "contained"}
+              color={activeStatus.binauralEngine ? "error" : "primary"}
+              size="small"
+              onClick={() => onToggleEngine?.('binaural', !activeStatus.binauralEngine)}
+              sx={{
+                minWidth: 140,
+                fontSize: '0.85rem',
+                fontWeight: 'bold',
+                mb: 0.5
+              }}
+            >
+              {activeStatus.binauralEngine ? '🎵 Stop Frontend' : '🎵 Start Frontend'}
+            </Button>
+          </Box>
+        </Box>
+
         {/* Backend Connection Control */}
         {audioEngine && (
           <Box sx={{ mb: 2 }}>
@@ -161,8 +184,8 @@ const QuickStart: React.FC<QuickStartProps> = ({
 
         <Stack spacing={1}>
           {getStatusChip(
-            (audioEngine?.backendConnected || false),
-            "Binaural Engine",
+            activeStatus.binauralEngine,
+            "Frontend Audio",
             <RadioIcon />,
             'binaural',
             true
