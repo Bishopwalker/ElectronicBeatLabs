@@ -39,7 +39,7 @@ interface UseTimerLogicProps {
     state: string;
     stability: number
   }) => void;
-  onTimerStatusUpdate?: (status: any) => void;
+  onTimerStatusUpdate?: (status: TimerStatus) => void;
 }
 
 export const useTimerLogic = (props: UseTimerLogicProps) => {
@@ -70,7 +70,7 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
   const currentTransitionIndexRef = useRef<number | null>(null);
 
   // Function to send timer updates via WebSocket
-  const sendTimerUpdate = useCallback((data: any) => {
+  const sendTimerUpdate = useCallback((data: TimerStatus) => {
     if (isConnected) {
       sendMessage({
         type: 'timer_update',
@@ -96,9 +96,9 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
       phase: (Date.now() % 10000) / 10000 * 360, // Rotating phase
       coherence: 0.85 + (Math.min(30, transition.frequency_hz) / 100),
       resonance: Math.min(1, 0.6 + (transition.frequency_hz / 80)),
-      state: transition.frequency_hz > 20 ? 'ACTIVE' :
+      state: transition.frequency_hz > 0 ? 'ACTIVE' :
           transition.frequency_hz > 10 ? 'RESONANT' :
-              transition.frequency_hz > 6 ? 'CHARGING' : 'INACTIVE',
+              transition.frequency_hz < 1 ? 'CHARGING' : 'INACTIVE',
       stability: 0.8 + (Math.min(40, transition.frequency_hz) / 200)
     };
 
@@ -210,7 +210,7 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
 
     const status: TimerStatus = {
       session: audioEngine?.sessionId ? {
-        presetId: selectedPresetId,
+        presetId: currentPreset,
         startTime: localTimer.startTime,
         currentPhase: currentTransitionIndex,
         isPaused: localTimer.isPaused,
@@ -243,6 +243,7 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
 
       // Send timer update via WebSocket if connected
       sendTimerUpdate({
+        currentTime: Date.now() - localTimer.startTime, isPaused: false, isRunning: false, progress: 0, totalTime: 0,
         transition: currentTransition,
         transitionIndex: currentTransitionIndex,
         totalTransitions: localTimer.transitions.length,
@@ -305,7 +306,8 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
           rightFreq: firstTransition.right_ear_hz,
           beatFreq: firstTransition.frequency_hz,
           amplitude: 0.7,
-          waveform: 'sine' as const
+          waveform: 'sine' as const,
+
         };
 
         console.log('🔥 Timer: Starting audio engine');
@@ -326,8 +328,8 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
 
         // If preset specifies a pattern, set it active
         const currentPreset = presets.find(p => p.id === selectedPresetId);
-        if (patterns8D && currentPreset && (currentPreset as any).pattern_id) {
-          const patternId = (currentPreset as any).pattern_id;
+        if (patterns8D && currentPreset && (currentPreset).pattern_id) {
+          const patternId = (currentPreset ).pattern_id;
           const realPattern = WAVE_PATTERNS.find(p => p.id === patternId);
           if (realPattern) {
             console.log('🎨 Timer: Setting REAL pattern for visualizer:', realPattern.name);
@@ -413,7 +415,7 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
         setTimeout(() => {
           if (selectedPresetId) {
             const currentPreset = presets.find(p => p.id === selectedPresetId);
-            const wasLooping = localTimer && (localTimer as any).forceLoop;
+            const wasLooping = localTimer && (localTimer).forceLoop;
             startTimer(wasLooping || currentPreset?.loop_enabled);
           }
         }, 100);
@@ -559,7 +561,7 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
     let interval: NodeJS.Timeout;
 
     if (localTimer?.isActive && !localTimer?.isPaused) {
-      // Only check every 30 seconds unless we're near a transition
+      // Longer intervals to prevent audio clicks during playback
       const checkInterval = () => {
         const now = Date.now();
         const elapsed = Math.floor((now - localTimer.startTime) / 1000 / 60);
@@ -577,14 +579,20 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
           }
         }
 
-        // Check frequently if close to transition, otherwise check every 30s
-        return timeToNextTransition <= 1 ? 5000 : 30000;
+        // Longer intervals to prevent audio interruption - 15s near transition, 60s normally
+        return timeToNextTransition <= 1 ? 15000 : 60000;
       };
 
       const scheduleNext = () => {
         const nextCheck = checkInterval();
         interval = setTimeout(() => {
-          loadTimerStatus();
+          // Only update if audio isn't actively playing to prevent clicks
+          const isAudioPlaying = audioEngine?.audioState?.isPlaying;
+          if (!isAudioPlaying) {
+            loadTimerStatus();
+          } else {
+            console.log('🔇 Skipping timer status update - audio playing to prevent clicks');
+          }
           scheduleNext();
         }, nextCheck);
       };
@@ -595,7 +603,7 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
     return () => {
       if (interval) clearTimeout(interval);
     };
-  }, [localTimer?.isActive, localTimer?.isPaused, loadTimerStatus]);
+  }, [localTimer?.isActive, localTimer?.isPaused]);
 
   return {
     presets,

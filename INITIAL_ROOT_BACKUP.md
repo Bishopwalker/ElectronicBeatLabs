@@ -314,7 +314,7 @@ SMR_TRAINING_PROTOCOL = {
 def test_frequency_accuracy():
     """Ensure generated frequencies match specification within 0.01 Hz"""
     engine = AudioEngine(sample_rate=44100)
-    audio = engine.generate_binaural_beat(440, 4, duration=1.0)
+    audio = engine.generate_binaural_beat(140, 4, duration=1.0)
     
     # FFT analysis to verify frequencies
     fft = np.fft.rfft(audio)
@@ -324,8 +324,8 @@ def test_frequency_accuracy():
     peaks = find_peaks(np.abs(fft), height=threshold)
     detected_freqs = freqs[peaks[0]]
     
-    assert abs(detected_freqs[0] - 440) < 0.01
-    assert abs(detected_freqs[1] - 444) < 0.01
+    assert abs(detected_freqs[0] - 140) < 0.01
+    assert abs(detected_freqs[1] - 144) < 0.01
 ```
 
 ### WebSocket Performance Testing

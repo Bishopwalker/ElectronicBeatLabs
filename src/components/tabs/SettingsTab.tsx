@@ -41,7 +41,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
 
     // Check immediately and set up interval
     checkAudioContext();
-    const intervalId = setInterval(checkAudioContext, 500);
+    const intervalId = setInterval(checkAudioContext, 10000);
 
     return () => clearInterval(intervalId);
   }, [audioEngine.audioState?.context, audioContextState]);
@@ -62,7 +62,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
     const intervalId = setInterval(checkConnectionState, 1000);
 
     return () => clearInterval(intervalId);
-  }, [audioEngine.backendConnected, audioEngine.websocketState]);
+  }, [audioEngine.backendConnected, audioEngine.websocketState?.connected || undefined]);
   const handleSpatialSettingsChange = (spatialSettings: {
     enabled: boolean;
     movement_speed: number;
@@ -93,10 +93,14 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
   // Handler for WebSocket reconnection
   const handleWebSocketReconnect = () => {
     console.log('🔄 Manually reconnecting WebSocket...');
-    if (audioEngine.connectBackend) {
-      audioEngine.connectBackend();
-    } else if (audioEngine.reconnect) {
-      audioEngine.reconnect();
+    if (audioEngine.connectBackend && audioEngine.disconnectBackend) {
+      // Disconnect first, then reconnect
+      audioEngine.disconnectBackend();
+      setTimeout(() => {
+        audioEngine.connectBackend();
+      }, 1000);
+    } else {
+      console.warn('⚠️ No backend connection methods available');
     }
   };
 

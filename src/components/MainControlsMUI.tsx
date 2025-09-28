@@ -31,7 +31,10 @@ const MainControlsMUI: React.FC<ExtendedMainControlsProps> = ({
   compact = false
 }) => {
   const handleVolumeChange = (_: Event, value: number | number[]) => {
-    onVolumeChange(value as number);
+    const numValue = value as number;
+    const safeValue = isNaN(numValue) ? 0.3 : Math.max(0, Math.min(1, numValue));
+    console.log('🎚️ MainControlsMUI volume change:', { raw: numValue, safe: safeValue });
+    onVolumeChange(safeValue);
   };
 
   // Compact horizontal layout for header
@@ -88,7 +91,7 @@ const MainControlsMUI: React.FC<ExtendedMainControlsProps> = ({
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: '200px' }}>
           <VolumeUpIcon color="secondary" fontSize="small" />
           <Slider
-            value={volume}
+            value={isNaN(volume) ? 0.3 : volume}
             onChange={handleVolumeChange}
             min={0}
             max={1}
@@ -206,7 +209,7 @@ const MainControlsMUI: React.FC<ExtendedMainControlsProps> = ({
               </Typography>
             </Stack>
             <Slider
-              value={volume}
+              value={isNaN(volume) ? 0.3 : volume}
               onChange={handleVolumeChange}
               min={0}
               max={1}

@@ -88,7 +88,7 @@ class AudioEngine:
         freq_left = base_freq
         freq_right = base_freq + beat_freq
         
-        # Frame size for 44.1kHz at 60 FPS (735 samples per frame)
+        # Frame size for 48kHz at 60 FPS (800 samples per frame)
         frame_size = int(self.sample_rate / 60)
         
         # Generate time array for precise phase calculation
@@ -207,7 +207,7 @@ class AudioEngine:
         validated = settings.copy()
         
         # Validate base frequency (human audible range)
-        base_freq = settings.get("base_frequency", 200)
+        base_freq = settings.get("base_frequency", 144)
         validated["base_frequency"] = max(20, min(20000, base_freq))
         
         # Validate beat frequency (therapeutic range)
@@ -256,7 +256,7 @@ class AudioEngine:
         """Create ADHD treatment protocol configurations"""
         protocols = {
             "focus": {
-                "base_frequency": 200,
+                "base_frequency": 144,
                 "beat_frequency": 14,  # SMR range
                 "amplitude": 0.6,
                 "duration": 20 * 60,  # 20 minutes
@@ -264,7 +264,7 @@ class AudioEngine:
                 "description": "SMR training for attention and focus"
             },
             "calm": {
-                "base_frequency": 150,
+                "base_frequency": 144,
                 "beat_frequency": 8,  # Alpha range
                 "amplitude": 0.4,
                 "duration": 15 * 60,
@@ -272,7 +272,7 @@ class AudioEngine:
                 "description": "Alpha waves for relaxation and calm focus"
             },
             "deep_focus": {
-                "base_frequency": 100,
+                "base_frequency": 144,
                 "beat_frequency": 40,  # Gamma range
                 "amplitude": 0.7,
                 "duration": 25 * 60,
@@ -281,7 +281,7 @@ class AudioEngine:
                 "description": "Gamma waves for deep concentration"
             },
             "meditation": {
-                "base_frequency": 80,
+                "base_frequency": 144,
                 "beat_frequency": 6,  # Theta range
                 "amplitude": 0.3,
                 "duration": 30 * 60,

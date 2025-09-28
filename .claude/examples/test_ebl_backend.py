@@ -21,6 +21,7 @@ from scipy import signal
 from pathlib import Path
 import sys
 import matplotlib.pyplot as plt
+from sympy.physics.continuum_mechanics.arch import numpy
 
 # Add backend to path for imports
 sys.path.append(str(Path(__file__).parent.parent / "backend"))
@@ -39,17 +40,17 @@ except ImportError as e:
         def __init__(self, sample_rate=44100):
             self.sample_rate = sample_rate
             
-        async def generate_frame(self, session_id):
+      def generate_frame(self, session_id):
             frame_size = int(self.sample_rate / 60)
             return {
-                "left": np.random.random(frame_size).tolist(),
-                "right": np.random.random(frame_size).tolist(),
+                "left": numpy.random.random(frame_size).tolist(),
+                "right": numpy.random.random(frame_size).tolist(),
                 "sample_rate": self.sample_rate,
                 "frame_size": frame_size
             }
     
     class MockFieldSimulator:
-        async def generate_frame(self, session_id):
+         def generate_frame(self, session_id):
             return {
                 "field": np.random.random((64, 64)).tolist(),
                 "grid_size": (64, 64),
@@ -124,7 +125,7 @@ class TestAudioEngine:
     def test_frequency_accuracy(self):
         """Test binaural beat frequency accuracy using FFT analysis."""
         settings = {
-            "base_frequency": 440,
+            "base_frequency": 140,
             "beat_frequency": 4,
             "amplitude": 0.5
         }
@@ -150,7 +151,7 @@ class TestAudioEngine:
         detected_freqs = freqs[peaks]
         
         # Should detect base frequency (440 Hz) and sideband (444 Hz)
-        expected_freqs = [440, 444]
+        expected_freqs = [140, 144]
         for expected_freq in expected_freqs:
             closest_detected = detected_freqs[np.argmin(np.abs(detected_freqs - expected_freq))]
             assert abs(closest_detected - expected_freq) < 0.5, f"Frequency accuracy: expected {expected_freq}, got {closest_detected}"

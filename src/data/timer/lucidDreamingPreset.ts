@@ -42,8 +42,8 @@ export const LUCID_DREAMING_MASTER: ComprehensiveTimerPreset = {
       duration_minutes: 10,
       frequency_hz: 13,
       frequency_type: 'Beta',
-      left_ear_hz: 440,
-      right_ear_hz: 453,
+      left_ear_hz: 144,
+      right_ear_hz: 150,
       description: '😌 Phase 1: Cool Down (13Hz Beta) - Waking State Relaxation',
       
       pattern_id: 'spiral-transformation',
@@ -100,8 +100,8 @@ export const LUCID_DREAMING_MASTER: ComprehensiveTimerPreset = {
       duration_minutes: 10,
       frequency_hz: 6,
       frequency_type: 'Theta',
-      left_ear_hz: 440,
-      right_ear_hz: 434,
+      left_ear_hz: 144,
+      right_ear_hz: 138,
       description: '🧬 Phase 2: Pre-Sleep Theta (6Hz) - DNA Helix Gateway',
       
       pattern_id: 'helix-dna-activation',
@@ -219,8 +219,8 @@ export const LUCID_DREAMING_MASTER: ComprehensiveTimerPreset = {
       duration_minutes: 7,
       frequency_hz: 25,
       frequency_type: 'Gamma',
-      left_ear_hz: 440,
-      right_ear_hz: 465,
+      left_ear_hz: 144,
+      right_ear_hz: 150,
       description: '⚡ Phase 4: Pre-Lucid Gamma (25Hz) - Consciousness Activation Vortex',
       
       pattern_id: 'vortex-focus-enhancement',
@@ -275,10 +275,10 @@ export const LUCID_DREAMING_MASTER: ComprehensiveTimerPreset = {
     {
       // Phase 5: Peak Lucidity - Maximum Resonance Toroidal
       duration_minutes: 5,
-      frequency_hz: 40,
+      frequency_hz: 30,
       frequency_type: 'Gamma',
-      left_ear_hz: 440,
-      right_ear_hz: 480,
+      left_ear_hz: 144,
+      right_ear_hz: 150,
       description: '🌟 Phase 5: Peak Lucidity (40Hz) - Maximum Resonance Toroidal Mastery',
       
       pattern_id: 'toroidal-max-resonance',

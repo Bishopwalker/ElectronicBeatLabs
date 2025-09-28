@@ -55,7 +55,7 @@ export class ElectromagneticLabManager {
     return {
       ...currentElectromagnetic,
       frequency: currentAudioState.beatFreq || this.state.appState.frequency || 4,
-      strength: currentAudioState.isPlaying ? Math.min(1, (currentAudioState.volume || 0.5) * 2) : 0,
+      strength: currentAudioState.isPlaying ? Math.min(1, (currentAudioState.amplitude || 0.5) * 2) : 0,
       resonance: currentAudioState.isPlaying ? 0.7 + (currentAudioState.beatFreq || 4) / 40 * 0.3 : 0,
       coherence: currentAudioState.isPlaying ? 0.8 : 0,
       stability: currentAudioState.isPlaying ? 0.9 : 0
@@ -117,8 +117,11 @@ export class ElectromagneticLabManager {
 
   // Handle volume change
   handleVolumeChange(volume: number, audioEngine: any) {
-    this.updateAppState({ volume });
-    audioEngine.updateVolume(volume);
+    // Protect against NaN values
+    const safeVolume = isNaN(volume) ? 0.3 : Math.max(0, Math.min(1, volume));
+    console.log('🔊 handleVolumeChange:', { original: volume, safe: safeVolume });
+    this.updateAppState({ volume: safeVolume });
+    audioEngine.updateVolume(safeVolume);
   }
 
   // Handle play

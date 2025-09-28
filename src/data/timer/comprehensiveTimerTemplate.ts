@@ -358,8 +358,8 @@ export const ULTIMATE_CONSCIOUSNESS_EXPANSION_TEMPLATE: ComprehensiveTimerPreset
       duration_minutes: 20,
       frequency_hz: 6,
       frequency_type: 'Theta',
-      left_ear_hz: 432,
-      right_ear_hz: 438,
+      left_ear_hz: 144,
+      right_ear_hz: 150,
       description: '✨ Phase 3: Theta Gateway (6Hz) - Intuitive Insight',
       
       pattern_id: 'spiral-transformation',
@@ -462,10 +462,10 @@ export const ULTIMATE_CONSCIOUSNESS_EXPANSION_TEMPLATE: ComprehensiveTimerPreset
     {
       // Phase 5: Gamma Awakening
       duration_minutes: 10,
-      frequency_hz: 40,
+      frequency_hz: 30,
       frequency_type: 'Gamma',
-      left_ear_hz: 432,
-      right_ear_hz: 472,
+      left_ear_hz: 144,
+      right_ear_hz: 150,
       description: '⚡ Phase 5: Gamma Awakening (40Hz) - Higher Consciousness',
       
       pattern_id: 'toroidal-max-resonance',
@@ -516,8 +516,8 @@ export const ULTIMATE_CONSCIOUSNESS_EXPANSION_TEMPLATE: ComprehensiveTimerPreset
       duration_minutes: 15,
       frequency_hz: 8,
       frequency_type: 'Alpha',
-      left_ear_hz: 432,
-      right_ear_hz: 440,
+      left_ear_hz: 144,
+      right_ear_hz: 150,
       description: '🔄 Phase 6: Integration (8Hz) - Wisdom Integration',
       
       pattern_id: 'helix-dna-activation',

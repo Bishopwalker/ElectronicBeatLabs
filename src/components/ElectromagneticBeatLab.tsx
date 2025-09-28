@@ -2,7 +2,7 @@
 // Advanced binaural beats generator with electromagnetic field visualization
 // Now properly separated into modular components under 500 lines
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { Box, Chip, IconButton, Paper, Typography } from '@mui/material';
 import type { ElectromagneticBeatLabProps } from '../types';
 
@@ -24,15 +24,17 @@ import ElectromagneticStatus from './ElectromagneticStatus';
 import MainControlsMUI from './MainControlsMUI';
 import ControlTabs from './ControlTabs';
 import BinauralGeneratorMUI from './BinauralGeneratorMUI';
+import { calculateLeftFreq, calculateRightFreq } from '../types';
 import QuickStart from './QuickStart';
 import TimerTab from './tabs/TimerTab';
-import TimerCountdownDisplay from './TimerCountdownDisplay';
 import { FrequencyVisualizer } from './FrequencyVisualizer';
+import { formatTime } from '../helpers/timer/timerUtils';
 
 // Extracted Components
 import CollapsibleSection from './shared/CollapsibleSection';
 import TabContentRenderer from './shared/TabContentRenderer';
 import SystemStatusChips from './shared/SystemStatusChips';
+import TimerCountdownDisplay from "./TimerCountdownDisplay.tsx";
 
 const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
   initialPattern,
@@ -88,18 +90,48 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
     console.log('🔄 Backend connection state changed:', backendEngine.backendConnected);
   }, [backendEngine.backendConnected, backendEngine.sessionId]);
 
-  // Auto-connect to backend on startup (only once)
+  // Auto-enable spatial audio ONCE when backend connects
+  const hasAutoEnabledRef = useRef(false);
   useEffect(() => {
-    let connectAttempted = false;
-    if (!connectAttempted && !backendEngine.backendConnected && backendEngine.connectBackend) {
-      connectAttempted = true;
-      console.log('🔌 Auto-connecting to backend on startup...');
+    // Only run this once when backend first connects
+    if (backendEngine.backendConnected && backendEngine.sessionId && !hasAutoEnabledRef.current) {
+      console.log('✅ Backend connected! Auto-enabling required audio systems...');
+      hasAutoEnabledRef.current = true;
+
+      // Auto-enable spatial audio when backend connects
+      if (!appState.spatialAudio?.enabled) {
+        console.log('🎧 Auto-enabling spatial audio for backend connection...');
+        updateAppState({
+          spatialAudio: {
+            ...appState.spatialAudio,
+            enabled: true
+          }
+        });
+      }
+
+      console.log('🎯 All required audio systems enabled for backend operation');
+    }
+
+    // Reset the flag when backend disconnects
+    if (!backendEngine.backendConnected) {
+      hasAutoEnabledRef.current = false;
+    }
+  }, [backendEngine.backendConnected, backendEngine.sessionId, appState.spatialAudio?.enabled, updateAppState]);
+
+  // Simple one-time backend connection attempt on startup
+  useEffect(() => {
+    if (!backendEngine.backendConnected && backendEngine.connectBackend) {
+      console.log('🔌 One-time backend connection attempt on startup...');
       backendEngine.connectBackend().catch((error) => {
-        console.log('⚠️ Backend auto-connect failed (this is expected if backend is not running):', error.message);
+        console.log('⚠️ Backend connection failed (expected if backend not running):', error.message);
       });
     }
-    setSessionId(backendEngine.sessionId);
   }, []); // Empty dependency array - only run once on mount
+
+  // Update sessionId when backend state changes
+  useEffect(() => {
+    setSessionId(backendEngine.sessionId);
+  }, [backendEngine.sessionId, backendEngine.backendConnected]);
 
 
   // Bound handler functions with context
@@ -160,6 +192,81 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
     toggleAdvancedControls(backendEngine);
   }, [toggleAdvancedControls, backendEngine]);
 
+  // Handle engine toggle changes
+  const handleEngineToggle = useCallback(async (engineType: 'binaural' | 'backend' | 'spatial', enabled: boolean) => {
+    console.log(`🔄 Engine Toggle: ${engineType} -> ${enabled}`);
+
+    try {
+      switch (engineType) {
+        case 'binaural':
+          // FRONTEND ENGINE - explicit fallback only
+          if (enabled) {
+            console.log('▶️ Starting frontend binaural engine (explicit fallback)...');
+            await frontendEngine.startBinauralBeat({
+              leftFreq: appState.frequency || 144,
+              rightFreq: (appState.frequency || 144) + 4,
+              amplitude: appState.volume || 0.3,
+              waveform: 'sine'
+            });
+          } else {
+            console.log('⏹️ Stopping frontend binaural engine...');
+            await frontendEngine.stopBinauralBeat();
+          }
+          break;
+
+        case 'backend':
+          // BACKEND ENGINE - this is the main binaural engine
+          if (enabled) {
+            // Connect to backend and start session
+            if (!backendEngine.backendConnected && backendEngine.connectBackend) {
+              console.log('🔌 Connecting to backend (main binaural engine)...');
+              await backendEngine.connectBackend();
+
+              // Auto-start backend session with default binaural config
+              console.log('🎧 Starting backend binaural session...');
+              const defaultConfig = {
+                baseFrequency: appState.frequency || 144,
+                beatFrequency: 4,
+                amplitude: appState.volume || 0.3,
+                waveform: 'sine' as const,
+                spatial_enabled: appState.spatialAudio?.enabled || false
+              };
+              await backendEngine.startBackendSession(defaultConfig);
+            }
+          } else {
+            // Stop backend session and disconnect
+            if (backendEngine.backendConnected) {
+              console.log('⏹️ Stopping backend binaural engine...');
+              await backendEngine.stopBackendSession();
+              if (backendEngine.disconnectBackend) {
+                await backendEngine.disconnectBackend();
+              }
+            }
+          }
+          break;
+
+        case 'spatial':
+          // Update spatial audio settings in app state
+          console.log('🎧 Toggling spatial audio:', enabled);
+          updateAppState({
+            spatialAudio: {
+              ...appState.spatialAudio,
+              enabled: enabled
+            }
+          });
+
+          // If enabling spatial audio but backend isn't connected, auto-connect
+          if (enabled && !backendEngine.backendConnected && backendEngine.connectBackend) {
+            console.log('🔌 Auto-connecting backend for spatial audio...');
+            await backendEngine.connectBackend();
+          }
+          break;
+      }
+    } catch (error) {
+      console.error(`❌ Error toggling ${engineType} engine:`, error);
+    }
+  }, [frontendEngine, backendEngine, appState, updateAppState]);
+
   // Get section data for restore functionality
   const getSectionData = (id: string) => {
     return SECTION_DATA[id as keyof typeof SECTION_DATA] || { title: 'Unknown', icon: '❓' };
@@ -204,6 +311,41 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
               activeTab={appState.activeTab}
               onTabChange={handleTabChange}
             />
+
+            {/* Timer Status Display - Under tabs, same level as title */}
+            {timerStatus && timerStatus.session && timerStatus.current_transition && (
+              <Box sx={{
+                mt: 1,
+                mb: 1,
+                bgcolor: 'rgba(0,0,0,0.3)',
+                border: '1px solid #ff6b00',
+                borderRadius: 1,
+                p: 1.5,
+                maxWidth: '600px'
+              }}>
+                <Typography variant="subtitle2" gutterBottom sx={{color: '#00ff88', fontSize: '0.9rem'}}>
+                  🎧 ACTIVE: {timerStatus.current_transition.description}
+                </Typography>
+                <Typography variant="body2" color="textSecondary" gutterBottom sx={{ fontSize: '0.8rem' }}>
+                  <Box component="span" sx={{color: '#ff6b00', fontWeight: 'bold'}}>
+                    {timerStatus.current_transition.frequency_hz}Hz
+                  </Box> •
+                  {timerStatus.current_transition.frequency_type} waves •
+                  <Box component="span" sx={{color: '#00bfff'}}>
+                    {timerStatus.current_transition.left_ear_hz}Hz L
+                    / {timerStatus.current_transition.right_ear_hz}Hz R
+                  </Box>
+                </Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
+                  <Typography variant="caption" sx={{ fontSize: '0.75rem' }}>
+                    Current: {formatTime(timerStatus.time_remaining_current)}
+                  </Typography>
+                  <Typography variant="caption" sx={{ fontSize: '0.75rem' }}>
+                    Total: {formatTime(timerStatus.time_remaining_total)}
+                  </Typography>
+                </Box>
+              </Box>
+            )}
           </Box>
 
           <Box sx={ElectromagneticLabStyles.tabContent}>
@@ -223,9 +365,19 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
       {/* Header */}
       <Paper elevation={0} sx={ElectromagneticLabStyles.headerPaper}>
         <Box sx={ElectromagneticLabStyles.titleStatusRow}>
-          <Typography variant="h4" sx={ElectromagneticLabStyles.mainTitle}>
-            Bishop's Electromagnetic Beat Lab
-          </Typography>
+          <Box sx={{ flex: 1 }}>
+            <Typography
+              variant={timerStatus?.session?.is_active ? "h5" : "h4"}
+              sx={{
+                ...ElectromagneticLabStyles.mainTitle,
+                fontSize: timerStatus?.session?.is_active ? '1.5rem' : '2rem'
+              }}
+            >
+              Bishop's Electromagnetic Beat Lab
+            </Typography>
+          </Box>
+
+
           <Box sx={{ display: 'flex', gap: 0.25, alignItems: 'center', fontSize: '0.75rem' }}>
             <ElectromagneticStatus
               field={appState.electromagnetic}
@@ -248,8 +400,10 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
             
             <SystemStatusChips
               appState={appState}
-              audioEngine={frontendEngine}
-              backendEngine={backendEngine}
+              audioEngine={backendEngine}
+              patterns8D={WAVE_PATTERNS}
+              onStateChange={updateAppState}
+              onToggleEngine={handleEngineToggle}
             />
           </Box>
         )}
@@ -275,13 +429,30 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                   patterns: !!appState.currentPattern,
                   testTones: false
                 }}
-                frequencies={{
-                  left: activeAudioEngine.audioState.leftFreq,
-                  right: activeAudioEngine.audioState.rightFreq,
-                  beat: activeAudioEngine.audioState.beatFreq
-                }}
-                volume={activeAudioEngine.audioState.volume}
-                audioEngine={activeAudioEngine}
+                frequencies={(() => {
+                  // Handle both backend (config) and frontend (direct) formats
+                  if (activeAudioEngine.audioState.config) {
+                    // Backend engine with config
+                    const baseFreq = activeAudioEngine.audioState.config.baseFrequency || 144;
+                    const beatFreq = activeAudioEngine.audioState.config.beatFrequency || 4;
+                    return {
+                      left: calculateLeftFreq(baseFreq),
+                      right: calculateRightFreq(baseFreq, beatFreq),
+                      beat: beatFreq
+                    };
+                  } else {
+                    // Frontend engine with direct values
+                    return {
+                      left: activeAudioEngine.audioState.leftFreq || 144,
+                      right: activeAudioEngine.audioState.rightFreq || 148,
+                      beat: activeAudioEngine.audioState.beatFreq || 4
+                    };
+                  }
+                })()}
+                volume={appState.volume}
+                audioEngine={backendEngine}
+                onToggleEngine={handleEngineToggle}
+                appState={appState}
               />
             </CollapsibleSection>
           </Box>
@@ -309,11 +480,33 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
             <CollapsibleSection id="binauralBeats" title="Binaural Beat Generator" icon="🎧" defaultOpen={true} onClose={handleSectionClose}>
               <Box sx={{ height: 'auto', overflow: 'visible' }}>
                 <BinauralGeneratorMUI
-                  leftFreq={activeAudioEngine.audioState.leftFreq || 440}
-                  rightFreq={activeAudioEngine.audioState.rightFreq || 444}
-                  onFrequencyChange={(left, right) => {
-                    console.log('🎛️ Parent received frequency change:', left, right);
-                    activeAudioEngine.updateFrequency(left, right);
+                  baseFrequency={
+                    activeAudioEngine.audioState.config?.baseFrequency ||
+                    activeAudioEngine.audioState.leftFreq ||
+                    144
+                  }
+                  beatFrequency={
+                    activeAudioEngine.audioState.config?.beatFrequency ||
+                    activeAudioEngine.audioState.beatFreq ||
+                    4
+                  }
+                  onFrequencyChange={(baseFreq, beatFreq) => {
+                    console.log('🎛️ Parent received frequency change - baseFreq:', baseFreq, 'beatFreq:', beatFreq);
+
+                    // Handle both backend and frontend engines
+                    if (activeAudioEngine.updateSettings) {
+                      // Backend engine - use new pattern
+                      activeAudioEngine.updateSettings({
+                        baseFrequency: baseFreq,
+                        beatFrequency: beatFreq
+                      });
+                    } else if (activeAudioEngine.updateFrequency) {
+                      // Frontend engine - convert to old pattern
+                      const leftFreq = baseFreq; // left = base
+                      const rightFreq = baseFreq + beatFreq; // right = base + beat
+                      console.log('🎛️ Converting to frontend format - left:', leftFreq, 'right:', rightFreq);
+                      activeAudioEngine.updateFrequency(leftFreq, rightFreq);
+                    }
                   }}
                   currentPreset={currentPreset}
                 />

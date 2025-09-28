@@ -19,28 +19,49 @@ import SpatialAudioIcon from '@mui/icons-material/SpatialAudio';
 import GraphicEqIcon from '@mui/icons-material/GraphicEq';
 import RadioIcon from '@mui/icons-material/Radio';
 import type {QuickStartProps} from "../types";
+import TimerControls from './TimerControls';
 
 const QuickStart: React.FC<QuickStartProps> = ({
   activeStatus,
   frequencies,
   volume,
-  audioEngine
+  audioEngine,
+  onToggleEngine,
+  appState
 }) => {
   const isAnyActive = Object.values(activeStatus).some(Boolean);
-  const activeCount = Object.values(activeStatus).filter(Boolean).length;
+  const activeCount = Object.values(activeStatus).filter(Boolean);
 
-  const getStatusChip = (isActive: boolean, label: string, icon: React.ReactNode) => (
+  const getStatusChip = (
+    isActive: boolean,
+    label: string,
+    icon: React.ReactNode,
+    engineType?: 'binaural' | 'backend' | 'spatial',
+    clickable: boolean = false
+  ) => (
     <Chip
       icon={icon as React.ReactElement}
       label={label}
       color={isActive ? "success" : "default"}
       variant={isActive ? "filled" : "outlined"}
       size="small"
+      onClick={clickable && onToggleEngine ? () => {
+        console.log(`🔄 Toggling ${engineType} engine:`, !isActive);
+        onToggleEngine(engineType!, !isActive);
+      } : undefined}
       sx={{
         minWidth: 100,
         '& .MuiChip-icon': {
           color: isActive ? 'inherit' : 'rgba(255,255,255,0.5)'
-        }
+        },
+        ...(clickable && {
+          cursor: 'pointer',
+          '&:hover': {
+            backgroundColor: isActive ? 'rgba(76, 175, 80, 0.2)' : 'rgba(255, 255, 255, 0.1)',
+            transform: 'scale(1.02)',
+          },
+          transition: 'all 0.2s ease-in-out'
+        })
       }}
     />
   );
@@ -82,7 +103,7 @@ const QuickStart: React.FC<QuickStartProps> = ({
                 </>
               )}
               <br />
-              Volume: {Math.round(volume * 100)}%
+              Volume: {Math.round((isNaN(volume) ? 0.3 : volume) * 100)}%
             </Typography>
           </Alert>
         )}
@@ -140,21 +161,27 @@ const QuickStart: React.FC<QuickStartProps> = ({
 
         <Stack spacing={1}>
           {getStatusChip(
-            activeStatus.binauralEngine,
+            (audioEngine?.backendConnected || false),
             "Binaural Engine",
-            <RadioIcon />
+            <RadioIcon />,
+            'binaural',
+            true
           )}
 
           {getStatusChip(
-            activeStatus.backendEngine,
+            audioEngine?.backendConnected || false,
             "Backend Engine",
-            <SpatialAudioIcon />
+            <SpatialAudioIcon />,
+            'backend',
+            true
           )}
 
           {getStatusChip(
-            activeStatus.spatialAudio,
+            appState?.spatialAudio?.enabled || false,
             "Spatial Audio",
-            <GraphicEqIcon />
+            <GraphicEqIcon />,
+            'spatial',
+            true
           )}
 
           {getStatusChip(

@@ -127,20 +127,17 @@ export const ElectromagneticLabStyles = {
     }
   } as SxProps<Theme>,
 
-  // Main title
+  // Main title - 1/3 smaller and centered
   mainTitle: {
     fontWeight: 700,
     m: 0,
     fontSize: {
-      xs: '1.5rem',
-      sm: '2rem',
-      md: '2.5rem',
-      lg: '3rem'
+      xs: '1rem',      // was 1.5rem → ~33% smaller
+      sm: '1.3rem',    // was 2rem → ~33% smaller
+      md: '1.7rem',    // was 2.5rem → ~33% smaller
+      lg: '2rem'       // was 3rem → ~33% smaller
     },
-    textAlign: {
-      xs: 'center',
-      md: 'left'
-    }
+    textAlign: 'center'  // Always centered
   } as SxProps<Theme>,
 
   // Compact status overview

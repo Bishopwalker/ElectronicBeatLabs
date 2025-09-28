@@ -19,8 +19,8 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 # Global instances (Lambda container reuse)
-audio_engine = AudioEngine(sample_rate=44100)
-spatial_processor = SpatialAudioProcessor(sample_rate=44100)
+audio_engine = AudioEngine(sample_rate=48000)
+spatial_processor = SpatialAudioProcessor(sample_rate=48000)
 audio_engine.set_spatial_processor(spatial_processor)
 
 # DynamoDB clients

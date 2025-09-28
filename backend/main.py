@@ -351,7 +351,7 @@ async def stream_data(websocket: WebSocket, session_id: str, settings: dict):
             field_data = await field_simulator.generate_frame(session_id)
             
             # Calculate frequencies from settings
-            base_freq = settings.get("base_frequency", 440)
+            base_freq = settings.get("base_frequency", 140)
             beat_freq = settings.get("beat_frequency", 4)
             left_freq = base_freq
             right_freq = base_freq + beat_freq

@@ -120,24 +120,24 @@ export const getPresetTransitions = (presetId: string): FrequencyTransition[] =>
           duration_minutes: 0.33,
           frequency_hz: 10,
           frequency_type: 'Alpha',
-          left_ear_hz: 440,
-          right_ear_hz: 450,
+          left_ear_hz: 144,
+          right_ear_hz: 150,
           description: '🧪 Alpha test (20s)'
         },
         {
           duration_minutes: 0.33,
           frequency_hz: 6,
           frequency_type: 'Theta',
-          left_ear_hz: 440,
-          right_ear_hz: 446,
+          left_ear_hz: 144,
+          right_ear_hz: 150,
           description: '🧪 Theta test (20s)'
         },
         {
           duration_minutes: 0.34,
           frequency_hz: 15,
           frequency_type: 'Beta',
-          left_ear_hz: 440,
-          right_ear_hz: 455,
+          left_ear_hz: 144,
+          right_ear_hz: 149,
           description: '🧪 Beta test (20s)'
         }
       ];
@@ -148,24 +148,24 @@ export const getPresetTransitions = (presetId: string): FrequencyTransition[] =>
           duration_minutes: 10,
           frequency_hz: 15,
           frequency_type: 'Beta',
-          left_ear_hz: 440,
-          right_ear_hz: 455,
+          left_ear_hz: 144,
+          right_ear_hz: 149,
           description: '🧠 Stage 1: Beta Focus (15Hz) - Mental activation & alertness'
         },
         {
           duration_minutes: 15,
           frequency_hz: 20,
           frequency_type: 'Beta',
-          left_ear_hz: 440,
-          right_ear_hz: 460,
+          left_ear_hz: 144,
+          right_ear_hz: 150,
           description: '⚡ Stage 2: High Beta (20Hz) - Peak concentration & problem solving'
         },
         {
           duration_minutes: 5,
           frequency_hz: 12,
           frequency_type: 'Alpha',
-          left_ear_hz: 440,
-          right_ear_hz: 452,
+          left_ear_hz: 144,
+          right_ear_hz: 150,
           description: '😌 Stage 3: Alpha Cooldown (12Hz) - Calm focus & integration'
         }
       ];
@@ -176,16 +176,16 @@ export const getPresetTransitions = (presetId: string): FrequencyTransition[] =>
           duration_minutes: 10,
           frequency_hz: 10,
           frequency_type: 'Alpha',
-          left_ear_hz: 440,
-          right_ear_hz: 450,
+          left_ear_hz: 144,
+          right_ear_hz: 150,
           description: '🧘 Stage 1: Alpha Relaxation (10Hz) - Calm awareness & preparation'
         },
         {
           duration_minutes: 10,
           frequency_hz: 6,
           frequency_type: 'Theta',
-          left_ear_hz: 440,
-          right_ear_hz: 446,
+          left_ear_hz: 144,
+          right_ear_hz: 150,
           description: '✨ Stage 2: Theta Meditation (6Hz) - Deep introspection & insight'
         }
       ];
@@ -196,32 +196,32 @@ export const getPresetTransitions = (presetId: string): FrequencyTransition[] =>
           duration_minutes: 15,
           frequency_hz: 8,
           frequency_type: 'Alpha',
-          left_ear_hz: 440,
-          right_ear_hz: 448,
+          left_ear_hz: 144,
+          right_ear_hz: 150,
           description: '😌 Stage 1: Alpha relaxation (8Hz) - Initial calm down'
         },
         {
           duration_minutes: 15,
           frequency_hz: 4,
           frequency_type: 'Theta',
-          left_ear_hz: 440,
-          right_ear_hz: 444,
+          left_ear_hz: 144,
+          right_ear_hz: 148,
           description: '😴 Stage 2: Theta drowsiness (4Hz) - Pre-sleep transition'
         },
         {
           duration_minutes: 20,
           frequency_hz: 2,
           frequency_type: 'Delta',
-          left_ear_hz: 440,
-          right_ear_hz: 442,
+          left_ear_hz: 144,
+          right_ear_hz: 146,
           description: '💤 Stage 3: Delta sleep (2Hz) - Deep restorative sleep'
         },
         {
           duration_minutes: 10,
           frequency_hz: 1,
           frequency_type: 'Delta',
-          left_ear_hz: 440,
-          right_ear_hz: 441,
+          left_ear_hz: 144,
+          right_ear_hz: 145,
           description: '🛌 Stage 4: Ultra-Delta (1Hz) - Deepest sleep state'
         }
       ];
@@ -232,8 +232,8 @@ export const getPresetTransitions = (presetId: string): FrequencyTransition[] =>
           duration_minutes: 45,
           frequency_hz: 6,
           frequency_type: 'Theta',
-          left_ear_hz: 440,
-          right_ear_hz: 446,
+          left_ear_hz: 144,
+          right_ear_hz: 150,
           description: 'Theta lucid dreaming'
         }
       ];
@@ -318,7 +318,7 @@ export const getPresetTransitions = (presetId: string): FrequencyTransition[] =>
       return [
         {
           duration_minutes: 25,
-          frequency_hz: 40,
+          frequency_hz: 30,
           frequency_type: 'Gamma',
           left_ear_hz: 95,
           right_ear_hz: 135,
@@ -342,7 +342,7 @@ export const getPresetTransitions = (presetId: string): FrequencyTransition[] =>
         },
         {
           duration_minutes: 25,
-          frequency_hz: 134.5,
+          frequency_hz: 30,
           frequency_type: 'Theta',
           left_ear_hz: 133,
           right_ear_hz: 136,
@@ -368,8 +368,8 @@ export const getPresetTransitions = (presetId: string): FrequencyTransition[] =>
           duration_minutes: 5,
           frequency_hz: 20,
           frequency_type: 'Beta',
-          left_ear_hz: 440,
-          right_ear_hz: 460,
+          left_ear_hz: 144,
+          right_ear_hz: 150,
           description: '🌀 Stage 3: Beta Pre-Lucid + Transformation (20Hz) - Spiral pattern for consciousness shift',
           pattern: 'spiral-transformation',
           spatial_settings: {
@@ -390,7 +390,7 @@ export const getPresetTransitions = (presetId: string): FrequencyTransition[] =>
         },
         {
           duration_minutes: 20,
-          frequency_hz: 133.05,
+          frequency_hz: 30,
           frequency_type: 'Delta',
           left_ear_hz: 133,
           right_ear_hz: 133.1,
@@ -420,8 +420,8 @@ export const getPresetTransitions = (presetId: string): FrequencyTransition[] =>
           duration_minutes: 10,
           frequency_hz: 10,
           frequency_type: 'Alpha',
-          left_ear_hz: 440,
-          right_ear_hz: 450,
+          left_ear_hz: 144,
+          right_ear_hz: 150,
           description: 'Default session'
         }
       ];
