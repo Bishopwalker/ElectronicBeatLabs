@@ -7,7 +7,6 @@ import CssBaseline from '@mui/material/CssBaseline';
 import GlobalStyles from './styles/GlobalStyles';
 import ElectromagneticBeatLab from './components/ElectromagneticBeatLab';
 import SimpleAuth from './components/SimpleAuth';
-// import UsageTrackingExample from './components/UsageTrackingExample';
 import TimerTab from './components/tabs/TimerTab';
 import { AuthProvider } from './contexts/AuthContext';
 import { useAuth } from './hooks/useAuth';

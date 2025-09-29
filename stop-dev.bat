@@ -1,23 +1,21 @@
 @echo off
-echo Stopping EBL development servers...
+echo 🛑 Stopping EBL Development Environment
+echo.
 
-echo Checking for processes on port 5173 (frontend)...
-for /f "tokens=5" %%a in ('netstat -ano ^| findstr :5173') do (
+REM Kill frontend servers
+echo 🧹 Stopping frontend server (port 5173)...
+for /f "tokens=5" %%a in ('netstat -ano ^| findstr :5173 ^| findstr LISTENING') do (
     echo Killing PID %%a
-    taskkill -F -PID %%a 2>nul
+    taskkill /F /PID %%a >nul 2>&1
 )
 
-echo Checking for processes on port 8000 (backend)...
-for /f "tokens=5" %%a in ('netstat -ano ^| findstr :8000') do (
+REM Kill backend servers
+echo 🧹 Stopping backend server (port 8000)...
+for /f "tokens=5" %%a in ('netstat -ano ^| findstr :8000 ^| findstr LISTENING') do (
     echo Killing PID %%a
-    taskkill -F -PID %%a 2>nul
+    taskkill /F /PID %%a >nul 2>&1
 )
 
-echo Checking for Node.js processes...
-taskkill -F -IM node.exe 2>nul
-
-echo Checking for Python processes...
-taskkill -F -IM python.exe 2>nul
-
-echo All development servers stopped.
+echo.
+echo ✅ All development servers stopped\!
 pause
