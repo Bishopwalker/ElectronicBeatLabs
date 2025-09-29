@@ -1,0 +1,34 @@
+{
+  "name": "@ebl/typescript-fixer-agent",
+  "version": "1.0.0",
+  "description": "Automated TypeScript error detection and fixing agent",
+  "main": "agent.js",
+  "bin": {
+    "ts-fixer": "./runner.js"
+  },
+  "scripts": {
+    "start": "node runner.js start",
+    "scan": "node runner.js scan",
+    "watch": "node runner.js start --verbose",
+    "build": "tsc",
+    "dev": "ts-node runner.ts start --verbose"
+  },
+  "dependencies": {
+    "chokidar": "^3.5.3",
+    "commander": "^11.0.0",
+    "typescript": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "ts-node": "^10.9.1"
+  },
+  "keywords": [
+    "typescript",
+    "agent",
+    "automation",
+    "error-fixing",
+    "type-safety"
+  ],
+  "author": "EBL Team",
+  "license": "MIT"
+}

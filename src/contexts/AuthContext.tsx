@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useContext, type ReactNode } from 'react';
 import { AuthContext, type User, type UsageInfo, type AuthContextType } from './auth';
-// import keycloak, { initKeycloak } from '../services/keycloak';
 
 interface AuthProviderProps {
   children: ReactNode;

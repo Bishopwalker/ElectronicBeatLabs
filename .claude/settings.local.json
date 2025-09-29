@@ -100,7 +100,8 @@
       "SlashCommand(/context-init)",
       "Bash(findstr:*)",
       "Bash(tasklist)",
-      "Bash(stop-dev.bat)"
+      "Bash(stop-dev.bat)",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
     "ask": []

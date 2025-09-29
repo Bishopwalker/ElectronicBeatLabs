@@ -4,9 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "dev:backend": "cd backend && uvicorn main:app --reload --port 8000",
-    "dev:all": "concurrently \"npm run dev\" \"npm run dev:backend\"",
+    "dev": "vite --host",
+    "dev:backend": "cd backend && uvicorn main:app --reload --host 0.0.0.0 --port 8000",
+    "dev:all": "concurrently --kill-others-on-fail \"npm run dev\" \"npm run dev:backend\"",
+    "dev:clean": "start-dev.bat",
+    "dev:stop": "stop-dev.bat",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
@@ -25,7 +27,11 @@
     "deploy:backend": "bash scripts/deploy-backend.sh",
     "deploy:backend:staging": "bash scripts/deploy-backend.sh staging",
     "deploy:all": "npm run deploy:frontend && npm run deploy:backend",
-    "deploy:all:staging": "npm run deploy:frontend:staging && npm run deploy:backend:staging"
+    "deploy:all:staging": "npm run deploy:frontend:staging && npm run deploy:backend:staging",
+    "ts-fixer": "cd src/agents/typescript-fixer && npx ts-node runner.ts start",
+    "ts-fixer:scan": "cd src/agents/typescript-fixer && npx ts-node runner.ts scan --fix",
+    "ts-fixer:watch": "cd src/agents/typescript-fixer && npx ts-node runner.ts start --verbose",
+    "ts-fixer:stats": "cd src/agents/typescript-fixer && npx ts-node runner.ts stats"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

@@ -1,6 +1,4 @@
-// ============================================
-// MASTER AUDIO TYPES - SINGLE SOURCE OF TRUTH
-// ============================================
+// Electromagnetic Beat Lab - Master Audio Types
 
 /**
  * MASTER AUDIO CONFIGURATION
@@ -91,9 +89,6 @@ export interface FrontendAudioEngineState {
 
 
 /**
- * Convert timer config to standard binaural config
- */
-/**
  * FREQUENCY CALCULATION FUNCTIONS FOR UI DISPLAY ONLY
  * Internal audio processing uses baseFrequency + beatFrequency
  * These are ONLY for UI display purposes
@@ -101,31 +96,6 @@ export interface FrontendAudioEngineState {
 export const calculateLeftFreq = (baseFrequency: number): number => baseFrequency;
 export const calculateRightFreq = (baseFrequency: number, beatFrequency: number): number => baseFrequency + beatFrequency;
 
-/**
- * Convert timer config to standard binaural config
- * Using unknown is safer than any
- */
-export const fromTimerConfig = (timer: unknown): BinauralBeatConfig => {
-    // Type guard to ensure it's an object
-    const t = timer as Record<string, number>;
-
-    return {
-        baseFrequency: t?.leftFreq || t?.baseFreq || 440,
-        beatFrequency: t?.beatFreq ||
-            (t?.rightFreq && t?.leftFreq
-                ? t.rightFreq - t.leftFreq
-                : 15),
-        amplitude: t?.amplitude || t?.volume || 0.7,
-        waveform: t?.waveform || 'sine',
-        spatial: t?.spatial || undefined
-    };
-};
-/**
- * Calculate right frequency from base and beat
- */
-export const calculateRightFrequency = (baseFreq: number, beatFreq: number): number => {
-    return baseFreq + beatFreq;
-};
 
 /**
  * Calculate beat frequency from left and right
