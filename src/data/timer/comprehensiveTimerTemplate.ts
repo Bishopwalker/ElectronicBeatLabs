@@ -411,8 +411,8 @@ export const ULTIMATE_CONSCIOUSNESS_EXPANSION_TEMPLATE: ComprehensiveTimerPreset
       duration_minutes: 15,
       frequency_hz: 4,
       frequency_type: 'Theta',
-      left_ear_hz: 120,
-      right_ear_hz: 116,
+      left_ear_hz: 116,
+      right_ear_hz: 120,
       description: '🕳️ Phase 4: Deep Theta (4Hz) - Profound States',
       
       pattern_id: 'standing-wave-meditation',
@@ -462,10 +462,10 @@ export const ULTIMATE_CONSCIOUSNESS_EXPANSION_TEMPLATE: ComprehensiveTimerPreset
     {
       // Phase 5: Gamma Awakening
       duration_minutes: 10,
-      frequency_hz: 30,
+      frequency_hz: 40,
       frequency_type: 'Gamma',
-      left_ear_hz: 144,
-      right_ear_hz: 150,
+      left_ear_hz: 44,
+      right_ear_hz: 84,
       description: '⚡ Phase 5: Gamma Awakening (40Hz) - Higher Consciousness',
       
       pattern_id: 'toroidal-max-resonance',
@@ -516,7 +516,7 @@ export const ULTIMATE_CONSCIOUSNESS_EXPANSION_TEMPLATE: ComprehensiveTimerPreset
       duration_minutes: 15,
       frequency_hz: 8,
       frequency_type: 'Alpha',
-      left_ear_hz: 144,
+      left_ear_hz: 142,
       right_ear_hz: 150,
       description: '🔄 Phase 6: Integration (8Hz) - Wisdom Integration',
       

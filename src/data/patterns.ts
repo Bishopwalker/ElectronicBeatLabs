@@ -527,7 +527,7 @@ def extract_audio_sync(video_id, start_time=0):
     
     return f'temp_audio_{video_id}.wav'
 
-def sync_with_binaural(audio_file, beat_freq=30):
+def sync_with_binaural(audio_file, beat_frequency=30):
     """Synchronize extracted audio with binaural beats"""
     sample_rate, audio_data = wavfile.read(audio_file)
     duration = len(audio_data) / sample_rate
@@ -535,7 +535,7 @@ def sync_with_binaural(audio_file, beat_freq=30):
     # Generate binaural beats
     t = np.linspace(0, duration, len(audio_data))
     left_freq = 200
-    right_freq = left_freq + beat_freq
+    right_freq = left_freq + beat_frequency
     
     binaural_left = np.sin(2 * np.pi * left_freq * t)
     binaural_right = np.sin(2 * np.pi * right_freq * t)
