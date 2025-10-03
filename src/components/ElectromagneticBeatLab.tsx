@@ -76,12 +76,12 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
   const activeAudioEngine = sessionId ? backendEngine : frontendEngine;
 
   // Timer status for preset tracking
-  const [timerStatus, setTimerStatus] = useState<TimerStatus | null>(null);
+  const [timerStatus, setTimerStatus] = useState<TimerStatus | undefined>(undefined);
 
   // Current preset tracking
   const { currentPreset } = useCurrentPresetTracker({
     timerStatus,
-    activePattern: appState.currentPattern?.id,
+    activePattern?: appState.currentPattern?.id,
     audioState: backendEngine.audioState
   });
 

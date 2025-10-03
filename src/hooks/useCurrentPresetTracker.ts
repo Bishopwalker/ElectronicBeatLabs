@@ -22,7 +22,7 @@ interface PresetTrackerParams {
     isPlaying: boolean;
     leftFreq: number;
     rightFreq: number;
-  };
+  }
 }
 
 export const useCurrentPresetTracker = ({
