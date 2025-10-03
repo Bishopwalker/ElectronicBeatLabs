@@ -2,13 +2,13 @@
  * TypeScript Fixer Agent - Main Entry Point
  */
 
-export { TypeScriptFixerAgent } from './agent';
+export { TypeScriptFixerAgent, typeScriptFixer } from './agent.js';
 export {
   TypeScriptFixerConfig,
   defaultConfig,
   developmentConfig,
   productionConfig
-} from './config';
+} from './config.js';
 export {
   FixStrategy,
   FixContext,
@@ -20,10 +20,7 @@ export {
   TypeAssertionFixer,
   StrategyManager,
   TypeScriptProgramManager
-} from './strategies';
-
-// Re-export for convenience
-export { typeScriptFixer } from './agent';
+} from './strategies.js';
 
 /**
  * Quick start function for immediate use
@@ -34,7 +31,7 @@ export async function startTypeScriptFixer(options?: {
   autoFix?: boolean;
   safeMode?: boolean;
 }) {
-  const { TypeScriptFixerAgent } = await import('./agent');
+  const { TypeScriptFixerAgent } = await import('./agent.js');
 
   const agent = new TypeScriptFixerAgent(
     options?.watchPaths || ['src/**/*.ts', 'src/**/*.tsx']
@@ -65,7 +62,7 @@ export async function startTypeScriptFixer(options?: {
  * Run a single scan
  */
 export async function scanTypeScriptErrors(fix: boolean = false) {
-  const { TypeScriptFixerAgent } = await import('./agent');
+  const { TypeScriptFixerAgent } = await import('./agent.js');
 
   const agent = new TypeScriptFixerAgent(['src/**/*.ts', 'src/**/*.tsx']);
 

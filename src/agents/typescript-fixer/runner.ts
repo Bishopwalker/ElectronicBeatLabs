@@ -4,10 +4,10 @@
  * CLI Runner for TypeScript Fixer Agent
  */
 
-import { TypeScriptFixerAgent } from './agent';
-import { defaultConfig, developmentConfig, productionConfig, TypeScriptFixerConfig } from './config';
-import * as fs from 'fs';
-import * as path from 'path';
+import { TypeScriptFixerAgent } from './agent.js';
+import { defaultConfig, developmentConfig, productionConfig, TypeScriptFixerConfig } from './config.js';
+import fs from 'node:fs';
+import path from 'node:path';
 import { program } from 'commander';
 
 // Load configuration

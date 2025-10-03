@@ -2,9 +2,9 @@
  * Advanced TypeScript Error Fix Strategies
  */
 
-import * as ts from 'typescript';
-import * as fs from 'fs';
-import * as path from 'path';
+import ts from 'typescript';
+import fs from 'node:fs';
+import path from 'node:path';
 
 export interface FixContext {
   sourceFile: ts.SourceFile;
