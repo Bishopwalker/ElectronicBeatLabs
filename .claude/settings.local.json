@@ -101,7 +101,9 @@
       "Bash(findstr:*)",
       "Bash(tasklist)",
       "Bash(stop-dev.bat)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(echo:*)",
+      "Bash(git worktree:*)"
     ],
     "deny": [],
     "ask": []
