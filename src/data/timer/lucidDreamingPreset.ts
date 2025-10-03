@@ -39,11 +39,11 @@ export const LUCID_DREAMING_MASTER: ComprehensiveTimerPreset = {
   advanced_transitions: [
     {
       // Phase 1: Cool Down Period - Beta Relaxation
-      duration_minutes: 10,
+      duration_minutes: 2,
       frequency_hz: 13,
       frequency_type: 'Beta',
-      left_ear_hz: 144,
-      right_ear_hz: 150,
+      left_ear_hz: 80,
+      right_ear_hz: 93,
       description: '😌 Phase 1: Cool Down (13Hz Beta) - Waking State Relaxation',
       
       pattern_id: 'spiral-transformation',
@@ -90,7 +90,7 @@ export const LUCID_DREAMING_MASTER: ComprehensiveTimerPreset = {
       },
       
       transition_effects: {
-        crossfade_duration: 30,
+        crossfade_duration: 13,
         harmonic_blending: true
       }
     },
@@ -100,8 +100,8 @@ export const LUCID_DREAMING_MASTER: ComprehensiveTimerPreset = {
       duration_minutes: 10,
       frequency_hz: 6,
       frequency_type: 'Theta',
-      left_ear_hz: 144,
-      right_ear_hz: 138,
+      left_ear_hz: 58,
+      right_ear_hz: 64,
       description: '🧬 Phase 2: Pre-Sleep Theta (6Hz) - DNA Helix Gateway',
       
       pattern_id: 'helix-dna-activation',
@@ -159,8 +159,8 @@ export const LUCID_DREAMING_MASTER: ComprehensiveTimerPreset = {
       duration_minutes: 30,
       frequency_hz: 0.3,
       frequency_type: 'Delta',
-      left_ear_hz: 110,
-      right_ear_hz: 110.3,
+      left_ear_hz: 50,
+      right_ear_hz: 50.3,
       description: '💤 Phase 3: Deep Delta Sleep (0.3Hz) - Standing Wave Rest',
       
       pattern_id: 'standing-wave-meditation',
@@ -219,8 +219,8 @@ export const LUCID_DREAMING_MASTER: ComprehensiveTimerPreset = {
       duration_minutes: 7,
       frequency_hz: 25,
       frequency_type: 'Gamma',
-      left_ear_hz: 144,
-      right_ear_hz: 150,
+      left_ear_hz: 40,
+      right_ear_hz: 65,
       description: '⚡ Phase 4: Pre-Lucid Gamma (25Hz) - Consciousness Activation Vortex',
       
       pattern_id: 'vortex-focus-enhancement',
@@ -275,10 +275,10 @@ export const LUCID_DREAMING_MASTER: ComprehensiveTimerPreset = {
     {
       // Phase 5: Peak Lucidity - Maximum Resonance Toroidal
       duration_minutes: 5,
-      frequency_hz: 30,
+      frequency_hz: 40,
       frequency_type: 'Gamma',
-      left_ear_hz: 144,
-      right_ear_hz: 150,
+      left_ear_hz: 85,
+      right_ear_hz: 125,
       description: '🌟 Phase 5: Peak Lucidity (40Hz) - Maximum Resonance Toroidal Mastery',
       
       pattern_id: 'toroidal-max-resonance',
@@ -336,35 +336,35 @@ export const LUCID_DREAMING_MASTER: ComprehensiveTimerPreset = {
     {
       start_time_minutes: 0,
       end_time_minutes: 10,
-      pattern_config: {} as any, // Would reference spiral-transformation
+      pattern_config: {} as' spiral-transformation',
       transition_duration_seconds: 30,
       transition_type: 'crossfade'
     },
     {
       start_time_minutes: 10,
       end_time_minutes: 20,
-      pattern_config: {} as any, // Would reference helix-dna-activation
+      pattern_config: {} as 'helix-dna-activation',
       transition_duration_seconds: 60,
       transition_type: 'morph'
     },
     {
       start_time_minutes: 20,
       end_time_minutes: 50,
-      pattern_config: {} as any, // Would reference standing-wave-meditation
+      pattern_config: {} as 'standing-wave-meditation',
       transition_duration_seconds: 90,
       transition_type: 'crossfade'
     },
     {
       start_time_minutes: 50,
       end_time_minutes: 57,
-      pattern_config: {} as any, // Would reference vortex-focus-enhancement
+      pattern_config: {} as 'vortex-focus-enhancement',
       transition_duration_seconds: 25,
       transition_type: 'instant'
     },
     {
       start_time_minutes: 57,
       end_time_minutes: 62,
-      pattern_config: {} as any, // Would reference toroidal-max-resonance
+      pattern_config: {} as 'toroidal-max-resonance',
       transition_duration_seconds: 20,
       transition_type: 'morph'
     }
