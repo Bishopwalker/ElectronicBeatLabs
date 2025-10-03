@@ -310,8 +310,8 @@ class TestADHDProtocols:
         
         # Check frequency ranges are in SMR band (12-15 Hz)
         for stage in stages:
-            beat_freq = stage["beat_frequency"]
-            assert 10 <= beat_freq <= 16, f"Beat frequency {beat_freq} outside SMR range"
+            beat_frequency = stage["beat_frequency"]
+            assert 10 <= beat_frequency <= 16, f"Beat frequency {beat_frequency} outside SMR range"
             
     def test_protocol_timing(self):
         """Test that protocol timing adds up correctly."""

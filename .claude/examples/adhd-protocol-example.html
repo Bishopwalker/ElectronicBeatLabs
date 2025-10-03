@@ -281,11 +281,11 @@
 
         <div class="current-params">
             <div class="param-card">
-                <div class="param-value" id="baseFreq">200</div>
+                <div class="param-value" id="base_frequency">200</div>
                 <div class="param-label">Base Frequency (Hz)</div>
             </div>
             <div class="param-card active">
-                <div class="param-value" id="beatFreq">14</div>
+                <div class="param-value" id="beat_frequency">14</div>
                 <div class="param-label">Beat Frequency (Hz)</div>
             </div>
             <div class="param-card">
@@ -326,22 +326,22 @@
             stages: [
                 {
                     duration: 5 * 60, // 5 minutes
-                    baseFreq: 180,
-                    beatFreq: 12,
+                    base_frequency: 180,
+                    beat_frequency: 12,
                     name: "Warm-up",
                     description: "Gentle SMR activation"
                 },
                 {
                     duration: 20 * 60, // 20 minutes
-                    baseFreq: 200,
-                    beatFreq: 14,
+                    base_frequency: 200,
+                    beat_frequency: 14,
                     name: "Core Training",
                     description: "Primary SMR enhancement"
                 },
                 {
                     duration: 5 * 60, // 5 minutes
-                    baseFreq: 180,
-                    beatFreq: 10,
+                    base_frequency: 180,
+                    beat_frequency: 10,
                     name: "Cool-down",
                     description: "Alpha transition"
                 }
@@ -462,18 +462,18 @@
             // Update current parameters
             if (sessionState.active && sessionState.currentStage < SMR_PROTOCOL.stages.length) {
                 const currentStageData = SMR_PROTOCOL.stages[sessionState.currentStage];
-                document.getElementById('baseFreq').textContent = currentStageData.baseFreq;
-                document.getElementById('beatFreq').textContent = currentStageData.beatFreq;
+                document.getElementById('base_frequency').textContent = currentStageData.base_frequency;
+                document.getElementById('beat_frequency').textContent = currentStageData.beat_frequency;
                 document.getElementById('currentStage').textContent = currentStageData.name;
                 
                 // Update brainwave state based on frequency
-                const beatFreq = currentStageData.beatFreq;
+                const beat_frequency = currentStageData.beat_frequency;
                 let state;
-                if (beatFreq < 4) state = "Delta";
-                else if (beatFreq < 8) state = "Theta";
-                else if (beatFreq < 13) state = "Alpha";
-                else if (beatFreq < 16) state = "SMR";
-                else if (beatFreq < 30) state = "Beta";
+                if (beat_frequency < 4) state = "Delta";
+                else if (beat_frequency < 8) state = "Theta";
+                else if (beat_frequency < 13) state = "Alpha";
+                else if (beat_frequency < 16) state = "SMR";
+                else if (beat_frequency < 30) state = "Beta";
                 else state = "Gamma";
                 
                 document.getElementById('brainwaveState').textContent = state;
