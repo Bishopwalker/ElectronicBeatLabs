@@ -158,14 +158,15 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
     if (!localTimer || !localTimer.isActive) return;
 
     const now = Date.now();
-    const elapsed = Math.floor((now - localTimer.startTime) / 1000 / 60);
+    const elapsedSeconds = Math.floor((now - localTimer.startTime) / 1000);
 
     let currentTransitionIndex = 0;
-    let elapsedInTransitions = elapsed;
+    let elapsedInTransitionsSeconds = elapsedSeconds;
 
     for (const element of localTimer.transitions) {
-      if (elapsedInTransitions >= element.duration_minutes) {
-        elapsedInTransitions -= element.duration_minutes;
+      const transitionDurationSeconds = element.duration_minutes * 60;
+      if (elapsedInTransitionsSeconds >= transitionDurationSeconds) {
+        elapsedInTransitionsSeconds -= transitionDurationSeconds;
         currentTransitionIndex++;
       } else {
         break;
@@ -195,14 +196,17 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
 
     const currentTransition = localTimer.transitions[currentTransitionIndex];
     const nextTransition = localTimer.transitions[currentTransitionIndex + 1] || null;
-    const timeRemainingCurrent = currentTransition.duration_minutes - elapsedInTransitions;
+    const currentTransitionDurationSeconds = currentTransition.duration_minutes * 60;
+    const timeRemainingCurrentSeconds = currentTransitionDurationSeconds - elapsedInTransitionsSeconds;
+    const timeRemainingCurrentMinutes = timeRemainingCurrentSeconds / 60;
 
-    const totalTimeRemaining = localTimer.transitions
+    const totalTimeRemainingSeconds = localTimer.transitions
         .slice(currentTransitionIndex)
         .reduce((sum, t, i) => {
-          if (i === 0) return sum + timeRemainingCurrent;
-          return sum + t.duration_minutes;
+          if (i === 0) return sum + timeRemainingCurrentSeconds;
+          return sum + (t.duration_minutes * 60);
         }, 0);
+    const totalTimeRemainingMinutes = totalTimeRemainingSeconds / 60;
 
     const currentPreset = presets.find(p => p.id === selectedPresetId);
 
@@ -219,12 +223,12 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
       } : undefined,
       current_transition: currentTransition,
       next_transition: nextTransition,
-      time_remaining_current: timeRemainingCurrent,
-      time_remaining_total: totalTimeRemaining,
+      time_remaining_current: timeRemainingCurrentMinutes,
+      time_remaining_total: totalTimeRemainingMinutes,
       isRunning: localTimer?.isActive && !localTimer?.isPaused,
       totalTime: localTimer?.transitions.reduce((sum, t) => sum + t.duration_minutes, 0) || 0,
-      progress: (localTimer && totalTimeRemaining) ?
-          (1 - (totalTimeRemaining / localTimer.transitions.reduce((sum, t) => sum + t.duration_minutes, 0))) * 100 : 0
+      progress: (localTimer && totalTimeRemainingMinutes) ?
+          (1 - (totalTimeRemainingMinutes / localTimer.transitions.reduce((sum, t) => sum + t.duration_minutes, 0))) * 100 : 0
     };
 
     console.log('⏰ Timer Status Updated:', {
