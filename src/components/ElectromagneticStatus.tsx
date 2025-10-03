@@ -28,8 +28,11 @@ const getStatusShadow = (state: string) => {
 };
 
 const ElectromagneticStatus: React.FC<ElectromagneticStatusProps> = ({ field, status }) => {
-  const statusState = status?.state || 'INACTIVE';
-  
+  // Get state from field first, fallback to status
+  const statusState = field?.state || status?.state || 'INACTIVE';
+  const fieldStrength = field?.strength || 0;
+  const fieldCoherence = field?.coherence || 0;
+
   return (
     <Box
       sx={{
@@ -56,7 +59,7 @@ const ElectromagneticStatus: React.FC<ElectromagneticStatusProps> = ({ field, st
           }
         }}
       />
-      
+
       <Typography
         sx={{
           fontSize: '0.9rem',
@@ -68,7 +71,7 @@ const ElectromagneticStatus: React.FC<ElectromagneticStatusProps> = ({ field, st
       >
         {statusState}
       </Typography>
-      
+
       <Typography
         sx={{
           fontFamily: 'Courier New, monospace',
@@ -77,9 +80,9 @@ const ElectromagneticStatus: React.FC<ElectromagneticStatusProps> = ({ field, st
           ml: 'auto'
         }}
       >
-        {field.strength.toFixed(2)}T
+        {fieldStrength.toFixed(2)}T
       </Typography>
-      
+
       <Box
         sx={{
           width: 80,
@@ -91,9 +94,9 @@ const ElectromagneticStatus: React.FC<ElectromagneticStatusProps> = ({ field, st
       >
         <Box
           sx={{
-            width: `${Math.min(100, field.coherence * 100)}%`,
+            width: `${Math.min(100, fieldCoherence * 100)}%`,
             height: '100%',
-            bgcolor: 'linear-gradient(90deg, #ff6b00, #00ff88)',
+            background: 'linear-gradient(90deg, #ff6b00, #00ff88)',
             transition: 'width 0.3s ease'
           }}
         />
