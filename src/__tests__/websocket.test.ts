@@ -84,7 +84,7 @@ describe('WebSocket Tests', () => {
       type: 'frequency_update',
       leftFreq: 440,
       rightFreq: 444,
-      beatFreq: 4
+      beat_frequency: 4
     };
 
     mockWebSocket.send(JSON.stringify(frequencyData));
@@ -198,7 +198,7 @@ describe('WebSocket Tests', () => {
     mockWebSocket.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.type === 'frequency_update') {
-        frequencies.push(data.beatFreq);
+        frequencies.push(data.beat_frequency);
       }
     };
 
@@ -207,7 +207,7 @@ describe('WebSocket Tests', () => {
       for (let i = 1; i <= 10; i++) {
         mockWebSocket.simulateMessage({
           type: 'frequency_update',
-          beatFreq: i * 0.5
+          beat_frequency: i * 0.5
         });
       }
 

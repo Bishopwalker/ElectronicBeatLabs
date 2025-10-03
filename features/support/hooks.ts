@@ -29,7 +29,7 @@ Before(async function(this: CustomWorld) {
     isPlaying: false,
     leftFreq: 440,
     rightFreq: 444,
-    beatFreq: 4,
+    beat_frequency: 4,
     volume: 0.5,
     waveform: 'sine',
     error: null

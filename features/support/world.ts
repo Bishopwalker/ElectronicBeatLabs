@@ -5,7 +5,7 @@ interface MockAudioEngine {
   isPlaying: boolean;
   leftFreq: number;
   rightFreq: number;
-  beatFreq: number;
+  beat_frequency: number;
   volume: number;
   waveform: string;
   startAudio: jest.Mock;
@@ -71,7 +71,7 @@ export class CustomWorldConstructor extends World implements CustomWorld {
       isPlaying: false,
       leftFreq: 440,
       rightFreq: 444,
-      beatFreq: 4,
+      beat_frequency: 4,
       volume: 0.5,
       waveform: 'sine',
       startAudio: jest.fn(),
