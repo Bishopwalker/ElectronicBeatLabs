@@ -5,127 +5,75 @@
 // IMPORT ALL PRESET COLLECTIONS
 // ==================================================================
 
-// Basic built-in presets
-import type {FrequencyTransition, TimerPreset} from "../../types";
+import { ADVANCED_TIMER_PRESETS } from "./advancedTimerPresets";
+import { BUILT_IN_PRESETS } from "./timerPresets";
+import type { TimerPreset, FrequencyTransition } from "../../types";
 
-export {
-  BUILT_IN_PRESETS, 
-  getPresetTransitions 
-} from './timerPresets';
+// ==================================================================
+// TIMER TYPE DEFINITIONS
+// ==================================================================
 
-// Advanced comprehensive presets
-export { 
-  ADVANCED_TIMER_PRESETS,
-  PRESET_CREATION_EXAMPLES,
-  ADVANCED_HEALING_PROTOCOL,
-  ADHD_GAMMA_FOCUS_BLAST
-} from './advancedTimerPresets';
-
-// Lucid dreaming specialist presets
-export { 
-  LUCID_DREAMING_PRESETS,
-  LUCID_DREAMING_MASTER 
-} from './lucidDreamingPreset';
-
-// Toroidal low-frequency + loop examples
-export { 
-  TOROIDAL_LOW_FREQUENCY_PRESETS,
-  DELTA_HEALING_TOROIDAL,
-  THETA_CREATIVITY_TOROIDAL,
-  ALPHA_FOCUS_TOROIDAL,
-  TOROIDAL_FREQUENCY_EXAMPLES,
-  LOOP_CONFIGURATION_EXAMPLES
-} from './toroidalLowFrequencyExamples';
-
-// Comprehensive template system
-export { 
-  ULTIMATE_CONSCIOUSNESS_EXPANSION_TEMPLATE,
-  AVAILABLE_FEATURES,
-  PRESET_TEMPLATES,
-  type ComprehensiveTimerPreset,
-  type AdvancedFrequencyTransition,
-  type PatternProgression,
-    type PatternConfig,
-  type Spatial8DConfig,
-  type ElectromagneticProgression,
-  type VisualizationProgression,
-  type YouTubeIntegration,
-  type SessionActivity
-} from './comprehensiveTimerTemplate';
-
-// Core types - imported from main types folder
-export { 
-  type TimerPreset,
-  type FrequencyTransition
-} from '../../types';
-
-// Additional timer-specific types that may need to be defined
+/**
+ * Timer session information
+ */
 export interface TimerSession {
-  presetId: string;
+  presetId?: TimerPreset;
   startTime: number;
   currentPhase: number;
   isPaused: boolean;
-  loopCount?: number;
-  session_id?: string; // Added for websocket integration
+  loopCount: number;
+  session_id: string;
+  preset?: TimerPreset;
+  is_active?: boolean;
+  current_transition_index?: number;
 }
 
+/**
+ * Timer status for UI display and state management
+ */
 export interface TimerStatus {
+  session?: TimerSession;
+  current_transition: FrequencyTransition;
+  next_transition: FrequencyTransition | null;
+  time_remaining_current: number;
+  time_remaining_total: number;
   isRunning: boolean;
-  isPaused: boolean;
-  currentTime: number;
   totalTime: number;
   progress: number;
-  session?: TimerSession;
 }
 
+/**
+ * Local timer state for useTimerLogic hook
+ */
 export interface LocalTimer {
-  id: string;
-  preset: CustomPresetForm;
-  status: TimerStatus;
-  session?: TimerSession;
-  // Direct properties used by useTimerLogic
   startTime: number;
   currentTransitionIndex: number;
   transitions: FrequencyTransition[];
   isActive: boolean;
   isPaused: boolean;
   forceLoop?: boolean;
+  session?: {
+    is_active?: boolean;
+    is_paused?: boolean;
+    preset?: TimerPreset;
+  };
 }
 
+/**
+ * Timer control actions
+ */
+export type TimerAction = 'stop' | 'pause' | 'resume' | 'restart';
+
+/**
+ * Custom preset form data
+ */
 export interface CustomPresetForm {
   name: string;
   description: string;
   duration: number;
-  transitions: FrequencyTransition[];
   tags: string[];
+  transitions: FrequencyTransition[];
 }
-
-export type TimerAction = 
-  | 'start' 
-  | 'pause' 
-  | 'resume' 
-  | 'stop' 
-  | 'reset' 
-  | 'restart'
-  | 'next_phase' 
-  | 'previous_phase';
-
-// ==================================================================
-// MASTER PRESET COLLECTIONS
-// ==================================================================
-
-import { BUILT_IN_PRESETS } from './timerPresets';
-import { ADVANCED_TIMER_PRESETS } from './advancedTimerPresets';
-
-// All presets combined for easy access
-export const ALL_TIMER_PRESETS = [
-  ...BUILT_IN_PRESETS,
-  ...ADVANCED_TIMER_PRESETS
-];
-
-// ==================================================================
-// PRESET CATEGORIES FOR UI ORGANIZATION
-// ==================================================================
 
 export const PRESET_CATEGORIES = {
   BASIC: {
@@ -135,7 +83,7 @@ export const PRESET_CATEGORIES = {
     icon: '🌟',
     difficulty: 'beginner'
   },
-  
+
   SLEEP: {
     name: 'Sleep & Dreams',
     description: 'Advanced sleep induction and lucid dreaming protocols',
@@ -143,7 +91,7 @@ export const PRESET_CATEGORIES = {
     icon: '😴',
     difficulty: 'intermediate'
   },
-  
+
   HEALING: {
     name: 'Healing & Wellness',
     description: 'Therapeutic frequencies for cellular regeneration and healing',
@@ -151,7 +99,7 @@ export const PRESET_CATEGORIES = {
     icon: '💚',
     difficulty: 'advanced'
   },
-  
+
   FOCUS: {
     name: 'Focus & Productivity',
     description: 'High-performance cognitive enhancement for work and study',
@@ -159,7 +107,7 @@ export const PRESET_CATEGORIES = {
     icon: '🎯',
     difficulty: 'intermediate'
   },
-  
+
   CREATIVITY: {
     name: 'Creativity & Flow',
     description: 'Inspiration and artistic enhancement protocols',
@@ -167,7 +115,7 @@ export const PRESET_CATEGORIES = {
     icon: '🎨',
     difficulty: 'beginner'
   },
-  
+
   CONSCIOUSNESS: {
     name: 'Consciousness Expansion',
     description: 'Advanced spiritual and consciousness development',
@@ -178,123 +126,10 @@ export const PRESET_CATEGORIES = {
 };
 
 // ==================================================================
-// PRESET SEARCH AND FILTERING
-// ==================================================================
-
-export const searchPresets = (query: string, presets = ALL_TIMER_PRESETS) => {
-  const searchTerm = query.toLowerCase();
-  return presets.filter(preset => 
-    preset.name.toLowerCase().includes(searchTerm) ||
-    preset.description.toLowerCase().includes(searchTerm) ||
-    preset.tags.some((tag: string) => tag.toLowerCase().includes(searchTerm))
-  );
-};
-
-export const filterPresetsByDifficulty = (difficulty: string, presets = ALL_TIMER_PRESETS) => {
-  return presets.filter(preset => {
-    // For basic presets, assume beginner level
-    if (!('difficulty_level' in preset)) return difficulty === 'beginner';
-    return (preset as any).difficulty_level === difficulty;
-  });
-};
-
-export const filterPresetsByDuration = (minMinutes: number, maxMinutes: number, presets = ALL_TIMER_PRESETS) => {
-  return presets.filter(preset => 
-    preset.total_duration >= minMinutes && preset.total_duration <= maxMinutes
-  );
-};
-
-export const filterPresetsByTags = (tags: string[], presets = ALL_TIMER_PRESETS) => {
-  return presets.filter(preset =>
-    tags.some(tag => preset.tags.includes(tag))
-  );
-};
-
-export const getPresetsByCategory = (categoryKey: string) => {
-  const category = PRESET_CATEGORIES[categoryKey as keyof typeof PRESET_CATEGORIES];
-  if (!category) return [];
-  
-  return ALL_TIMER_PRESETS.filter(preset => 
-    category.presets.includes(preset.id)
-  );
-};
-
-// ==================================================================
-// LOOP FUNCTIONALITY HELPERS
-// ==================================================================
-
-export const getLoopEnabledPresets = (presets = ALL_TIMER_PRESETS) => {
-  return presets.filter(preset => preset.loop_enabled === true);
-};
-
-export const getInfiniteLoopPresets = (presets = ALL_TIMER_PRESETS) => {
-  return presets.filter(preset => 
-    preset.loop_enabled === true && preset.loop_count === 0
-  );
-};
-
-export const getCountLoopPresets = (presets = ALL_TIMER_PRESETS) => {
-  return presets.filter(preset => 
-    preset.loop_enabled === true && preset.loop_count && preset.loop_count > 0
-  );
-};
-
-export const getPresetTransition = (presets: TimerPreset[] = ALL_TIMER_PRESETS): FrequencyTransition[][] => {
-  return presets.map(preset => preset.transitions);
-};
-
-// ==================================================================
-// FREQUENCY ANALYSIS HELPERS  
-// ==================================================================
-
-export const getPresetsByFrequencyRange = (minHz: number, maxHz: number) => {
-  return ALL_TIMER_PRESETS.filter(preset => {
-    const transitions = getPresetTransition([preset])[0];
-    return transitions.some(transition => 
-      transition.frequency_hz >= minHz && transition.frequency_hz <= maxHz
-    );
-  });
-};
-
-export const getDeltaPresets = () => getPresetsByFrequencyRange(0.5, 4);
-export const getThetaPresets = () => getPresetsByFrequencyRange(4, 8);
-export const getAlphaPresets = () => getPresetsByFrequencyRange(8, 12);
-export const getBetaPresets = () => getPresetsByFrequencyRange(12, 30);
-export const getGammaPresets = () => getPresetsByFrequencyRange(30, 100);
-
-// ==================================================================
-// TOROIDAL PATTERN HELPERS
-// ==================================================================
-
-export const getToroidalPresets = (presets = ALL_TIMER_PRESETS) => {
-  return presets.filter(preset => 
-    preset.name.toLowerCase().includes('toroidal') ||
-    preset.description.toLowerCase().includes('toroidal') ||
-    preset.tags.includes('toroidal')
-  );
-};
-
-export const getMaximumResonancePresets = (presets = ALL_TIMER_PRESETS) => {
-  return presets.filter(preset => 
-    preset.name.toLowerCase().includes('maximum resonance') ||
-    preset.description.toLowerCase().includes('maximum resonance')
-  );
-};
-
-// ==================================================================
 // USAGE STATISTICS AND RECOMMENDATIONS
 // ==================================================================
 
-export const PRESET_STATS = {
-  total_presets: ALL_TIMER_PRESETS.length,
-  basic_presets: BUILT_IN_PRESETS.length,
-  advanced_presets: ADVANCED_TIMER_PRESETS.length,
-  loop_enabled_presets: getLoopEnabledPresets().length,
-  toroidal_presets: getToroidalPresets().length,
-  healing_presets: filterPresetsByTags(['healing']).length,
-  focus_presets: filterPresetsByTags(['focus']).length,
-  meditation_presets: filterPresetsByTags(['meditation']).length
-};
+
 
 export const BEGINNER_RECOMMENDATIONS = [
   'test-quick-1min',
@@ -344,8 +179,52 @@ export const validatePreset = (preset: TimerPreset): { valid: boolean; errors: s
 };
 
 // ==================================================================
+// PRESET COLLECTIONS
+// ==================================================================
+
+export const ALL_TIMER_PRESETS: TimerPreset[] = [
+  ...BUILT_IN_PRESETS,
+  ...ADVANCED_TIMER_PRESETS
+];
+
+// ==================================================================
+// PRESET FILTERING UTILITIES
+// ==================================================================
+
+export const getLoopEnabledPresets = (): TimerPreset[] => {
+  return ALL_TIMER_PRESETS.filter(preset => preset.loop_enabled === true);
+};
+
+export const getToroidalPresets = (): TimerPreset[] => {
+  return ALL_TIMER_PRESETS.filter(preset =>
+    preset.id.includes('toroidal') || preset.pattern_id?.includes('toroidal')
+  );
+};
+
+export const filterPresetsByTags = (tags: string[]): TimerPreset[] => {
+  return ALL_TIMER_PRESETS.filter(preset =>
+    tags.some(tag => preset.tags.includes(tag))
+  );
+};
+
+// ==================================================================
 // EXPORT SUMMARY
 // ==================================================================
+export const PRESET_STATS = {
+  total_presets: ALL_TIMER_PRESETS.length,
+  basic_presets: BUILT_IN_PRESETS.length,
+  advanced_presets: ADVANCED_TIMER_PRESETS.length,
+  loop_enabled_presets: getLoopEnabledPresets().length,
+  toroidal_presets: getToroidalPresets().length,
+  healing_presets: filterPresetsByTags(['healing']).length,
+  focus_presets: filterPresetsByTags(['focus']).length,
+  meditation_presets: filterPresetsByTags(['meditation']).length
+};
+
+// ==================================================================
+// EXPORT ALL TYPES
+// ==================================================================
+export type { TimerPreset, FrequencyTransition };
 
 export const TIMER_SYSTEM_INFO = {
   version: '1.0.0',
@@ -364,5 +243,6 @@ export const TIMER_SYSTEM_INFO = {
   ],
   total_presets: PRESET_STATS.total_presets,
   categories: Object.keys(PRESET_CATEGORIES).length,
-  difficulty_levels: ['beginner', 'intermediate', 'advanced', 'expert']
+  difficulty_levels: ['beginner', 'intermediate', 'advanced', 'expert'],
+
 };
