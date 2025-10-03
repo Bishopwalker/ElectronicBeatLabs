@@ -66,53 +66,85 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
-async def stream_audio_frames(websocket: WebSocket, session_id: str):
-    """Stream audio frames to client at precise 60 FPS with timing correction"""
+async def stream_audio_frames(websocket: WebSocket, session_id: str, use_binary: bool = True):
+    """Stream audio frames to client at precise 60 FPS with timing correction
+
+    Args:
+        websocket: WebSocket connection
+        session_id: Unique session identifier
+        use_binary: If True, use binary WebSocket frames (50% smaller, faster)
+    """
+    logger.info(f" STREAM START: Beginning audio stream for session {session_id} (binary={use_binary})")
     target_fps = 60
     frame_duration = 1.0 / target_fps  # 16.666ms target
 
-    # Track timing for precision
-    start_time = asyncio.get_event_loop().time()
+    # Use time.perf_counter() for better precision than event loop time
+    import time
+    start_time = time.perf_counter()
     frame_count = 0
     next_frame_time = start_time
 
+    # Performance tracking
+    generation_times = []
+    transmission_times = []
+
     try:
         while True:
-            frame_start = asyncio.get_event_loop().time()
+            frame_start = time.perf_counter()
 
-            # Generate audio frame
-            frame = await audio_engine.generate_frame(session_id)
+            # Generate audio frame (binary mode for faster processing)
+            frame = await audio_engine.generate_frame(session_id, binary_mode=use_binary)
+            generation_end = time.perf_counter()
+            generation_time = (generation_end - frame_start) * 1000  # ms
+            generation_times.append(generation_time)
 
             if frame:
-                # Send frame to client with precise timing
-                await websocket.send_json({
-                    "type": "frame",
-                    "data": frame,
-                    "timestamp": frame_start,
-                    "frame_count": frame_count
-                })
+                # Send frame to client
+                if use_binary:
+                    # Binary transmission: ~3.2KB vs ~6.4KB JSON (50% smaller)
+                    await websocket.send_bytes(frame)
+                else:
+                    # Legacy JSON transmission
+                    await websocket.send_json({
+                        "type": "frame",
+                        "data": frame,
+                        "timestamp": frame_start,
+                        "frame_count": frame_count
+                    })
+
+                transmission_end = time.perf_counter()
+                transmission_time = (transmission_end - generation_end) * 1000  # ms
+                transmission_times.append(transmission_time)
 
             frame_count += 1
             next_frame_time = start_time + (frame_count * frame_duration)
 
             # Calculate precise sleep time to maintain 60 FPS
-            current_time = asyncio.get_event_loop().time()
+            current_time = time.perf_counter()
             sleep_time = next_frame_time - current_time
 
             if sleep_time > 0:
                 await asyncio.sleep(sleep_time)
-            elif sleep_time < -0.002:  # If more than 2ms behind, log warning
-                logger.warning(f"Frame timing drift: {sleep_time*1000:.1f}ms behind target")
+            elif sleep_time < -0.003:  # If more than 3ms behind, log warning
+                avg_gen = sum(generation_times[-10:]) / min(len(generation_times), 10)
+                avg_tx = sum(transmission_times[-10:]) / min(len(transmission_times), 10)
+                logger.warning(
+                    f"Frame timing drift: {sleep_time*1000:.1f}ms behind "
+                    f"(gen={avg_gen:.1f}ms, tx={avg_tx:.1f}ms)"
+                )
 
+    except asyncio.CancelledError:
+        logger.info(f" STREAM CANCELLED: Audio stream cancelled for session {session_id}")
+        raise
     except Exception as e:
-        logger.error(f"Audio streaming error for session {session_id}: {e}")
+        logger.error(f" STREAM ERROR: Audio streaming error for session {session_id}: {e}", exc_info=True)
 
 @router.websocket("/ws/audio/{session_id}")
 async def websocket_audio_endpoint(websocket: WebSocket, session_id: str):
     """WebSocket endpoint for real-time audio streaming"""
     logger.info(f"🔌 WebSocket connection attempt for session: {session_id}")
     await manager.connect(websocket, session_id)
-    logger.info(f"✅ WebSocket connected successfully for session: {session_id}")
+    logger.info(f" WebSocket connected successfully for session: {session_id}")
 
     audio_task = None  # Track audio streaming task
 
@@ -139,7 +171,7 @@ async def websocket_audio_endpoint(websocket: WebSocket, session_id: str):
         # Cancel audio streaming if still running
         if audio_task and not audio_task.done():
             audio_task.cancel()
-            logger.info(f"🛑 Cancelled audio streaming for {session_id}")
+            logger.info(f"Cancelled audio streaming for {session_id}")
         manager.disconnect(session_id)
 
 async def send_frequency_transition(session_id: str, transition_data: dict):
@@ -152,24 +184,33 @@ async def send_frequency_transition(session_id: str, transition_data: dict):
 async def handle_websocket_message(message: dict, session_id: str, websocket: WebSocket = None, audio_task=None):
     """Handle incoming WebSocket messages"""
     message_type = message.get("type")
-    
+    logger.info(f" RECEIVED MESSAGE: type={message_type}, session={session_id}")
+    logger.info(f" MESSAGE DATA: {message}")
+
     try:
         if message_type == "start_session" or message_type == "start_stream":
             # Start audio session
             settings = message.get("data", {}).get("settings", {}) if message.get("data") else message.get("settings", {})
             validated_settings = audio_engine.validate_frequencies(settings)
             audio_engine_session_id = audio_engine.start_session(validated_settings)
-            
+
             # Store the mapping between WebSocket session ID and audio engine session ID
             websocket_to_audio_session[session_id] = audio_engine_session_id
-            logger.info(f"🎵 Audio session started: WebSocket={session_id}, AudioEngine={audio_engine_session_id}")
-            logger.info(f"🗂️ Current session mappings: {websocket_to_audio_session}")
-            logger.info(f"🔧 AudioEngine active sessions: {list(audio_engine.sessions.keys())}")
-            
-            # Start audio streaming task
+            logger.info(f" Audio session started: WebSocket={session_id}, AudioEngine={audio_engine_session_id}")
+            logger.info(f"🗂 Current session mappings: {websocket_to_audio_session}")
+            logger.info(f" AudioEngine active sessions: {list(audio_engine.sessions.keys())}")
+
+            # Start audio streaming task with binary mode enabled
             if websocket:
-                audio_task = asyncio.create_task(stream_audio_frames(websocket, audio_engine_session_id))
-                logger.info(f"🎵 Started audio streaming task for session {audio_engine_session_id}")
+                # Cancel existing task if running
+                if audio_task and not audio_task.done():
+                    audio_task.cancel()
+                    logger.info(f" Cancelled previous audio streaming task")
+
+                # Use binary transmission by default (50% payload reduction)
+                use_binary = settings.get("use_binary", True)
+                audio_task = asyncio.create_task(stream_audio_frames(websocket, audio_engine_session_id, use_binary=use_binary))
+                logger.info(f"🎵 Started audio streaming task for session {audio_engine_session_id} (binary={use_binary})")
 
             await manager.send_personal_message({
                 "type": "session_started",
@@ -192,8 +233,11 @@ async def handle_websocket_message(message: dict, session_id: str, websocket: We
             # Update session settings
             settings = message.get("settings", {})
             validated_settings = audio_engine.validate_frequencies(settings)
-            audio_engine.update_settings(session_id, validated_settings)
-            
+
+            # Use audio engine session ID if mapped
+            target_session_id = websocket_to_audio_session.get(session_id, session_id)
+            audio_engine.update_settings(target_session_id, validated_settings)
+
             await manager.send_personal_message({
                 "type": "settings_updated",
                 "settings": validated_settings
@@ -216,7 +260,8 @@ async def handle_websocket_message(message: dict, session_id: str, websocket: We
         
         elif message_type == "get_metrics":
             # Get session metrics
-            metrics = audio_engine.get_session_metrics(session_id)
+            target_session_id = websocket_to_audio_session.get(session_id, session_id)
+            metrics = audio_engine.get_session_metrics(target_session_id)
             await manager.send_personal_message({
                 "type": "metrics",
                 "data": metrics
@@ -225,14 +270,16 @@ async def handle_websocket_message(message: dict, session_id: str, websocket: We
         elif message_type == "enable_spatial":
             # Enable 8D spatial audio
             spatial_settings = message.get("spatial_settings", {})
-            spatial_processor.configure_session(session_id, spatial_settings)
-            
+            target_session_id = websocket_to_audio_session.get(session_id, session_id)
+
+            spatial_processor.configure_session(target_session_id, spatial_settings)
+
             # Update session to enable spatial audio
-            audio_engine.update_settings(session_id, {
+            audio_engine.update_settings(target_session_id, {
                 "spatial_enabled": True,
                 "spatial_settings": spatial_settings
             })
-            
+
             await manager.send_personal_message({
                 "type": "spatial_enabled",
                 "settings": spatial_settings
@@ -240,12 +287,27 @@ async def handle_websocket_message(message: dict, session_id: str, websocket: We
         
         elif message_type == "disable_spatial":
             # Disable 8D spatial audio
-            audio_engine.update_settings(session_id, {"spatial_enabled": False})
-            
+            target_session_id = websocket_to_audio_session.get(session_id, session_id)
+            audio_engine.update_settings(target_session_id, {"spatial_enabled": False})
+
             await manager.send_personal_message({
                 "type": "spatial_disabled"
             }, session_id)
-        
+
+        elif message_type == "configure":
+            # Configure session settings
+            settings = message.get("settings", {})
+            validated_settings = audio_engine.validate_frequencies(settings)
+
+            # Use audio engine session ID if mapped
+            target_session_id = websocket_to_audio_session.get(session_id, session_id)
+            audio_engine.configure(target_session_id, validated_settings)
+
+            await manager.send_personal_message({
+                "type": "configured",
+                "settings": validated_settings
+            }, session_id)
+
         else:
             logger.warning(f"Unknown message type: {message_type}")
 

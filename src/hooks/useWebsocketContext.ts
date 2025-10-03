@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
-import {cleanup} from "@testing-library/react";
+
+
 
 interface WebSocketMessage {
     type: string;
@@ -14,7 +15,7 @@ interface WebSocketContextType {
     lastMessage: WebSocketMessage | null;
     sessionId: string | null;
     sendMessage: (message: WebSocketMessage | string) => void;
-    connect: (baseFrequency?: number, beatFrequency?: number) => void;
+    connect: (baseFrequency?: number, beat_frequency?: number) => void;
     disconnect: () => void;
     registerFrameHandler: (handler: (message: any) => void) => void;
 }
@@ -51,8 +52,8 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     const reconnectAttemptsRef = useRef(0);
     const maxReconnectAttempts = 3; // Reduced for better UX
     const reconnectDelay = 2000;
-    const currentParamsRef = useRef<{ baseFreq?: number; beatFreq?: number }>({});
-    const frameMessageHandlerRef = useRef<{ handler?: (message: any) => void; lastUpdate?: number } | null>(null);
+    const currentParamsRef = useRef<{ base_frequency?: number; beat_frequency?: number }>({});
+    const frameMessageHandlerRef = useRef<{ handler?: (message: WebSocketMessage) => void; lastUpdate?: number } | null>(null);
 
     // Cleanup function
     const cleanup = useCallback(() => {
@@ -72,26 +73,27 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     }, []);
 
     // Connect function
-    const connect = useCallback((baseFrequency = 140, beatFrequency = 4) => {
-        console.log('🔌 WebSocket connect() called with:', {baseFrequency, beatFrequency});
+    const connect = useCallback((baseFrequency: number | undefined, beat_frequency: number | undefined) => {
+        console.log('🔌 WebSocket connect() called with:', {baseFrequency, beat_frequency});
 
         // Check WebSocket ref directly for state
         if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
             console.log('✅ WebSocket: Already connected (readyState = OPEN)');
             setIsConnected(true);  // Update state in case it's out of sync
             setIsConnecting(false);
-            setCurrentSessionId(wsRef.current.sessionId)
             return;
         }
 
         // If connecting, log but don't return - let backend wait for it
         if (wsRef.current && wsRef.current.readyState === WebSocket.CONNECTING) {
             console.log('⏳ WebSocket: Connection already in progress (readyState = CONNECTING)');
+            setIsConnected(true);  // Update state in case it's out of sync
+            setIsConnecting(false);
             return;
         }
 
         // Store parameters for potential reconnection
-        currentParamsRef.current = {baseFreq: baseFrequency, beatFreq: beatFrequency};
+        currentParamsRef.current = {base_frequency: baseFrequency, beat_frequency: beat_frequency};
 
         try {
             // Clean up any existing connection first
@@ -121,8 +123,8 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
             console.log('🆔 WebSocket: Using session ID:', currentSessionId);
 
             // Backend calculates: left_ear = base_frequency - beat_frequency
-            // Using main WebSocket endpoint that actually streams audio frames
-            const wsUrl = `${baseUrl}/ws/${currentSessionId}?base_frequency=${baseFrequency}&beat_frequency=${beatFrequency}`;
+            // Using audio-specific WebSocket endpoint for backend audio engine
+            const wsUrl = `${baseUrl}/ws/audio/${currentSessionId}?base_frequency=${baseFrequency}&beat_frequency=${beat_frequency}`;
 
             console.log('🚀 Connecting to WebSocket:', wsUrl);
 
@@ -151,38 +153,44 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
                 if (extractedSessionId)
                     setCurrentSessionId(extractedSessionId);
                 console.log('💾 Session ID stored in WebSocket context:', extractedSessionId);
-            }
 
-            setIsConnected(true);
-            setIsConnecting(false);
-            setError(null);
-            reconnectAttemptsRef.current = 0;
+                // Move these inside onopen to ensure proper state sync
+                setIsConnected(true);
+                setIsConnecting(false);
+                setError(null);
+                reconnectAttemptsRef.current = 0;
+            }
 
 
 
             ws.onmessage = (event) => {
                 try {
+                    // Handle binary frames (50% smaller, faster)
+                    if (event.data instanceof Blob) {
+                        // Convert Blob to ArrayBuffer
+                        event.data.arrayBuffer().then((arrayBuffer: ArrayBuffer) => {
+                            // Send binary frame directly to registered handler
+                            if (frameMessageHandlerRef.current?.handler) {
+                                frameMessageHandlerRef.current.handler({
+                                    type: 'audio_frame',
+                                    data: arrayBuffer
+                                });
+                            }
+                        });
+                        return;
+                    }
+
+                    // Handle text/JSON frames (legacy or control messages)
                     const data = typeof event.data === 'string'
                         ? JSON.parse(event.data)
                         : event.data;
 
-              //      console.log('📨 WebSocket message received:', data);
+                    console.log('📨 WebSocket message received:', data);
 
-                    // Optimize: Throttle frame message updates to prevent infinite re-renders
+                    // Optimize: For frame messages, only call handlers without updating state
                     if (data.type === 'frame' || data.type === 'audio_frame') {
-                        // For frame messages, only update state occasionally to prevent render loops
-                        const now = Date.now();
-                        const timeSinceLastFrameUpdate = now - (frameMessageHandlerRef.current?.lastUpdate || 0);
-
-                        if (timeSinceLastFrameUpdate > 100) { // Only update every 100ms max
-                            if (!frameMessageHandlerRef.current) {
-                                frameMessageHandlerRef.current = { lastUpdate: now };
-                            } else {
-                                frameMessageHandlerRef.current.lastUpdate = now;
-                            }
-                            setLastMessage(data);
-                        }
-                        // Still call direct handlers for real-time processing
+                        // Don't update state for frame messages to prevent re-render loops
+                        // Just call the registered handler directly
                         if (frameMessageHandlerRef.current?.handler) {
                             frameMessageHandlerRef.current.handler(data);
                         }
@@ -191,13 +199,13 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
                         setLastMessage(data);
                     }
                 } catch (err) {
-                    console.error('❌ Error parsing WebSocket message:', err);
+                    console.error(' Error parsing WebSocket message:', err);
                 }
             };
 
             ws.onerror = (event) => {
-                console.error('❌ WebSocket error:', event);
-                console.error('❌ Error details:', {
+                console.error(' WebSocket error:', event);
+                console.error(' Error details:', {
                     readyState: ws.readyState,
                     url: ws.url,
                     protocol: ws.protocol,
@@ -221,8 +229,8 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
                         console.log(`🔄 Reconnecting (${reconnectAttemptsRef.current}/${maxReconnectAttempts})...`);
 
                         reconnectTimeoutRef.current = setTimeout(() => {
-                            const { baseFreq, beatFreq } = currentParamsRef.current;
-                            connect(baseFreq, beatFreq);
+                            const { base_frequency, beat_frequency } = currentParamsRef.current;
+                           if (currentParamsRef.current) connect(base_frequency ,beat_frequency);
                         }, reconnectDelay * reconnectAttemptsRef.current); // Exponential backoff
                     } else {
                         setError(new Error('Max reconnection attempts reached'));
@@ -231,7 +239,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
             };
 
         } catch (err) {
-            console.error('❌ Error creating WebSocket connection:', err);
+            console.error(' Error creating WebSocket connection:', err);
             let connectionError: Error;
             if (err instanceof Error) {
                 connectionError = err;
@@ -246,7 +254,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     // Send message function
     const sendMessage = useCallback((message: WebSocketMessage | string) => {
         if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
-            console.warn('⚠️ Cannot send message: WebSocket not connected');
+            console.warn('⚠ Cannot send message: WebSocket not connected');
             return;
         }
 
@@ -256,9 +264,9 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
                 : JSON.stringify(message);
 
             wsRef.current.send(messageToSend);
-            console.log('📤 Message sent:', messageToSend);
+            console.log(' Message sent:', messageToSend);
         } catch (err) {
-            console.error('❌ Error sending message:', err);
+            console.error('Error sending message:', err);
             setError(err instanceof Error ? err : new Error('Failed to send message'));
         }
     }, []);
@@ -270,7 +278,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
         cleanup();
     }, [cleanup]);
 
-    const registerFrameHandler = useCallback((handler: (message: any) => void) => {
+    const registerFrameHandler = useCallback((handler: (message: WebSocketMessage) => void) => {
         frameMessageHandlerRef.current = {
             ...frameMessageHandlerRef.current,
             handler
@@ -280,7 +288,8 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     // Auto-connect on mount if enabled
     useEffect(() => {
         if (autoConnect) {
-            connect();
+            const { base_frequency, beat_frequency } = currentParamsRef.current;
+            connect(base_frequency,beat_frequency);
         }
 
         // Cleanup on unmount

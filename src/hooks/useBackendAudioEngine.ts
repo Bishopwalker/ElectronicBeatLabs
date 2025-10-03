@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useWebSocketContext } from './useWebsocketContext';
 import { useBackendAPI } from './useBackendAPI';
 import type {
-  AudioEngineState,
+  BackendAudioEngineState,
   ElectromagneticField,
   PatternConfig,
   BinauralBeatConfig
@@ -52,14 +52,14 @@ interface BackendSessionConfig {
 }
 
 export const useBackendAudioEngine = () => {
-  const [audioState, setAudioState] = useState<AudioEngineState>({
+  const [audioState, setAudioState] = useState<BackendAudioEngineState>({
     error: '',
     sessionId: '',
     connected: false,
     isPlaying: false,
     config: {
-      amplitude: 0.3,
-      beatFrequency: 4,
+      amplitude: 1.2,
+      beat_frequency: 4,
       baseFrequency: 144,
       waveform: 'sine',
       spatial: {
@@ -141,13 +141,12 @@ export const useBackendAudioEngine = () => {
       // Create persistent gain node
       if (!gainNode.current) {
         gainNode.current = audioContext.current.createGain();
-        gainNode.current.gain.value = audioState.config?.amplitude || 0.3;
+        gainNode.current.gain.value = audioState.config?.amplitude || 1.2;
         gainNode.current.connect(audioContext.current.destination);
       }
 
       // Create AudioWorkletNode for real-time audio processing
       if (!audioWorkletNode.current) {
-
         audioWorkletNode.current = new AudioWorkletNode(
             audioContext.current,
             'backend-audio-processor',
@@ -156,40 +155,45 @@ export const useBackendAudioEngine = () => {
               numberOfOutputs: 1,
               outputChannelCount: [2], // Stereo output
               processorOptions: {
-                amplitude: audioState.config?.amplitude || 0.3
+                amplitude: audioState.config?.amplitude || 1.2
               }
             }
         );
 
         // Handle messages from AudioWorklet
-        audioWorkletNode.current.port.onmessage = (event) => {
+        audioWorkletNode.current.port.onmessage = (event: MessageEvent) => {
           const message = event.data;
           switch (message.type) {
             case 'frameProcessed':
-              console.log('🎵 Backend Engine: Frame processed -', message.data.frameSize, 'samples');
+              // Reduced logging - only log every 60 frames (1 second)
+              break;
+            case 'bufferStatus':
+              console.log('📊 Buffer Status:', message.data);
               break;
             case 'bufferExhausted':
-              console.log('🔄 Backend Engine: Audio buffer exhausted, need new frame');
+              console.warn('⚠️ Backend Engine: Audio buffer exhausted, need new frame');
               break;
             case 'processingError':
               console.error('❌ Backend Engine: AudioWorklet processing error:', message.error);
+              break;
+            default:
               break;
           }
         };
 
         // Connect AudioWorklet to gain node
         audioWorkletNode.current.connect(gainNode.current);
-        console.log('✅ Backend Engine: AudioWorklet node created and connected');
+        console.log('✅ Backend Engine: AudioWorklet node created and connected to gain node');
       }
     } catch (error) {
       console.error('❌ Backend Engine: Failed to initialize AudioWorklet audio:', error);
     }
-  }, [audioState.config?.amplitude]);
+  }, [audioState]);
 /* console.log('🎧 Backend Engine: Processing audio frame with', frame.frame_size, 'samples',
     //     'Left:', frame.frequencies.left, 'Hz Right:', frame.frequencies.right, 'Hz Beat:', frame.frequencies.beat, 'Hz');
 */
   // Process backend audio frame (send to AudioWorklet)
-  const processAudioFrame = useCallback((frame: BackendAudioFrame) => {
+  const processAudioFrame = useCallback((frame: BackendAudioFrame | ArrayBuffer) => {
 
     if (!audioContext.current) {
       console.error('❌ Backend Engine: No audio context available for frame processing');
@@ -202,7 +206,17 @@ export const useBackendAudioEngine = () => {
     }
 
     try {
-      // Send audio frame directly to AudioWorklet processor
+      // Handle binary frame (ArrayBuffer) - 50% faster, 50% smaller
+      if (frame instanceof ArrayBuffer) {
+        audioWorkletNode.current.port.postMessage({
+          type: 'audioFrame',
+          data: frame // Pass ArrayBuffer directly to AudioWorklet
+        });
+        console.log('🔊 Backend Engine: Binary audio frame sent to AudioWorklet');
+        return;
+      }
+
+      // Handle legacy JSON frame
       audioWorkletNode.current.port.postMessage({
         type: 'audioFrame',
         data: {
@@ -213,26 +227,30 @@ export const useBackendAudioEngine = () => {
         }
       });
 
-      // Update volume parameter on AudioWorklet
+      // Update volume parameter on AudioWorklet (legacy JSON frames only)
       const volumeParam = audioWorkletNode.current.parameters.get('volume');
-      if (volumeParam) {
+      if (volumeParam && !(frame instanceof ArrayBuffer)) {
         volumeParam.setValueAtTime(
-            audioState.config?.amplitude || 0.3,
+            audioState.config?.amplitude || 1.2,
             audioContext.current.currentTime
         );
       }
 
-      console.log('🔊 Backend Engine: Audio frame sent to AudioWorklet, amplitude:', audioState.config?.amplitude || 0.3);
+      console.log('🔊 Backend Engine: Audio frame sent to AudioWorklet, amplitude:', audioState.config?.amplitude || 1.2);
 
-      // Update frequency state in config
-      setAudioState(prev => ({
-        ...prev,
-        config: {
-          ...prev.config!,
-          baseFrequency: frame.frequencies.left,
-          beatFrequency: frame.frequencies.beat
-        }
-      }));
+      // Update frequency state in config (legacy JSON frames only)
+      if (!(frame instanceof ArrayBuffer)) {
+        setAudioState(prev => ({
+          ...prev,
+          config: {
+            ...prev.config!,
+            baseFrequency: frame.frequencies.left,
+            beat_frequency: frame.frequencies.beat,
+            amplitude: audioState.config?.amplitude || 1.2,
+            duration: audioContext.current?.currentTime || Date.now(),
+          }
+        }));
+      }
 
     } catch (error) {
       console.error('❌ Backend Engine: Failed to process audio frame:', error);
@@ -270,6 +288,58 @@ export const useBackendAudioEngine = () => {
     }
   }, [websocket.isConnected, waitingForConnection]);
 
+  // Sync session ID from WebSocket when it becomes available
+  useEffect(() => {
+    if (websocket.sessionId && !sessionId) {
+      console.log('🔄 Backend Engine: Syncing session ID from WebSocket:', websocket.sessionId);
+      setSessionId(websocket.sessionId);
+    }
+  }, [websocket.sessionId, sessionId]);
+
+  // CRITICAL FIX: Initialize AudioWorklet EARLY on WebSocket connection
+  useEffect(() => {
+    const initAudioPipeline = async () => {
+      if (websocket.isConnected && !audioWorkletNode.current) {
+        console.log('🎵 Backend Engine: WebSocket connected, initializing audio pipeline early...');
+
+        // Initialize audio context first
+        const context = await initializeAudio();
+        if (context) {
+          // Initialize AudioWorklet pipeline BEFORE frames start arriving
+          await initializePersistentAudio();
+          console.log('✅ Backend Engine: Audio pipeline initialized and ready for frames');
+        }
+      }
+    };
+
+    initAudioPipeline();
+  }, [websocket.isConnected, initializeAudio, initializePersistentAudio]);
+
+  // CRITICAL FIX: Register frame handler to receive audio frames from WebSocket
+  useEffect(() => {
+    console.log('🎵 Backend Engine: Registering frame handler for audio processing');
+
+    websocket.registerFrameHandler((message: any) => {
+      // Process frame messages directly without triggering re-renders
+      if (message.type === 'frame' || message.type === 'audio_frame') {
+        const audioData = message.data;
+
+        // Handle binary frames (ArrayBuffer)
+        if (audioData instanceof ArrayBuffer) {
+          processAudioFrame(audioData);
+          return;
+        }
+
+        // Handle legacy JSON frames
+        if (audioData && typeof audioData === 'object' && 'left' in audioData && 'right' in audioData) {
+          processAudioFrame(audioData as BackendAudioFrame);
+        }
+      }
+    });
+
+    console.log('✅ Backend Engine: Frame handler registered successfully');
+  }, [websocket, processAudioFrame]);
+
   // Handle WebSocket messages with debouncing for frame messages
   const lastProcessedMessageRef = useRef<number>(0);
 
@@ -294,10 +364,10 @@ export const useBackendAudioEngine = () => {
           case 'frame':
           case 'audio_frame': {
             console.log('🎵 Backend Engine: Processing audio frame - UPDATED');
-            // Handle both 'frame' (from main.py) and 'audio_frame' formats
-            // Frame structure from backend main.py is: { type: 'frame', data: { audio: {...}, field: {...} } }
-            const audioData = message.type === 'frame' ? message.data?.audio : message.data;
-            const fieldData = message.type === 'frame' ? message.data?.field : message.data?.field;
+            // audio_websocket.py sends: { type: 'frame', data: {left: [], right: [], ...} }
+            // Direct access to audio data (no nested 'audio' wrapper from audio_websocket.py)
+            const audioData = message.data;
+            const fieldData = null; // audio_websocket.py doesn't send field data
 
             // Check for session errors
             if (audioData && typeof audioData === 'object' && audioData.error) {
@@ -332,7 +402,11 @@ export const useBackendAudioEngine = () => {
               return;
             }
 
-            if (audioData && typeof audioData === 'object' && 'left' in audioData && 'right' in audioData) {
+            // Handle binary frames
+            if (audioData instanceof ArrayBuffer) {
+              processAudioFrame(audioData);
+            } else if (audioData && typeof audioData === 'object' && 'left' in audioData && 'right' in audioData) {
+              // Handle legacy JSON frames
               processAudioFrame(audioData as BackendAudioFrame);
             } else {
               console.warn('⚠️ Backend Engine: Audio data not available');
@@ -406,13 +480,20 @@ export const useBackendAudioEngine = () => {
           const timeout = setTimeout(() => {
             console.log('⚠️ Backend Engine: WebSocket connection timeout during backend connect');
             resolve(false);
-          }, 1000); // Increased to 10 seconds
+          }, 5000); // 5 seconds timeout for WebSocket connection
 
           const checkConnection = () => {
             if (websocket.isConnected) {
               clearTimeout(timeout);
+              console.log('✅ Backend Engine: WebSocket connected, session ID:', websocket.sessionId);
               resolve(true);
+            } else if (!websocket.isConnecting) {
+              // If not connecting and not connected, it failed
+              clearTimeout(timeout);
+              console.log('⚠️ Backend Engine: WebSocket connection stopped without connecting');
+              resolve(false);
             } else {
+              // Still connecting, check again
               setTimeout(checkConnection, 100);
             }
           };
@@ -426,13 +507,20 @@ export const useBackendAudioEngine = () => {
       }
 
       setBackendConnected(true);
+
+      // Update session ID from WebSocket if available
+      if (websocket.sessionId && !sessionId) {
+        console.log('🆔 Backend Engine: Setting session ID from WebSocket:', websocket.sessionId);
+        setSessionId(websocket.sessionId);
+      }
+
       console.log('✅ Backend Engine: Connected successfully with WebSocket state:', {
         connected: websocket.isConnected,
         connecting: websocket.isConnecting,
         backendConnected: true,
-        sessionId:websocket.sessionId
+        sessionId: websocket.sessionId
       });
-      console.log('🆔 Backend Engine: Current session ID after connection:', sessionId);
+      console.log('🆔 Backend Engine: Current session ID after connection:', sessionId || websocket.sessionId);
 
       // Force a re-render by updating a timestamp
       console.log('🔄 Backend Engine: Forcing component re-render after connection');
@@ -465,14 +553,14 @@ export const useBackendAudioEngine = () => {
       setBackendConnected(true); // KEEP backend connected for Advanced Controls
     }
 
-    // ONLY clear the audio buffer - keep AudioWorklet alive for restart
+    // STOP the AudioWorklet processor and clear buffer
     if (audioWorkletNode.current) {
-      console.log('🧹 stopBackendSession: Clearing AudioWorklet buffer but keeping pipeline alive');
+      console.log('🛑 stopBackendSession: Stopping AudioWorklet processor');
+      audioWorkletNode.current.port.postMessage({ type: 'stop' });
       audioWorkletNode.current.port.postMessage({ type: 'clearBuffer' });
-      // DON'T disconnect - keep the pipeline ready for next session
     }
 
-    // Also mute the gain node to ensure no humming
+    // Mute the gain node to ensure no humming
     if (gainNode.current) {
       console.log('🔇 stopBackendSession: Muting gain node to eliminate humming');
       gainNode.current.gain.setValueAtTime(0, audioContext.current!.currentTime);
@@ -492,7 +580,7 @@ export const useBackendAudioEngine = () => {
       state: 'INACTIVE',
       stability: 0
     });
-  }, [sessionId, websocket]);
+  }, [websocket.sessionId]);
 
   // Start backend session - FIXED NaN CHECKS
   const startBackendSession = useCallback(async (config?: BinauralBeatConfig & {
@@ -525,8 +613,8 @@ export const useBackendAudioEngine = () => {
         // When config is provided, check if values are valid numbers
         base_frequency: (!isNaN(config.baseFrequency))
             ? config.baseFrequency : 140,
-        beat_frequency: ( !isNaN(config.beatFrequency))
-            ? config.beatFrequency : 4,
+        beat_frequency: ( !isNaN(config.beat_frequency))
+            ? config.beat_frequency : 4,
         amplitude: ( !isNaN(config.amplitude))
             ? config.amplitude : 0.7,
         spatial_enabled: config.spatial_enabled || false,
@@ -534,8 +622,8 @@ export const useBackendAudioEngine = () => {
       } : {
         // When no config, use current audioState.config with proper fallbacks
         base_frequency: audioState.config?.baseFrequency || 144,
-        beat_frequency: audioState.config?.beatFrequency || 4,
-        amplitude: audioState.config?.amplitude || 0.3,
+        beat_frequency: audioState.config?.beat_frequency || 4,
+        amplitude: audioState.config?.amplitude || 1.2,
         spatial_enabled: audioState.config?.spatial?.enabled || false,
         spatial_settings: {
           mode: audioState.config?.spatial?.mode || 'binaural',
@@ -706,7 +794,7 @@ export const useBackendAudioEngine = () => {
           config: {
             ...prev.config!,
             baseFrequency: sessionConfig.base_frequency,
-            beatFrequency: sessionConfig.beat_frequency,
+            beat_frequency: sessionConfig.beat_frequency,
             amplitude: sessionConfig.amplitude
           }
         }));
@@ -735,7 +823,7 @@ export const useBackendAudioEngine = () => {
   const loadPattern = useCallback(async (pattern: PatternConfig) => {
     const config: BinauralBeatConfig & { spatial_enabled?: boolean; spatial_settings?: Record<string, unknown> } = {
       baseFrequency: pattern.frequencies.carrier,
-      beatFrequency: pattern.frequencies.beat,
+      beat_frequency: pattern.frequencies.beat,
       amplitude: 0.5,
       waveform: 'sine',
       spatial_enabled: true,
@@ -754,18 +842,18 @@ export const useBackendAudioEngine = () => {
   }, [audioState.isPlaying, startBackendSession, stopBackendSession]);
 
   // Update frequency
-  const updateFrequency = useCallback((baseFreq: number, beatFreq: number) => {
+  const updateFrequency = useCallback((base_frequency: number, beat_frequency: number) => {
     updateSettings({
-      base_frequency: baseFreq,
-      beat_frequency: beatFreq
+      base_frequency: base_frequency,
+      beat_frequency: beat_frequency
     });
 
     setAudioState(prev => ({
       ...prev,
       config: {
         ...prev.config!,
-        baseFrequency: baseFreq,
-        beatFrequency: beatFreq
+        baseFrequency: base_frequency,
+        beat_frequency: beat_frequency
       }
     }));
   }, [updateSettings]);
@@ -773,7 +861,7 @@ export const useBackendAudioEngine = () => {
   // Update volume
   const updateVolume = useCallback((volume: number) => {
     // Protect against NaN and invalid values
-    const safeVolume = isNaN(volume) ? 0.3 : Math.max(0, Math.min(1, volume));
+    const safeVolume = isNaN(volume) ? 1.2 : Math.max(0, Math.min(2, volume));
     console.log('🎵 Backend updateVolume:', { original: volume, safe: safeVolume });
 
     updateSettings({
@@ -822,8 +910,8 @@ export const useBackendAudioEngine = () => {
   const startBinauralBeat = useCallback(async (config: BinauralBeatConfig) => {
     const sessionConfig = {
       baseFrequency: config.baseFrequency || 80,
-      beatFrequency: config.beatFrequency || 15,
-      amplitude: config.amplitude || 0.3,
+      beat_frequency: config.beat_frequency || 15,
+      amplitude: config.amplitude || 1.2,
       waveform: config.waveform || 'sine',
       spatial_enabled: config.spatial?.enabled || true,
       spatial_settings: {
@@ -854,7 +942,7 @@ export const useBackendAudioEngine = () => {
           config: {
             ...prev.config!,
             baseFrequency: sessionConfig.baseFrequency,
-            beatFrequency: sessionConfig.beatFrequency,
+            beat_frequency: sessionConfig.beat_frequency,
             amplitude: sessionConfig.amplitude
           }
         }));
@@ -891,8 +979,8 @@ export const useBackendAudioEngine = () => {
   const generateTestTones = useCallback((leftFreq: number, rightFreq: number, duration: number = 5000) => {
     const config: BinauralBeatConfig = {
       baseFrequency: leftFreq,
-      beatFrequency: Math.abs(rightFreq - leftFreq),
-      amplitude: 0.3,
+      beat_frequency: Math.abs(rightFreq - leftFreq),
+      amplitude: 1.2,
       waveform: 'sine'
     };
 
@@ -926,7 +1014,7 @@ export const useBackendAudioEngine = () => {
         // Update backend frequency
         await updateSettings({
           baseFrequency: currentFreq,
-          beatFrequency: 4 // Keep beat frequency constant during sweep
+          beat_frequency: 4 // Keep beat frequency constant during sweep
         });
 
         // Wait for step duration
@@ -944,7 +1032,7 @@ export const useBackendAudioEngine = () => {
   const createGammaProtocol = useCallback((protocol: any) => {
     const config: BinauralBeatConfig = {
       baseFrequency: 144,
-      beatFrequency: protocol.gammaFreq || 40,
+      beat_frequency: protocol.gammaFreq || 40,
       amplitude: (protocol.intensity || 70) / 100,
       waveform: 'sine'
     };
@@ -982,9 +1070,9 @@ export const useBackendAudioEngine = () => {
     sessionId,
     backendConnected,
     websocketState: {
-      isConnected: websocket.isConnected,
-      isConnecting: websocket.isConnecting,
-      error: websocket.error
+      connected: websocket.isConnected,
+      connecting: websocket.isConnecting,
+      error: websocket.error?.message || null
     },
     connectBackend,
     disconnectBackend,
