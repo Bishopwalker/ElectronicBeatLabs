@@ -2,8 +2,10 @@
 // Combines audio generation and visualization using existing types
 // Single source of truth for all binaural visualization needs
 
-import { useState, useCallback, useRef, useEffect } from 'react';
-import type { BinauralBeatConfig, FrontendAudioEngineState } from '../types';
+import {useCallback, useEffect, useRef, useState} from 'react';
+import type {BinauralBeatConfig, FrontendAudioEngineState} from '../types';
+import {useBackendAudioEngine} from "./useBackendAudioEngine.ts";
+import {useAudioEngine} from "./useAudioEngine.ts";
 
 // Visualization data interface using existing patterns
 interface VisualizationData {
@@ -55,12 +57,12 @@ export const useBinauralVisualization = (config: Partial<VisualizationConfig> = 
   };
 
   // State management using existing audio types
-  const [audioState, setAudioState] = useState<FrontendAudioEngineState>({
+  const [audioState, setAudioState] = useState<FrontendAudioEngineState >({
     isPlaying: false,
     amplitude: 0.3,
     leftFreq: 440,
     rightFreq: 444,
-    beatFreq: 4,
+    beat_frequency: 4,
     waveform: 'sine',
     gainL: null,
     gainR: null,
@@ -239,7 +241,7 @@ export const useBinauralVisualization = (config: Partial<VisualizationConfig> = 
     const rawData: VisualizationData = {
       spectrumData,
       peakFrequencies,
-      currentBeatFreq: audioState.beatFreq,
+      currentBeatFreq: audioState.beat_frequency,
       amplitudes: {
         left: dataArray.current[leftBin] || 0,
         right: dataArray.current[rightBin] || 0
@@ -254,14 +256,12 @@ export const useBinauralVisualization = (config: Partial<VisualizationConfig> = 
     };
 
     // Enhance with detected frequencies and quality metrics
-    const actualFrequencies = findActualPlayedFrequencies(
-      spectrumData,
-      audioState.leftFreq,
-      audioState.rightFreq,
-      audioState.context.sampleRate
+    rawData.actualDetectedFrequencies = findActualPlayedFrequencies(
+        spectrumData,
+        audioState.leftFreq,
+        audioState.rightFreq,
+        audioState.context.sampleRate
     );
-
-    rawData.actualDetectedFrequencies = actualFrequencies;
     rawData.signalQuality = calculateSignalQuality(rawData);
 
     return rawData;
@@ -333,7 +333,11 @@ export const useBinauralVisualization = (config: Partial<VisualizationConfig> = 
 
     try {
       // Stop any existing audio
-      stopBinauralBeats();
+
+      setAudioState(prev => ({
+        ...prev,
+        isPlaying: false
+      }));
 
       // Create analyser if needed
       if (!analyser.current) {
@@ -350,7 +354,7 @@ export const useBinauralVisualization = (config: Partial<VisualizationConfig> = 
 
       // Calculate frequencies using BinauralBeatConfig standard
       const leftFreq = config.baseFrequency;
-      const rightFreq = config.baseFrequency + config.beatFrequency;
+      const rightFreq = config.baseFrequency + config.beat_frequency;
 
       // Configure oscillators
       oscillatorL.frequency.setValueAtTime(leftFreq, context.currentTime);
@@ -383,7 +387,7 @@ export const useBinauralVisualization = (config: Partial<VisualizationConfig> = 
         amplitude: config.amplitude,
         leftFreq,
         rightFreq,
-        beatFreq: config.beatFrequency,
+        beat_frequency: config.beat_frequency,
         waveform: config.waveform,
         gainL,
         gainR,
@@ -397,7 +401,7 @@ export const useBinauralVisualization = (config: Partial<VisualizationConfig> = 
       masterGain.current = masterGainNode;
 
       console.log('✅ BinauralVisualization: Created binaural beats -',
-                  'Left:', leftFreq, 'Hz, Right:', rightFreq, 'Hz, Beat:', config.beatFrequency, 'Hz');
+                  'Left:', leftFreq, 'Hz, Right:', rightFreq, 'Hz, Beat:', config.beat_frequency, 'Hz');
 
       // Start visualization
       startVisualization();
@@ -409,49 +413,49 @@ export const useBinauralVisualization = (config: Partial<VisualizationConfig> = 
     }
   }, [initializeAudioContext, createAnalyser, startVisualization]);
 
-  // Stop binaural beats
-  const stopBinauralBeats = useCallback(() => {
-    try {
-      // Stop oscillators
-      if (audioState.oscillatorL) {
-        audioState.oscillatorL.stop();
-        audioState.oscillatorL.disconnect();
-      }
-      if (audioState.oscillatorR) {
-        audioState.oscillatorR.stop();
-        audioState.oscillatorR.disconnect();
-      }
-
-      // Disconnect gains
-      if (audioState.gainL) audioState.gainL.disconnect();
-      if (audioState.gainR) audioState.gainR.disconnect();
-      if (merger.current) merger.current.disconnect();
-      if (masterGain.current) masterGain.current.disconnect();
-
-      // Reset state
-      setAudioState(prev => ({
-        ...prev,
-        isPlaying: false,
-        gainL: null,
-        gainR: null,
-        oscillatorL: null,
-        oscillatorR: null
-      }));
-
-      // Stop visualization
-      stopVisualization();
-
-      console.log('✅ BinauralVisualization: Stopped and cleaned up');
-    } catch (error) {
-      console.error('❌ BinauralVisualization: Error during cleanup:', error);
-    }
-  }, [audioState, stopVisualization]);
+  // // Stop binaural beats
+  // const stopBinauralBeats = useCallback(() => {
+  //   try {
+  //     // Stop oscillators
+  //     if (audioState.oscillatorL) {
+  //       audioState.oscillatorL.stop();
+  //       audioState.oscillatorL.disconnect();
+  //     }
+  //     if (audioState.oscillatorR) {
+  //       audioState.oscillatorR.stop();
+  //       audioState.oscillatorR.disconnect();
+  //     }
+  //
+  //     // Disconnect gains
+  //     if (audioState.gainL) audioState.gainL.disconnect();
+  //     if (audioState.gainR) audioState.gainR.disconnect();
+  //     if (merger.current) merger.current.disconnect();
+  //     if (masterGain.current) masterGain.current.disconnect();
+  //
+  //     // Reset state
+  //     setAudioState(prev => ({
+  //       ...prev,
+  //       isPlaying: false,
+  //       gainL: null,
+  //       gainR: null,
+  //       oscillatorL: null,
+  //       oscillatorR: null
+  //     }));
+  //
+  //     // Stop visualization
+  //     stopVisualization();
+  //
+  //     console.log('✅ BinauralVisualization: Stopped and cleaned up');
+  //   } catch (error) {
+  //     console.error('❌ BinauralVisualization: Error during cleanup:', error);
+  //   }
+  // }, [ stopVisualization]);
 
   // Update frequencies using BinauralBeatConfig pattern
-  const updateFrequencies = useCallback((baseFreq: number, beatFreq: number) => {
+  const updateFrequencies = useCallback((base_frequency: number, beat_frequency: number) => {
     if (audioState.oscillatorL && audioState.oscillatorR && audioState.context) {
-      const leftFreq = baseFreq;
-      const rightFreq = baseFreq + beatFreq;
+      const leftFreq = base_frequency;
+      const rightFreq = base_frequency + beat_frequency;
       const currentTime = audioState.context.currentTime;
 
       audioState.oscillatorL.frequency.setValueAtTime(leftFreq, currentTime);
@@ -461,11 +465,11 @@ export const useBinauralVisualization = (config: Partial<VisualizationConfig> = 
         ...prev,
         leftFreq,
         rightFreq,
-        beatFreq
+        beat_frequency
       }));
 
       console.log('🔄 BinauralVisualization: Frequencies updated -',
-                  'Base:', baseFreq, 'Hz, Beat:', beatFreq, 'Hz');
+                  'Base:', base_frequency, 'Hz, Beat:', beat_frequency, 'Hz');
     }
   }, [audioState]);
 
@@ -484,12 +488,13 @@ export const useBinauralVisualization = (config: Partial<VisualizationConfig> = 
     }
   }, [audioState]);
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      stopBinauralBeats();
-    };
-  }, [stopBinauralBeats]);
+  // // Cleanup on unmount
+  // useEffect(() => {
+  //   return () => {
+  //     stopBinauralBeats();
+  //   };
+  
+   // }, [stopBinauralBeats]);
 
   // Auto-start visualization when enabled
   useEffect(() => {

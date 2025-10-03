@@ -112,7 +112,99 @@ import { ADVANCED_HEALING_PROTOCOL, ADHD_GAMMA_FOCUS_BLAST } from './advancedTim
 import { LUCID_DREAMING_MASTER } from './lucidDreamingPreset';
 import { DELTA_HEALING_TOROIDAL, THETA_CREATIVITY_TOROIDAL, ALPHA_FOCUS_TOROIDAL } from './toroidalLowFrequencyExamples';
 
-export const getPresetTransitions = (presetId: string): FrequencyTransition[] => {
+export const getPresetTransitions = (presetId: string): ({
+  duration_minutes: number;
+  frequency_hz: number;
+  frequency_type: string;
+  left_ear_hz: number;
+  right_ear_hz: number;
+  description: string;
+  pattern_id: string;
+  spatial_config: {
+    enabled: boolean;
+    hrtf: boolean;
+    roomSize: number;
+    reverbAmount: number;
+    spatialWidth: number;
+    elevation: number;
+    azimuth: number;
+    movement_speed: number;
+    spatial_intensity: number;
+    reverberance: number;
+    room_scale: number;
+    hf_damping: number;
+    pattern_8d: string
+  }
+} | {
+  duration_minutes: number;
+  frequency_hz: number;
+  frequency_type: string;
+  left_ear_hz: number;
+  right_ear_hz: number;
+  description: string;
+  pattern_id: string;
+  spatial_enabled: boolean;
+  spatial_config: {
+    hrtf: boolean;
+    roomSize: number;
+    reverbAmount: number;
+    spatialWidth: number;
+    elevation: number;
+    azimuth: number;
+    movement_speed: number;
+    spatial_intensity: number;
+    reverberance: number;
+    room_scale: number;
+    hf_damping: number;
+    pattern: string
+  }
+} | {
+  duration_minutes: number;
+  frequency_hz: number;
+  frequency_type: string;
+  left_ear_hz: number;
+  right_ear_hz: number;
+  description: string;
+  pattern: string;
+  spatial_enabled: boolean;
+  spatial_config: {
+    hrtf: boolean;
+    roomSize: number;
+    reverbAmount: number;
+    spatialWidth: number;
+    elevation: number;
+    azimuth: number;
+    movement_speed: number;
+    spatial_intensity: number;
+    reverberance: number;
+    room_scale: number;
+    hf_damping: number;
+    pattern_id: string
+  }
+} | {
+  duration_minutes: number;
+  frequency_hz: number;
+  frequency_type: string;
+  left_ear_hz: number;
+  right_ear_hz: number;
+  description: string;
+  pattern: string;
+  spatial_config: {
+    enabled: boolean;
+    hrtf: boolean;
+    roomSize: number;
+    reverbAmount: number;
+    spatialWidth: number;
+    elevation: number;
+    azimuth: number;
+    movement_speed: number;
+    spatial_intensity: number;
+    reverberance: number;
+    room_scale: number;
+    hf_damping: number;
+    pattern: string
+  }
+})[] => {
   switch (presetId) {
     case 'test-quick-1min':
       return [
@@ -121,16 +213,37 @@ export const getPresetTransitions = (presetId: string): FrequencyTransition[] =>
           frequency_hz: 10,
           frequency_type: 'Alpha',
           left_ear_hz: 144,
-          right_ear_hz: 150,
-          description: '🧪 Alpha test (20s)'
-        },
+          right_ear_hz: 164,
+          description: '🧪 Alpha test (20s)',
+          spatial_config: {
+            enabled: true,
+            hrtf: false,
+            roomSize: 0.5,
+            reverbAmount: 0.2,
+            spatialWidth: 0.7,
+            elevation: 0,
+            azimuth: 0,
+            movement_speed: 0.02,
+            spatial_intensity: 0.4
+          },},
         {
           duration_minutes: 0.33,
           frequency_hz: 6,
           frequency_type: 'Theta',
           left_ear_hz: 144,
           right_ear_hz: 150,
-          description: '🧪 Theta test (20s)'
+          description: '🧪 Theta test (20s)',
+          spatial_config: {
+            enabled: true,
+            hrtf: false,
+            roomSize: 0.5,
+            reverbAmount: 0.2,
+            spatialWidth: 0.7,
+            elevation: 0,
+            azimuth: 0,
+            movement_speed: 0.02,
+            spatial_intensity: 0.4
+          },
         },
         {
           duration_minutes: 0.34,
@@ -138,7 +251,18 @@ export const getPresetTransitions = (presetId: string): FrequencyTransition[] =>
           frequency_type: 'Beta',
           left_ear_hz: 144,
           right_ear_hz: 149,
-          description: '🧪 Beta test (20s)'
+          description: '🧪 Beta test (20s)',
+          spatial_config: {
+            enabled: true,
+            hrtf: false,
+            roomSize: 0.5,
+            reverbAmount: 0.2,
+            spatialWidth: 0.7,
+            elevation: 0,
+            azimuth: 0,
+            movement_speed: 0.02,
+            spatial_intensity: 0.4
+          },
         }
       ];
     
@@ -150,7 +274,18 @@ export const getPresetTransitions = (presetId: string): FrequencyTransition[] =>
           frequency_type: 'Beta',
           left_ear_hz: 144,
           right_ear_hz: 149,
-          description: '🧠 Stage 1: Beta Focus (15Hz) - Mental activation & alertness'
+          description: '🧠 Stage 1: Beta Focus (15Hz) - Mental activation & alertness',
+          spatial_config: {
+            enabled: true,
+            hrtf: false,
+            roomSize: 0.5,
+            reverbAmount: 0.2,
+            spatialWidth: 0.7,
+            elevation: 0,
+            azimuth: 0,
+            movement_speed: 0.02,
+            spatial_intensity: 0.4
+          },
         },
         {
           duration_minutes: 15,
@@ -158,7 +293,19 @@ export const getPresetTransitions = (presetId: string): FrequencyTransition[] =>
           frequency_type: 'Beta',
           left_ear_hz: 144,
           right_ear_hz: 150,
-          description: '⚡ Stage 2: High Beta (20Hz) - Peak concentration & problem solving'
+          description: '⚡ Stage 2: High Beta (20Hz) - Peak concentration & problem solving,' ,
+          spatial_config: {
+            enabled: true,
+            hrtf: false,
+            roomSize: 0.5,
+            reverbAmount: 0.2,
+            spatialWidth: 0.7,
+            elevation: 0,
+            azimuth: 0,
+            movement_speed: 0.02,
+            spatial_intensity: 0.4
+          },
+
         },
         {
           duration_minutes: 5,
@@ -166,7 +313,18 @@ export const getPresetTransitions = (presetId: string): FrequencyTransition[] =>
           frequency_type: 'Alpha',
           left_ear_hz: 144,
           right_ear_hz: 150,
-          description: '😌 Stage 3: Alpha Cooldown (12Hz) - Calm focus & integration'
+          description: '😌 Stage 3: Alpha Cooldown (12Hz) - Calm focus & integration',
+          spatial_config: {
+            enabled: true,
+            hrtf: false,
+            roomSize: 0.5,
+            reverbAmount: 0.2,
+            spatialWidth: 0.7,
+            elevation: 0,
+            azimuth: 0,
+            movement_speed: 0.02,
+            spatial_intensity: 0.4
+          },
         }
       ];
     
@@ -178,7 +336,19 @@ export const getPresetTransitions = (presetId: string): FrequencyTransition[] =>
           frequency_type: 'Alpha',
           left_ear_hz: 144,
           right_ear_hz: 150,
-          description: '🧘 Stage 1: Alpha Relaxation (10Hz) - Calm awareness & preparation'
+      description: '🧘 Stage 1: Alpha Relaxation (10Hz) - Calm awareness & preparation',
+        spatial_config: {
+      enabled: true,
+          hrtf: false,
+          roomSize: 0.5,
+          reverbAmount: 0.2,
+          spatialWidth: 0.7,
+          elevation: 0,
+          azimuth: 0,
+          movement_speed: 0.02,
+          spatial_intensity: 0.4
+    },
+
         },
         {
           duration_minutes: 10,
@@ -186,7 +356,18 @@ export const getPresetTransitions = (presetId: string): FrequencyTransition[] =>
           frequency_type: 'Theta',
           left_ear_hz: 144,
           right_ear_hz: 150,
-          description: '✨ Stage 2: Theta Meditation (6Hz) - Deep introspection & insight'
+          description: '✨ Stage 2: Theta Meditation (6Hz) - Deep introspection & insight',
+            spatial_config: {
+          enabled: true,
+              hrtf: false,
+              roomSize: 0.5,
+              reverbAmount: 0.2,
+              spatialWidth: 0.7,
+              elevation: 0,
+              azimuth: 0,
+              movement_speed: 0.02,
+              spatial_intensity: 0.4
+        },
         }
       ];
     
@@ -198,8 +379,11 @@ export const getPresetTransitions = (presetId: string): FrequencyTransition[] =>
           frequency_type: 'Alpha',
           left_ear_hz: 144,
           right_ear_hz: 150,
-          description: '😌 Stage 1: Alpha relaxation (8Hz) - Initial calm down'
+          description: '😌 Stage 1: Alpha relaxation (8Hz) - Initial calm down',
+
         },
+
+
         {
           duration_minutes: 15,
           frequency_hz: 4,
@@ -248,7 +432,8 @@ export const getPresetTransitions = (presetId: string): FrequencyTransition[] =>
         right_ear_hz: t.right_ear_hz,
         description: t.description,
         pattern: t.pattern_id,
-        spatial_settings: t.spatial_config
+        spatial_settings: t.spatial_config,
+        pattern8d: t.pattern_8d
       }));
     
     // ADHD Gamma Focus Blast transitions
@@ -261,8 +446,8 @@ export const getPresetTransitions = (presetId: string): FrequencyTransition[] =>
         right_ear_hz: t.right_ear_hz,
         description: t.description,
         pattern: t.pattern_id,
-        spatial_settings: t.spatial_config
-      }));
+        spatial_settings: t.spatial_config,
+        pattern8d: t.pattern_8d      }));
     
     // Lucid Dreaming Master transitions
     case 'lucid-dreaming-master-62min':
@@ -274,7 +459,8 @@ export const getPresetTransitions = (presetId: string): FrequencyTransition[] =>
         right_ear_hz: t.right_ear_hz,
         description: t.description,
         pattern: t.pattern_id,
-        spatial_settings: t.spatial_config
+        spatial_settings: t.spatial_config,
+        pattern8d: t.pattern_8d
       }));
     
     // Toroidal Low Frequency presets
@@ -287,7 +473,8 @@ export const getPresetTransitions = (presetId: string): FrequencyTransition[] =>
         right_ear_hz: t.right_ear_hz,
         description: t.description,
         pattern: t.pattern_id,
-        spatial_settings: t.spatial_config
+        spatial_settings: t.spatial_config,
+        pattern8d: t.pattern_8d
       }));
     
     case 'theta-creativity-toroidal-30min-3loop':
@@ -299,7 +486,8 @@ export const getPresetTransitions = (presetId: string): FrequencyTransition[] =>
         right_ear_hz: t.right_ear_hz,
         description: t.description,
         pattern: t.pattern_id,
-        spatial_settings: t.spatial_config
+        spatial_settings: t.spatial_config,
+        pattern8d:t.pattern_8d
       }));
     
     case 'alpha-focus-toroidal-25min-maintenance':
@@ -311,7 +499,8 @@ export const getPresetTransitions = (presetId: string): FrequencyTransition[] =>
         right_ear_hz: t.right_ear_hz,
         description: t.description,
         pattern: t.pattern_id,
-        spatial_settings: t.spatial_config
+        spatial_settings: t.spatial_config,
+        pattern8d:t.pattern_8d
       }));
     
     case 'custom-complex-obe-protocol-95min':
@@ -323,8 +512,8 @@ export const getPresetTransitions = (presetId: string): FrequencyTransition[] =>
           left_ear_hz: 95,
           right_ear_hz: 135,
           description: '⚡ Stage 1: Gamma Maximum Resonance (40Hz) - Toroidal pattern, 8D spatial heavy',
-          pattern: 'toroidal-max-resonance',
-          spatial_settings: {
+          pattern_id: 'toroidal-max-resonance',
+          spatial_config: {
             enabled: true,
             hrtf: true,
             roomSize: 0.9,
@@ -337,7 +526,7 @@ export const getPresetTransitions = (presetId: string): FrequencyTransition[] =>
             reverberance: 0.7,
             room_scale: 0.9,
             hf_damping: 0.3,
-            pattern: '8d-heavy'
+            pattern_8d: '8d-heavy'
           }
         },
         {
@@ -345,12 +534,12 @@ export const getPresetTransitions = (presetId: string): FrequencyTransition[] =>
           frequency_hz: 30,
           frequency_type: 'Theta',
           left_ear_hz: 133,
-          right_ear_hz: 136,
+          right_ear_hz: 163,
           description: '🌀 Stage 2: Theta Vortex Flow (134.5Hz avg) - Vortex pattern, 8D spatial medium',
-          pattern: 'vortex-focus-enhancement',
-          spatial_settings: {
-            enabled: true,
-            hrtf: true,
+          pattern_id: 'vortex-focus-enhancement',
+          spatial_enabled:true,
+          spatial_config: {
+             hrtf: true,
             roomSize: 0.7,
             reverbAmount: 0.6,
             spatialWidth: 0.7,
@@ -368,13 +557,13 @@ export const getPresetTransitions = (presetId: string): FrequencyTransition[] =>
           duration_minutes: 5,
           frequency_hz: 20,
           frequency_type: 'Beta',
-          left_ear_hz: 144,
-          right_ear_hz: 150,
+          left_ear_hz: 114,
+          right_ear_hz: 134,
           description: '🌀 Stage 3: Beta Pre-Lucid + Transformation (20Hz) - Spiral pattern for consciousness shift',
           pattern: 'spiral-transformation',
-          spatial_settings: {
-            enabled: true,
-            hrtf: true,
+          spatial_enabled: true,
+          spatial_config: {
+                       hrtf: true,
             roomSize: 0.5,
             reverbAmount: 0.4,
             spatialWidth: 0.5,
@@ -385,7 +574,7 @@ export const getPresetTransitions = (presetId: string): FrequencyTransition[] =>
             reverberance: 0.6,
             room_scale: 0.8,
             hf_damping: 0.2,
-            pattern: 'dna-healing'
+            pattern_id: 'dna-healing'
           }
         },
         {
@@ -396,7 +585,7 @@ export const getPresetTransitions = (presetId: string): FrequencyTransition[] =>
           right_ear_hz: 133.1,
           description: '💤 Stage 4: Delta DNA Restoration (133.05Hz) - Deep healing, 8D spatial heavy',
           pattern: 'helix-dna-activation',
-          spatial_settings: {
+          spatial_config: {
             enabled: true,
             hrtf: true,
             roomSize: 0.9,
