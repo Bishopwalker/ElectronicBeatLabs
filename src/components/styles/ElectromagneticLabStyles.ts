@@ -34,13 +34,18 @@ export const ElectromagneticLabStyles = {
     top: 16,
     right: 16,
     zIndex: 200,
-    bgcolor: 'rgba(0, 0, 0, 0.7)',
+    bgcolor: '#ff6b00',
     color: 'white',
     backdropFilter: 'blur(10px)',
+    fontSize: '1.5rem',
+    width: 48,
+    height: 48,
+    border: '2px solid white',
+    boxShadow: '0 0 10px rgba(255, 107, 0, 0.5)',
     '&:hover': {
-      bgcolor: 'rgba(0, 0, 0, 0.8)',
+      bgcolor: '#ff8533',
+      boxShadow: '0 0 20px rgba(255, 107, 0, 0.8)',
     },
-    border: '1px solid rgba(255, 255, 255, 0.2)',
   } as SxProps<Theme>,
 
   // Advanced controls menu overlay

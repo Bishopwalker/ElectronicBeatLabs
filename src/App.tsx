@@ -40,6 +40,7 @@ const styledTheme = {
 const AppContent = () => {
   const { user, canUseApp, requiresLogin, usage } = useAuth();
   const [activeTab, setActiveTab] = React.useState(0);
+  const [showUsageAlert, setShowUsageAlert] = React.useState(true);
 
   // If anonymous usage limit reached, require login
   if (!user && requiresLogin) {
@@ -73,10 +74,14 @@ const AppContent = () => {
   // Show the main app (anonymous or logged in users with remaining time)
   return (
     <>
-      {/* Optional usage indicator for anonymous users */}
-      {!user && usage && (
-        <Box sx={{ position: 'fixed', top: 16, right: 16, zIndex: 1000 }}>
-          <Alert severity="info" sx={{ fontSize: '0.8rem' }}>
+      {/* Optional usage indicator for anonymous users - moveable and closable */}
+      {!user && usage && showUsageAlert && (
+        <Box sx={{ position: 'fixed', top: 16, left: 16, zIndex: 1000 }}>
+          <Alert
+            severity="info"
+            sx={{ fontSize: '0.8rem', cursor: 'move' }}
+            onClose={() => setShowUsageAlert(false)}
+          >
             Free usage: {Math.round(usage.remaining_minutes)} min left
           </Alert>
         </Box>
@@ -211,7 +216,7 @@ const AppContent = () => {
                     isPlaying: false,
                     leftFreq: 140,
                     rightFreq: 144,
-                    beatFreq: 4,
+                    beat_frequency: 4,
                     volume: 0.3
                   }
                 } as any}

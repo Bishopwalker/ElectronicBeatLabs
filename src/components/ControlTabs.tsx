@@ -22,7 +22,9 @@ const ControlTabs: React.FC<ControlTabsProps> = ({
           onTabChange(selectedTab.id);
         }
       }}
-      variant="fullWidth"
+      variant="scrollable"
+      scrollButtons="auto"
+      allowScrollButtonsMobile
       sx={{
         borderBottom: '2px solid rgba(255, 255, 255, 0.1)',
         mb: 2,
@@ -31,8 +33,8 @@ const ControlTabs: React.FC<ControlTabsProps> = ({
           fontWeight: 600,
           textTransform: 'uppercase',
           letterSpacing: '0.5px',
-          minWidth: 0,
-          flex: 1,
+          minWidth: 80,
+          px: 1.5,
           '&.Mui-selected': {
             color: '#ff6b00'
           },
@@ -44,8 +46,11 @@ const ControlTabs: React.FC<ControlTabsProps> = ({
           backgroundColor: '#ff6b00',
           height: 2
         },
-        '& .MuiTabs-flexContainer': {
-          justifyContent: 'stretch'
+        '& .MuiTabs-scrollButtons': {
+          color: '#ff6b00',
+          '&.Mui-disabled': {
+            opacity: 0.3
+          }
         }
       }}
     >

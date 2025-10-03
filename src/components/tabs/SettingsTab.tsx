@@ -4,8 +4,11 @@ import React, { useEffect, useState } from 'react';
 import { Box, Paper, Typography, Button } from '@mui/material';
 import SpatialAudioControls from '../SpatialAudioControls';
 import type { AppState, AudioEngine, Pattern8D } from '../../types';
+import TimerCountdownDisplay from "../TimerCountdownDisplay.tsx";
+import type {TimerStatus} from "../../data/timer";
 
 interface SettingsTabProps {
+  timerStatus: TimerStatus;
   appState: AppState;
   audioEngine: AudioEngine;
   patterns8D: Pattern8D[];
@@ -19,7 +22,8 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
   audioEngine,
   onStateChange,
   backendEngine,
-  frontendEngine
+  frontendEngine,
+    timerStatus
 }) => {
   // Use specific engines for their purposes
   const audioContextEngine = frontendEngine; // Always use frontend for audio context
@@ -72,7 +76,6 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
     // Check immediately and set up interval
     checkConnectionState();
     const intervalId = setInterval(checkConnectionState, 1000);
-
     return () => clearInterval(intervalId);
   }, [connectionEngine?.backendConnected, connectionEngine?.websocketState, backendConnected]);
 
@@ -339,7 +342,15 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
           p: 1,
           border: '1px solid rgba(255, 255, 255, 0.1)'
         }}
+
       >
+        <TimerCountdownDisplay
+            timerStatus={timerStatus}
+            isVisible={true}
+
+        >
+
+        </TimerCountdownDisplay>
         <Typography
           variant="h6"
           component="h4"
