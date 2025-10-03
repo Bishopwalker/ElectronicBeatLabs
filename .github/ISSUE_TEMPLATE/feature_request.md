@@ -56,7 +56,7 @@ screenshots about the feature request          const audioData = message. Data |
                 frequencies: {
                   left: audioState.leftFreq,
                   right: audioState.rightFreq,
-                  beat: audioState.beatFreq
+                  beat: audioState.beat_frequency
                 }
               };
               processAudioFrame(frame);
@@ -78,7 +78,7 @@ screenshots about the feature request          const audioData = message. Data |
                       frequencies: {
                         left: audioState.leftFreq,
                         right: audioState.rightFreq,
-                        beat: audioState.beatFreq
+                        beat: audioState.beat_frequency
                       }
                     };
                     processAudioFrame(frame);

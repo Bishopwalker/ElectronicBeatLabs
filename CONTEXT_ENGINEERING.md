@@ -54,7 +54,7 @@ Project Root Context
 ```typescript
 // Context-driven interface evolution
 interface AudioEngine {
-  audioState: AudioEngineState;
+  audioState: BackendAudioEngineState;
   electromagnetic: ElectromagneticField;
   createGammaProtocol: (protocol: ADHDProtocol) => void; // ← Context-informed signature
   updateSpatialSettings?: (settings: SpatialAudioConfig) => void;
