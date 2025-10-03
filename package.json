@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host",
-    "dev:backend": "cd backend && uvicorn main:app --reload --host 0.0.0.0 --port 8000",
+    "dev:backend": "cd backend && uvicorn main:app --reload --host 0.0.0.0 --port 8000 --reload-exclude '*.pyc' --reload-exclude '__pycache__/*'",
     "dev:all": "concurrently --kill-others-on-fail \"npm run dev\" \"npm run dev:backend\"",
     "dev:clean": "start-dev.bat",
     "dev:stop": "stop-dev.bat",
@@ -28,10 +28,10 @@
     "deploy:backend:staging": "bash scripts/deploy-backend.sh staging",
     "deploy:all": "npm run deploy:frontend && npm run deploy:backend",
     "deploy:all:staging": "npm run deploy:frontend:staging && npm run deploy:backend:staging",
-    "ts-fixer": "cd src/agents/typescript-fixer && npx ts-node runner.ts start",
-    "ts-fixer:scan": "cd src/agents/typescript-fixer && npx ts-node runner.ts scan --fix",
-    "ts-fixer:watch": "cd src/agents/typescript-fixer && npx ts-node runner.ts start --verbose",
-    "ts-fixer:stats": "cd src/agents/typescript-fixer && npx ts-node runner.ts stats"
+    "ts-fixer": "node src/agents/typescript-fixer/dist/runner.js start",
+    "ts-fixer:scan": "node src/agents/typescript-fixer/dist/runner.js scan --fix",
+    "ts-fixer:watch": "node src/agents/typescript-fixer/dist/runner.js start --verbose",
+    "ts-fixer:stats": "node src/agents/typescript-fixer/dist/runner.js stats"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
