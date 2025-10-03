@@ -19,12 +19,10 @@ interface SettingsTabProps {
 
 const SettingsTab: React.FC<SettingsTabProps> = ({
   appState,
-  audioEngine,
-  onStateChange,
+   onStateChange,
   backendEngine,
   frontendEngine,
-    timerStatus
-}) => {
+ }) => {
   // Use specific engines for their purposes
   const audioContextEngine = frontendEngine; // Always use frontend for audio context
   const connectionEngine = backendEngine;     // Always use backend for connection status
@@ -344,13 +342,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
         }}
 
       >
-        <TimerCountdownDisplay
-            timerStatus={timerStatus}
-            isVisible={true}
 
-        >
-
-        </TimerCountdownDisplay>
         <Typography
           variant="h6"
           component="h4"
