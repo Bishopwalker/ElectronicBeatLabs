@@ -29,11 +29,13 @@ import QuickStart from './QuickStart';
 import TimerTab from './tabs/TimerTab';
 import { FrequencyVisualizer } from './FrequencyVisualizer';
 import { formatTime } from '../helpers/timer/timerUtils';
+import type { TimerStatus } from '../data/timer';
 
 // Extracted Components
 import CollapsibleSection from './shared/CollapsibleSection';
 import TabContentRenderer from './shared/TabContentRenderer';
 import SystemStatusChips from './shared/SystemStatusChips';
+import TimerCountdownDisplay from './TimerCountdownDisplay';
 
 const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
   initialPattern,
@@ -61,7 +63,11 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
 
   // Hybrid audio engines: Backend for advanced features, Frontend for fallback
   const backendEngine = useBackendAudioEngine();
-  const frontendEngine = useAudioEngine();
+
+  // Only initialize frontend engine if backend is not connected
+  const skipFrontendInit = backendEngine.backendConnected || backendEngine.sessionId !== null;
+  const frontendEngine = useAudioEngine(skipFrontendInit);
+
   const [sessionId, setSessionId] = useState<string | null>(
     backendEngine.sessionId
   );
@@ -70,7 +76,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
   const activeAudioEngine = sessionId ? backendEngine : frontendEngine;
 
   // Timer status for preset tracking
-  const [timerStatus, setTimerStatus] = useState<TimerStatus>(null);
+  const [timerStatus, setTimerStatus] = useState<TimerStatus | null>(null);
 
   // Current preset tracking
   const { currentPreset } = useCurrentPresetTracker({
@@ -232,16 +238,24 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                 await backendEngine.disconnectBackend();
               }
             }
-            // Start frontend engine
+            // Start frontend engine WITHOUT setting a pattern
             await frontendEngine.startBinauralBeat({
               baseFrequency: appState.frequency || 144,
-              beatFrequency: 4,
+              beat_frequency: 4,
               amplitude: appState.volume || 0.3,
               waveform: 'sine'
+            });
+            // Update app state to mark as playing but DON'T set currentPattern
+            updateAppState({
+              isPlaying: true
             });
           } else {
             console.log('⏹️ Stopping frontend binaural engine...');
             await frontendEngine.stopBinauralBeat();
+            // Update app state
+            updateAppState({
+              isPlaying: false
+            });
           }
           break;
 
@@ -262,7 +276,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
               console.log('🎧 Starting backend binaural session...');
               const defaultConfig = {
                 baseFrequency: appState.frequency || 144,
-                beatFrequency: 4,
+                beat_frequency: 4,
                 amplitude: appState.volume || 0.3,
                 waveform: 'sine' as const,
                 spatial_enabled: appState.spatialAudio?.enabled || false
@@ -447,6 +461,11 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
         )}
       </Paper>
 
+      {/* Timer Countdown Display - Always visible when timer is active */}
+      <TimerCountdownDisplay
+        timerStatus={timerStatus}
+        isVisible={true}
+      />
 
       {/* Dynamic Flex Layout */}
       <Box sx={ElectromagneticLabStyles.mainLayoutContainer(closedSections)}>
@@ -466,19 +485,19 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                   // Handle both backend (config) and frontend (direct) formats
                   if (activeAudioEngine.audioState.config) {
                     // Backend engine with config
-                    const baseFreq = activeAudioEngine.audioState.config.baseFrequency || 144;
-                    const beatFreq = activeAudioEngine.audioState.config.beatFrequency || 4;
+                    const base_frequency = activeAudioEngine.audioState.config.baseFrequency || 144;
+                    const beat_frequency = activeAudioEngine.audioState.config.beat_frequency || 4;
                     return {
-                      left: calculateLeftFreq(baseFreq),
-                      right: calculateRightFreq(baseFreq, beatFreq),
-                      beat: beatFreq
+                      left: calculateLeftFreq(base_frequency),
+                      right: calculateRightFreq(base_frequency, beat_frequency),
+                      beat: beat_frequency
                     };
                   } else {
                     // Frontend engine with direct values
                     return {
                       left: activeAudioEngine.audioState.leftFreq || 144,
                       right: activeAudioEngine.audioState.rightFreq || 148,
-                      beat: activeAudioEngine.audioState.beatFreq || 4
+                      beat: activeAudioEngine.audioState.beat_frequency || 4
                     };
                   }
                 })()}
@@ -518,25 +537,25 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                     activeAudioEngine.audioState.leftFreq ||
                     144
                   }
-                  beatFrequency={
-                    activeAudioEngine.audioState.config?.beatFrequency ||
-                    activeAudioEngine.audioState.beatFreq ||
+                  beat_frequency={
+                    activeAudioEngine.audioState.config?.beat_frequency ||
+                    activeAudioEngine.audioState.beat_frequency ||
                     4
                   }
-                  onFrequencyChange={(baseFreq, beatFreq) => {
-                    console.log('🎛️ Parent received frequency change - baseFreq:', baseFreq, 'beatFreq:', beatFreq);
+                  onFrequencyChange={(base_frequency, beat_frequency) => {
+                    console.log('🎛️ Parent received frequency change - base_frequency:', base_frequency, 'beat_frequency:', beat_frequency);
 
                     // Handle both backend and frontend engines
                     if (activeAudioEngine.updateSettings) {
                       // Backend engine - use new pattern
                       activeAudioEngine.updateSettings({
-                        baseFrequency: baseFreq,
-                        beatFrequency: beatFreq
+                        baseFrequency: base_frequency,
+                        beat_frequency: beat_frequency
                       });
                     } else if (activeAudioEngine.updateFrequency) {
                       // Frontend engine - convert to old pattern
-                      const leftFreq = baseFreq; // left = base
-                      const rightFreq = baseFreq + beatFreq; // right = base + beat
+                      const leftFreq = base_frequency; // left = base
+                      const rightFreq = base_frequency + beat_frequency; // right = base + beat
                       console.log('🎛️ Converting to frontend format - left:', leftFreq, 'right:', rightFreq);
                       activeAudioEngine.updateFrequency(leftFreq, rightFreq);
                     }

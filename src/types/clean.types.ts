@@ -11,7 +11,7 @@
  */
 export interface AudioConfig {
   baseFrequency: number;    // Left ear frequency (Hz)
-  beatFrequency: number;    // Beat frequency (Hz)
+  beat_frequency: number;    // Beat frequency (Hz)
   amplitude: number;        // Volume 0-1
   waveform: 'sine' | 'square' | 'triangle' | 'sawtooth';
 }
@@ -144,7 +144,7 @@ export interface VisualizationData {
   peakFrequencies: { frequency: number; amplitude: number }[];
   leftAmplitude: number;
   rightAmplitude: number;
-  beatFrequency: number;
+  beat_frequency: number;
   signalQuality: number; // 0-1
 }
 
@@ -185,8 +185,8 @@ export interface SystemStatus {
 /**
  * Calculate right frequency from base and beat
  */
-export const calculateRightFreq = (baseFreq: number, beatFreq: number): number => {
-  return baseFreq + beatFreq;
+export const calculateRightFreq = (base_frequency: number, beat_frequency: number): number => {
+  return base_frequency + beat_frequency;
 };
 
 /**
@@ -202,7 +202,7 @@ export const calculateBeatFreq = (leftFreq: number, rightFreq: number): number =
 export const validateAudioConfig = (config: Partial<AudioConfig>): AudioConfig => {
   return {
     baseFrequency: Math.max(20, Math.min(20000, config.baseFrequency || 144)),
-    beatFrequency: Math.max(0.1, Math.min(100, config.beatFrequency || 4)),
+    beat_frequency: Math.max(0.1, Math.min(100, config.beat_frequency || 4)),
     amplitude: Math.max(0, Math.min(1, config.amplitude || 0.3)),
     waveform: config.waveform || 'sine'
   };

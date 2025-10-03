@@ -1,5 +1,7 @@
 // Hook to track and provide current active preset information for UI display
 import { useState, useEffect, useCallback } from 'react';
+import type {TimerStatus} from "../data/timer";
+import type {PatternConfig} from "../types";
 
 interface CurrentPreset {
   name?: string;
@@ -14,8 +16,8 @@ interface CurrentPreset {
 }
 
 interface PresetTrackerParams {
-  timerStatus?: any; // Timer status from useTimerLogic
-  activePattern?: any; // Active pattern from patterns engine
+  timerStatus?: TimerStatus; // Timer status from useTimerLogic
+  activePattern?: PatternConfig; // Active pattern from patterns engine
   audioState?: {
     isPlaying: boolean;
     leftFreq: number;
@@ -37,18 +39,20 @@ export const useCurrentPresetTracker = ({
       const preset = timerStatus.session.preset;
       const currentIndex = timerStatus.session.current_transition_index || 0;
       const totalTransitions = preset?.transitions_count || 1;
-      
-      setCurrentPreset({
-        name: `⏰ ${preset?.name || 'Timer Session'}`,
-        description: `Transition ${currentIndex + 1}/${totalTransitions}: ${transition.description} • ${transition.frequency_hz}Hz ${transition.frequency_type} • ${Math.floor(timerStatus.time_remaining_current)}min left`,
-        isActive: true,
-        source: 'timer',
-        frequencies: {
-          left: transition.left_ear_hz,
-          right: transition.right_ear_hz,
-          beat: transition.frequency_hz
-        }
-      });
+
+      if (timerStatus?.time_remaining_current != null) {
+        setCurrentPreset({
+          name: `⏰ ${preset?.name || 'Timer Session'}`,
+          description: `Transition ${currentIndex + 1}/${totalTransitions}: ${transition.description} • ${transition.frequency_hz}Hz ${transition.frequency_type} • ${Math.floor(timerStatus?.time_remaining_current)}min left`,
+          isActive: true,
+          source: 'timer',
+          frequencies: {
+            left: transition.left_ear_hz,
+            right: transition.right_ear_hz,
+            beat: transition.frequency_hz
+          }
+        });
+      }
       return;
     }
 
@@ -70,24 +74,24 @@ export const useCurrentPresetTracker = ({
 
     // Priority 3: Manual frequencies when playing
     if (audioState?.isPlaying && audioState.leftFreq && audioState.rightFreq) {
-      const beatFreq = Math.abs(audioState.rightFreq - audioState.leftFreq);
+      const beat_frequency = Math.abs(audioState.rightFreq - audioState.leftFreq);
       let frequencyType = 'Custom';
       
-      if (beatFreq <= 4) frequencyType = 'Delta';
-      else if (beatFreq <= 8) frequencyType = 'Theta';
-      else if (beatFreq <= 13) frequencyType = 'Alpha';
-      else if (beatFreq <= 30) frequencyType = 'Beta';
+      if (beat_frequency <= 4) frequencyType = 'Delta';
+      else if (beat_frequency <= 8) frequencyType = 'Theta';
+      else if (beat_frequency <= 13) frequencyType = 'Alpha';
+      else if (beat_frequency <= 30) frequencyType = 'Beta';
       else frequencyType = 'Gamma';
 
       setCurrentPreset({
         name: `Manual ${frequencyType}`,
-        description: `${audioState.leftFreq}Hz / ${audioState.rightFreq}Hz • ${beatFreq.toFixed(1)}Hz beat`,
+        description: `${audioState.leftFreq}Hz / ${audioState.rightFreq}Hz • ${beat_frequency.toFixed(1)}Hz beat`,
         isActive: true,
         source: 'manual',
         frequencies: {
           left: audioState.leftFreq,
           right: audioState.rightFreq,
-          beat: beatFreq
+          beat: beat_frequency
         }
       });
       return;

@@ -8,7 +8,7 @@
 export interface BinauralBeatConfig {
     // Core frequencies
     baseFrequency: number;      // Left ear (Hz) - the carrier frequency
-    beatFrequency: number;      // Beat frequency (Hz) - the difference
+    beat_frequency: number;      // Beat frequency (Hz) - the difference
 
     // Audio properties
     amplitude: number;          // Volume 0-1 (NOT "volume", always "amplitude")
@@ -56,7 +56,7 @@ export interface WebSocketAudioMessage {
 /**
  * AUDIO ENGINE STATE
  */
-export interface AudioEngineState {
+export interface  BackendAudioEngineState {
     isPlaying: boolean;
     config: BinauralBeatConfig | null;
     sessionId: string | null;
@@ -74,7 +74,7 @@ export interface FrontendAudioEngineState {
     amplitude: number;
     leftFreq: number;
     rightFreq: number;
-    beatFreq: number;
+    beat_frequency: number;
     waveform: 'sine' | 'square' | 'triangle' | 'sawtooth';
     gainL: GainNode | null;
     gainR: GainNode | null;
@@ -90,11 +90,11 @@ export interface FrontendAudioEngineState {
 
 /**
  * FREQUENCY CALCULATION FUNCTIONS FOR UI DISPLAY ONLY
- * Internal audio processing uses baseFrequency + beatFrequency
+ * Internal audio processing uses baseFrequency + beat_frequency
  * These are ONLY for UI display purposes
  */
 export const calculateLeftFreq = (baseFrequency: number): number => baseFrequency;
-export const calculateRightFreq = (baseFrequency: number, beatFrequency: number): number => baseFrequency + beatFrequency;
+export const calculateRightFreq = (baseFrequency: number, beat_frequency: number): number => baseFrequency + beat_frequency;
 
 
 /**

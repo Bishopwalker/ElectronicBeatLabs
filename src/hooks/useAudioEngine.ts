@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type {
-  FrontendAudioEngineState,
+  FrontendBackendAudioEngineState,
   BinauralBeatConfig,
   ElectromagneticField,
   ElectromagneticFieldState,
@@ -11,16 +11,16 @@ import type {
   ADHDProtocol, WaveForm
 } from '../types';
 
-export const useAudioEngine = () => {
+export const useAudioEngine = (skipInitialization = false) => {
   // Persistent audio context that survives start/stop cycles
   const audioContextRef = useRef<AudioContext | null>(null);
 
   const [audioState, setAudioState] = useState<FrontendAudioEngineState>({
     isPlaying: false,
-    amplitude: 0.3,
-    leftFreq: 144,
-    rightFreq: 148,
-    beatFreq: 4,
+    amplitude: 1.2,
+    leftFreq: 148,
+    rightFreq: 144,
+    beat_frequency: 4,
     waveform: 'sine',
     gainL: null,
     gainR: null,
@@ -103,27 +103,32 @@ export const useAudioEngine = () => {
   }, []);
 
   // Initialize audio context on component mount (requires user gesture)
-  useEffect(() => {
-    const initAudioContextOnMount = async () => {
-      if (!audioState.context) {
-        console.log('🎵 Frontend Engine: Initializing audio context on mount...');
-        try {
-          const context = await initializeAudio();
-          if (context) {
-            setAudioState(prev => ({
-              ...prev,
-              context
-            }));
-            console.log('✅ Frontend Engine: Audio context initialized and stored in state, state:', context.state);
-          }
-        } catch (error) {
-          console.log('⚠️ Frontend Engine: Audio context initialization requires user gesture:', error);
-        }
-      }
-    };
-
-    initAudioContextOnMount();
-  }, [initializeAudio]); // Include initializeAudio in deps
+  // useEffect(() => {
+  //   if (skipInitialization) {
+  //     console.log('🚫 Frontend Engine: Skipping initialization (backend engine active)');
+  //     return;
+  //   }
+  //
+  //   const initAudioContextOnMount = async () => {
+  //     if (!audioState.context) {
+  //       console.log('🎵 Frontend Engine: Initializing audio context on mount...');
+  //       try {
+  //         const context = await initializeAudio();
+  //         if (context) {
+  //           setAudioState(prev => ({
+  //             ...prev,
+  //             context
+  //           }));
+  //           console.log('✅ Frontend Engine: Audio context initialized and stored in state, state:', context.state);
+  //         }
+  //       } catch (error) {
+  //         console.log('⚠️ Frontend Engine: Audio context initialization requires user gesture:', error);
+  //       }
+  //     }
+  //   };
+  //
+  //   initAudioContextOnMount();
+  // }, [audioState.context, initializeAudio, skipInitialization]); // Only depend on skipInitialization, initializeAudio is stable
 
   // Create oscillator with specified waveform
   const createOscillator = useCallback((
@@ -151,12 +156,12 @@ export const useAudioEngine = () => {
   const calculateElectromagneticField = useCallback((
     leftFreq: number,
     rightFreq: number,
-    beatFreq: number,
+    beat_frequency: number,
     time: number
   ): ElectromagneticField => {
-    const strength = Math.sin(time * 0.001 * beatFreq) * 0.5 + 0.5;
-    const frequency = beatFreq;
-    const phase = (time * 0.001 * beatFreq * 360) % 360;
+    const strength = Math.sin(time * 0.001 * beat_frequency) * 0.5 + 0.5;
+    const frequency = beat_frequency;
+    const phase = (time * 0.001 * beat_frequency * 360) % 360;
     const coherence = Math.min(1, 1 / (Math.abs(leftFreq - rightFreq) * 0.1 + 1));
     const resonance = strength * coherence;
     
@@ -181,9 +186,11 @@ export const useAudioEngine = () => {
 
   // Start binaural beat playback
   const startBinauralBeat = useCallback(async (config: BinauralBeatConfig) => {
+    console.log('🎵 Frontend Engine: startBinauralBeat called with config:', config);
     try {
       // Stop any existing audio first
       if (audioState.isPlaying) {
+        console.log('🛑 Frontend Engine: Stopping existing audio...');
         // Inline stop logic to avoid circular dependency
         if (audioState.oscillatorL) {
           audioState.oscillatorL.stop();
@@ -198,20 +205,24 @@ export const useAudioEngine = () => {
       }
 
       // Use persistent context or initialize if needed
+      console.log('🎵 Frontend Engine: Initializing audio context...');
       const context = audioContextRef.current || await initializeAudio();
       if (!context) {
-        console.error('Failed to initialize audio context');
+        console.error('❌ Frontend Engine: Failed to initialize audio context');
         return;
       }
+      console.log('✅ Frontend Engine: Audio context ready, state:', context.state);
 
       // Ensure context is running
       if (context.state === 'suspended') {
+        console.log('⏸️ Frontend Engine: Audio context suspended, resuming...');
         await context.resume();
+        console.log('▶️ Frontend Engine: Audio context resumed, new state:', context.state);
       }
 
       // Calculate actual frequencies from config
       const leftFreq = config.baseFrequency;
-      const rightFreq = config.baseFrequency + config.beatFrequency;
+      const rightFreq = config.baseFrequency + config.beat_frequency;
 
       // Create oscillators
       const oscL = createOscillator(context, leftFreq, config.waveform);
@@ -248,15 +259,15 @@ export const useAudioEngine = () => {
       oscL.start(context.currentTime);
       oscR.start(context.currentTime);
 
-      console.log(`Starting binaural beat: ${leftFreq}Hz (L) / ${rightFreq}Hz (R) = ${config.beatFrequency}Hz beat`);
-      calculateElectromagneticField(leftFreq,rightFreq, config.beatFrequency,context.currentTime);
+      console.log(`Starting binaural beat: ${leftFreq}Hz (L) / ${rightFreq}Hz (R) = ${config.beat_frequency}Hz beat`);
+      calculateElectromagneticField(leftFreq,rightFreq, config.beat_frequency,context.currentTime);
       // Update state with persistent context
       setAudioState(prev => ({
         ...prev,
         isPlaying: true,
         leftFreq: leftFreq,
         rightFreq: rightFreq,
-        beatFreq: config.beatFrequency,
+        beat_frequency: config.beat_frequency,
         waveform: config.waveform,
         gainL,
         gainR,
@@ -271,7 +282,7 @@ export const useAudioEngine = () => {
     // Don't start animation for frontend engine when backend is being used
     // This prevents the infinite loop issue
 
-  }, [audioState.isPlaying, audioState.context, audioState.amplitude, audioState.oscillatorL, audioState.oscillatorR, initializeAudio, createOscillator, createGainNode]);
+  }, [audioState.amplitude, audioState.isPlaying, audioState.oscillatorL, audioState.oscillatorR, calculateElectromagneticField, createGainNode, createOscillator, initializeAudio]);
 
   // Stop binaural beat playback
   const stopBinauralBeat = useCallback(() => {
@@ -312,7 +323,7 @@ export const useAudioEngine = () => {
     } catch (error) {
       console.error('Error stopping binaural beat:', error);
     }
-  }, []);
+  }, [audioState.oscillatorL, audioState.oscillatorR]);
 
   // Update frequency
   const updateFrequency = useCallback((leftFreq: number, rightFreq: number) => {
@@ -321,26 +332,26 @@ export const useAudioEngine = () => {
       audioState.oscillatorL.frequency.setValueAtTime(leftFreq, now);
       audioState.oscillatorR.frequency.setValueAtTime(rightFreq, now);
       
-      const beatFreq = Math.abs(rightFreq - leftFreq);
+      const beat_frequency = Math.abs(rightFreq - leftFreq);
       
       setAudioState(prev => ({
         ...prev,
         leftFreq,
         rightFreq,
-        beatFreq
+        beat_frequency
       }));
 
       // Update electromagnetic field based on frequency changes
       const avgFreq = (leftFreq + rightFreq) / 2;
-      const fieldStrength = Math.min(1, Math.max(0, beatFreq / 100)); // Normalize beat frequency to 0-1
-      const coherence = Math.min(1, Math.max(0.1, 1 - (beatFreq / 50))); // Higher coherence for lower beat frequencies
+      const fieldStrength = Math.min(1, Math.max(0, beat_frequency / 100)); // Normalize beat frequency to 0-1
+      const coherence = Math.min(1, Math.max(0.1, 1 - (beat_frequency / 50))); // Higher coherence for lower beat frequencies
       
       setElectromagnetic({
         strength: fieldStrength,
         frequency: avgFreq,
         phase: Date.now() * 0.001, // Dynamic phase for animation
         coherence: coherence,
-        resonance: beatFreq,
+        resonance: beat_frequency,
         state: 'ACTIVE',
         stability: Math.min(1, Math.max(0.5, 1 - Math.abs(leftFreq - rightFreq) / 100))
       });
@@ -350,7 +361,7 @@ export const useAudioEngine = () => {
   // Update volume
   const updateVolume = useCallback((volume: number) => {
     // Protect against NaN and invalid values
-    const safeVolume = isNaN(volume) ? 0.3 : Math.max(0, Math.min(1, volume));
+    const safeVolume = isNaN(volume) ? 1.2 : Math.max(0, Math.min(2, volume));
     console.log('🎶 Frontend updateVolume:', { original: volume, safe: safeVolume });
 
     if (audioState.gainL && audioState.gainR && audioState.context) {
@@ -382,7 +393,7 @@ export const useAudioEngine = () => {
   const loadPattern = useCallback((pattern: PatternConfig) => {
     const config: BinauralBeatConfig = {
       baseFrequency: pattern.frequencies.carrier,
-      beatFrequency: pattern.frequencies.beat,
+      beat_frequency: pattern.frequencies.beat,
       amplitude: 0.5,
       waveform: 'sine'
     };
@@ -394,8 +405,8 @@ export const useAudioEngine = () => {
   const generateTestTones = useCallback((leftFreq: number, rightFreq: number, duration: number = 5000) => {
     const config: BinauralBeatConfig = {
       baseFrequency: leftFreq,
-      beatFrequency: Math.abs(rightFreq - leftFreq),
-      amplitude: 0.3,
+      beat_frequency: Math.abs(rightFreq - leftFreq),
+      amplitude: 1.2,
       waveform: 'sine'
     };
 
@@ -412,7 +423,7 @@ export const useAudioEngine = () => {
     startFreq: number,
     endFreq: number,
     duration: number,
-    beatFreq: number
+    beat_frequency: number
   ) => {
     if (!audioState.context || !audioState.oscillatorL || !audioState.oscillatorR) return;
 
@@ -424,8 +435,8 @@ export const useAudioEngine = () => {
     audioState.oscillatorL.frequency.linearRampToValueAtTime(endFreq, endTime);
 
     // Keep beat frequency constant
-    audioState.oscillatorR.frequency.setValueAtTime(startFreq + beatFreq, now);
-    audioState.oscillatorR.frequency.linearRampToValueAtTime(endFreq + beatFreq, endTime);
+    audioState.oscillatorR.frequency.setValueAtTime(startFreq + beat_frequency, now);
+    audioState.oscillatorR.frequency.linearRampToValueAtTime(endFreq + beat_frequency, endTime);
 
   }, []);
 
@@ -433,7 +444,7 @@ export const useAudioEngine = () => {
   const createGammaProtocol = useCallback((protocol: ADHDProtocol) => {
     const config: BinauralBeatConfig = {
       baseFrequency: 144,
-      beatFrequency: protocol.gammaFreq,
+      beat_frequency: protocol.gammaFreq,
       amplitude: protocol.intensity / 100, // Convert percentage to amplitude
       waveform: 'sine'
     };
@@ -482,7 +493,11 @@ export const useAudioEngine = () => {
     setAudioState,
     backendConnected: false, // Frontend engine is never connected to backend
     sessionId: null,
-    websocketState: { connected: false, connecting: false, error: null },
+    websocketState: {
+      connected: false,
+      connecting: false,
+      error: null
+    },
     isSupported: !!(window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)
   };
 };

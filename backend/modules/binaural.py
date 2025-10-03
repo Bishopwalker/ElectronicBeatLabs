@@ -109,20 +109,20 @@ class BinauralBeatGenerator:
             if preset.get("category") == category
         ]
     
-    def create_custom_preset(self, base_freq: float, beat_freq: float, 
+    def create_custom_preset(self, base_frequency: float, beat_frequency: float, 
                            name: str = "Custom") -> dict:
         """Create a custom binaural beat configuration"""
         # Determine brainwave category based on beat frequency
-        if beat_freq < 4:
+        if beat_frequency < 4:
             category = "delta"
             description = "Delta waves"
-        elif beat_freq < 8:
+        elif beat_frequency < 8:
             category = "theta"
             description = "Theta waves"
-        elif beat_freq < 13:
+        elif beat_frequency < 13:
             category = "alpha"
             description = "Alpha waves"
-        elif beat_freq < 30:
+        elif beat_frequency < 30:
             category = "beta"
             description = "Beta waves"
         else:
@@ -131,25 +131,25 @@ class BinauralBeatGenerator:
         
         return {
             "name": name,
-            "base_frequency": base_freq,
-            "beat_frequency": beat_freq,
-            "description": f"{description} ({beat_freq} Hz)",
+            "base_frequency": base_frequency,
+            "beat_frequency": beat_frequency,
+            "description": f"{description} ({beat_frequency} Hz)",
             "category": "custom",
             "duration_minutes": 20
         }
     
-    def validate_frequencies(self, base_freq: float, beat_freq: float) -> bool:
+    def validate_frequencies(self, base_frequency: float, beat_frequency: float) -> bool:
         """Validate frequency parameters"""
         # Base frequency should be in audible range
-        if base_freq < 20 or base_freq > 1000:
+        if base_frequency < 20 or base_frequency > 1000:
             return False
         
         # Beat frequency should be in brainwave range
-        if beat_freq < 0.5 or beat_freq > 100:
+        if beat_frequency < 0.5 or beat_frequency > 100:
             return False
         
         # Frequencies should be reasonable for binaural beats
-        if beat_freq > base_freq / 2:
+        if beat_frequency > base_frequency / 2:
             return False
         
         return True

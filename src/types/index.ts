@@ -1,5 +1,5 @@
 // Electromagnetic Beat Lab - Type Definitions
-import type {BinauralBeatConfig} from './audio.types';
+import type {BackendAudioEngineState, BinauralBeatConfig, FrontendAudioEngineState} from './audio.types';
 export * from './audio.types'
 
 export type PatternMode = 'AUTO' | 'MANUAL' | 'OFF' | 'CUSTOM' | 'SYNC' | 'FLOW';
@@ -66,18 +66,17 @@ export interface PatternConfig {
   };
 }
 
-// AudioEngineState is now defined in audio.types.ts - import from there
+// BackendAudioEngineState is now defined in audio.types.ts - import from there
 // This removes the old leftFreq/rightFreq confusion
 
 export interface WebSocketState {
   connected: boolean;
   connecting: boolean;
-  error?: string;
-  updateState: (state: WebSocketState) => void;
+  error?: string | null;
 }
 
 export interface AudioEngine {
-  audioState: AudioEngineState;
+  audioState: BackendAudioEngineState;
   electromagnetic: ElectromagneticField;
   startBinauralBeat: (config: BinauralBeatConfig) => Promise<void>;
   stopBinauralBeat: () => void;
@@ -324,7 +323,7 @@ export interface SpatialVisualizerProps {
 
 export interface FrequencyDisplayProps {
   frequency: number;
-  beatFreq: number;
+  beat_frequency: number;
   target: number;
   range: FrequencyRange;
   onChange: (freq: number) => void;
@@ -429,3 +428,5 @@ export interface BinauralTestProps {
   rightFreq: number;
   onFrequencyChange: (left: number, right: number) => void;
 }
+// LocalAudio - The Father Type
+export * from './localaudio.types';

@@ -39,7 +39,8 @@ app = FastAPI(
 # Include simplified auth and subscription routes
 app.include_router(simple_router, prefix="/api")
 app.include_router(timer_router, prefix="/api")
-app.include_router(audio_router, prefix="/api")
+# Audio router includes WebSocket endpoint, no /api prefix needed
+app.include_router(audio_router)
 
 # Initialize database on startup
 @app.on_event("startup")
@@ -290,7 +291,7 @@ async def websocket_endpoint(
     """WebSocket endpoint for real-time audio and field streaming"""
     print(f"[CONNECT] WEBSOCKET CONNECTION ATTEMPT: {session_id}")
     print(f"[PARAMS] base_frequency={base_frequency}, beat_frequency={beat_frequency}")
-    logger.info(f"Main WebSocket connection for session: {session_id}, base_freq={base_frequency}, beat_freq={beat_frequency}")
+    logger.info(f"Main WebSocket connection for session: {session_id}, base_frequency={base_frequency}, beat_frequency={beat_frequency}")
     await manager.connect(websocket, session_id)
     print(f"[SUCCESS] WEBSOCKET CONNECTED: {session_id}")
     logger.info(f"Main WebSocket connected for session: {session_id}")
@@ -364,10 +365,10 @@ async def stream_data(websocket: WebSocket, session_id: str, settings: dict):
             field_data = await field_simulator.generate_frame(session_id)
             
             # Calculate frequencies from settings
-            base_freq = settings.get("base_frequency", 140)
-            beat_freq = settings.get("beat_frequency", 4)
-            left_freq = base_freq
-            right_freq = base_freq + beat_freq
+            base_frequency = settings.get("base_frequency", 140)
+            beat_frequency = settings.get("beat_frequency", 4)
+            left_freq = base_frequency
+            right_freq = base_frequency + beat_frequency
             
             # Combine and send
             frame_data = {
@@ -380,8 +381,8 @@ async def stream_data(websocket: WebSocket, session_id: str, settings: dict):
                 "metrics": {
                     "frequency_left": left_freq,
                     "frequency_right": right_freq,
-                    "beat_frequency": beat_freq,
-                    "amplitude": settings.get("amplitude", 0.5)
+                    "beat_frequency": beat_frequency,
+                    "amplitude": settings.get("amplitude", 1.2)
                 }
             }
             
@@ -394,5 +395,10 @@ async def stream_data(websocket: WebSocket, session_id: str, settings: dict):
         print(f"Streaming error for session {session_id}: {e}")
 
 if __name__ == "__main__":
+    import multiprocessing
     import uvicorn
+
+    # Fix for Python 3.13 + Windows multiprocessing issues
+    multiprocessing.set_start_method('spawn', force=True)
+
     uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
