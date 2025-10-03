@@ -35,7 +35,7 @@ const CustomPresetDialog: React.FC<CustomPresetDialogProps> = ({
                                                                    setCustomPreset,
                                                                    onSave,
                                                                    loading,
-                                                                   title
+
                                                                }) => {
     const addTransition = () => {
         setCustomPreset(prev => ({
@@ -44,8 +44,8 @@ const CustomPresetDialog: React.FC<CustomPresetDialogProps> = ({
                 duration_minutes: 10,
                 frequency_hz: 10,
                 frequency_type: 'Alpha',
-                left_ear_hz: 440,
-                right_ear_hz: 450,
+                left_ear_hz: 140,
+                right_ear_hz: 144,
                 description: 'New transition'
             }]
         }));
@@ -72,9 +72,9 @@ const CustomPresetDialog: React.FC<CustomPresetDialogProps> = ({
                         const rightNum = parseFloat(rightEar);
 
                         if (!isNaN(leftNum) && !isNaN(rightNum)) {
-                            const beatFreq = Math.abs(rightNum - leftNum);
-                            updatedTransition.frequency_hz = beatFreq;
-                            updatedTransition.frequency_type = getWaveTypeFromFrequency(beatFreq);
+                            const beat_frequency = Math.abs(rightNum - leftNum);
+                            updatedTransition.frequency_hz = beat_frequency;
+                            updatedTransition.frequency_type = getWaveTypeFromFrequency(beat_frequency);
                         }
                     }
 

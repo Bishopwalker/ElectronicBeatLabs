@@ -60,9 +60,9 @@ export class ElectromagneticLabManager {
   calculateEnhancedElectromagnetic(currentElectromagnetic: any, currentAudioState: any) {
     return {
       ...currentElectromagnetic,
-      frequency: currentAudioState.beatFreq || this.state.appState.frequency || 4,
+      frequency: currentAudioState.beat_frequency || this.state.appState.frequency || 4,
       strength: currentAudioState.isPlaying ? Math.min(1, (currentAudioState.amplitude || 0.5) * 2) : 0,
-      resonance: currentAudioState.isPlaying ? 0.7 + (currentAudioState.beatFreq || 4) / 40 * 0.3 : 0,
+      resonance: currentAudioState.isPlaying ? 0.7 + (currentAudioState.beat_frequency || 4) / 40 * 0.3 : 0,
       coherence: currentAudioState.isPlaying ? 0.8 : 0,
       stability: currentAudioState.isPlaying ? 0.9 : 0
     };
@@ -155,7 +155,7 @@ export class ElectromagneticLabManager {
         // Both engines now use consistent BinauralBeatConfig format
         const config = {
           baseFrequency: pattern.frequencies.carrier,
-          beatFrequency: pattern.frequencies.beat,
+          beat_frequency: pattern.frequencies.beat,
           amplitude: this.state.appState.volume || 0.3,
           waveform: 'sine' as const,
           spatial: {
@@ -176,7 +176,7 @@ export class ElectromagneticLabManager {
         // Both engines now use consistent BinauralBeatConfig format
         const config = {
           baseFrequency: pattern.frequencies.carrier,
-          beatFrequency: pattern.frequencies.beat,
+          beat_frequency: pattern.frequencies.beat,
           amplitude: this.state.appState.volume || 0.3,
           waveform: 'sine' as const
         };

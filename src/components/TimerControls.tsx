@@ -24,7 +24,7 @@ import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import type {AudioEngine, ElectromagneticFieldState, PatternConfig} from '../types';
-import type {CustomPresetForm, LocalTimer} from '../data/timer';
+import type {CustomPresetForm, TimerStatus} from '../data/timer';
 import {formatTime} from '../helpers/timer/timerUtils';
 import {useTimerLogic} from '../hooks/useTimerLogic';
 import CustomPresetDialog from './timer/CustomPresetDialog';
@@ -32,14 +32,14 @@ import CustomPresetDialog from './timer/CustomPresetDialog';
 
 interface TimerControlsProps {
     audioEngine?:AudioEngine;
-    onTimerStatusUpdate?: (status: LocalTimer) => void,
+    onTimerStatusUpdate?: (status: TimerStatus | null) => void,
     patterns8D?: {
         setActivePattern: (pattern: PatternConfig) => void;
         clearActivePattern: () => void;
     },
     onElectromagneticUpdate?: (electromagnetic: ElectromagneticFieldState) => void,
 
-};
+}
 
 
 const TimerControls: React.FC<TimerControlsProps> = ({

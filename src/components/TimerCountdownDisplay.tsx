@@ -5,26 +5,36 @@ import React from 'react';
 import { Box, Typography, Paper, LinearProgress, Chip } from '@mui/material';
 import TimerIcon from '@mui/icons-material/Timer';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import type {TimerPreset, TimerStatus} from '../data/timer';
 
 interface TimerCountdownDisplayProps {
-  timerStatus: any | null;
+  timerStatus: TimerStatus | null;
   isVisible?: boolean;
+  presets?: TimerPreset[];
 }
 
-const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({ 
-  timerStatus, 
-  isVisible = true 
+const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
+  timerStatus,
+  isVisible = true,
+
 }) => {
-  if (!timerStatus?.session?.is_active || !isVisible) {
+  // Show countdown if timer is running OR if session is active
+  const shouldShow = isVisible && timerStatus && (
+    timerStatus.isRunning ||
+    timerStatus.session?.is_active ||
+    (timerStatus.current_transition && timerStatus.time_remaining_current !== undefined)
+  );
+
+  if (!shouldShow) {
     return null;
   }
 
   const currentTransition = timerStatus.current_transition;
   const timeRemainingCurrent = timerStatus.time_remaining_current;
   const timeRemainingTotal = timerStatus.time_remaining_total;
-  const preset = timerStatus.session.preset;
-  
-  const currentIndex = timerStatus.session.current_transition_index || 0;
+  const preset = timerStatus.session?.preset;
+
+  const currentIndex = timerStatus.session?.current_transition_index || 0;
   const totalTransitions = preset?.transitions_count || 1;
   
   // Format time as MM:SS

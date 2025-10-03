@@ -6,7 +6,7 @@ import type {
     ADHDProtocol,
     AppState,
     AudioEngine,
-    AudioEngineState,
+    BackendAudioEngineState,
     BinauralBeatConfig,
     ElectromagneticField,
     Pattern8D, PatternConfig
@@ -17,7 +17,7 @@ interface TimerTabProps {
     appState: AppState,
     patterns8D: Pattern8D[],
     onStateChange: (state: Partial<AppState>) => void,
-    onTimerStatusUpdate?: (status: TimerStatus) => void,
+    onTimerStatusUpdate?: (status: TimerStatus | null) => void,
     audioEngine?: {
         startBinauralBeat: (config:BinauralBeatConfig) => Promise<void>;
         stopBinauralBeat: () => Promise<void>;
