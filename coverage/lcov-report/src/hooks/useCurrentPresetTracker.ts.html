@@ -349,24 +349,24 @@ export const <span class="cstat-no" title="statement not covered" >useCurrentPre
 &nbsp;
     // Priority 3: Manual frequencies when playing
 <span class="cstat-no" title="statement not covered" >    if (audioState?.isPlaying &amp;&amp; audioState.leftFreq &amp;&amp; audioState.rightFreq) {</span>
-      const beatFreq = <span class="cstat-no" title="statement not covered" >Math.abs(audioState.rightFreq - audioState.leftFreq);</span>
+      const beat_frequency = <span class="cstat-no" title="statement not covered" >Math.abs(audioState.rightFreq - audioState.leftFreq);</span>
       let frequencyType = <span class="cstat-no" title="statement not covered" >'Custom';</span>
       
-<span class="cstat-no" title="statement not covered" >      if (beatFreq &lt;= 4) <span class="cstat-no" title="statement not covered" >frequencyType = 'Delta';</span></span>
-      else <span class="cstat-no" title="statement not covered" >if (beatFreq &lt;= 8) <span class="cstat-no" title="statement not covered" >frequencyType = 'Theta';</span></span>
-      else <span class="cstat-no" title="statement not covered" >if (beatFreq &lt;= 13) <span class="cstat-no" title="statement not covered" >frequencyType = 'Alpha';</span></span>
-      else <span class="cstat-no" title="statement not covered" >if (beatFreq &lt;= 30) <span class="cstat-no" title="statement not covered" >frequencyType = 'Beta';</span></span>
+<span class="cstat-no" title="statement not covered" >      if (beat_frequency &lt;= 4) <span class="cstat-no" title="statement not covered" >frequencyType = 'Delta';</span></span>
+      else <span class="cstat-no" title="statement not covered" >if (beat_frequency &lt;= 8) <span class="cstat-no" title="statement not covered" >frequencyType = 'Theta';</span></span>
+      else <span class="cstat-no" title="statement not covered" >if (beat_frequency &lt;= 13) <span class="cstat-no" title="statement not covered" >frequencyType = 'Alpha';</span></span>
+      else <span class="cstat-no" title="statement not covered" >if (beat_frequency &lt;= 30) <span class="cstat-no" title="statement not covered" >frequencyType = 'Beta';</span></span>
       else <span class="cstat-no" title="statement not covered" >frequencyType = 'Gamma';</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      setCurrentPreset({</span>
         name: `Manual ${frequencyType}`,
-        description: `${audioState.leftFreq}Hz / ${audioState.rightFreq}Hz • ${beatFreq.toFixed(1)}Hz beat`,
+        description: `${audioState.leftFreq}Hz / ${audioState.rightFreq}Hz • ${beat_frequency.toFixed(1)}Hz beat`,
         isActive: true,
         source: 'manual',
         frequencies: {
           left: audioState.leftFreq,
           right: audioState.rightFreq,
-          beat: beatFreq
+          beat: beat_frequency
         }
       });
 <span class="cstat-no" title="statement not covered" >      return;</span>
@@ -403,4 +403,3 @@ export const <span class="cstat-no" title="statement not covered" >useCurrentPre
         <script src="../../block-navigation.js"></script>
     </body>
 </html>
-    

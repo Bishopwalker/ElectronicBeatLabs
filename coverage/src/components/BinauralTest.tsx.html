@@ -729,7 +729,7 @@ const BinauralTest: React.FC&lt;BinauralTestProps&gt; = <span class="cstat-no" t
   const [localLeftFreq, setLocalLeftFreq] = <span class="cstat-no" title="statement not covered" >useState(leftFreq.toString());</span>
   const [localRightFreq, setLocalRightFreq] = <span class="cstat-no" title="statement not covered" >useState(rightFreq.toString());</span>
 &nbsp;
-  const beatFreq = <span class="cstat-no" title="statement not covered" >Math.abs(parseFloat(localRightFreq) - parseFloat(localLeftFreq));</span>
+  const beat_frequency = <span class="cstat-no" title="statement not covered" >Math.abs(parseFloat(localRightFreq) - parseFloat(localLeftFreq));</span>
 &nbsp;
   const handleLeftFreqChange = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(e</span>: React.ChangeEvent&lt;HTMLInputElement&gt;) =&gt; {</span>
     const value = <span class="cstat-no" title="statement not covered" >e.target.value;</span>
@@ -796,7 +796,7 @@ const BinauralTest: React.FC&lt;BinauralTestProps&gt; = <span class="cstat-no" t
       
       &lt;BeatFreqDisplay&gt;
         &lt;BeatFreqLabel&gt;Beat Frequency&lt;/BeatFreqLabel&gt;
-        &lt;BeatFreqValue&gt;{beatFreq.toFixed(1)} Hz&lt;/BeatFreqValue&gt;
+        &lt;BeatFreqValue&gt;{beat_frequency.toFixed(1)} Hz&lt;/BeatFreqValue&gt;
       &lt;/BeatFreqDisplay&gt;
       
       &lt;TestButtons&gt;
@@ -838,4 +838,3 @@ const BinauralTest: React.FC&lt;BinauralTestProps&gt; = <span class="cstat-no" t
         <script src="../../block-navigation.js"></script>
     </body>
 </html>
-    

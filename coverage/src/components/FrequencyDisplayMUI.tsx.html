@@ -415,7 +415,7 @@ import type { FrequencyDisplayProps, FrequencyRange } from '../types/index';
 &nbsp;
 const FrequencyDisplayMUI: React.FC&lt;FrequencyDisplayProps&gt; = ({
   frequency,
-  beatFreq,
+  beat_frequency,
   target,
   range,
   onChange
@@ -481,8 +481,8 @@ const FrequencyDisplayMUI: React.FC&lt;FrequencyDisplayProps&gt; = ({
               sx={{ 
                 fontFamily: 'monospace',
                 fontWeight: 700,
-                color: getFrequencyColor(beatFreq),
-                textShadow: `0 0 20px ${getFrequencyColor(beatFreq)}66`,
+                color: getFrequencyColor(beat_frequency),
+                textShadow: `0 0 20px ${getFrequencyColor(beat_frequency)}66`,
                 fontSize: '1.8rem',
               }}
             &gt;
@@ -493,7 +493,7 @@ const FrequencyDisplayMUI: React.FC&lt;FrequencyDisplayProps&gt; = ({
               color="primary"
               sx={{ fontFamily: 'monospace', mt: 1 }}
             &gt;
-              Beat: {beatFreq.toFixed(1)} Hz
+              Beat: {beat_frequency.toFixed(1)} Hz
             &lt;/Typography&gt;
             &lt;Typography 
               variant="body2" 
@@ -583,4 +583,3 @@ export default FrequencyDisplayMUI;</pre></td></tr></table></pre>
         <script src="../../block-navigation.js"></script>
     </body>
 </html>
-    

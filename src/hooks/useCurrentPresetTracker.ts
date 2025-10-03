@@ -12,7 +12,8 @@ interface CurrentPreset {
     left: number;
     right: number;
     beat: number;
-  };
+  }
+
 }
 
 interface PresetTrackerParams {

@@ -968,7 +968,7 @@
 &nbsp;
 <span class="cstat-no" title="statement not covered" >import { useState, useEffect, useCallback, useRef } from 'react';</span>
 import type { 
-  AudioEngineState, 
+  BackendAudioEngineState,
   BinauralBeatConfig, 
   ElectromagneticField,
   ElectromagneticFieldState,
@@ -977,12 +977,12 @@ import type {
 } from '../types/index';
 &nbsp;
 export const <span class="cstat-no" title="statement not covered" >useAudioEngine = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(</span>) =</span>&gt; {</span>
-  const [audioState, setAudioState] = <span class="cstat-no" title="statement not covered" >useState&lt;AudioEngineState&gt;({</span>
+  const [audioState, setAudioState] = <span class="cstat-no" title="statement not covered" >useState&lt;BackendAudioEngineState&gt;({</span>
     isPlaying: false,
     volume: 0.3,
     leftFreq: 440,
     rightFreq: 444,
-    beatFreq: 4,
+    beat_frequency: 4,
     waveform: 'sine',
     gainL: null,
     gainR: null,
@@ -1066,12 +1066,12 @@ export const <span class="cstat-no" title="statement not covered" >useAudioEngin
   const calculateElectromagneticField = <span class="cstat-no" title="statement not covered" >useCallback(<span class="fstat-no" title="function not covered" >(</span></span>
     leftFreq: number,
     rightFreq: number,
-    beatFreq: number,
+    beat_frequency: number,
     time: number
   ): ElectromagneticField =&gt; {
-    const strength = <span class="cstat-no" title="statement not covered" >Math.sin(time * 0.001 * beatFreq) * 0.5 + 0.5;</span>
-    const frequency = <span class="cstat-no" title="statement not covered" >beatFreq;</span>
-    const phase = <span class="cstat-no" title="statement not covered" >(time * 0.001 * beatFreq * 360) % 360;</span>
+    const strength = <span class="cstat-no" title="statement not covered" >Math.sin(time * 0.001 * beat_frequency) * 0.5 + 0.5;</span>
+    const frequency = <span class="cstat-no" title="statement not covered" >beat_frequency;</span>
+    const phase = <span class="cstat-no" title="statement not covered" >(time * 0.001 * beat_frequency * 360) % 360;</span>
     const coherence = <span class="cstat-no" title="statement not covered" >Math.min(1, 1 / (Math.abs(leftFreq - rightFreq) * 0.1 + 1));</span>
     const resonance = <span class="cstat-no" title="statement not covered" >strength * coherence;</span>
     
@@ -1158,7 +1158,7 @@ export const <span class="cstat-no" title="statement not covered" >useAudioEngin
 <span class="cstat-no" title="statement not covered" >      oscL.start(context.currentTime);</span>
 <span class="cstat-no" title="statement not covered" >      oscR.start(context.currentTime);</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >      console.log(`Starting binaural beat: ${config.leftFreq}Hz (L) / ${config.rightFreq}Hz (R) = ${config.beatFreq}Hz beat`);</span>
+<span class="cstat-no" title="statement not covered" >      console.log(`Starting binaural beat: ${config.leftFreq}Hz (L) / ${config.rightFreq}Hz (R) = ${config.beat_frequency}Hz beat`);</span>
 &nbsp;
       // Update state
 <span class="cstat-no" title="statement not covered" >      setAudioState(<span class="fstat-no" title="function not covered" >prev </span>=&gt; <span class="cstat-no" title="statement not covered" >({</span></span>
@@ -1166,7 +1166,7 @@ export const <span class="cstat-no" title="statement not covered" >useAudioEngin
         isPlaying: true,
         leftFreq: config.leftFreq,
         rightFreq: config.rightFreq,
-        beatFreq: config.beatFreq,
+        beat_frequency: config.beat_frequency,
         waveform: config.waveform as 'sine' | 'square' | 'triangle' | 'sawtooth',
         gainL,
         gainR,
@@ -1186,7 +1186,7 @@ export const <span class="cstat-no" title="statement not covered" >useAudioEngin
       const field = <span class="cstat-no" title="statement not covered" >calculateElectromagneticField(</span>
         config.leftFreq,
         config.rightFreq,
-        config.beatFreq,
+        config.beat_frequency,
         currentTime - startTimeRef.current
       );
       
@@ -1252,26 +1252,26 @@ export const <span class="cstat-no" title="statement not covered" >useAudioEngin
 <span class="cstat-no" title="statement not covered" >      audioState.oscillatorL.frequency.setValueAtTime(leftFreq, now);</span>
 <span class="cstat-no" title="statement not covered" >      audioState.oscillatorR.frequency.setValueAtTime(rightFreq, now);</span>
       
-      const beatFreq = <span class="cstat-no" title="statement not covered" >Math.abs(rightFreq - leftFreq);</span>
+      const beat_frequency = <span class="cstat-no" title="statement not covered" >Math.abs(rightFreq - leftFreq);</span>
       
 <span class="cstat-no" title="statement not covered" >      setAudioState(<span class="fstat-no" title="function not covered" >prev </span>=&gt; <span class="cstat-no" title="statement not covered" >({</span></span>
         ...prev,
         leftFreq,
         rightFreq,
-        beatFreq
+        beat_frequency
       }));
 &nbsp;
       // Update electromagnetic field based on frequency changes
       const avgFreq = <span class="cstat-no" title="statement not covered" >(leftFreq + rightFreq) / 2;</span>
-      const fieldStrength = <span class="cstat-no" title="statement not covered" >Math.min(1, Math.max(0, beatFreq / 100));</span> // Normalize beat frequency to 0-1
-      const coherence = <span class="cstat-no" title="statement not covered" >Math.min(1, Math.max(0.1, 1 - (beatFreq / 50)));</span> // Higher coherence for lower beat frequencies
+      const fieldStrength = <span class="cstat-no" title="statement not covered" >Math.min(1, Math.max(0, beat_frequency / 100));</span> // Normalize beat frequency to 0-1
+      const coherence = <span class="cstat-no" title="statement not covered" >Math.min(1, Math.max(0.1, 1 - (beat_frequency / 50)));</span> // Higher coherence for lower beat frequencies
       
 <span class="cstat-no" title="statement not covered" >      setElectromagnetic({</span>
         strength: fieldStrength,
         frequency: avgFreq,
         phase: Date.now() * 0.001, // Dynamic phase for animation
         coherence: coherence,
-        resonance: beatFreq,
+        resonance: beat_frequency,
         state: 'ACTIVE',
         stability: Math.min(1, Math.max(0.5, 1 - Math.abs(leftFreq - rightFreq) / 100))
       });
@@ -1310,7 +1310,7 @@ export const <span class="cstat-no" title="statement not covered" >useAudioEngin
     const config: BinauralBeatConfig = <span class="cstat-no" title="statement not covered" >{</span>
       leftFreq: pattern.frequencies.carrier,
       rightFreq: pattern.frequencies.carrier + pattern.frequencies.beat,
-      beatFreq: pattern.frequencies.beat,
+      beat_frequency: pattern.frequencies.beat,
       amplitude: 0.5,
       waveform: 'sine'
     };
@@ -1323,7 +1323,7 @@ export const <span class="cstat-no" title="statement not covered" >useAudioEngin
     const config: BinauralBeatConfig = <span class="cstat-no" title="statement not covered" >{</span>
       leftFreq,
       rightFreq,
-      beatFreq: Math.abs(rightFreq - leftFreq),
+      beat_frequency: Math.abs(rightFreq - leftFreq),
       amplitude: 0.3,
       waveform: 'sine'
     };
@@ -1341,7 +1341,7 @@ export const <span class="cstat-no" title="statement not covered" >useAudioEngin
     startFreq: number,
     endFreq: number,
     duration: number,
-    beatFreq: number = <span class="branch-0 cbranch-no" title="branch not covered" >4</span>
+    beat_frequency: number = <span class="branch-0 cbranch-no" title="branch not covered" >4</span>
   ) =&gt; {
 <span class="cstat-no" title="statement not covered" >    if (!audioState.context || !audioState.oscillatorL || !audioState.oscillatorR) <span class="cstat-no" title="statement not covered" >return;</span></span>
 &nbsp;
@@ -1353,8 +1353,8 @@ export const <span class="cstat-no" title="statement not covered" >useAudioEngin
 <span class="cstat-no" title="statement not covered" >    audioState.oscillatorL.frequency.linearRampToValueAtTime(endFreq, endTime);</span>
 &nbsp;
     // Keep beat frequency constant
-<span class="cstat-no" title="statement not covered" >    audioState.oscillatorR.frequency.setValueAtTime(startFreq + beatFreq, now);</span>
-<span class="cstat-no" title="statement not covered" >    audioState.oscillatorR.frequency.linearRampToValueAtTime(endFreq + beatFreq, endTime);</span>
+<span class="cstat-no" title="statement not covered" >    audioState.oscillatorR.frequency.setValueAtTime(startFreq + beat_frequency, now);</span>
+<span class="cstat-no" title="statement not covered" >    audioState.oscillatorR.frequency.linearRampToValueAtTime(endFreq + beat_frequency, endTime);</span>
 &nbsp;
   }, []);
 &nbsp;
@@ -1363,7 +1363,7 @@ export const <span class="cstat-no" title="statement not covered" >useAudioEngin
     const config: BinauralBeatConfig = <span class="cstat-no" title="statement not covered" >{</span>
       leftFreq: 200,
       rightFreq: 200 + protocol.gammaFreq,
-      beatFreq: protocol.gammaFreq,
+      beat_frequency: protocol.gammaFreq,
       amplitude: protocol.intensity / 100, // Convert percentage to amplitude
       waveform: 'sine'
     };
@@ -1432,4 +1432,3 @@ export const <span class="cstat-no" title="statement not covered" >useAudioEngin
         <script src="../../block-navigation.js"></script>
     </body>
 </html>
-    

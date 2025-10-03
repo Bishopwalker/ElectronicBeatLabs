@@ -402,7 +402,7 @@ export const <span class="cstat-no" title="statement not covered" >useTimerWebSo
     const transitionData = <span class="cstat-no" title="statement not covered" >{</span>
       leftFreq: transition.left_ear_hz,
       rightFreq: transition.right_ear_hz,
-      beatFreq: transition.frequency_hz,
+      beat_frequency: transition.frequency_hz,
       transition_duration: transitionDuration,
       session_progress: ((transitionIndex + 1) / totalTransitions) * 100,
       description: transition.description,
@@ -436,7 +436,7 @@ export const <span class="cstat-no" title="statement not covered" >useTimerWebSo
           const transitionData = <span class="cstat-no" title="statement not covered" >{</span>
             leftFreq,
             rightFreq,
-            beatFreq: Math.abs(rightFreq - leftFreq),
+            beat_frequency: Math.abs(rightFreq - leftFreq),
             transition_duration: 2.0,
             session_progress: 0,
             description: 'Manual frequency update',
@@ -517,4 +517,3 @@ export const <span class="cstat-no" title="statement not covered" >useTimerWebSo
         <script src="../../block-navigation.js"></script>
     </body>
 </html>
-    

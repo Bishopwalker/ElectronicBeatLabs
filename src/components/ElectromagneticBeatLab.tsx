@@ -463,7 +463,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
 
       {/* Timer Countdown Display - Always visible when timer is active */}
       <TimerCountdownDisplay
-        timerStatus={timerStatus}
+        timerStatus={timerStatus??null}
         isVisible={true}
       />
 

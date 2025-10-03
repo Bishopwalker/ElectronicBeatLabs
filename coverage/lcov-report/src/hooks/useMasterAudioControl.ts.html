@@ -489,7 +489,7 @@ export const <span class="cstat-no" title="statement not covered" >useMasterAudi
     const defaultConfig = <span class="cstat-no" title="statement not covered" >{</span>
       leftFreq: 200,
       rightFreq: 204,
-      beatFreq: 4,
+      beat_frequency: 4,
       amplitude: 0.3,
       waveform: 'sine' as const
     };
@@ -504,7 +504,7 @@ export const <span class="cstat-no" title="statement not covered" >useMasterAudi
 <span class="cstat-no" title="statement not covered" >      return {</span>
         left: audioEngine.audioState.leftFreq,
         right: audioEngine.audioState.rightFreq,
-        beat: audioEngine.audioState.beatFreq
+        beat: audioEngine.audioState.beat_frequency
       };
     }
 &nbsp;
@@ -512,7 +512,7 @@ export const <span class="cstat-no" title="statement not covered" >useMasterAudi
 <span class="cstat-no" title="statement not covered" >      return {</span>
         left: backendEngine.audioState.leftFreq,
         right: backendEngine.audioState.rightFreq,
-        beat: backendEngine.audioState.beatFreq
+        beat: backendEngine.audioState.beat_frequency
       };
     }
 &nbsp;
@@ -574,4 +574,3 @@ export const <span class="cstat-no" title="statement not covered" >useMasterAudi
         <script src="../../block-navigation.js"></script>
     </body>
 </html>
-    

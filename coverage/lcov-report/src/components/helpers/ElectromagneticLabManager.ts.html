@@ -613,9 +613,9 @@ export interface ElectromagneticLabState {
 <span class="fstat-no" title="function not covered" >  calculateEnhancedElectromagnetic(</span>currentElectromagnetic: any, currentAudioState: any) {
 <span class="cstat-no" title="statement not covered" >    return {</span>
       ...currentElectromagnetic,
-      frequency: currentAudioState.beatFreq || this.state.appState.frequency || 4,
+      frequency: currentAudioState.beat_frequency || this.state.appState.frequency || 4,
       strength: currentAudioState.isPlaying ? Math.min(1, (currentAudioState.volume || 0.5) * 2) : 0,
-      resonance: currentAudioState.isPlaying ? 0.7 + (currentAudioState.beatFreq || 4) / 40 * 0.3 : 0,
+      resonance: currentAudioState.isPlaying ? 0.7 + (currentAudioState.beat_frequency || 4) / 40 * 0.3 : 0,
       coherence: currentAudioState.isPlaying ? 0.8 : 0,
       stability: currentAudioState.isPlaying ? 0.9 : 0
     };
@@ -698,7 +698,7 @@ export interface ElectromagneticLabState {
           const config = <span class="cstat-no" title="statement not covered" >{</span>
             leftFreq: this.state.appState.currentPattern.frequencies.carrier,
             rightFreq: this.state.appState.currentPattern.frequencies.carrier + this.state.appState.currentPattern.frequencies.beat,
-            beatFreq: this.state.appState.currentPattern.frequencies.beat,
+            beat_frequency: this.state.appState.currentPattern.frequencies.beat,
             amplitude: this.state.appState.volume || 0.3,
             waveform: 'sine' as const
           };
@@ -713,7 +713,7 @@ export interface ElectromagneticLabState {
           const config = <span class="cstat-no" title="statement not covered" >{</span>
             leftFreq: this.state.appState.currentPattern.frequencies.carrier,
             rightFreq: this.state.appState.currentPattern.frequencies.carrier + this.state.appState.currentPattern.frequencies.beat,
-            beatFreq: this.state.appState.currentPattern.frequencies.beat,
+            beat_frequency: this.state.appState.currentPattern.frequencies.beat,
             amplitude: this.state.appState.volume || 0.3,
             waveform: 'sine' as const
           };
@@ -823,4 +823,3 @@ export interface ElectromagneticLabState {
         <script src="../../../block-navigation.js"></script>
     </body>
 </html>
-    

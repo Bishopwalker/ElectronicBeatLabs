@@ -540,7 +540,7 @@ const FrequencyValue = <span class="cstat-no" title="statement not covered" >sty
   text-shadow: 0 0 20px rgba(0, 255, 136, 0.6);
 `;
 &nbsp;
-const BeatFrequency = <span class="cstat-no" title="statement not covered" >styled.div`</span>
+const beat_frequency = <span class="cstat-no" title="statement not covered" >styled.div`</span>
   font-family: 'Courier New', monospace;
   font-size: 1rem;
   text-align: center;
@@ -608,7 +608,7 @@ const PrecisionButton = <span class="cstat-no" title="statement not covered" >st
 &nbsp;
 const FrequencyDisplay: React.FC&lt;FrequencyDisplayProps&gt; = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >({</span></span>
   frequency,
-  beatFreq,
+  beat_frequency,
   target,
   range,
   onChange
@@ -650,9 +650,9 @@ const FrequencyDisplay: React.FC&lt;FrequencyDisplayProps&gt; = <span class="cst
         {frequency.toFixed(1)} Hz
       &lt;/FrequencyValue&gt;
       
-      &lt;BeatFrequency&gt;
-        Beat: {beatFreq.toFixed(1)} Hz
-      &lt;/BeatFrequency&gt;
+      &lt;beat_frequency&gt;
+        Beat: {beat_frequency.toFixed(1)} Hz
+      &lt;/beat_frequency&gt;
       
       &lt;RangeLabel style={{ color: rangeInfo.color }}&gt;
         {rangeInfo.name} Wave - {rangeInfo.description}
@@ -718,4 +718,3 @@ const FrequencyDisplay: React.FC&lt;FrequencyDisplayProps&gt; = <span class="cst
         <script src="../../block-navigation.js"></script>
     </body>
 </html>
-    
