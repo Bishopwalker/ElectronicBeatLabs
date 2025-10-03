@@ -172,7 +172,7 @@
         </div>
         
         <div class="beat-freq">
-            Beat Frequency: <span id="beatFreq">4</span> Hz (Theta - Deep Meditation)
+            Beat Frequency: <span id="beat_frequency">4</span> Hz (Theta - Deep Meditation)
         </div>
 
         <div class="visualization" id="visualization">
@@ -181,13 +181,13 @@
 
         <div class="controls">
             <div class="control-group">
-                <label for="baseFreq">Base Frequency (Hz):</label>
-                <input type="range" id="baseFreq" min="80" max="1000" value="200" step="1">
+                <label for="base_frequency">Base Frequency (Hz):</label>
+                <input type="range" id="base_frequency" min="80" max="1000" value="200" step="1">
                 <input type="number" id="baseFreqNum" min="80" max="1000" value="200" step="1">
             </div>
 
             <div class="control-group">
-                <label for="beatFreq">Beat Frequency (Hz):</label>
+                <label for="beat_frequency">Beat Frequency (Hz):</label>
                 <input type="range" id="beatFreqSlider" min="0.5" max="50" value="4" step="0.5">
                 <input type="number" id="beatFreqNum" min="0.5" max="50" value="4" step="0.1">
             </div>
@@ -233,12 +233,12 @@
     <script>
         // Enhanced UI controls
         function updateDisplay() {
-            const base = parseFloat(document.getElementById('baseFreq').value);
+            const base = parseFloat(document.getElementById('base_frequency').value);
             const beat = parseFloat(document.getElementById('beatFreqSlider').value);
             
             document.getElementById('leftFreq').textContent = base.toFixed(1);
             document.getElementById('rightFreq').textContent = (base + beat).toFixed(1);
-            document.getElementById('beatFreq').textContent = beat.toFixed(1);
+            document.getElementById('beat_frequency').textContent = beat.toFixed(1);
             
             // Update number inputs
             document.getElementById('baseFreqNum').value = base;
@@ -246,7 +246,7 @@
             
             // Update brainwave category
             const category = getBrainwaveCategory(beat);
-            document.getElementById('beatFreq').innerHTML = `${beat.toFixed(1)} Hz (${category})`;
+            document.getElementById('beat_frequency').innerHTML = `${beat.toFixed(1)} Hz (${category})`;
         }
 
         function getBrainwaveCategory(freq) {
@@ -258,17 +258,17 @@
             return "Gamma - Peak Performance";
         }
 
-        function loadPreset(baseFreq, beatFreq) {
-            document.getElementById('baseFreq').value = baseFreq;
-            document.getElementById('beatFreqSlider').value = beatFreq;
+        function loadPreset(base_frequency, beat_frequency) {
+            document.getElementById('base_frequency').value = base_frequency;
+            document.getElementById('beatFreqSlider').value = beat_frequency;
             updateDisplay();
             
             document.getElementById('status').innerHTML = 
-                `Preset loaded: ${baseFreq}Hz base, ${beatFreq}Hz beat (${getBrainwaveCategory(beatFreq)})`;
+                `Preset loaded: ${base_frequency}Hz base, ${beat_frequency}Hz beat (${getBrainwaveCategory(beat_frequency)})`;
         }
 
         function enhancedStart() {
-            const base = parseFloat(document.getElementById('baseFreq').value);
+            const base = parseFloat(document.getElementById('base_frequency').value);
             const beat = parseFloat(document.getElementById('beatFreqSlider').value);
             const vol = parseFloat(document.getElementById('volume').value);
             
@@ -308,10 +308,10 @@
         }
 
         // Event listeners
-        document.getElementById('baseFreq').addEventListener('input', updateDisplay);
+        document.getElementById('base_frequency').addEventListener('input', updateDisplay);
         document.getElementById('beatFreqSlider').addEventListener('input', updateDisplay);
         document.getElementById('baseFreqNum').addEventListener('input', function() {
-            document.getElementById('baseFreq').value = this.value;
+            document.getElementById('base_frequency').value = this.value;
             updateDisplay();
         });
         document.getElementById('beatFreqNum').addEventListener('input', function() {

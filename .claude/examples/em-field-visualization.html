@@ -267,8 +267,8 @@
                 <div class="sync-controls">
                     <h3>🎵 Audio Synchronization</h3>
                     <div class="slider-group">
-                        <label for="baseFreq">Base Audio: <span class="value-display" id="baseFreqValue">200 Hz</span></label>
-                        <input type="range" id="baseFreq" min="80" max="800" step="10" value="200">
+                        <label for="base_frequency">Base Audio: <span class="value-display" id="baseFreqValue">200 Hz</span></label>
+                        <input type="range" id="base_frequency" min="80" max="800" step="10" value="200">
                     </div>
                     <button class="start-stop-btn start-btn" id="syncBtn" onclick="toggleSync()">🎵 Start Synchronized Mode</button>
                 </div>
@@ -571,7 +571,7 @@
             document.getElementById('speedValue').textContent = e.target.value + 'x';
         });
         
-        document.getElementById('baseFreq').addEventListener('input', (e) => {
+        document.getElementById('base_frequency').addEventListener('input', (e) => {
             visualizer.baseAudioFreq = parseInt(e.target.value);
             document.getElementById('baseFreqValue').textContent = e.target.value + ' Hz';
         });
