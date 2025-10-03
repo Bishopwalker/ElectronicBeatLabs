@@ -6,7 +6,7 @@
 // ==================================================================
 
 import { ADVANCED_TIMER_PRESETS } from "./advancedTimerPresets";
-import { BUILT_IN_PRESETS } from "./timerPresets";
+import { BUILT_IN_PRESETS, getPresetTransitions } from "./timerPresets";
 import type { TimerPreset, FrequencyTransition } from "../../types";
 
 // ==================================================================
@@ -222,9 +222,10 @@ export const PRESET_STATS = {
 };
 
 // ==================================================================
-// EXPORT ALL TYPES
+// EXPORT ALL TYPES AND FUNCTIONS
 // ==================================================================
 export type { TimerPreset, FrequencyTransition };
+export { getPresetTransitions };
 
 export const TIMER_SYSTEM_INFO = {
   version: '1.0.0',
