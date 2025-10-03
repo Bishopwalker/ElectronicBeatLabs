@@ -81,7 +81,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
   // Current preset tracking
   const { currentPreset } = useCurrentPresetTracker({
     timerStatus,
-    activePattern?: appState.currentPattern?.id,
+    activePattern: appState.currentPattern?.id,
     audioState: backendEngine.audioState
   });
 
@@ -201,7 +201,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
       await backendEngine.stopBackendSession();
       
       console.log('🛑 Stopping frontend engine...');
-      await frontendEngine.stopBinauralBeat();
+       frontendEngine.stopBinauralBeat();
       
       // Also clear any patterns
       updateAppState({ 
@@ -594,10 +594,21 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                   {appState.isPlaying && (
                     <Box sx={{ mt: 2 }}>
                       <FrequencyVisualizer
-                        getVisualizationData={activeAudioEngine.getVisualizationData || null}
+                        config={{
+                          baseFrequency: activeAudioEngine.audioState.config?.baseFrequency || activeAudioEngine.audioState.leftFreq || 144,
+                          beat_frequency: activeAudioEngine.audioState.config?.beat_frequency || activeAudioEngine.audioState.beat_frequency || 4,
+                          amplitude: activeAudioEngine.audioState.config?.amplitude || activeAudioEngine.audioState.amplitude || 0.7,
+                          waveform: activeAudioEngine.audioState.config?.waveform || 'sine'
+                        }}
+                        audioState={{
+                          isPlaying: appState.isPlaying,
+                          leftFreq: activeAudioEngine.audioState.config?.baseFrequency || activeAudioEngine.audioState.leftFreq || 144,
+                          rightFreq: (activeAudioEngine.audioState.config?.baseFrequency || activeAudioEngine.audioState.leftFreq || 144) + (activeAudioEngine.audioState.config?.beat_frequency || activeAudioEngine.audioState.beat_frequency || 4)
+                        }}
                         title="Real-time Frequency Analysis"
                         height={200}
                         width={600}
+                        autoStart={appState.isPlaying}
                       />
                     </Box>
                   )}
