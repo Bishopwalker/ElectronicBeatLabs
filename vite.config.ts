@@ -5,12 +5,13 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
-    host: true, // Allow external connections
+    host: true,
     port: 5173,
-    strictPort: true, // Exit if port is in use
-    open: false, // Don't auto-open browser
+    strictPort: false, // Try next port if busy instead of crashing
+    open: false,
     hmr: {
-      port: 24678, // Use different port for HMR to avoid conflicts
+      port: 24678,
+      overlay: false // Disable error overlay for faster HMR
     },
     proxy: {
       '/api': {
@@ -25,12 +26,32 @@ export default defineConfig({
       }
     },
     watch: {
-      // Watch for changes in these directories
-      ignored: ['!**/node_modules/**', '!**/backend/**']
+      ignored: [
+        '**/node_modules/**',
+        '**/backend/**',
+        '**/.git/**',
+        '**/coverage/**',
+        '**/dist/**',
+        '**/__pycache__/**'
+      ]
     }
   },
-  // Enable hot reload for these file types
   optimizeDeps: {
-    include: ['react', 'react-dom', '@mui/material']
+    include: ['react', 'react-dom', '@mui/material'],
+    esbuildOptions: {
+      target: 'esnext' // Faster builds
+    }
+  },
+  build: {
+    target: 'esnext',
+    minify: 'esbuild', // Faster than terser
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom'],
+          'mui-vendor': ['@mui/material', '@mui/icons-material']
+        }
+      }
+    }
   }
 })
