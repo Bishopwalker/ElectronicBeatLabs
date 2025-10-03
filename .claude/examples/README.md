@@ -56,9 +56,9 @@ function start() {
 const SMR_PROTOCOL = {
     totalDuration: 30 * 60, // 30 minutes
     stages: [
-        { duration: 5*60, baseFreq: 180, beatFreq: 12 }, // Warm-up
-        { duration: 20*60, baseFreq: 200, beatFreq: 14 }, // Core
-        { duration: 5*60, baseFreq: 180, beatFreq: 10 }   // Cool-down
+        { duration: 5*60, base_frequency: 180, beat_frequency: 12 }, // Warm-up
+        { duration: 20*60, base_frequency: 200, beat_frequency: 14 }, // Core
+        { duration: 5*60, base_frequency: 180, beat_frequency: 10 }   // Cool-down
     ]
 };
 ```
