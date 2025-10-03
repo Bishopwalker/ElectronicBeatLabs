@@ -16,10 +16,10 @@ from typing import Dict, Optional, TYPE_CHECKING, Union, List
 import uuid
 from datetime import datetime
 
-if TYPE_CHECKING:
-    from modules.spatial_audio import SpatialAudioProcessor
 
 class AudioEngine:
+    """Enhanced audio engine for binaural beat generation"""
+
     def __init__(self, sample_rate: int = 48000):
         self.sample_rate = sample_rate
         self.sessions: Dict[str, dict] = {}
@@ -71,22 +71,33 @@ class AudioEngine:
         if session_id in self.sessions:
             self.sessions[session_id]["settings"].update(settings)
     
-    async def generate_frame(self, session_id: str) -> dict:
-        """Generate a single audio frame with professional audio standards"""
+    async def generate_frame(self, session_id: str, binary_mode: bool = True) -> Union[dict, bytes]:
+        """Generate a single audio frame with professional audio standards
+
+        Args:
+            session_id: Unique session identifier
+            binary_mode: If True, return binary data; if False, return dict (legacy)
+
+        Returns:
+            bytes: Binary audio frame (if binary_mode=True)
+            dict: JSON-compatible frame data (if binary_mode=False)
+        """
         if session_id not in self.sessions:
-            return {"error": "Session not found"}
-        
+            print(f"ERROR: Session {session_id} not found in sessions: {list(self.sessions.keys())}")
+            return {"error": "Session not found"} if not binary_mode else b''
+
+        print(f" Generating frame for session {session_id}")
         session = self.sessions[session_id]
         settings = session["settings"]
-        
-        # Get frequency parameters with validation
-        base_freq = max(20, min(20000, settings.get("base_frequency", 140)))
-        beat_freq = max(0.1, min(100, settings.get("beat_frequency", 4)))
-        amplitude = max(0.0, min(1.0, settings.get("amplitude", 0.5)))
+
+        # Get frequency parameters with validation (cached to avoid repeated dict lookups)
+        base_frequency = max(20, min(20000, settings.get("base_frequency", 140)))
+        beat_frequency = max(0.1, min(100, settings.get("beat_frequency", 4)))
+        amplitude = max(0.0, min(2.0, settings.get("amplitude", 1.2)))
         
         # Calculate left and right frequencies for binaural beats
-        freq_left = base_freq
-        freq_right = base_freq + beat_freq
+        freq_left = base_frequency
+        freq_right = base_frequency + beat_frequency
         
         # Frame size for 48kHz at 60 FPS (800 samples per frame)
         frame_size = int(self.sample_rate / 60)
@@ -139,7 +150,17 @@ class AudioEngine:
             b, a = signal.butter(4, self.sample_rate / 2.5, btype='low')
             left_wave = signal.filtfilt(b, a, left_wave)
             right_wave = signal.filtfilt(b, a, right_wave)
-        
+
+        # Binary mode: Return compact binary format for WebSocket transmission
+        if binary_mode:
+            # Binary frame format:
+            # [4 bytes: frame_size] [left_pcm bytes] [right_pcm bytes]
+            # This reduces payload from ~6.4KB JSON to ~3.2KB binary (50% reduction)
+            import struct
+            header = struct.pack('<I', frame_size)  # Little-endian unsigned int
+            return header + left_pcm.tobytes() + right_pcm.tobytes()
+
+        # Legacy JSON mode for compatibility
         return {
             "left": left_pcm.tolist(),
             "right": right_pcm.tolist(),
@@ -148,8 +169,8 @@ class AudioEngine:
             "frequencies": {
                 "left": freq_left,
                 "right": freq_right,
-                "beat": beat_freq,
-                "carrier": base_freq
+                "beat": beat_frequency,
+                "carrier": base_frequency
             },
             "spatial": spatial_metrics,
             "audio_metrics": {
@@ -207,16 +228,16 @@ class AudioEngine:
         validated = settings.copy()
         
         # Validate base frequency (human audible range)
-        base_freq = settings.get("base_frequency", 144)
-        validated["base_frequency"] = max(20, min(20000, base_freq))
+        base_frequency = settings.get("base_frequency", 144)
+        validated["base_frequency"] = max(20, min(20000, base_frequency))
         
         # Validate beat frequency (therapeutic range)
-        beat_freq = settings.get("beat_frequency", 4)
-        validated["beat_frequency"] = max(0.1, min(100, beat_freq))
+        beat_frequency = settings.get("beat_frequency", 4)
+        validated["beat_frequency"] = max(0.1, min(100, beat_frequency))
         
-        # Validate amplitude (prevent clipping)
-        amplitude = settings.get("amplitude", 0.5)
-        validated["amplitude"] = max(0.0, min(1.0, amplitude))
+        # Validate amplitude (allow higher volumes for louder output)
+        amplitude = settings.get("amplitude", 1.2)
+        validated["amplitude"] = max(0.0, min(2.0, amplitude))
         
         # Ensure frequencies don't exceed Nyquist limit
         max_freq = validated["base_frequency"] + validated["beat_frequency"]
@@ -258,7 +279,7 @@ class AudioEngine:
             "focus": {
                 "base_frequency": 144,
                 "beat_frequency": 14,  # SMR range
-                "amplitude": 0.6,
+                "amplitude": 1.4,
                 "duration": 20 * 60,  # 20 minutes
                 "envelope_type": "adsr",
                 "description": "SMR training for attention and focus"
@@ -266,7 +287,7 @@ class AudioEngine:
             "calm": {
                 "base_frequency": 144,
                 "beat_frequency": 8,  # Alpha range
-                "amplitude": 0.4,
+                "amplitude": 1.2,
                 "duration": 15 * 60,
                 "envelope_type": "fade_in",
                 "description": "Alpha waves for relaxation and calm focus"
@@ -274,7 +295,7 @@ class AudioEngine:
             "deep_focus": {
                 "base_frequency": 144,
                 "beat_frequency": 40,  # Gamma range
-                "amplitude": 0.7,
+                "amplitude": 1.6,
                 "duration": 25 * 60,
                 "envelope_type": "pulse",
                 "pulse_frequency": 0.1,
@@ -283,7 +304,7 @@ class AudioEngine:
             "meditation": {
                 "base_frequency": 144,
                 "beat_frequency": 6,  # Theta range
-                "amplitude": 0.3,
+                "amplitude": 1.0,
                 "duration": 30 * 60,
                 "envelope_type": "constant",
                 "description": "Theta waves for meditation and creativity"
