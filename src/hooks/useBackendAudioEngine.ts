@@ -212,7 +212,7 @@ export const useBackendAudioEngine = () => {
           type: 'audioFrame',
           data: frame // Pass ArrayBuffer directly to AudioWorklet
         });
-        console.log('🔊 Backend Engine: Binary audio frame sent to AudioWorklet');
+        //console.log('🔊 Backend Engine: Binary audio frame sent to AudioWorklet');
         return;
       }
 

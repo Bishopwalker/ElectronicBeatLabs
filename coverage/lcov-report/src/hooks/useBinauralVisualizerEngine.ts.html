@@ -733,7 +733,7 @@ interface VisualizerEngineState {
   isPlaying: boolean;
   leftFreq: number;
   rightFreq: number;
-  beatFreq: number;
+  beat_frequency: number;
   amplitude: number;
   waveform: 'sine' | 'square' | 'sawtooth' | 'triangle';
 }
@@ -743,7 +743,7 @@ export const <span class="cstat-no" title="statement not covered" >useBinauralVi
     isPlaying: false,
     leftFreq: 440,
     rightFreq: 444,
-    beatFreq: 4,
+    beat_frequency: 4,
     amplitude: 0.3,
     waveform: 'sine'
   });
@@ -842,7 +842,7 @@ export const <span class="cstat-no" title="statement not covered" >useBinauralVi
         isPlaying: true,
         leftFreq: config.leftFreq,
         rightFreq: config.rightFreq,
-        beatFreq: Math.abs(config.rightFreq - config.leftFreq),
+        beat_frequency: Math.abs(config.rightFreq - config.leftFreq),
         amplitude: config.amplitude,
         waveform: config.waveform
       }));
@@ -946,14 +946,14 @@ export const <span class="cstat-no" title="statement not covered" >useBinauralVi
 <span class="cstat-no" title="statement not covered" >    return {</span>
       spectrumData: Array.from(dataArray.current),
       peakFrequencies: detectPeakFrequencies(),
-      currentBeatFreq: state.beatFreq,
+      currentBeatFreq: state.beat_frequency,
       amplitudes: {
         left: dataArray.current[leftBin],
         right: dataArray.current[rightBin]
       },
       timestamp: Date.now()
     };
-  }, [state.leftFreq, state.rightFreq, state.beatFreq, getFrequencyBin, detectPeakFrequencies]);
+  }, [state.leftFreq, state.rightFreq, state.beat_frequency, getFrequencyBin, detectPeakFrequencies]);
 &nbsp;
   const updateFrequencies = <span class="cstat-no" title="statement not covered" >useCallback(<span class="fstat-no" title="function not covered" >(l</span>eftFreq: number, rightFreq: number) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    if (leftOscillator.current &amp;&amp; rightOscillator.current &amp;&amp; audioContext.current) {</span>
@@ -966,7 +966,7 @@ export const <span class="cstat-no" title="statement not covered" >useBinauralVi
         ...prev,
         leftFreq,
         rightFreq,
-        beatFreq: Math.abs(rightFreq - leftFreq)
+        beat_frequency: Math.abs(rightFreq - leftFreq)
       }));
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      console.log('🔄 BinauralVisualizerEngine: Frequencies updated -', </span>
@@ -993,7 +993,7 @@ export const <span class="cstat-no" title="statement not covered" >useBinauralVi
       ...prev,
       leftFreq: targetLeftFreq,
       rightFreq: targetRightFreq,
-      beatFreq: Math.abs(targetRightFreq - targetLeftFreq)
+      beat_frequency: Math.abs(targetRightFreq - targetLeftFreq)
     }));
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    console.log('🌊 BinauralVisualizerEngine: Smooth transition started -', </span>
@@ -1051,4 +1051,3 @@ export const <span class="cstat-no" title="statement not covered" >useBinauralVi
         <script src="../../block-navigation.js"></script>
     </body>
 </html>
-    

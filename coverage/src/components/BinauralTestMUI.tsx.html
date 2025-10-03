@@ -608,7 +608,7 @@ const BinauralGeneratorMUI: React.FC&lt;BinauralTestProps&gt; = <span class="cst
 <span class="cstat-no" title="statement not covered" >    setIsPlaying(!isPlaying);</span>
   };
 &nbsp;
-  const beatFrequency = <span class="cstat-no" title="statement not covered" >Math.abs(leftFreq - rightFreq);</span>
+  const beat_frequency = <span class="cstat-no" title="statement not covered" >Math.abs(leftFreq - rightFreq);</span>
 &nbsp;
   const handleReset = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >() =</span>&gt; {</span>
     const defaultLeft = <span class="cstat-no" title="statement not covered" >440;</span>
@@ -748,7 +748,7 @@ const BinauralGeneratorMUI: React.FC&lt;BinauralTestProps&gt; = <span class="cst
               color="info"
               sx={{ fontFamily: 'monospace', fontWeight: 700 }}
             &gt;
-              {beatFrequency.toFixed(1)} Hz
+              {beat_frequency.toFixed(1)} Hz
             &lt;/Typography&gt;
           &lt;/Paper&gt;
           
@@ -823,4 +823,3 @@ const BinauralGeneratorMUI: React.FC&lt;BinauralTestProps&gt; = <span class="cst
         <script src="../../block-navigation.js"></script>
     </body>
 </html>
-    

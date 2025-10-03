@@ -822,7 +822,7 @@
 <span class="cstat-no" title="statement not covered" >import { useWebSocket } from './useWebSocket';</span>
 <span class="cstat-no" title="statement not covered" >import { useBackendAPI } from './useBackendAPI';</span>
 import type { 
-  AudioEngineState, 
+  BackendAudioEngineState,
   BinauralBeatConfig, 
   ElectromagneticField,
   PatternConfig 
@@ -861,12 +861,12 @@ interface BackendFieldFrame {
 }
 &nbsp;
 export const <span class="cstat-no" title="statement not covered" >useBackendAudioEngine = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(</span>) =</span>&gt; {</span>
-  const [audioState, setAudioState] = <span class="cstat-no" title="statement not covered" >useState&lt;AudioEngineState&gt;({</span>
+  const [audioState, setAudioState] = <span class="cstat-no" title="statement not covered" >useState&lt;BackendAudioEngineState&gt;({</span>
     isPlaying: false,
     volume: 0.3,
     leftFreq: 440,
     rightFreq: 444,
-    beatFreq: 4,
+    beat_frequency: 4,
     waveform: 'sine',
     gainL: null,
     gainR: null,
@@ -947,7 +947,7 @@ export const <span class="cstat-no" title="statement not covered" >useBackendAud
         ...prev,
         leftFreq: frame.frequencies.left,
         rightFreq: frame.frequencies.right,
-        beatFreq: frame.frequencies.beat
+        beat_frequency: frame.frequencies.beat
       }));
 &nbsp;
     } catch (error) {
@@ -1011,7 +1011,7 @@ export const <span class="cstat-no" title="statement not covered" >useBackendAud
       // Start session via API
       const response = <span class="cstat-no" title="statement not covered" >await api.startSession({</span>
         base_frequency: config.leftFreq,
-        beat_frequency: config.beatFreq,
+        beat_frequency: config.beat_frequency,
         amplitude: config.amplitude,
         spatial_enabled: config.spatial_enabled || false,
         spatial_settings: config.spatial_settings || {}
@@ -1033,7 +1033,7 @@ export const <span class="cstat-no" title="statement not covered" >useBackendAud
           data: {
             settings: {
               base_frequency: config.leftFreq,
-              beat_frequency: config.beatFreq,
+              beat_frequency: config.beat_frequency,
               amplitude: config.amplitude,
               spatial_enabled: config.spatial_enabled,
               spatial_settings: config.spatial_settings
@@ -1046,7 +1046,7 @@ export const <span class="cstat-no" title="statement not covered" >useBackendAud
           isPlaying: true,
           leftFreq: config.leftFreq,
           rightFreq: config.rightFreq,
-          beatFreq: config.beatFreq,
+          beat_frequency: config.beat_frequency,
           context: audioContext.current
         }));
       }
@@ -1115,7 +1115,7 @@ export const <span class="cstat-no" title="statement not covered" >useBackendAud
     const config: BinauralBeatConfig &amp; { spatial_enabled?: boolean, spatial_settings?: Record&lt;string, unknown&gt; } = <span class="cstat-no" title="statement not covered" >{</span>
       leftFreq: pattern.frequencies.carrier,
       rightFreq: pattern.frequencies.carrier + pattern.frequencies.beat,
-      beatFreq: pattern.frequencies.beat,
+      beat_frequency: pattern.frequencies.beat,
       amplitude: 0.5,
       waveform: 'sine',
       spatial_enabled: true,
@@ -1135,18 +1135,18 @@ export const <span class="cstat-no" title="statement not covered" >useBackendAud
 &nbsp;
   // Update frequency
   const updateFrequency = <span class="cstat-no" title="statement not covered" >useCallback(<span class="fstat-no" title="function not covered" >(l</span>eftFreq: number, rightFreq: number) =&gt; {</span>
-    const beatFreq = <span class="cstat-no" title="statement not covered" >Math.abs(rightFreq - leftFreq);</span>
+    const beat_frequency = <span class="cstat-no" title="statement not covered" >Math.abs(rightFreq - leftFreq);</span>
     
 <span class="cstat-no" title="statement not covered" >    updateSettings({</span>
       base_frequency: leftFreq,
-      beat_frequency: beatFreq
+      beat_frequency: beat_frequency
     });
     
 <span class="cstat-no" title="statement not covered" >    setAudioState(<span class="fstat-no" title="function not covered" >prev </span>=&gt; <span class="cstat-no" title="statement not covered" >({</span></span>
       ...prev,
       leftFreq,
       rightFreq,
-      beatFreq
+      beat_frequency
     }));
   }, [updateSettings]);
 &nbsp;
@@ -1210,4 +1210,3 @@ export const <span class="cstat-no" title="statement not covered" >useBackendAud
         <script src="../../block-navigation.js"></script>
     </body>
 </html>
-    

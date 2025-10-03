@@ -158,7 +158,7 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
     if (!localTimer || !localTimer.isActive) return;
 
     const now = Date.now();
-    const elapsed = Math.floor((now - localTimer.status.startTime) / 1000 / 60);
+    const elapsed = Math.floor((now - localTimer.startTime) / 1000 / 60);
 
     let currentTransitionIndex = 0;
     let elapsedInTransitions = elapsed;
@@ -227,11 +227,21 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
           (1 - (totalTimeRemaining / localTimer.transitions.reduce((sum, t) => sum + t.duration_minutes, 0))) * 100 : 0
     };
 
+    console.log('⏰ Timer Status Updated:', {
+      isRunning: status.isRunning,
+      hasTransition: !!status.current_transition,
+      timeRemaining: status.time_remaining_current,
+      status
+    });
+
     setTimerStatus(status);
 
     // Notify parent component of timer status changes
     if (onTimerStatusUpdate) {
+      console.log('📤 Calling onTimerStatusUpdate with status:', status);
       onTimerStatusUpdate(status);
+    } else {
+      console.warn('⚠️ No onTimerStatusUpdate callback provided!');
     }
 
     if (audioEngine && currentTransition && currentTransitionIndexRef.current !== currentTransitionIndex) {
@@ -563,49 +573,16 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
     let interval: NodeJS.Timeout;
 
     if (localTimer?.isActive && !localTimer?.isPaused) {
-      // Longer intervals to prevent audio clicks during playback
-      const checkInterval = () => {
-        const now = Date.now();
-        const elapsed = Math.floor((now - localTimer.startTime) / 1000 / 60);
-
-        // Check if we're within 1 minute of a transition boundary
-        let timeToNextTransition = 0;
-        let elapsedInTransitions = elapsed;
-
-        for (const transition of localTimer.transitions) {
-          if (elapsedInTransitions >= transition.duration_minutes) {
-            elapsedInTransitions -= transition.duration_minutes;
-          } else {
-            timeToNextTransition = transition.duration_minutes - elapsedInTransitions;
-            break;
-          }
-        }
-
-        // Longer intervals to prevent audio interruption - 15s near transition, 60s normally
-        return timeToNextTransition <= 1 ? 15000 : 60000;
-      };
-
-      const scheduleNext = () => {
-        const nextCheck = checkInterval();
-        interval = setTimeout(() => {
-          // Only update if audio isn't actively playing to prevent clicks
-          const isAudioPlaying = audioEngine?.audioState?.isPlaying;
-          if (!isAudioPlaying) {
-            loadTimerStatus();
-          } else {
-            console.log('🔇 Skipping timer status update - audio playing to prevent clicks');
-          }
-          scheduleNext();
-        }, nextCheck);
-      };
-
-      scheduleNext();
+      // Update every second for countdown display
+      interval = setInterval(() => {
+        loadTimerStatus();
+      }, 1000);
     }
 
     return () => {
-      if (interval) clearTimeout(interval);
+      if (interval) clearInterval(interval);
     };
-  }, [localTimer?.isActive, localTimer?.isPaused]);
+  }, [localTimer?.isActive, localTimer?.isPaused, loadTimerStatus]);
 
   return {
     presets,

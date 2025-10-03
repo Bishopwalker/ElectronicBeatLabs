@@ -769,7 +769,7 @@ const BinauralGeneratorMUI: React.FC&lt;BinauralGeneratorProps&gt; = <span class
 &nbsp;
     // Removed local audio handling - parent controls all audio through unified backend engine
   // Calculate beat frequency directly from props
-  const beatFrequency = <span class="cstat-no" title="statement not covered" >Math.abs(rightFreq - leftFreq);</span>
+  const beat_frequency = <span class="cstat-no" title="statement not covered" >Math.abs(rightFreq - leftFreq);</span>
 &nbsp;
   const handleReset = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >() =</span>&gt; {</span>
     const defaultLeft = <span class="cstat-no" title="statement not covered" >440;</span>
@@ -967,7 +967,7 @@ const BinauralGeneratorMUI: React.FC&lt;BinauralGeneratorProps&gt; = <span class
               color="info"
               sx={{ fontFamily: 'monospace', fontWeight: 700 }}
             &gt;
-              {beatFrequency.toFixed(1)} Hz
+              {beat_frequency.toFixed(1)} Hz
             &lt;/Typography&gt;
           &lt;/Paper&gt;
           
@@ -1021,4 +1021,3 @@ const BinauralGeneratorMUI: React.FC&lt;BinauralGeneratorProps&gt; = <span class
         <script src="../../block-navigation.js"></script>
     </body>
 </html>
-    

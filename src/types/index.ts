@@ -303,9 +303,10 @@ export interface ElectromagneticEvent {
 
 // Component Props
 export interface ElectromagneticBeatLabProps {
-  initialPattern?: string;
+  initialPattern?: PatternPreset;
   autoStart?: boolean;
   fullscreen?: boolean;
+  acti
 }
 
 export interface StarFieldProps {

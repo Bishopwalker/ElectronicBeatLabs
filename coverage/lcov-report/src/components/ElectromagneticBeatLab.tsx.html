@@ -1738,7 +1738,7 @@ const ElectromagneticBeatLab: React.FC&lt;ElectromagneticBeatLabProps&gt; = <spa
       electromagnetic: audioEngine.electromagnetic,
       isPlaying: audioEngine.audioState.isPlaying,
       volume: audioEngine.audioState.volume,
-      frequency: audioEngine.audioState.beatFreq
+      frequency: audioEngine.audioState.beat_frequency
     }));
   }, [audioEngine.electromagnetic, audioEngine.audioState]);
 &nbsp;
@@ -1902,7 +1902,7 @@ const ElectromagneticBeatLab: React.FC&lt;ElectromagneticBeatLabProps&gt; = <spa
 &nbsp;
           &lt;FrequencyDisplayMUI
             frequency={appState.frequency}
-            beatFreq={appState.frequency}
+            beat_frequency={appState.frequency}
             target={appState.currentPattern?.frequencies.carrier || 440}
             range={appState.currentPattern?.frequencies.range || 'alpha'}
             onChange={handleFrequencyChange}
@@ -1996,4 +1996,3 @@ const ElectromagneticBeatLab: React.FC&lt;ElectromagneticBeatLabProps&gt; = <spa
         <script src="../../block-navigation.js"></script>
     </body>
 </html>
-    
