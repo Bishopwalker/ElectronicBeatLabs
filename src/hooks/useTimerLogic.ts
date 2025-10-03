@@ -18,7 +18,7 @@ import { useWebSocketContext } from './useWebsocketContext';
 
 interface UseTimerLogicProps {
   audioEngine?: {
-    sessionId: string;
+    sessionId: string | null;
     startBinauralBeat: (config: any) => Promise<void>;
     stopBinauralBeat: () => Promise<void>;
     updateFrequency: (left: number, right: number) => void;
@@ -158,7 +158,7 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
     if (!localTimer || !localTimer.isActive) return;
 
     const now = Date.now();
-    const elapsed = Math.floor((now - localTimer.startTime) / 1000 / 60);
+    const elapsed = Math.floor((now - localTimer.status.startTime) / 1000 / 60);
 
     let currentTransitionIndex = 0;
     let elapsedInTransitions = elapsed;
@@ -175,7 +175,7 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
     if (currentTransitionIndex >= localTimer.transitions.length) {
       // Check if loop is enabled for the current preset
       const currentPreset = presets.find(p => p.id === selectedPresetId);
-      if (currentPreset?.loop_enabled || (localTimer as any).forceLoop) {
+      if (currentPreset?.loop_enabled || (localTimer).forceLoop) {
         // Reset to beginning for loop
         setLocalTimer({
           ...localTimer,
@@ -244,12 +244,12 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
       // Send timer update via WebSocket if connected
       sendTimerUpdate({
         currentTime: Date.now() - localTimer.startTime, isPaused: false, isRunning: false, progress: 0, totalTime: 0,
-        transition: currentTransition,
+        current_transition: currentTransition,
         transitionIndex: currentTransitionIndex,
         totalTransitions: localTimer.transitions.length,
         leftFreq: currentTransition.left_ear_hz,
         rightFreq: currentTransition.right_ear_hz,
-        beatFreq: currentTransition.frequency_hz
+        beat_frequency: currentTransition.frequency_hz
       });
 
       // Update electromagnetic state for visualizer (driven by real frequency)
@@ -301,13 +301,15 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
 
       if (audioEngine && mockTransitions.length > 0) {
         const firstTransition = mockTransitions[0];
+
+        // Convert timer frequencies to proper format for BOTH engines
+        // Backend engine expects: { baseFrequency, beat_frequency }
+        // Frontend engine expects: { baseFrequency, beat_frequency } (same now!)
         const config = {
-          leftFreq: firstTransition.left_ear_hz,
-          rightFreq: firstTransition.right_ear_hz,
-          beatFreq: firstTransition.frequency_hz,
+          baseFrequency: firstTransition.left_ear_hz,
+          beat_frequency: firstTransition.frequency_hz,
           amplitude: 0.7,
           waveform: 'sine' as const,
-
         };
 
         console.log('🔥 Timer: Starting audio engine');

@@ -45,7 +45,7 @@ export const useBackendAPI = (baseUrl: string = 'http://localhost:8000') => {
         return { error, status: response.status };
       }
 
-      setState(prev => ({ ...prev, loading: false, data }));
+      setState(prev => ({ ...prev, loading: true, data }));
       return { data, status: response.status };
 
     } catch (error) {

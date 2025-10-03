@@ -20,17 +20,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         try {
           const userData = JSON.parse(savedUser);
           setUser(userData);
-          await refreshUsageForUser(userData.email);
+          // DISABLED FOR PERFORMANCE: await refreshUsageForUser(userData.email);
         } catch (err) {
           console.error('Failed to load saved user:', err);
           localStorage.removeItem('ebl_user');
         }
       } else {
-        // Load anonymous usage for this IP
-        await refreshAnonymousUsage();
+        // DISABLED FOR PERFORMANCE: Load anonymous usage for this IP
+        // await refreshAnonymousUsage();
+        // Set default usage to allow immediate app use
+        setUsage({
+          used_minutes: 0,
+          limit_minutes: 180,
+          remaining_minutes: 180,
+          can_use: true,
+          requires_login: false
+        });
       }
     };
-    
+
     initializeAuth();
   }, []);
 
