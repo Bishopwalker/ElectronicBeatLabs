@@ -76,7 +76,7 @@ describe('API Tests', () => {
 
   it('should update frequency during session', async () => {
     const sessionId = 'session-123';
-    const updateData = { beatFreq: 8 };
+    const updateData = { beat_frequency: 8 };
 
     mockFetch.mockResolvedValueOnce({
       ok: true,

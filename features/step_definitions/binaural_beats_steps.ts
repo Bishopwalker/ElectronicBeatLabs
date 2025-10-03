@@ -221,8 +221,8 @@ Then('both left and right channels should increase in amplitude', async function
 });
 
 Then('the beat frequency should remain unchanged', async function () {
-  const beatFreq = calculateBeatFrequency();
-  console.log(`✅ Beat frequency remains ${beatFreq} Hz`);
+  const beat_frequency = calculateBeatFrequency();
+  console.log(`✅ Beat frequency remains ${beat_frequency} Hz`);
 });
 
 Then('the electromagnetic field strength should scale proportionally', async function () {
@@ -267,31 +267,31 @@ Then('all audio resources should be properly released', async function () {
 });
 
 Then('I should hear beats in the {string} range', async function (brainwaveRange: string) {
-  const beatFreq = calculateBeatFrequency();
+  const beat_frequency = calculateBeatFrequency();
   let isInRange = false;
 
   switch (brainwaveRange) {
     case 'Delta':
-      isInRange = beatFreq <= 4;
+      isInRange = beat_frequency <= 4;
       break;
     case 'Theta':
-      isInRange = beatFreq >= 4 && beatFreq < 8;
+      isInRange = beat_frequency >= 4 && beat_frequency < 8;
       break;
     case 'Alpha':
-      isInRange = beatFreq >= 8 && beatFreq < 13;
+      isInRange = beat_frequency >= 8 && beat_frequency < 13;
       break;
     case 'Beta':
-      isInRange = beatFreq >= 13 && beatFreq < 30;
+      isInRange = beat_frequency >= 13 && beat_frequency < 30;
       break;
     case 'Gamma':
-      isInRange = beatFreq >= 30;
+      isInRange = beat_frequency >= 30;
       break;
   }
 
   if (!isInRange) {
-    throw new Error(`Beat frequency ${beatFreq} Hz is not in ${brainwaveRange} range`);
+    throw new Error(`Beat frequency ${beat_frequency} Hz is not in ${brainwaveRange} range`);
   }
-  console.log(`✅ Beats playing in ${brainwaveRange} range (${beatFreq} Hz)`);
+  console.log(`✅ Beats playing in ${brainwaveRange} range (${beat_frequency} Hz)`);
 });
 
 Then('the electromagnetic field should show {string} characteristics', async function (expectedState: string) {
@@ -327,11 +327,11 @@ Then('both channels should remain perfectly synchronized', async function () {
 });
 
 Then('the beat frequency should update smoothly', async function () {
-  const beatFreq = calculateBeatFrequency();
-  if (beatFreq === undefined || beatFreq < 0) {
+  const beat_frequency = calculateBeatFrequency();
+  if (beat_frequency === undefined || beat_frequency < 0) {
     throw new Error('Beat frequency should be valid');
   }
-  console.log(`✅ Beat frequency updated smoothly: ${beatFreq} Hz`);
+  console.log(`✅ Beat frequency updated smoothly: ${beat_frequency} Hz`);
 });
 
 Then('there should be no phase drift between channels', async function () {
