@@ -3,11 +3,11 @@
  * Continuously monitors and automatically fixes TypeScript errors in the codebase
  */
 
-import * as fs from 'fs';
-import * as path from 'path';
-import { exec } from 'child_process';
-import { promisify } from 'util';
-import * as chokidar from 'chokidar';
+import fs from 'node:fs';
+import path from 'node:path';
+import { exec } from 'node:child_process';
+import { promisify } from 'node:util';
+import chokidar from 'chokidar';
 
 const execAsync = promisify(exec);
 
@@ -197,13 +197,16 @@ export class TypeScriptFixerAgent {
    * Get TypeScript errors from the compiler
    */
   private async getTypeScriptErrors(): Promise<TypeScriptError[]> {
+    const command = 'npx tsc --noEmit --project tsconfig.app.json --pretty false';
+
     try {
-      const { stdout, stderr } = await execAsync('npx tsc --noEmit --pretty false');
+      const { stdout, stderr } = await execAsync(command);
       return this.parseTypeScriptOutput(stdout || stderr);
     } catch (error: any) {
       // TypeScript exits with non-zero code when there are errors
       if (error.stdout || error.stderr) {
-        return this.parseTypeScriptOutput(error.stdout || error.stderr);
+        const output = error.stdout || error.stderr;
+        return this.parseTypeScriptOutput(output);
       }
       console.error('Failed to get TypeScript errors:', error);
       return [];
@@ -218,6 +221,7 @@ export class TypeScriptFixerAgent {
     const lines = output.split('\n');
 
     for (const line of lines) {
+      // Match TypeScript error format: file.ts(line,col): error TSxxxx: message
       const match = line.match(/^(.+?)\((\d+),(\d+)\):\s+(error|warning)\s+(TS\d+):\s+(.+)$/);
       if (match) {
         errors.push({
@@ -305,10 +309,12 @@ export class TypeScriptFixerAgent {
 
     const line = lines[lineIndex];
 
-    // Add type assertion as a quick fix
-    const match = line.match(/(\w+)\s*\(/);
-    if (match) {
-      lines[lineIndex] = line.replace(match[1], `${match[1]} as any`);
+    // Look for function calls or assignments that need type assertion
+    // Be more careful with the replacement to avoid breaking syntax
+    const functionCallMatch = line.match(/(\w+)\s*\([^)]*\)/);
+    if (functionCallMatch && !line.includes(' as ')) {
+      const replacement = `(${functionCallMatch[0]} as any)`;
+      lines[lineIndex] = line.replace(functionCallMatch[0], replacement);
     }
 
     return lines.join('\n');
@@ -326,10 +332,13 @@ export class TypeScriptFixerAgent {
     const lineIndex = error.line - 1;
 
     // Add optional chaining
-    lines[lineIndex] = lines[lineIndex].replace(
-      new RegExp(`\\.${property}\\b`),
-      `?.${property}`
-    );
+    if (lineIndex >= 0 && lineIndex < lines.length) {
+      const escapedProperty = property.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      lines[lineIndex] = lines[lineIndex].replace(
+        new RegExp(`\\.${escapedProperty}\\b`),
+        `?.${escapedProperty}`
+      );
+    }
 
     return lines.join('\n');
   }
@@ -350,10 +359,12 @@ export class TypeScriptFixerAgent {
 
     if (match) {
       const paramName = match[1];
-      lines[lineIndex] = line.replace(
-        new RegExp(`(${paramName})(?!:)`),
-        `${paramName}: any`
-      );
+      const escapedParamName = paramName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      // Look for the parameter without a type annotation
+      const regex = new RegExp(`\\b${escapedParamName}\\b(?!\\s*:)`);
+      if (regex.test(line)) {
+        lines[lineIndex] = line.replace(regex, `${paramName}: any`);
+      }
     }
 
     return lines.join('\n');
@@ -374,10 +385,12 @@ export class TypeScriptFixerAgent {
     const line = lines[lineIndex];
     const assignmentMatch = line.match(/(\w+)\s*=\s*(.+)/);
 
-    if (assignmentMatch) {
+    if (assignmentMatch && !assignmentMatch[2].includes(' as ')) {
+      // Only add assertion if not already present
+      const valueToAssert = assignmentMatch[2].trimEnd();
       lines[lineIndex] = line.replace(
         assignmentMatch[2],
-        `${assignmentMatch[2]} as any`
+        `(${valueToAssert} as any)`
       );
     }
 
