@@ -39,10 +39,12 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
     const currentIndex = timerStatus.session?.current_transition_index || 0;
     const totalTransitions = preset?.transitions_count || 1;
 
-    // Format time as MM:SS
-    const formatTime = (minutes: number): string => {
-        const mins = Math.floor(minutes);
-        const secs = Math.floor((minutes - mins) * 60);
+    // Format time as MM:SS with proper seconds display
+    const formatTime = (minutes: number | undefined): string => {
+        if (minutes === undefined || minutes === null || isNaN(minutes)) return '00:00';
+        const totalSeconds = Math.max(0, Math.floor(minutes * 60));
+        const mins = Math.floor(totalSeconds / 60);
+        const secs = totalSeconds % 60;
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
@@ -50,8 +52,21 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
     const transitionProgress = currentTransition ?
         ((currentTransition.duration_minutes - timeRemainingCurrent) / currentTransition.duration_minutes) * 100 : 0;
 
+    // Force component update when time changes
+    const timeKey = `${Math.floor((timeRemainingCurrent || 0) * 60)}`;
+
+    // Debug logging
+    React.useEffect(() => {
+        console.log('⏱️ Timer Display Update:', {
+            timeRemainingCurrent,
+            formatted: formatTime(timeRemainingCurrent),
+            timeKey
+        });
+    }, [timeRemainingCurrent, timeKey]);
+
     return (
         <Paper
+            key={timeKey}
             elevation={3}
             sx={{
                 p: 1.5,
