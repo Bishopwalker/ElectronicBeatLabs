@@ -78,9 +78,9 @@ export const useElectromagneticLabState = (initialPattern?: string, autoStart: b
           electromagnetic: enhancedElectromagnetic,
           isPlaying: currentAudioState.isPlaying,
           volume: isNaN(currentAudioState.amplitude) ? prev.appState.volume : currentAudioState.amplitude,
-          baseFrequency: currentAudioState.baseFrequency,
+          base_frequency: currentAudioState.base_frequency,
           beat_frequency: currentAudioState.beatFrequence
-          
+
         }
       }));
     }

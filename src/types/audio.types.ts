@@ -7,8 +7,8 @@
  */
 export interface BinauralBeatConfig {
     // Core frequencies
-    baseFrequency: number;      // Left ear (Hz) - the carrier frequency
-    beat_frequency: number;      // Beat frequency (Hz) - the difference
+    base_frequency: number;      // Carrier/base frequency (Hz) - the base tone
+    beat_frequency: number;      // Beat frequency (Hz) - the difference creating binaural effect
 
     // Audio properties
     amplitude: number;          // Volume 0-1 (NOT "volume", always "amplitude")
@@ -90,11 +90,13 @@ export interface FrontendAudioEngineState {
 
 /**
  * FREQUENCY CALCULATION FUNCTIONS FOR UI DISPLAY ONLY
- * Internal audio processing uses baseFrequency + beat_frequency
- * These are ONLY for UI display purposes
+ * Binaural beats formula: Right = Left + Beat
+ * - Left ear: beat_frequency (carrier)
+ * - Right ear: beat_frequency - beat_frequency
+ * - Beat: difference perceived by brain
  */
-export const calculateLeftFreq = (baseFrequency: number): number => baseFrequency;
-export const calculateRightFreq = (baseFrequency: number, beat_frequency: number): number => baseFrequency + beat_frequency;
+export const calculateLeftFreq = (base_frequency: number): number => base_frequency;
+export const calculateRightFreq = (base_frequency: number, beatFrequency: number): number => base_frequency + beatFrequency;
 
 
 /**

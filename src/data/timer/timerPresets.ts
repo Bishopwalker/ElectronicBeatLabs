@@ -65,7 +65,7 @@ export const BUILT_IN_PRESETS: TimerPreset[] = [
     
     // Sleep - loop deep delta phases for extended rest
     loop_enabled: true,
-    loop_count: 0, // Infinite
+    loop_count: 3, // Infinite
     loop_phase: 'specific_transitions',
     loop_transitions: [2, 3], // Loop the delta sleep phases
     
@@ -119,7 +119,6 @@ export const getPresetTransitions = (presetId: string): ({
   left_ear_hz: number;
   right_ear_hz: number;
   description: string;
-  pattern_id: string;
   spatial_config: {
     enabled: boolean;
     hrtf: boolean;
@@ -129,80 +128,7 @@ export const getPresetTransitions = (presetId: string): ({
     elevation: number;
     azimuth: number;
     movement_speed: number;
-    spatial_intensity: number;
-    reverberance: number;
-    room_scale: number;
-    hf_damping: number;
-    pattern_8d: string
-  }
-} | {
-  duration_minutes: number;
-  frequency_hz: number;
-  frequency_type: string;
-  left_ear_hz: number;
-  right_ear_hz: number;
-  description: string;
-  pattern_id: string;
-  spatial_enabled: boolean;
-  spatial_config: {
-    hrtf: boolean;
-    roomSize: number;
-    reverbAmount: number;
-    spatialWidth: number;
-    elevation: number;
-    azimuth: number;
-    movement_speed: number;
-    spatial_intensity: number;
-    reverberance: number;
-    room_scale: number;
-    hf_damping: number;
-    pattern: string
-  }
-} | {
-  duration_minutes: number;
-  frequency_hz: number;
-  frequency_type: string;
-  left_ear_hz: number;
-  right_ear_hz: number;
-  description: string;
-  pattern: string;
-  spatial_enabled: boolean;
-  spatial_config: {
-    hrtf: boolean;
-    roomSize: number;
-    reverbAmount: number;
-    spatialWidth: number;
-    elevation: number;
-    azimuth: number;
-    movement_speed: number;
-    spatial_intensity: number;
-    reverberance: number;
-    room_scale: number;
-    hf_damping: number;
-    pattern_id: string
-  }
-} | {
-  duration_minutes: number;
-  frequency_hz: number;
-  frequency_type: string;
-  left_ear_hz: number;
-  right_ear_hz: number;
-  description: string;
-  pattern: string;
-  spatial_config: {
-    enabled: boolean;
-    hrtf: boolean;
-    roomSize: number;
-    reverbAmount: number;
-    spatialWidth: number;
-    elevation: number;
-    azimuth: number;
-    movement_speed: number;
-    spatial_intensity: number;
-    reverberance: number;
-    room_scale: number;
-    hf_damping: number;
-    pattern: string
+    spatial_intensity: number
   }
 })[] => {
   switch (presetId) {
@@ -380,7 +306,17 @@ export const getPresetTransitions = (presetId: string): ({
           left_ear_hz: 144,
           right_ear_hz: 150,
           description: '😌 Stage 1: Alpha relaxation (8Hz) - Initial calm down',
-
+          spatial_config: {
+            enabled: true,
+            hrtf: false,
+            roomSize: 0.5,
+            reverbAmount: 0.2,
+            spatialWidth: 0.7,
+            elevation: 0,
+            azimuth: 0,
+            movement_speed: 0.02,
+            spatial_intensity: 0.4
+          },
         },
 
 
@@ -390,7 +326,18 @@ export const getPresetTransitions = (presetId: string): ({
           frequency_type: 'Theta',
           left_ear_hz: 144,
           right_ear_hz: 148,
-          description: '😴 Stage 2: Theta drowsiness (4Hz) - Pre-sleep transition'
+          description: '😴 Stage 2: Theta drowsiness (4Hz) - Pre-sleep transition',
+          spatial_config: {
+            enabled: true,
+            hrtf: false,
+            roomSize: 0.5,
+            reverbAmount: 0.2,
+            spatialWidth: 0.7,
+            elevation: 0,
+            azimuth: 0,
+            movement_speed: 0.02,
+            spatial_intensity: 0.4
+          },
         },
         {
           duration_minutes: 20,
@@ -398,7 +345,18 @@ export const getPresetTransitions = (presetId: string): ({
           frequency_type: 'Delta',
           left_ear_hz: 144,
           right_ear_hz: 146,
-          description: '💤 Stage 3: Delta sleep (2Hz) - Deep restorative sleep'
+          description: '💤 Stage 3: Delta sleep (2Hz) - Deep restorative sleep',
+          spatial_config: {
+            enabled: true,
+            hrtf: false,
+            roomSize: 0.5,
+            reverbAmount: 0.2,
+            spatialWidth: 0.7,
+            elevation: 0,
+            azimuth: 0,
+            movement_speed: 0.02,
+            spatial_intensity: 0.4
+          }
         },
         {
           duration_minutes: 10,
@@ -406,7 +364,18 @@ export const getPresetTransitions = (presetId: string): ({
           frequency_type: 'Delta',
           left_ear_hz: 144,
           right_ear_hz: 145,
-          description: '🛌 Stage 4: Ultra-Delta (1Hz) - Deepest sleep state'
+          description: '🛌 Stage 4: Ultra-Delta (1Hz) - Deepest sleep state',
+          spatial_config: {
+            enabled: true,
+            hrtf: false,
+            roomSize: 0.5,
+            reverbAmount: 0.2,
+            spatialWidth: 0.7,
+            elevation: 0,
+            azimuth: 0,
+            movement_speed: 0.02,
+            spatial_intensity: 0.4
+          },
         }
       ];
     
@@ -418,7 +387,18 @@ export const getPresetTransitions = (presetId: string): ({
           frequency_type: 'Theta',
           left_ear_hz: 144,
           right_ear_hz: 150,
-          description: 'Theta lucid dreaming'
+          description: 'Theta lucid dreaming',
+          spatial_config: {
+            enabled: true,
+            hrtf: false,
+            roomSize: 0.5,
+            reverbAmount: 0.2,
+            spatialWidth: 0.7,
+            elevation: 0,
+            azimuth: 0,
+            movement_speed: 0.02,
+            spatial_intensity: 0.4
+          },
         }
       ];
     
@@ -447,7 +427,8 @@ export const getPresetTransitions = (presetId: string): ({
         description: t.description,
         pattern: t.pattern_id,
         spatial_settings: t.spatial_config,
-        pattern8d: t.pattern_8d      }));
+        pattern8d: t.pattern_8d
+      }));
     
     // Lucid Dreaming Master transitions
     case 'lucid-dreaming-master-62min':
@@ -459,7 +440,7 @@ export const getPresetTransitions = (presetId: string): ({
         right_ear_hz: t.right_ear_hz,
         description: t.description,
         pattern: t.pattern_id,
-        spatial_settings: t.spatial_config,
+        spatial_settings: t.spatial_settings,
         pattern8d: t.pattern_8d
       }));
     

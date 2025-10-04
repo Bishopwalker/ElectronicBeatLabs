@@ -91,9 +91,10 @@ class AudioEngine:
         settings = session["settings"]
 
         # Get frequency parameters with validation (cached to avoid repeated dict lookups)
-        base_frequency = max(20, min(20000, settings.get("base_frequency", 140)))
-        beat_frequency = max(0.1, min(100, settings.get("beat_frequency", 4)))
-        amplitude = max(0.0, min(2.0, settings.get("amplitude", 1.2)))
+        # Use provided values - NO HARDCODED DEFAULTS (will use what's in settings)
+        base_frequency = max(20, min(20000, settings["base_frequency"]))
+        beat_frequency = max(0.1, min(100, settings["beat_frequency"]))
+        amplitude = max(0.0, min(2.0, settings.get("amplitude", 0.8)))  # Only amplitude has safe default
         
         # Calculate left and right frequencies for binaural beats
         freq_left = base_frequency

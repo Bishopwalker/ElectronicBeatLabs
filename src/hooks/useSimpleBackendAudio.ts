@@ -35,8 +35,8 @@ export const useSimpleBackendAudio = () => {
     isPlaying: false,
     config: {
       amplitude: 0.3,
+      base_frequency: 144,
       beat_frequency: 4,
-      baseFrequency: 144,
       waveform: 'sine',
       spatial: {
         enabled: true,
@@ -158,7 +158,7 @@ export const useSimpleBackendAudio = () => {
       ...prev,
       config: {
         ...prev.config!,
-        baseFrequency: frame.frequencies.left,
+        base_frequency: frame.frequencies.left,
         beat_frequency: frame.frequencies.beat
       }
     }));
@@ -217,7 +217,7 @@ export const useSimpleBackendAudio = () => {
 
       // Connect WebSocket if not connected
       if (!websocket.isConnected) {
-        const base_frequency = config?.baseFrequency || audioState.config?.baseFrequency || 144;
+        const base_frequency = config?.base_frequency || audioState.config?.base_frequency || 144;
         const beat_frequency = config?.beat_frequency || audioState.config?.beat_frequency || 4;
         websocket.connect(base_frequency, beat_frequency);
 
@@ -240,7 +240,7 @@ export const useSimpleBackendAudio = () => {
 
       // Send start message with configuration
       const sessionConfig = {
-        base_frequency: config?.baseFrequency || audioState.config?.baseFrequency || 144,
+        base_frequency: config?.base_frequency || audioState.config?.base_frequency || 144,
         beat_frequency: config?.beat_frequency || audioState.config?.beat_frequency || 4,
         amplitude: config?.amplitude || audioState.config?.amplitude || 0.3,
         spatial_enabled: config?.spatial?.enabled || audioState.config?.spatial?.enabled || true,
@@ -350,7 +350,7 @@ export const useSimpleBackendAudio = () => {
       ...prev,
       config: {
         ...prev.config!,
-        baseFrequency: base_frequency,
+        base_frequency: base_frequency,
         beat_frequency: beat_frequency
       }
     }));

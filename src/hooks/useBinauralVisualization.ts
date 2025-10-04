@@ -4,8 +4,6 @@
 
 import {useCallback, useEffect, useRef, useState} from 'react';
 import type {BinauralBeatConfig, FrontendAudioEngineState} from '../types';
-import {useBackendAudioEngine} from "./useBackendAudioEngine.ts";
-import {useAudioEngine} from "./useAudioEngine.ts";
 
 // Visualization data interface using existing patterns
 interface VisualizationData {
@@ -353,8 +351,8 @@ export const useBinauralVisualization = (config: Partial<VisualizationConfig> = 
       const masterGainNode = context.createGain();
 
       // Calculate frequencies using BinauralBeatConfig standard
-      const leftFreq = config.baseFrequency;
-      const rightFreq = config.baseFrequency + config.beat_frequency;
+      const leftFreq = config.beat_frequency;
+      const rightFreq = config.beat_frequency + config.beat_frequency;
 
       // Configure oscillators
       oscillatorL.frequency.setValueAtTime(leftFreq, context.currentTime);
