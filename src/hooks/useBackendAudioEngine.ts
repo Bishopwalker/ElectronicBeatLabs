@@ -59,8 +59,8 @@ export const useBackendAudioEngine = () => {
     isPlaying: false,
     config: {
       amplitude: 1.2,
+      base_frequency: 144,
       beat_frequency: 4,
-      baseFrequency: 144,
       waveform: 'sine',
       spatial: {
         enabled: true,
@@ -196,12 +196,12 @@ export const useBackendAudioEngine = () => {
   const processAudioFrame = useCallback((frame: BackendAudioFrame | ArrayBuffer) => {
 
     if (!audioContext.current) {
-      console.error('❌ Backend Engine: No audio context available for frame processing');
+      // Silently skip - audio pipeline not ready yet
       return;
     }
 
     if (!audioWorkletNode.current) {
-      console.error('❌ Backend Engine: No AudioWorklet node available for frame processing');
+      // Silently skip - AudioWorklet not initialized yet, frames will be buffered by backend
       return;
     }
 
@@ -244,7 +244,7 @@ export const useBackendAudioEngine = () => {
           ...prev,
           config: {
             ...prev.config!,
-            baseFrequency: frame.frequencies.left,
+            base_frequency: frame.frequencies.left,
             beat_frequency: frame.frequencies.beat,
             amplitude: audioState.config?.amplitude || 1.2,
             duration: audioContext.current?.currentTime || Date.now(),
@@ -611,8 +611,8 @@ export const useBackendAudioEngine = () => {
       // FIXED: Correct NaN checks and default values
       const sessionConfig: BackendSessionConfig = config ? {
         // When config is provided, check if values are valid numbers
-        base_frequency: (!isNaN(config.baseFrequency))
-            ? config.baseFrequency : 140,
+        base_frequency: (!isNaN(config.base_frequency))
+            ? config.base_frequency : 140,
         beat_frequency: ( !isNaN(config.beat_frequency))
             ? config.beat_frequency : 4,
         amplitude: ( !isNaN(config.amplitude))
@@ -621,7 +621,7 @@ export const useBackendAudioEngine = () => {
         spatial_settings: config.spatial_settings || {}
       } : {
         // When no config, use current audioState.config with proper fallbacks
-        base_frequency: audioState.config?.baseFrequency || 144,
+        base_frequency: audioState.config?.base_frequency || 144,
         beat_frequency: audioState.config?.beat_frequency || 4,
         amplitude: audioState.config?.amplitude || 1.2,
         spatial_enabled: audioState.config?.spatial?.enabled || false,
@@ -793,7 +793,7 @@ export const useBackendAudioEngine = () => {
           isPlaying: true,
           config: {
             ...prev.config!,
-            baseFrequency: sessionConfig.base_frequency,
+            base_frequency: sessionConfig.base_frequency,
             beat_frequency: sessionConfig.beat_frequency,
             amplitude: sessionConfig.amplitude
           }
@@ -822,7 +822,7 @@ export const useBackendAudioEngine = () => {
   // Load pattern with backend integration
   const loadPattern = useCallback(async (pattern: PatternConfig) => {
     const config: BinauralBeatConfig & { spatial_enabled?: boolean; spatial_settings?: Record<string, unknown> } = {
-      baseFrequency: pattern.frequencies.carrier,
+      base_frequency: pattern.frequencies.carrier,
       beat_frequency: pattern.frequencies.beat,
       amplitude: 0.5,
       waveform: 'sine',
@@ -852,7 +852,7 @@ export const useBackendAudioEngine = () => {
       ...prev,
       config: {
         ...prev.config!,
-        baseFrequency: base_frequency,
+        base_frequency: base_frequency,
         beat_frequency: beat_frequency
       }
     }));
@@ -909,7 +909,7 @@ export const useBackendAudioEngine = () => {
   // Timer compatibility methods
   const startBinauralBeat = useCallback(async (config: BinauralBeatConfig) => {
     const sessionConfig = {
-      baseFrequency: config.baseFrequency || 80,
+      base_frequency: config.base_frequency || 80,
       beat_frequency: config.beat_frequency || 15,
       amplitude: config.amplitude || 1.2,
       waveform: config.waveform || 'sine',
@@ -941,7 +941,7 @@ export const useBackendAudioEngine = () => {
           isPlaying: true,
           config: {
             ...prev.config!,
-            baseFrequency: sessionConfig.baseFrequency,
+            base_frequency: sessionConfig.base_frequency,
             beat_frequency: sessionConfig.beat_frequency,
             amplitude: sessionConfig.amplitude
           }
@@ -978,7 +978,7 @@ export const useBackendAudioEngine = () => {
 
   const generateTestTones = useCallback((leftFreq: number, rightFreq: number, duration: number = 5000) => {
     const config: BinauralBeatConfig = {
-      baseFrequency: leftFreq,
+      base_frequency: leftFreq,
       beat_frequency: Math.abs(rightFreq - leftFreq),
       amplitude: 1.2,
       waveform: 'sine'
@@ -1013,7 +1013,7 @@ export const useBackendAudioEngine = () => {
 
         // Update backend frequency
         await updateSettings({
-          baseFrequency: currentFreq,
+          base_frequency: currentFreq,
           beat_frequency: 4 // Keep beat frequency constant during sweep
         });
 
@@ -1031,7 +1031,7 @@ export const useBackendAudioEngine = () => {
 
   const createGammaProtocol = useCallback((protocol: any) => {
     const config: BinauralBeatConfig = {
-      baseFrequency: 144,
+      base_frequency: 144,
       beat_frequency: protocol.gammaFreq || 40,
       amplitude: (protocol.intensity || 70) / 100,
       waveform: 'sine'

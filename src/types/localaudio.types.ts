@@ -302,7 +302,7 @@ export function createLocalAudio(config?: Partial<AudioConfig>): LocalAudio {
 
         // Core configuration
         config: {
-            baseFrequency: config?.baseFrequency || 144,
+            base_frequency: config?.base_frequency || 144,
             beat_frequency: config?.beat_frequency || 4,
             amplitude: config?.amplitude || 0.7,
             waveform: config?.waveform || 'sine'

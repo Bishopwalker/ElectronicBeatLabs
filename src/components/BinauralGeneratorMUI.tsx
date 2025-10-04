@@ -15,10 +15,10 @@ import {
 } from '@mui/material';
 import HeadphonesIcon from '@mui/icons-material/Headphones';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import { calculateLeftFreq, calculateRightFreq, calculateBeatFrequency } from '../types/audio.types';
+import { calculateLeftFreq, calculateRightFreq, calculateBeatFrequency } from '../types';
 
 interface BinauralGeneratorProps {
-  baseFrequency: number;
+  base_frequency: number;
   beat_frequency: number;
   onFrequencyChange: (base_frequency: number, beat_frequency: number) => void;
   currentPreset?: {
@@ -30,14 +30,14 @@ interface BinauralGeneratorProps {
 }
 
 const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
-  baseFrequency,
+  base_frequency,
   beat_frequency,
   onFrequencyChange,
   currentPreset
 }) => {
   // Calculate display frequencies from base + beat
-  const leftFreq = calculateLeftFreq(baseFrequency);
-  const rightFreq = calculateRightFreq(baseFrequency, beat_frequency);
+  const leftFreq = calculateLeftFreq(base_frequency);
+  const rightFreq = calculateRightFreq(base_frequency, beat_frequency);
 
   // Local state for typing - allows smooth input
   const [leftInput, setLeftInput] = useState(leftFreq.toString());
@@ -47,16 +47,16 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
 
   // Update local state when base_frequency/beat_frequency changes
   useEffect(() => {
-    const newLeftFreq = calculateLeftFreq(baseFrequency);
+    const newLeftFreq = calculateLeftFreq(base_frequency);
     console.log('🎛️ BinauralGenerator: Base frequency changed, left freq:', newLeftFreq);
     setLeftInput(newLeftFreq.toString());
-  }, [baseFrequency]);
+  }, [base_frequency]);
 
   useEffect(() => {
-    const newRightFreq = calculateRightFreq(baseFrequency, beat_frequency);
+    const newRightFreq = calculateRightFreq(base_frequency, beat_frequency);
     console.log('🎛️ BinauralGenerator: Beat frequency changed, right freq:', newRightFreq);
     setRightInput(newRightFreq.toString());
-  }, [baseFrequency, beat_frequency]);
+  }, [base_frequency, beat_frequency]);
 
   const handleLeftChange = (value: string) => {
     console.log('🎛️ Left Hz input changed:', value);
@@ -79,8 +79,8 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
     if (!isNaN(rightNum)) {
       // Convert right freq to beat_frequency: beat = right - left (right - base)
       const newBeatFreq = calculateBeatFrequency(leftFreq, rightNum);
-      console.log('🎛️ Calling onFrequencyChange with base_frequency:', baseFrequency, 'beat_frequency:', newBeatFreq);
-      onFrequencyChange(baseFrequency, newBeatFreq);
+      console.log('🎛️ Calling onFrequencyChange with base_frequency:', base_frequency, 'beat_frequency:', newBeatFreq);
+      onFrequencyChange(base_frequency, beat_frequency);
     }
   };
 
@@ -280,13 +280,53 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
             <Typography variant="caption" color="text.secondary">
               Binaural Beat Frequency
             </Typography>
-            <Typography 
-              variant="h6" 
+            <Typography
+              variant="h6"
               color="info"
               sx={{ fontFamily: 'monospace', fontWeight: 700 }}
             >
               {beat_frequency.toFixed(1)} Hz
             </Typography>
+          </Paper>
+
+          {/* Backend Values Display */}
+          <Paper
+            elevation={0}
+            sx={{
+              p: 0.75,
+              background: 'rgba(138, 43, 226, 0.1)',
+              border: '1px solid rgba(138, 43, 226, 0.3)',
+            }}
+          >
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+              Backend Values
+            </Typography>
+            <Stack direction="row" spacing={1} justifyContent="center">
+              <Box>
+                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
+                  Base Freq
+                </Typography>
+                <Typography
+                  variant="body2"
+                  color="secondary"
+                  sx={{ fontFamily: 'monospace', fontWeight: 600, fontSize: '0.8rem' }}
+                >
+                  {base_frequency.toFixed(1)} Hz
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
+                  Beat Freq
+                </Typography>
+                <Typography
+                  variant="body2"
+                  color="secondary"
+                  sx={{ fontFamily: 'monospace', fontWeight: 600, fontSize: '0.8rem' }}
+                >
+                  {beat_frequency.toFixed(1)} Hz
+                </Typography>
+              </Box>
+            </Stack>
           </Paper>
           
           <Stack direction="row" spacing={0.5} justifyContent="center">

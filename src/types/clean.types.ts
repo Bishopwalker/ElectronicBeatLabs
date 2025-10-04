@@ -10,7 +10,7 @@
  * Standard audio configuration used everywhere
  */
 export interface AudioConfig {
-  baseFrequency: number;    // Left ear frequency (Hz)
+  base_frequency: number;    // Left ear frequency (Hz)
   beat_frequency: number;    // Beat frequency (Hz)
   amplitude: number;        // Volume 0-1
   waveform: 'sine' | 'square' | 'triangle' | 'sawtooth';
@@ -199,9 +199,14 @@ export const calculateBeatFreq = (leftFreq: number, rightFreq: number): number =
 /**
  * Validate audio configuration
  */
-export const validateAudioConfig = (config: Partial<AudioConfig>): AudioConfig => {
+export const validateAudioConfig = (config: Partial<AudioConfig>): {
+  base_frequency: number;
+  beat_frequency: number;
+  amplitude: number;
+  waveform: "sine" | "square" | "triangle" | "sawtooth"
+} => {
   return {
-    baseFrequency: Math.max(20, Math.min(20000, config.baseFrequency || 144)),
+    base_frequency: Math.max(20, Math.min(20000, config.base_frequency || 144)),
     beat_frequency: Math.max(0.1, Math.min(100, config.beat_frequency || 4)),
     amplitude: Math.max(0, Math.min(1, config.amplitude || 0.3)),
     waveform: config.waveform || 'sine'

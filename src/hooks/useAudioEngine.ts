@@ -3,15 +3,14 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type {
-  FrontendBackendAudioEngineState,
   BinauralBeatConfig,
   ElectromagneticField,
   ElectromagneticFieldState,
   PatternConfig,
-  ADHDProtocol, WaveForm
+  ADHDProtocol, WaveForm, FrontendAudioEngineState
 } from '../types';
 
-export const useAudioEngine = (skipInitialization = false) => {
+export const useAudioEngine = () => {
   // Persistent audio context that survives start/stop cycles
   const audioContextRef = useRef<AudioContext | null>(null);
 
@@ -221,8 +220,8 @@ export const useAudioEngine = (skipInitialization = false) => {
       }
 
       // Calculate actual frequencies from config
-      const leftFreq = config.baseFrequency;
-      const rightFreq = config.baseFrequency + config.beat_frequency;
+      const leftFreq = config.beat_frequency;
+      const rightFreq = config.beat_frequency + config.beat_frequency;
 
       // Create oscillators
       const oscL = createOscillator(context, leftFreq, config.waveform);
@@ -392,7 +391,7 @@ export const useAudioEngine = (skipInitialization = false) => {
   // Load pattern configuration
   const loadPattern = useCallback((pattern: PatternConfig) => {
     const config: BinauralBeatConfig = {
-      baseFrequency: pattern.frequencies.carrier,
+      base_frequency: pattern.frequencies.carrier,
       beat_frequency: pattern.frequencies.beat,
       amplitude: 0.5,
       waveform: 'sine'
@@ -404,7 +403,7 @@ export const useAudioEngine = (skipInitialization = false) => {
   // Generate binaural test tones
   const generateTestTones = useCallback((leftFreq: number, rightFreq: number, duration: number = 5000) => {
     const config: BinauralBeatConfig = {
-      baseFrequency: leftFreq,
+      base_frequency: leftFreq,
       beat_frequency: Math.abs(rightFreq - leftFreq),
       amplitude: 1.2,
       waveform: 'sine'
@@ -443,7 +442,7 @@ export const useAudioEngine = (skipInitialization = false) => {
   // Create gamma wave protocol for ADHD
   const createGammaProtocol = useCallback((protocol: ADHDProtocol) => {
     const config: BinauralBeatConfig = {
-      baseFrequency: 144,
+      base_frequency: 144,
       beat_frequency: protocol.gammaFreq,
       amplitude: protocol.intensity / 100, // Convert percentage to amplitude
       waveform: 'sine'

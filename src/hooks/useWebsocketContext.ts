@@ -15,7 +15,7 @@ interface WebSocketContextType {
     lastMessage: WebSocketMessage | null;
     sessionId: string | null;
     sendMessage: (message: WebSocketMessage | string) => void;
-    connect: (baseFrequency?: number, beat_frequency?: number) => void;
+    connect: (base_frequency?: number, beat_frequency?: number) => void;
     disconnect: () => void;
     registerFrameHandler: (handler: (message: any) => void) => void;
 }
@@ -73,8 +73,8 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     }, []);
 
     // Connect function
-    const connect = useCallback((baseFrequency: number | undefined, beat_frequency: number | undefined) => {
-        console.log('🔌 WebSocket connect() called with:', {baseFrequency, beat_frequency});
+    const connect = useCallback((base_frequency: number | undefined, beat_frequency: number | undefined) => {
+        console.log('🔌 WebSocket connect() called with:', {base_frequency, beat_frequency});
 
         // Check WebSocket ref directly for state
         if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
@@ -93,7 +93,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
         }
 
         // Store parameters for potential reconnection
-        currentParamsRef.current = {base_frequency: baseFrequency, beat_frequency: beat_frequency};
+        currentParamsRef.current = {base_frequency: base_frequency, beat_frequency: beat_frequency};
 
         try {
             // Clean up any existing connection first
@@ -124,7 +124,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
 
             // Backend calculates: left_ear = base_frequency - beat_frequency
             // Using audio-specific WebSocket endpoint for backend audio engine
-            const wsUrl = `${baseUrl}/ws/audio/${currentSessionId}?base_frequency=${baseFrequency}&beat_frequency=${beat_frequency}`;
+            const wsUrl = `${baseUrl}/ws/audio/${currentSessionId}?base_frequency=${base_frequency}&beat_frequency=${beat_frequency}`;
 
             console.log('🚀 Connecting to WebSocket:', wsUrl);
 

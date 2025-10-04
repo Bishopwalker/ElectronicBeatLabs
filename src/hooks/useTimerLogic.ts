@@ -317,10 +317,10 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
         const firstTransition = mockTransitions[0];
 
         // Convert timer frequencies to proper format for BOTH engines
-        // Backend engine expects: { baseFrequency, beat_frequency }
-        // Frontend engine expects: { baseFrequency, beat_frequency } (same now!)
+        // Backend engine expects: { base_frequency, beat_frequency }
+        // Frontend engine expects: { base_frequency, beat_frequency } (same now!)
         const config = {
-          baseFrequency: firstTransition.left_ear_hz,
+          base_frequency: firstTransition.left_ear_hz,
           beat_frequency: firstTransition.frequency_hz,
           amplitude: 0.7,
           waveform: 'sine' as const,

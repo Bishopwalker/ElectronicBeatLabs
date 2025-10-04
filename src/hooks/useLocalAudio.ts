@@ -77,7 +77,7 @@ export const useLocalAudio = (options: UseLocalAudioOptions = {}) => {
     if (!ctx) return;
 
     const finalConfig = { ...audio.config, ...config };
-    const baseFreq = finalConfig.baseFrequency;
+    const baseFreq = finalConfig.base_frequency;
     const beatFreq = finalConfig.beat_frequency;
     const leftFreq = baseFreq;
     const rightFreq = baseFreq + beatFreq;
@@ -240,7 +240,7 @@ export const useLocalAudio = (options: UseLocalAudioOptions = {}) => {
       }
 
       if (!websocket.isConnected) {
-        websocket.connect(audio.config.baseFrequency, audio.config.beat_frequency);
+        websocket.connect(audio.config.base_frequency, audio.config.beat_frequency);
       }
 
       setAudio(prev => ({
@@ -293,7 +293,7 @@ export const useLocalAudio = (options: UseLocalAudioOptions = {}) => {
       websocket.sendMessage({
         type: 'start_stream',
         data: {
-          base_frequency: finalConfig.baseFrequency,
+          base_frequency: finalConfig.base_frequency,
           beat_frequency: finalConfig.beat_frequency,
           amplitude: finalConfig.amplitude,
           spatial_enabled: audio.spatial.enabled,
@@ -420,7 +420,7 @@ export const useLocalAudio = (options: UseLocalAudioOptions = {}) => {
       ...prev,
       config: {
         ...prev.config,
-        baseFrequency: base,
+        base_frequency: base,
         beat_frequency: beat
       },
       timestamps: {
@@ -517,7 +517,7 @@ export const useLocalAudio = (options: UseLocalAudioOptions = {}) => {
     }));
 
     await start({
-      baseFrequency: pattern.frequencies.carrier,
+      base_frequency: pattern.frequencies.carrier,
       beat_frequency: pattern.frequencies.beat
     });
   }, [start]);
@@ -590,7 +590,7 @@ export const useLocalAudio = (options: UseLocalAudioOptions = {}) => {
           ...prev.visualization,
           electromagnetic: {
             strength: Math.min(1, prev.config.amplitude * 0.8),
-            frequency: prev.config.baseFrequency,
+            frequency: prev.config.base_frequency,
             phase: (Date.now() * prev.config.beat_frequency * 0.36) % 360,
             coherence: prev.engine.backend.isActive ? 0.9 : 0.75,
             resonance: Math.min(1, prev.config.beat_frequency / 10),
@@ -742,7 +742,7 @@ export const useLocalAudio = (options: UseLocalAudioOptions = {}) => {
     // Compatibility with old AudioEngine interface
     audioState: {
       isPlaying: audio.playback.isPlaying,
-      baseFrequency: audio.config.baseFrequency,
+      base_frequency: audio.config.base_frequency,
       beat_frequency: audio.config.beat_frequency,
       amplitude: audio.config.amplitude,
       waveform: audio.config.waveform
