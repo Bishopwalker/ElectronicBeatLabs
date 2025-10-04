@@ -154,7 +154,7 @@ export class ElectromagneticLabManager {
       if (backendEngine.startBinauralBeat) {
         // Both engines now use consistent BinauralBeatConfig format
         const config = {
-          baseFrequency: pattern.frequencies.carrier,
+          base_frequency: pattern.frequencies.carrier,
           beat_frequency: pattern.frequencies.beat,
           amplitude: this.state.appState.volume || 0.3,
           waveform: 'sine' as const,
@@ -175,7 +175,7 @@ export class ElectromagneticLabManager {
       if (audioEngine.startBinauralBeat) {
         // Both engines now use consistent BinauralBeatConfig format
         const config = {
-          baseFrequency: pattern.frequencies.carrier,
+          base_frequency: pattern.frequencies.carrier,
           beat_frequency: pattern.frequencies.beat,
           amplitude: this.state.appState.volume || 0.3,
           waveform: 'sine' as const

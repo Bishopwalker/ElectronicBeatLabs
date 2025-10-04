@@ -91,17 +91,17 @@ export interface FrontendAudioEngineState {
 /**
  * FREQUENCY CALCULATION FUNCTIONS FOR UI DISPLAY ONLY
  * Binaural beats formula: Right = Left + Beat
- * - Left ear: beat_frequency (carrier)
- * - Right ear: beat_frequency - beat_frequency
+ * - Left ear: base_frequency (carrier)
+ * - Right ear: base_frequency + beat_frequency
  * - Beat: difference perceived by brain
  */
 export const calculateLeftFreq = (base_frequency: number): number => base_frequency;
-export const calculateRightFreq = (base_frequency: number, beatFrequency: number): number => base_frequency + beatFrequency;
+export const calculateRightFreq = (base_frequency: number, beat_frequency: number): number => base_frequency + beat_frequency;
 
 
 /**
  * Calculate beat frequency from left and right
  */
 export const calculateBeatFrequency = (leftFreq: number, rightFreq: number): number => {
-    return Math.abs(rightFreq - leftFreq);
+    return Math.abs(leftFreq - rightFreq);
 };

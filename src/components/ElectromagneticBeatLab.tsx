@@ -485,8 +485,8 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                   // Handle both backend (config) and frontend (direct) formats
                   if (activeAudioEngine.audioState.config) {
                     // Backend engine with config
-                    const base_frequency = activeAudioEngine.audioState.config.beat_frequency || 144;
-                    const beat_frequency = activeAudioEngine.audioState.config.beat_frequency || 4;
+                    const base_frequency = activeAudioEngine.audioState.config.beat_frequency;
+                    const beat_frequency = activeAudioEngine.audioState.config.beat_frequency;
                     return {
                       left: calculateLeftFreq(base_frequency),
                       right: calculateRightFreq(base_frequency, beat_frequency),
