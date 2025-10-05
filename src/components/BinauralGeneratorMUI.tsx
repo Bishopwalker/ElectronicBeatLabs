@@ -15,7 +15,8 @@ import {
 } from '@mui/material';
 import HeadphonesIcon from '@mui/icons-material/Headphones';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import { calculateLeftFreq, calculateRightFreq, calculateBeatFrequency } from '../types';
+import {calculateRightFreq} from "../types/clean.types.ts";
+//import { calculateLeftFreq, calculateRightFreq, calculateBeatFrequency } from '../types';
 
 interface BinauralGeneratorProps {
   base_frequency: number;
@@ -36,8 +37,8 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
   currentPreset
 }) => {
   // Calculate display frequencies from base + beat
-  const leftFreq = calculateLeftFreq(base_frequency);
-  const rightFreq = calculateRightFreq(base_frequency, beat_frequency);
+  const leftFreq = base_frequency;
+  const rightFreq = base_frequency+ beat_frequency;
 
   // Local state for typing - allows smooth input
   const [leftInput, setLeftInput] = useState(leftFreq.toString());
@@ -47,7 +48,7 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
 
   // Update local state when base_frequency/beat_frequency changes
   useEffect(() => {
-    const newLeftFreq = calculateLeftFreq(base_frequency);
+    const newLeftFreq =  base_frequency;
     console.log('🎛️ BinauralGenerator: Base frequency changed, left freq:', newLeftFreq);
     setLeftInput(newLeftFreq.toString());
   }, [base_frequency]);
@@ -78,8 +79,8 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
     const rightNum = parseFloat(value);
     if (!isNaN(rightNum)) {
       // Convert right freq to beat_frequency: beat = right - left (right - base)
-      const newBeatFreq = calculateBeatFrequency(leftFreq, rightNum);
-      console.log('🎛️ Calling onFrequencyChange with base_frequency:', base_frequency, 'beat_frequency:', newBeatFreq);
+     // const newBeatFreq = calculateBeatFrequency(leftFreq, rightNum);
+    //  console.log('🎛️ Calling onFrequencyChange with base_frequency:', base_frequency, 'beat_frequency:', newBeatFreq);
       onFrequencyChange(base_frequency, beat_frequency);
     }
   };
@@ -89,8 +90,8 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
   const handleReset = () => {
     const defaultBaseFreq = 140;
     const defaultBeatFreq = 4;
-    const newLeftFreq = calculateLeftFreq(defaultBaseFreq);
-    const newRightFreq = calculateRightFreq(defaultBaseFreq, defaultBeatFreq);
+    const newLeftFreq = defaultBaseFreq;
+    const newRightFreq = defaultBaseFreq+defaultBeatFreq;
     setLeftInput(newLeftFreq.toString());
     setRightInput(newRightFreq.toString());
     onFrequencyChange(defaultBaseFreq, defaultBeatFreq);
