@@ -252,8 +252,21 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
       console.log(`🚨 TIMER TRANSITION ${currentTransitionIndex + 1}/${localTimer.transitions.length}: ${currentTransition.left_ear_hz}Hz / ${currentTransition.right_ear_hz}Hz`);
       console.log(`🎯 ${currentTransition.description} - ${currentTransition.frequency_hz}Hz ${currentTransition.frequency_type} for ${currentTransition.duration_minutes} minutes`);
 
-      // Update frequencies directly on the audio engine
-      audioEngine.updateFrequency(currentTransition.left_ear_hz, currentTransition.right_ear_hz);
+      // Update frequencies based on engine type
+      // Backend engine uses updateSettings({ base_frequency, beat_frequency })
+      // Frontend engine uses updateFrequency(leftFreq, rightFreq)
+      if ((audioEngine as any).updateSettings) {
+        // Backend engine - use base/beat model
+        console.log('🎛️ Timer: Updating backend engine with base:', currentTransition.left_ear_hz, 'beat:', currentTransition.frequency_hz);
+        (audioEngine as any).updateSettings({
+          base_frequency: currentTransition.left_ear_hz,
+          beat_frequency: currentTransition.frequency_hz
+        });
+      } else if (audioEngine.updateFrequency) {
+        // Frontend engine - use left/right model
+        console.log('🎛️ Timer: Updating frontend engine with left:', currentTransition.left_ear_hz, 'right:', currentTransition.right_ear_hz);
+        audioEngine.updateFrequency(currentTransition.left_ear_hz, currentTransition.right_ear_hz);
+      }
 
       // Send timer update via WebSocket if connected
       sendTimerUpdate({
