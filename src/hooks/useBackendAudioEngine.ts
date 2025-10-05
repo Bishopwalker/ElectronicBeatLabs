@@ -788,6 +788,15 @@ export const useBackendAudioEngine = () => {
         }
 
         // Update audio state to match backend calculation
+        // CRITICAL: Compute leftFreq/rightFreq for UI compatibility
+        const computedLeft = sessionConfig.base_frequency;
+        const computedRight = sessionConfig.base_frequency + sessionConfig.beat_frequency;
+        console.log('🔢 Backend Engine: Computing frequencies -', {
+          base: sessionConfig.base_frequency,
+          beat: sessionConfig.beat_frequency,
+          computedLeft,
+          computedRight
+        });
         setAudioState(prev => ({
           ...prev,
           isPlaying: true,
@@ -796,7 +805,11 @@ export const useBackendAudioEngine = () => {
             base_frequency: sessionConfig.base_frequency,
             beat_frequency: sessionConfig.beat_frequency,
             amplitude: sessionConfig.amplitude
-          }
+          },
+          // Computed properties for UI (FrequencyVisualizer, etc.)
+          leftFreq: computedLeft,
+          rightFreq: computedRight,
+          beat_frequency: sessionConfig.beat_frequency
         }));
       }
       
@@ -854,7 +867,11 @@ export const useBackendAudioEngine = () => {
         ...prev.config!,
         base_frequency: base_frequency,
         beat_frequency: beat_frequency
-      }
+      },
+      // Computed properties for UI compatibility
+      leftFreq: base_frequency,
+      rightFreq: base_frequency + beat_frequency,
+      beat_frequency: beat_frequency
     }));
   }, [updateSettings]);
 
@@ -908,6 +925,21 @@ export const useBackendAudioEngine = () => {
 
   // Timer compatibility methods
   const startBinauralBeat = useCallback(async (config: BinauralBeatConfig) => {
+    console.log('🎵 startBinauralBeat called with config:', config);
+
+    // CRITICAL: Initialize audio context first (required for user gesture)
+    if (!audioContext.current) {
+      console.log('🎧 Initializing audio context for timer...');
+      const ctx = await initializeAudio();
+      if (!ctx) {
+        console.error('❌ Failed to initialize audio context');
+        throw new Error('Failed to initialize audio context');
+      }
+    }
+
+    // Initialize AudioWorklet pipeline
+    await initializePersistentAudio();
+
     const sessionConfig = {
       base_frequency: config.base_frequency || 80,
       beat_frequency: config.beat_frequency || 15,
@@ -958,7 +990,7 @@ export const useBackendAudioEngine = () => {
       console.error('❌ Failed to start binaural beat:', error);
       throw error;
     }
-  }, [sessionId, websocket, startBackendSession, audioState, stopBackendSession]);
+  }, [sessionId, websocket, startBackendSession, audioState, stopBackendSession, initializeAudio, initializePersistentAudio]);
 
   const stopBinauralBeat = useCallback(async () => {
     console.log('🛑 Backend Engine: Stopping binaural beat - ONLY CLEARING BUFFER, KEEPING WEBSOCKET ALIVE');
