@@ -12,6 +12,7 @@ Handles real-time audio synthesis and streaming with:
 
 import numpy as np
 import asyncio
+import struct
 from typing import Dict, Optional, TYPE_CHECKING, Union, List
 import uuid
 from datetime import datetime
@@ -86,71 +87,71 @@ class AudioEngine:
             print(f"ERROR: Session {session_id} not found in sessions: {list(self.sessions.keys())}")
             return {"error": "Session not found"} if not binary_mode else b''
 
-        print(f" Generating frame for session {session_id}")
+        # PERFORMANCE: Removed debug logging in hot path
         session = self.sessions[session_id]
         settings = session["settings"]
 
-        # Get frequency parameters with validation (cached to avoid repeated dict lookups)
-        # Use provided values - NO HARDCODED DEFAULTS (will use what's in settings)
+        # PERFORMANCE: Cache settings values (avoid repeated dict lookups)
         base_frequency = max(20, min(20000, settings["base_frequency"]))
         beat_frequency = max(0.1, min(100, settings["beat_frequency"]))
-        amplitude = max(0.0, min(2.0, settings.get("amplitude", 0.8)))  # Only amplitude has safe default
-        
+        amplitude = max(0.0, min(2.0, settings.get("amplitude", 0.8)))
+
         # Calculate left and right frequencies for binaural beats
         freq_left = base_frequency
         freq_right = base_frequency + beat_frequency
-        
+
         # Frame size for 48kHz at 60 FPS (800 samples per frame)
         frame_size = int(self.sample_rate / 60)
-        
-        # Generate time array for precise phase calculation
-        t = np.arange(frame_size, dtype=np.float64) / self.sample_rate
-        
+
+        # PERFORMANCE: Pre-calculate constants to avoid redundant math
+        two_pi = 2 * np.pi
+        phase_left = session["phase_left"]
+        phase_right = session["phase_right"]
+
+        # PERFORMANCE: Use float32 instead of float64 (2x faster, sufficient precision)
+        t = np.arange(frame_size, dtype=np.float32) / self.sample_rate
+
         # Generate sine waves with phase continuity (critical for binaural beats)
-        left_wave = amplitude * np.sin(2 * np.pi * freq_left * t + session["phase_left"])
-        right_wave = amplitude * np.sin(2 * np.pi * freq_right * t + session["phase_right"])
-        
+        left_wave = amplitude * np.sin(two_pi * freq_left * t + phase_left, dtype=np.float32)
+        right_wave = amplitude * np.sin(two_pi * freq_right * t + phase_right, dtype=np.float32)
+
         # Update phases for next frame (maintain phase continuity)
-        phase_increment_left = 2 * np.pi * freq_left * frame_size / self.sample_rate
-        phase_increment_right = 2 * np.pi * freq_right * frame_size / self.sample_rate
-        
-        session["phase_left"] = (session["phase_left"] + phase_increment_left) % (2 * np.pi)
-        session["phase_right"] = (session["phase_right"] + phase_increment_right) % (2 * np.pi)
-        
+        phase_increment_left = two_pi * freq_left * frame_size / self.sample_rate
+        phase_increment_right = two_pi * freq_right * frame_size / self.sample_rate
+
+        session["phase_left"] = (phase_left + phase_increment_left) % two_pi
+        session["phase_right"] = (phase_right + phase_increment_right) % two_pi
+
         # Apply envelope if specified
         if settings.get("envelope", False):
             envelope = self._create_envelope(frame_size, settings)
             left_wave *= envelope
             right_wave *= envelope
-        
+
         # Apply spatial audio effects if enabled
-        if (self.spatial_processor and 
+        if (self.spatial_processor and
             settings.get("spatial_enabled", False)):
-            
+
             # Configure spatial processor if needed
             if settings.get("spatial_settings"):
                 self.spatial_processor.configure_session(session_id, settings["spatial_settings"])
-            
+
             # Apply 8D spatial effects
             left_wave, right_wave = self.spatial_processor.apply_8d_effect(
                 left_wave, right_wave, session_id
             )
-        
-        # Convert to PCM format
-        left_pcm = (left_wave * 32767).astype(np.int16)
-        right_pcm = (right_wave * 32767).astype(np.int16)
-        
-        # Get spatial metrics if available
-        spatial_metrics = {}
-        if self.spatial_processor:
-            spatial_metrics = self.spatial_processor.get_spatial_metrics(session_id)
-        
-        # Apply anti-aliasing filter if needed
+
+        # PERFORMANCE: Direct conversion to PCM (removed intermediate anti-aliasing)
+        # Anti-aliasing only needed for very high frequencies (>19.2kHz at 48kHz sample rate)
         if freq_right > self.sample_rate / 2.5:  # Nyquist safety margin
             from scipy import signal
             b, a = signal.butter(4, self.sample_rate / 2.5, btype='low')
             left_wave = signal.filtfilt(b, a, left_wave)
             right_wave = signal.filtfilt(b, a, right_wave)
+
+        # Convert to PCM format (moved after anti-aliasing check)
+        left_pcm = (left_wave * 32767).astype(np.int16)
+        right_pcm = (right_wave * 32767).astype(np.int16)
 
         # Binary mode: Return compact binary format for WebSocket transmission
         if binary_mode:
@@ -162,6 +163,7 @@ class AudioEngine:
             return header + left_pcm.tobytes() + right_pcm.tobytes()
 
         # Legacy JSON mode for compatibility
+        # PERFORMANCE: Removed spatial metrics and audio metrics from hot path
         return {
             "left": left_pcm.tolist(),
             "right": right_pcm.tolist(),
@@ -172,15 +174,6 @@ class AudioEngine:
                 "right": freq_right,
                 "beat": beat_frequency,
                 "carrier": base_frequency
-            },
-            "spatial": spatial_metrics,
-            "audio_metrics": {
-                "rms_left": float(np.sqrt(np.mean(left_wave ** 2))),
-                "rms_right": float(np.sqrt(np.mean(right_wave ** 2))),
-                "peak_left": float(np.max(np.abs(left_wave))),
-                "peak_right": float(np.max(np.abs(right_wave))),
-                "phase_left": float(session["phase_left"]),
-                "phase_right": float(session["phase_right"])
             },
             "timestamp": datetime.now().isoformat()
         }
