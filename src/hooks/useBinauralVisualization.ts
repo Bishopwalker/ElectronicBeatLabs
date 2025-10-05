@@ -351,8 +351,9 @@ export const useBinauralVisualization = (config: Partial<VisualizationConfig> = 
       const masterGainNode = context.createGain();
 
       // Calculate frequencies using BinauralBeatConfig standard
-      const leftFreq = config.beat_frequency;
-      const rightFreq = config.beat_frequency + config.beat_frequency;
+      // Left ear = base_frequency (carrier), Right ear = base_frequency + beat_frequency
+      const leftFreq = config.base_frequency;
+      const rightFreq = config.base_frequency + config.beat_frequency;
 
       // Configure oscillators
       oscillatorL.frequency.setValueAtTime(leftFreq, context.currentTime);
@@ -412,42 +413,44 @@ export const useBinauralVisualization = (config: Partial<VisualizationConfig> = 
   }, [initializeAudioContext, createAnalyser, startVisualization]);
 
   // // Stop binaural beats
-  // const stopBinauralBeats = useCallback(() => {
-  //   try {
-  //     // Stop oscillators
-  //     if (audioState.oscillatorL) {
-  //       audioState.oscillatorL.stop();
-  //       audioState.oscillatorL.disconnect();
-  //     }
-  //     if (audioState.oscillatorR) {
-  //       audioState.oscillatorR.stop();
-  //       audioState.oscillatorR.disconnect();
-  //     }
-  //
-  //     // Disconnect gains
-  //     if (audioState.gainL) audioState.gainL.disconnect();
-  //     if (audioState.gainR) audioState.gainR.disconnect();
-  //     if (merger.current) merger.current.disconnect();
-  //     if (masterGain.current) masterGain.current.disconnect();
-  //
-  //     // Reset state
-  //     setAudioState(prev => ({
-  //       ...prev,
-  //       isPlaying: false,
-  //       gainL: null,
-  //       gainR: null,
-  //       oscillatorL: null,
-  //       oscillatorR: null
-  //     }));
-  //
-  //     // Stop visualization
-  //     stopVisualization();
-  //
-  //     console.log('✅ BinauralVisualization: Stopped and cleaned up');
-  //   } catch (error) {
-  //     console.error('❌ BinauralVisualization: Error during cleanup:', error);
-  //   }
-  // }, [ stopVisualization]);
+  const stopBinauralBeats = useCallback(() => {
+    try {
+      // Stop oscillators
+      if (audioState.oscillatorL) {
+        audioState.oscillatorL.stop();
+        audioState.oscillatorL.disconnect();
+      }
+      if (audioState.oscillatorR) {
+        audioState.oscillatorR.stop();
+        audioState.oscillatorR.disconnect();
+      }
+
+      // Disconnect gains
+      if (audioState.gainL) audioState.gainL.disconnect();
+      if (audioState.gainR) audioState.gainR.disconnect();
+      if (merger.current) merger.current.disconnect();
+      if (masterGain.current) masterGain.current.disconnect();
+
+      // Reset state
+      setAudioState(prev => ({
+        ...prev,
+        isPlaying: false,
+        gainL: null,
+        gainR: null,
+        oscillatorL: null,
+        oscillatorR: null,
+
+
+      }));
+
+      // Stop visualization
+      stopVisualization();
+
+      console.log('✅ BinauralVisualization: Stopped and cleaned up');
+    } catch (error) {
+      console.error('❌ BinauralVisualization: Error during cleanup:', error);
+    }
+  }, [ stopVisualization]);
 
   // Update frequencies using BinauralBeatConfig pattern
   const updateFrequencies = useCallback((base_frequency: number, beat_frequency: number) => {

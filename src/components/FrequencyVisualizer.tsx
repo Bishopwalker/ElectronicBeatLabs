@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Box, Typography, Paper, Chip, LinearProgress, Grid } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { useBinauralVisualization } from '../hooks/useBinauralVisualization';
+import { useAudioAnalysis } from '../hooks/useAudioAnalysis';
 import type { BinauralBeatConfig, Pattern8D } from '../types';
 import type { TimerStatus } from '../data/timer';
 
@@ -85,10 +85,20 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
   const [fps, setFps] = useState(0);
 
   // Use actual audio state or fallback to config
-  const leftFreq = audioState?.leftFreq || config?.beat_frequency || 140;
-  const rightFreq = audioState?.rightFreq || (config?.beat_frequency ? config.beat_frequency + (config.beat_frequency || 0) : 150);
+  // Correct calculation: left = base_frequency, right = base_frequency + beat_frequency
+  const leftFreq = audioState?.leftFreq || config?.base_frequency;
+  const rightFreq = audioState?.rightFreq || ((config?.base_frequency) + (config?.beat_frequency));
   const beatFreq = Math.abs(rightFreq - leftFreq);
   const isPlaying = audioState?.isPlaying || false;
+
+  console.log('📊 FrequencyVisualizer render:', {
+    isPlaying,
+    leftFreq,
+    rightFreq,
+    beatFreq,
+    hasAudioState: !!audioState,
+    hasConfig: !!config
+  });
 
   // Timer info display
   const getTimerInfo = () => {
@@ -113,11 +123,26 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
 
   // Performance-optimized visualization at 20 FPS
   useEffect(() => {
-    if (!canvasRef.current || !isPlaying) return;
+    console.log('🎨 FrequencyVisualizer useEffect triggered:', {
+      hasCanvas: !!canvasRef.current,
+      isPlaying,
+      leftFreq,
+      rightFreq
+    });
+
+    if (!canvasRef.current || !isPlaying) {
+      console.log('❌ FrequencyVisualizer: Not rendering -', !canvasRef.current ? 'No canvas' : 'Not playing');
+      return;
+    }
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (!ctx) {
+      console.log('❌ FrequencyVisualizer: No canvas context');
+      return;
+    }
+
+    console.log('✅ FrequencyVisualizer: Starting animation loop');
 
     let animationId: number;
     let lastFrameTime = 0;
