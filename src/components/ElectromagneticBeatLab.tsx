@@ -605,6 +605,8 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                           leftFreq: activeAudioEngine.audioState.config?.base_frequency || activeAudioEngine.audioState.leftFreq || 144,
                           rightFreq: (activeAudioEngine.audioState.config?.base_frequency || activeAudioEngine.audioState.leftFreq || 144) + (activeAudioEngine.audioState.config?.beat_frequency || activeAudioEngine.audioState.beat_frequency || 4)
                         }}
+                        audioContext={activeAudioEngine.audioContext}
+                        analyserNode={activeAudioEngine.analyserNode}
                         title="Real-time Frequency Analysis"
                         height={200}
                         width={600}

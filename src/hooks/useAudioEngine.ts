@@ -235,16 +235,25 @@ export const useAudioEngine = () => {
       // Create channel merger for proper stereo separation
       const merger = context.createChannelMerger(2);
 
+      // Create or reuse analyser node for visualization
+      if (!analyserNodeRef.current) {
+        analyserNodeRef.current = context.createAnalyser();
+        analyserNodeRef.current.fftSize = 2048;
+        analyserNodeRef.current.smoothingTimeConstant = 0.8;
+        console.log('✅ Created AnalyserNode for visualization');
+      }
+
       // Connect left oscillator to left channel only
       oscL.connect(gainL);
       gainL.connect(merger, 0, 0); // Connect to left output channel
 
-      // Connect right oscillator to right channel only  
+      // Connect right oscillator to right channel only
       oscR.connect(gainR);
       gainR.connect(merger, 0, 1); // Connect to right output channel
 
-      // Connect merged output to destination
-      merger.connect(context.destination);
+      // Connect merged output to analyser and destination
+      merger.connect(analyserNodeRef.current);
+      analyserNodeRef.current.connect(context.destination);
 
       // Add error handling for oscillators
       oscL.addEventListener('ended', () => {
@@ -498,6 +507,8 @@ export const useAudioEngine = () => {
       connecting: false,
       error: null
     },
-    isSupported: !!(window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)
+    isSupported: !!(window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext),
+    audioContext: audioContextRef.current,
+    analyserNode: analyserNodeRef.current
   };
 };

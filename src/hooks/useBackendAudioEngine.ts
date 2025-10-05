@@ -1121,6 +1121,8 @@ export const useBackendAudioEngine = () => {
     frequencySweep,
     createGammaProtocol,
     updateSettings,
-    isSupported: !!(window.AudioContext || (window as any).webkitAudioContext)
+    isSupported: !!(window.AudioContext || (window as any).webkitAudioContext),
+    audioContext: null, // Backend engine doesn't use local AudioContext
+    analyserNode: null  // Backend engine doesn't use local AnalyserNode
   };
 };

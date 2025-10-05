@@ -21,6 +21,8 @@ interface FrequencyVisualizerProps {
     leftFreq: number;
     rightFreq: number;
   };
+  audioContext?: AudioContext;
+  analyserNode?: AnalyserNode;
 }
 
 const VisualizerContainer = styled(Paper)(({ theme }) => ({
@@ -79,10 +81,20 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
   autoStart = false,
   timerStatus,
   activePattern,
-  audioState
+  audioState,
+  audioContext,
+  analyserNode
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [fps, setFps] = useState(0);
+
+  // Initialize audio analysis with external AudioContext/AnalyserNode
+  const { analysisData, stats, isAnalyzing } = useAudioAnalysis({
+    enabled: !!audioState?.isPlaying,
+    updateRate: 20,
+    audioContext,
+    analyserNode
+  });
 
   // Use actual audio state or fallback to config
   // Correct calculation: left = base_frequency, right = base_frequency + beat_frequency
