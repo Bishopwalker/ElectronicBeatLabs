@@ -59,7 +59,11 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
   } = useWebSocketContext();
 
   const [presets, setPresets] = useState<TimerPreset[]>([]);
-  const [selectedPresetId, setSelectedPresetId] = useState<string>('');
+  // Load selected preset from localStorage on mount
+  const [selectedPresetId, setSelectedPresetId] = useState<string>(() => {
+    const saved = localStorage.getItem('ebl_selected_preset');
+    return saved || '';
+  });
   const [timerStatus, setTimerStatus] = useState<TimerStatus | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -107,6 +111,14 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
       onElectromagneticUpdate(electromagnetic);
     }
   }, [onElectromagneticUpdate]);
+
+  // Save selected preset to localStorage whenever it changes
+  useEffect(() => {
+    if (selectedPresetId) {
+      localStorage.setItem('ebl_selected_preset', selectedPresetId);
+      console.log('💾 Saved preset to localStorage:', selectedPresetId);
+    }
+  }, [selectedPresetId]);
 
   const loadPresets = async () => {
     try {
