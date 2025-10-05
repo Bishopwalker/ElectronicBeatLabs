@@ -63,6 +63,10 @@ export interface  BackendAudioEngineState {
     webSocket?: boolean;
     connected: boolean;
     error: string | null;
+    // Computed properties for UI compatibility (calculated from config.base_frequency and config.beat_frequency)
+    leftFreq?: number;  // Left ear = base_frequency
+    rightFreq?: number; // Right ear = base_frequency + beat_frequency
+    beat_frequency?: number; // Beat frequency from config
 }
 
 /**
@@ -95,13 +99,13 @@ export interface FrontendAudioEngineState {
  * - Right ear: base_frequency + beat_frequency
  * - Beat: difference perceived by brain
  */
-export const calculateLeftFreq = (base_frequency: number): number => base_frequency;
-export const calculateRightFreq = (base_frequency: number, beat_frequency: number): number => base_frequency + beat_frequency;
+//export const calculateLeftFreq = (base_frequency: number): number => base_frequency;
+//export const calculateRightFreq = (base_frequency: number, beat_frequency: number): number => base_frequency + beat_frequency;
 
 
 /**
  * Calculate beat frequency from left and right
  */
-export const calculateBeatFrequency = (leftFreq: number, rightFreq: number): number => {
-    return Math.abs(leftFreq - rightFreq);
-};
+//export const calculateBeatFrequency = (leftFreq: number, rightFreq: number): number => {
+//    return Math.abs(leftFreq - rightFreq);
+//};
