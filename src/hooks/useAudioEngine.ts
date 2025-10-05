@@ -220,8 +220,9 @@ export const useAudioEngine = () => {
       }
 
       // Calculate actual frequencies from config
-      const leftFreq = config.beat_frequency;
-      const rightFreq = config.beat_frequency + config.beat_frequency;
+      // CRITICAL: left = base_frequency, right = base_frequency + beat_frequency
+      const leftFreq = config.base_frequency;
+      const rightFreq = config.base_frequency + config.beat_frequency;
 
       // Create oscillators
       const oscL = createOscillator(context, leftFreq, config.waveform);
