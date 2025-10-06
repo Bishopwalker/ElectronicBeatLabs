@@ -10,6 +10,12 @@ import type {
   PatternConfig,
   BinauralBeatConfig
 } from '../types';
+import {
+  DEFAULT_BASE_FREQUENCY,
+  DEFAULT_BEAT_FREQUENCY,
+  DEFAULT_AMPLITUDE,
+  DEFAULT_VOLUME
+} from '../constants/audio.constants';
 
 interface BackendAudioFrame {
   left: number[];
@@ -58,9 +64,9 @@ export const useBackendAudioEngine = () => {
     connected: false,
     isPlaying: false,
     config: {
-      amplitude: 1.2,
-      base_frequency: 144,
-      beat_frequency: 4,
+      amplitude: DEFAULT_AMPLITUDE,
+      base_frequency: DEFAULT_BASE_FREQUENCY,
+      beat_frequency: DEFAULT_BEAT_FREQUENCY,
       waveform: 'sine',
       spatial: {
         enabled: true,
@@ -612,18 +618,18 @@ export const useBackendAudioEngine = () => {
       const sessionConfig: BackendSessionConfig = config ? {
         // When config is provided, check if values are valid numbers
         base_frequency: (!isNaN(config.base_frequency))
-            ? config.base_frequency : 140,
+            ? config.base_frequency : DEFAULT_BASE_FREQUENCY,
         beat_frequency: ( !isNaN(config.beat_frequency))
-            ? config.beat_frequency : 4,
+            ? config.beat_frequency : DEFAULT_BEAT_FREQUENCY,
         amplitude: ( !isNaN(config.amplitude))
-            ? config.amplitude : 0.7,
+            ? config.amplitude : DEFAULT_VOLUME,
         spatial_enabled: config.spatial_enabled || false,
         spatial_settings: config.spatial_settings || {}
       } : {
         // When no config, use current audioState.config with proper fallbacks
-        base_frequency: audioState.config?.base_frequency || 144,
-        beat_frequency: audioState.config?.beat_frequency || 4,
-        amplitude: audioState.config?.amplitude || 1.2,
+        base_frequency: audioState.config?.base_frequency || DEFAULT_BASE_FREQUENCY,
+        beat_frequency: audioState.config?.beat_frequency || DEFAULT_BEAT_FREQUENCY,
+        amplitude: audioState.config?.amplitude || DEFAULT_AMPLITUDE,
         spatial_enabled: audioState.config?.spatial?.enabled || false,
         spatial_settings: {
           mode: audioState.config?.spatial?.mode || 'binaural',
@@ -1046,7 +1052,7 @@ export const useBackendAudioEngine = () => {
         // Update backend frequency
         await updateSettings({
           base_frequency: currentFreq,
-          beat_frequency: 4 // Keep beat frequency constant during sweep
+          beat_frequency: DEFAULT_BEAT_FREQUENCY // Keep beat frequency constant during sweep
         });
 
         // Wait for step duration
@@ -1063,7 +1069,7 @@ export const useBackendAudioEngine = () => {
 
   const createGammaProtocol = useCallback((protocol: any) => {
     const config: BinauralBeatConfig = {
-      base_frequency: 144,
+      base_frequency: DEFAULT_BASE_FREQUENCY,
       beat_frequency: protocol.gammaFreq || 40,
       amplitude: (protocol.intensity || 70) / 100,
       waveform: 'sine'
