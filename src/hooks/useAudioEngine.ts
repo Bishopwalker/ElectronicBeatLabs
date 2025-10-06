@@ -9,17 +9,24 @@ import type {
   PatternConfig,
   ADHDProtocol, WaveForm, FrontendAudioEngineState
 } from '../types';
+import {
+  DEFAULT_BASE_FREQUENCY,
+  DEFAULT_BEAT_FREQUENCY,
+  DEFAULT_AMPLITUDE,
+  DEFAULT_LEFT_FREQUENCY,
+  DEFAULT_RIGHT_FREQUENCY
+} from '../constants/audio.constants';
 
 export const useAudioEngine = () => {
   // Persistent audio context that survives start/stop cycles
   const audioContextRef = useRef<AudioContext | null>(null);
-
+  const analyserNodeRef = useRef<AnalyserNode | null>(null);
   const [audioState, setAudioState] = useState<FrontendAudioEngineState>({
     isPlaying: false,
-    amplitude: 1.2,
-    leftFreq: 148,
-    rightFreq: 144,
-    beat_frequency: 4,
+    amplitude: DEFAULT_AMPLITUDE,
+    leftFreq: DEFAULT_LEFT_FREQUENCY,
+    rightFreq: DEFAULT_RIGHT_FREQUENCY,
+    beat_frequency: DEFAULT_BEAT_FREQUENCY,
     waveform: 'sine',
     gainL: null,
     gainR: null,
@@ -452,7 +459,7 @@ export const useAudioEngine = () => {
   // Create gamma wave protocol for ADHD
   const createGammaProtocol = useCallback((protocol: ADHDProtocol) => {
     const config: BinauralBeatConfig = {
-      base_frequency: 144,
+      base_frequency: DEFAULT_BASE_FREQUENCY,
       beat_frequency: protocol.gammaFreq,
       amplitude: protocol.intensity / 100, // Convert percentage to amplitude
       waveform: 'sine'

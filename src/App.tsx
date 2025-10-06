@@ -14,6 +14,7 @@ import { muiTheme } from './theme/muiTheme';
 import { Box, Alert, Tabs, Tab, Typography } from '@mui/material';
 import React from 'react';
 import { WebSocketProvider } from './hooks/useWebsocketContext';
+import { DEFAULT_BASE_FREQUENCY, DEFAULT_BEAT_FREQUENCY, DEFAULT_VOLUME } from './constants/audio.constants';
 
 // Styled Components theme configuration
 const styledTheme = {
@@ -214,10 +215,10 @@ const AppContent = () => {
                   updateFrequency: (left: number, right: number) => console.log('Updating frequency:', left, right),
                   audioState: {
                     isPlaying: false,
-                    leftFreq: 140,
-                    rightFreq: 144,
-                    beat_frequency: 4,
-                    volume: 0.3
+                    leftFreq: DEFAULT_BASE_FREQUENCY,
+                    rightFreq: DEFAULT_BASE_FREQUENCY + DEFAULT_BEAT_FREQUENCY,
+                    beat_frequency: DEFAULT_BEAT_FREQUENCY,
+                    volume: DEFAULT_VOLUME
                   }
                 } as any}
                 patterns8D={[]}

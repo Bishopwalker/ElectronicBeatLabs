@@ -6,6 +6,9 @@ import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { Box, Chip, IconButton, Paper, Typography } from '@mui/material';
 import type { ElectromagneticBeatLabProps } from '../types';
 
+// Constants
+import { DEFAULT_BASE_FREQUENCY, DEFAULT_BEAT_FREQUENCY, DEFAULT_VOLUME } from '../constants/audio.constants';
+
 // Hooks and Data
 import { useBackendAudioEngine } from '../hooks/useBackendAudioEngine';
 import { useAudioEngine } from '../hooks/useAudioEngine';
@@ -24,7 +27,6 @@ import ElectromagneticStatus from './ElectromagneticStatus';
 import MainControlsMUI from './MainControlsMUI';
 import ControlTabs from './ControlTabs';
 import BinauralGeneratorMUI from './BinauralGeneratorMUI';
-import { calculateLeftFreq, calculateRightFreq } from '../types';
 import QuickStart from './QuickStart';
 import TimerTab from './tabs/TimerTab';
 import { FrequencyVisualizer } from './FrequencyVisualizer';
@@ -36,6 +38,7 @@ import CollapsibleSection from './shared/CollapsibleSection';
 import TabContentRenderer from './shared/TabContentRenderer';
 import SystemStatusChips from './shared/SystemStatusChips';
 import TimerCountdownDisplay from './TimerCountdownDisplay';
+import EqualizerMUI from './EqualizerMUI';
 
 const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
   initialPattern,
@@ -240,9 +243,9 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
             }
             // Start frontend engine WITHOUT setting a pattern
             await frontendEngine.startBinauralBeat({
-              base_frequency: appState.frequency || 144,
-              beat_frequency: 4,
-              amplitude: appState.volume || 0.3,
+              base_frequency: appState.frequency || DEFAULT_BASE_FREQUENCY,
+              beat_frequency: appState.beat_frequency || DEFAULT_BEAT_FREQUENCY,
+              amplitude: appState.volume || DEFAULT_VOLUME,
               waveform: 'sine'
             });
             // Update app state to mark as playing but DON'T set currentPattern
@@ -275,9 +278,9 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
               // Auto-start backend session with default binaural config
               console.log('🎧 Starting backend binaural session...');
               const defaultConfig = {
-                base_frequency: appState.base_frequency || 140,
-                beat_frequency: appState.beat_frequency || 4, // Default beat frequency
-                amplitude: appState.volume || 0.3,
+                base_frequency: appState.base_frequency || DEFAULT_BASE_FREQUENCY,
+                beat_frequency: appState.beat_frequency || DEFAULT_BEAT_FREQUENCY,
+                amplitude: appState.volume || DEFAULT_VOLUME,
                 waveform: 'sine' as const,
                 spatial_enabled: appState.spatialAudio?.enabled || false
               };
@@ -485,19 +488,19 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                   // Handle both backend (config) and frontend (direct) formats
                   if (activeAudioEngine.audioState.config) {
                     // Backend engine with config
-                    const base_frequency = activeAudioEngine.audioState.config.beat_frequency;
+                    const base_frequency = activeAudioEngine.audioState.config.base_frequency;
                     const beat_frequency = activeAudioEngine.audioState.config.beat_frequency;
                     return {
-                      left: calculateLeftFreq(base_frequency),
-                      right: calculateRightFreq(base_frequency, beat_frequency),
+                      left:(base_frequency),
+                      right:(base_frequency + beat_frequency),
                       beat: beat_frequency
                     };
                   } else {
                     // Frontend engine with direct values
                     return {
-                      left: activeAudioEngine.audioState.leftFreq || 144,
-                      right: activeAudioEngine.audioState.rightFreq || 148,
-                      beat: activeAudioEngine.audioState.beat_frequency || 4
+                      left: activeAudioEngine.audioState.leftFreq || DEFAULT_BASE_FREQUENCY,
+                      right: activeAudioEngine.audioState.rightFreq || (DEFAULT_BASE_FREQUENCY + DEFAULT_BEAT_FREQUENCY),
+                      beat: activeAudioEngine.audioState.beat_frequency || DEFAULT_BEAT_FREQUENCY
                     };
                   }
                 })()}
@@ -505,6 +508,22 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                 audioEngine={backendEngine}
                 onToggleEngine={handleEngineToggle}
                 appState={appState}
+              />
+            </CollapsibleSection>
+          </Box>
+        )}
+
+        {/* Equalizer */}
+        {!closedSections.includes('equalizer') && (
+          <Box sx={ElectromagneticLabStyles.widePanelFlex}>
+            <CollapsibleSection id="equalizer" title="Equalizer" icon="🎚️" defaultOpen={false} onClose={handleSectionClose}>
+              <EqualizerMUI
+                audioContext={activeAudioEngine.audioContext || null}
+                onEqualizerChange={(inputNode, outputNode) => {
+                  if (activeAudioEngine.setEqualizerNodes) {
+                    activeAudioEngine.setEqualizerNodes(inputNode, outputNode);
+                  }
+                }}
               />
             </CollapsibleSection>
           </Box>
@@ -535,12 +554,12 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                   base_frequency={
                     activeAudioEngine.audioState.config?.base_frequency ||
                     activeAudioEngine.audioState.leftFreq ||
-                    144
+                    DEFAULT_BASE_FREQUENCY
                   }
                   beat_frequency={
                     activeAudioEngine.audioState.config?.beat_frequency ||
                     activeAudioEngine.audioState.beat_frequency ||
-                    4
+                    DEFAULT_BEAT_FREQUENCY
                   }
                   onFrequencyChange={(base_frequency, beat_frequency) => {
                     console.log('🎛️ Parent received frequency change - base_frequency:', base_frequency, 'beat_frequency:', beat_frequency);
@@ -595,15 +614,15 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                     <Box sx={{ mt: 2 }}>
                       <FrequencyVisualizer
                         config={{
-                          base_frequency: activeAudioEngine.audioState.config?.base_frequency || activeAudioEngine.audioState.leftFreq || 144,
-                          beat_frequency: activeAudioEngine.audioState.config?.beat_frequency || activeAudioEngine.audioState.beat_frequency || 4,
-                          amplitude: activeAudioEngine.audioState.config?.amplitude || activeAudioEngine.audioState.amplitude || 0.7,
-                          waveform: activeAudioEngine.audioState.config?.waveform || 'sine'
+                          base_frequency:  activeAudioEngine.audioState.leftFreq ,
+                          beat_frequency:  activeAudioEngine.audioState.beat_frequency,
+                          amplitude: activeAudioEngine.audioContext?.amplitude,
+                          waveform: activeAudioEngine.audioContext?.waveform
                         }}
                         audioState={{
                           isPlaying: appState.isPlaying,
-                          leftFreq: activeAudioEngine.audioState.config?.base_frequency || activeAudioEngine.audioState.leftFreq || 144,
-                          rightFreq: (activeAudioEngine.audioState.config?.base_frequency || activeAudioEngine.audioState.leftFreq || 144) + (activeAudioEngine.audioState.config?.beat_frequency || activeAudioEngine.audioState.beat_frequency || 4)
+                          leftFreq: activeAudioEngine.audioState.beat_frequency || activeAudioEngine.audioState.leftFreq,
+                          rightFreq: (activeAudioEngine.audioState.base_frequency || activeAudioEngine.audioState.leftFreq ) + (activeAudioEngine.audioState.beat_frequency || activeAudioEngine.audioState.leftFreq )
                         }}
                         audioContext={activeAudioEngine.audioContext}
                         analyserNode={activeAudioEngine.analyserNode}
