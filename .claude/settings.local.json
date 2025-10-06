@@ -103,7 +103,8 @@
       "Bash(stop-dev.bat)",
       "Bash(git checkout:*)",
       "Bash(echo:*)",
-      "Bash(git worktree:*)"
+      "Bash(git worktree:*)",
+      "Bash(git log:*)"
     ],
     "deny": [],
     "ask": []
