@@ -2,14 +2,17 @@
 // Extracted from main component for better organization
 
 import type { AppState } from '../../types';
+import { DEFAULT_BASE_FREQUENCY, DEFAULT_BEAT_FREQUENCY, DEFAULT_VOLUME } from '../../constants/audio.constants';
 
 // Default app state configuration
 export const DEFAULT_APP_STATE: AppState = {
   mode: 'AUTO',
   currentPattern: null,
-  frequency: 4.0,
+  frequency: DEFAULT_BEAT_FREQUENCY,
+  base_frequency: DEFAULT_BASE_FREQUENCY,
+  beat_frequency: DEFAULT_BEAT_FREQUENCY,
   isPlaying: false,
-  volume: 0.3,
+  volume: DEFAULT_VOLUME,
   electromagnetic: {
     strength: 0,
     frequency: 0,
@@ -106,6 +109,7 @@ export const SECTION_DATA = {
   'adhdID': { title: 'ADHD Protocol', icon: '⚡' },
   'patternID': { title: 'Patterns', icon: '🌀' },
   'masterControls': { title: 'Master Controls', icon: '🎛️' },
+  'equalizer': { title: 'Equalizer', icon: '🎚️' },
   'binauralBeats': { title: 'Binaural Beat Generator', icon: '🎧' },
   'timerPanel': { title: 'Timer & Sessions', icon: '⏰' }
 };
