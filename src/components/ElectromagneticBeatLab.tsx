@@ -81,6 +81,15 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
   // Timer status for preset tracking
   const [timerStatus, setTimerStatus] = useState<TimerStatus | undefined>(undefined);
 
+  // Timer navigation callback ref
+  const timerNavigationRef = useRef<{
+    jumpToTransition: (direction: 'next' | 'previous') => void;
+    restartCurrentTransition: () => void;
+  }>({
+    jumpToTransition: () => console.warn('Timer navigation not initialized'),
+    restartCurrentTransition: () => console.warn('Timer navigation not initialized')
+  });
+
   // Current preset tracking
   const { currentPreset } = useCurrentPresetTracker({
     timerStatus,
@@ -464,11 +473,20 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
         )}
       </Paper>
 
-      {/* Timer Countdown Display - Always visible when timer is active */}
-      <TimerCountdownDisplay
-        timerStatus={timerStatus??null}
-        isVisible={true}
-      />
+      {/* Timer Countdown Display - Positioned above layout */}
+      {timerStatus && (
+        <Box sx={{
+          p: { xs: '5px', sm: '8px', md: '10px' },
+          pt: 0
+        }}>
+          <TimerCountdownDisplay
+            timerStatus={timerStatus}
+            isVisible={true}
+            onJumpToTransition={timerNavigationRef.current.jumpToTransition}
+            onRestartTransition={timerNavigationRef.current.restartCurrentTransition}
+          />
+        </Box>
+      )}
 
       {/* Dynamic Flex Layout */}
       <Box sx={ElectromagneticLabStyles.mainLayoutContainer(closedSections)}>
@@ -660,6 +678,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                   }}
                   onStateChange={updateAppState}
                   onTimerStatusUpdate={setTimerStatus}
+                  onTransitionNavigation={timerNavigationRef.current}
                 />
               </Box>
             </CollapsibleSection>

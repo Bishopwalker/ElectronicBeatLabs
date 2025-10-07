@@ -613,6 +613,112 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
     };
   }, [localTimer?.isActive, localTimer?.isPaused, loadTimerStatus]);
 
+  // Navigation functions for timer transitions
+  const jumpToTransition = async (direction: 'next' | 'previous') => {
+    if (!localTimer || !localTimer.transitions.length) return;
+
+    const now = Date.now();
+    const elapsedSeconds = Math.floor((now - localTimer.startTime) / 1000);
+
+    let currentTransitionIndex = 0;
+    let elapsedInTransitionsSeconds = elapsedSeconds;
+
+    // Calculate current transition index
+    for (const element of localTimer.transitions) {
+      const transitionDurationSeconds = element.duration_minutes * 60;
+      if (elapsedInTransitionsSeconds >= transitionDurationSeconds) {
+        elapsedInTransitionsSeconds -= transitionDurationSeconds;
+        currentTransitionIndex++;
+      } else {
+        break;
+      }
+    }
+
+    let targetIndex: number;
+
+    if (direction === 'next') {
+      targetIndex = Math.min(currentTransitionIndex + 1, localTimer.transitions.length - 1);
+    } else {
+      targetIndex = Math.max(currentTransitionIndex - 1, 0);
+    }
+
+    if (targetIndex === currentTransitionIndex) {
+      console.log('⏩ Already at boundary transition');
+      return;
+    }
+
+    // Calculate elapsed time up to target transition
+    let newElapsedSeconds = 0;
+    for (let i = 0; i < targetIndex; i++) {
+      newElapsedSeconds += localTimer.transitions[i].duration_minutes * 60;
+    }
+
+    // Update timer start time to reflect new position
+    const newStartTime = Date.now() - (newElapsedSeconds * 1000);
+
+    setLocalTimer({
+      ...localTimer,
+      startTime: newStartTime
+    });
+
+    console.log(`⏩ Jumped to transition ${targetIndex + 1}/${localTimer.transitions.length}`);
+
+    // Send update via WebSocket
+    sendTimerUpdate({
+      action: `jump_${direction}`,
+      transitionIndex: targetIndex
+    });
+
+    // Immediately trigger loadTimerStatus to update audio engine
+    setTimeout(() => loadTimerStatus(), 100);
+  };
+
+  const restartCurrentTransition = () => {
+    if (!localTimer || !localTimer.transitions.length) return;
+
+    const now = Date.now();
+    const elapsedSeconds = Math.floor((now - localTimer.startTime) / 1000);
+
+    let currentTransitionIndex = 0;
+    let elapsedInTransitionsSeconds = elapsedSeconds;
+
+    // Calculate current transition index
+    for (const element of localTimer.transitions) {
+      const transitionDurationSeconds = element.duration_minutes * 60;
+      if (elapsedInTransitionsSeconds >= transitionDurationSeconds) {
+        elapsedInTransitionsSeconds -= transitionDurationSeconds;
+        currentTransitionIndex++;
+      } else {
+        break;
+      }
+    }
+
+    // Calculate elapsed time up to current transition (restart it)
+    let newElapsedSeconds = 0;
+    for (let i = 0; i < currentTransitionIndex; i++) {
+      newElapsedSeconds += localTimer.transitions[i].duration_minutes * 60;
+    }
+
+    // Update timer start time to restart current transition
+    const newStartTime = Date.now() - (newElapsedSeconds * 1000);
+
+    setLocalTimer({
+      ...localTimer,
+      startTime: newStartTime
+    });
+
+    console.log(`🔄 Restarted transition ${currentTransitionIndex + 1}/${localTimer.transitions.length}`);
+
+    // Send update via WebSocket
+    sendTimerUpdate({
+      action: 'restart_transition',
+      transitionIndex: currentTransitionIndex
+    });
+
+    // Immediately trigger loadTimerStatus to update display
+    setTimeout(() => loadTimerStatus(), 100);
+  };
+
   return {
     presets,
     selectedPresetId,
@@ -628,6 +734,8 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
     updateCustomPreset,
     deleteCustomPreset,
     customPresetTransitions,
-    isWebSocketConnected: isConnected // Simple boolean for WebSocket status
+    isWebSocketConnected: isConnected, // Simple boolean for WebSocket status
+    jumpToTransition,
+    restartCurrentTransition
   };
 };

@@ -2,9 +2,12 @@
 // Shows prominent countdown for active timer sessions
 
 import React from 'react';
-import {Box, Typography, Paper, LinearProgress, Chip} from '@mui/material';
+import {Box, Typography, Paper, LinearProgress, Chip, IconButton, Tooltip} from '@mui/material';
 import TimerIcon from '@mui/icons-material/Timer';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import SkipPreviousIcon from '@mui/icons-material/SkipPrevious';
+import SkipNextIcon from '@mui/icons-material/SkipNext';
+import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import type {TimerPreset, TimerStatus} from '../data/timer';
 import type {AppState} from "../types";
 
@@ -12,13 +15,17 @@ interface TimerCountdownDisplayProps {
     timerStatus: TimerStatus | null,
     isVisible?: boolean,
     presets?: TimerPreset[],
-    appState?: AppState
+    appState?: AppState,
+    onJumpToTransition?: (direction: 'next' | 'previous') => void,
+    onRestartTransition?: () => void
 }
 
 const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
                                                                          timerStatus,
                                                                          isVisible = true,
-                                                                         appState
+                                                                         appState,
+                                                                         onJumpToTransition,
+                                                                         onRestartTransition
                                                                      }) => {
     // Show countdown if timer is running OR if session is active
     const shouldShow = isVisible && timerStatus && (
@@ -143,7 +150,7 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
                 </Box>
 
                 {/* Time Display - Compact */}
-                <Box sx={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                <Box sx={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1}}>
                     <Box sx={{textAlign: 'center'}}>
                         <Typography variant="h5" sx={{
                             fontFamily: 'monospace',
@@ -172,6 +179,71 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
                             Total Remaining
                         </Typography>
                     </Box>
+                </Box>
+
+                {/* Next Transition Preview */}
+                {timerStatus.next_transition && (
+                    <Box sx={{
+                        mb: 1,
+                        p: 0.75,
+                        background: 'rgba(138, 43, 226, 0.15)',
+                        borderRadius: 1,
+                        border: '1px solid rgba(138, 43, 226, 0.3)'
+                    }}>
+                        <Typography variant="caption" sx={{fontSize: '0.65rem', color: '#8a2be2', fontWeight: 'bold'}}>
+                            Up Next:
+                        </Typography>
+                        <Typography variant="caption" sx={{display: 'block', fontSize: '0.65rem', color: 'text.secondary'}}>
+                            {timerStatus.next_transition.description} • {timerStatus.next_transition.frequency_hz}Hz • {timerStatus.next_transition.duration_minutes}min
+                        </Typography>
+                    </Box>
+                )}
+
+                {/* Navigation Controls */}
+                <Box sx={{display: 'flex', justifyContent: 'center', gap: 1}}>
+                    <Tooltip title="Previous Transition">
+                        <IconButton
+                            size="small"
+                            onClick={() => onJumpToTransition?.('previous')}
+                            disabled={!onJumpToTransition || currentIndex === 0}
+                            sx={{
+                                bgcolor: 'rgba(255, 107, 0, 0.2)',
+                                '&:hover': {bgcolor: 'rgba(255, 107, 0, 0.3)'},
+                                '&:disabled': {opacity: 0.3}
+                            }}
+                        >
+                            <SkipPreviousIcon sx={{fontSize: '1rem', color: '#ff6b00'}} />
+                        </IconButton>
+                    </Tooltip>
+
+                    <Tooltip title="Restart Current Transition">
+                        <IconButton
+                            size="small"
+                            onClick={() => onRestartTransition?.()}
+                            disabled={!onRestartTransition}
+                            sx={{
+                                bgcolor: 'rgba(138, 43, 226, 0.2)',
+                                '&:hover': {bgcolor: 'rgba(138, 43, 226, 0.3)'}
+                            }}
+                        >
+                            <RestartAltIcon sx={{fontSize: '1rem', color: '#8a2be2'}} />
+                        </IconButton>
+                    </Tooltip>
+
+                    <Tooltip title="Next Transition">
+                        <IconButton
+                            size="small"
+                            onClick={() => onJumpToTransition?.('next')}
+                            disabled={!onJumpToTransition || currentIndex >= totalTransitions - 1}
+                            sx={{
+                                bgcolor: 'rgba(255, 107, 0, 0.2)',
+                                '&:hover': {bgcolor: 'rgba(255, 107, 0, 0.3)'},
+                                '&:disabled': {opacity: 0.3}
+                            }}
+                        >
+                            <SkipNextIcon sx={{fontSize: '1rem', color: '#ff6b00'}} />
+                        </IconButton>
+                    </Tooltip>
                 </Box>
             </Box>
         </Paper>
