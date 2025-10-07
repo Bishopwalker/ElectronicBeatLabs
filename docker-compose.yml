@@ -1,0 +1,123 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: ebl-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-ebl_db}
+      POSTGRES_USER: ${POSTGRES_USER:-ebl_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ebl_password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - ebl-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ebl_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: ebl-redis
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD:-ebl_redis_password}
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - ebl-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API (FastAPI)
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: ebl-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      # Database
+      DATABASE_URL: postgresql://${POSTGRES_USER:-ebl_user}:${POSTGRES_PASSWORD:-ebl_password}@postgres:5432/${POSTGRES_DB:-ebl_db}
+
+      # Redis
+      REDIS_URL: redis://default:${REDIS_PASSWORD:-ebl_redis_password}@redis:6379/0
+
+      # Application
+      PYTHON_ENV: production
+
+      # Security
+      SECRET_KEY: ${SECRET_KEY:-your-secret-key-change-in-production}
+      JWT_SECRET: ${JWT_SECRET:-your-jwt-secret-change-in-production}
+
+      # CORS - allow frontend origin
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost,http://frontend}
+
+      # Stripe (if using)
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+
+      # Audio Engine
+      SAMPLE_RATE: ${SAMPLE_RATE:-48000}
+      BUFFER_SIZE: ${BUFFER_SIZE:-512}
+      MAX_FREQUENCY: ${MAX_FREQUENCY:-199}
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - ebl-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Frontend (React + Nginx)
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: ebl-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - ebl-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  ebl-network:
+    driver: bridge

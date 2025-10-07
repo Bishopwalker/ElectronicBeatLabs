@@ -1,0 +1,40 @@
+# Electromagnetic Beat Lab - Development Docker Build
+# Hot-reload enabled for both frontend and backend
+
+FROM node:20-slim
+
+WORKDIR /app
+
+# Install Python and system dependencies
+RUN apt-get update && apt-get install -y \
+    python3.11 \
+    python3-pip \
+    python3.11-venv \
+    portaudio19-dev \
+    gcc \
+    g++ \
+    make \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Node dependencies
+COPY package*.json ./
+RUN npm install
+
+# Install Python dependencies
+COPY backend/requirements.txt ./backend/
+RUN pip3 install --no-cache-dir -r backend/requirements.txt
+
+# Copy source code
+COPY . .
+
+# Expose ports
+EXPOSE 5173 8000
+
+# Development environment variables
+ENV NODE_ENV=development
+ENV PYTHON_ENV=development
+ENV PYTHONUNBUFFERED=1
+
+# Start both frontend and backend with hot-reload
+CMD ["sh", "-c", "npm run dev & python3 -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload"]

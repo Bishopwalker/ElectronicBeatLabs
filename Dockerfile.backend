@@ -1,0 +1,75 @@
+# Electromagnetic Beat Lab - Backend Production Build
+# FastAPI + Python 3.11
+
+# ==========================================
+# Stage 1: Build Python Dependencies
+# ==========================================
+FROM python:3.11-slim AS builder
+
+WORKDIR /app
+
+# Install build dependencies for PyAudio and native extensions
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    g++ \
+    make \
+    portaudio19-dev \
+    python3-dev \
+    libffi-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy and install Python requirements
+COPY backend/requirements.txt ./
+RUN pip install --no-cache-dir --user -r requirements.txt
+
+# ==========================================
+# Stage 2: Production Runtime
+# ==========================================
+FROM python:3.11-slim AS production
+
+WORKDIR /app
+
+# Install runtime dependencies only
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    portaudio19-dev \
+    curl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Create non-root user for security
+RUN groupadd -r ebl && useradd -r -g ebl -u 1001 ebl
+
+# Copy Python packages from builder
+COPY --from=builder /root/.local /home/ebl/.local
+
+# Copy backend application
+COPY --chown=ebl:ebl backend/ ./backend/
+
+# Create necessary directories
+RUN mkdir -p /app/logs /app/data /app/uploads \
+    && chown -R ebl:ebl /app
+
+# Switch to non-root user
+USER ebl
+
+# Set Python path
+ENV PATH=/home/ebl/.local/bin:$PATH
+ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
+ENV PYTHON_ENV=production
+
+# Expose port
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+# Metadata
+LABEL maintainer="bishop8-group" \
+      version="1.0.0" \
+      description="EBL Backend - FastAPI + Python 3.11"
+
+# Start FastAPI with uvicorn (4 workers for production)
+CMD ["python", "-m", "uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]

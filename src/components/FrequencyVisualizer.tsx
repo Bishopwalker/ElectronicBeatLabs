@@ -98,8 +98,8 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
 
   // Use actual audio state or fallback to config
   // Correct calculation: left = base_frequency, right = base_frequency + beat_frequency
-  const leftFreq = audioState?.leftFreq || config?.base_frequency;
-  const rightFreq = audioState?.rightFreq || ((config?.base_frequency) + (config?.beat_frequency));
+  const leftFreq = audioState?.leftFreq || config?.base_frequency || 0;
+  const rightFreq = audioState?.rightFreq || ((config?.base_frequency || 0) + (config?.beat_frequency || 0));
   const beatFreq = Math.abs(rightFreq - leftFreq);
   const isPlaying = audioState?.isPlaying || false;
 

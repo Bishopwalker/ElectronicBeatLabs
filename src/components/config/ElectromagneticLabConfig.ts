@@ -8,7 +8,6 @@ import { DEFAULT_BASE_FREQUENCY, DEFAULT_BEAT_FREQUENCY, DEFAULT_VOLUME } from '
 export const DEFAULT_APP_STATE: AppState = {
   mode: 'AUTO',
   currentPattern: null,
-  frequency: DEFAULT_BEAT_FREQUENCY,
   base_frequency: DEFAULT_BASE_FREQUENCY,
   beat_frequency: DEFAULT_BEAT_FREQUENCY,
   isPlaying: false,
