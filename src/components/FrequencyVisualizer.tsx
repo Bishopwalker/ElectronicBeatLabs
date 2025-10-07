@@ -91,15 +91,15 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
   // Initialize audio analysis with external AudioContext/AnalyserNode
   const { analysisData, stats, isAnalyzing } = useAudioAnalysis({
     enabled: !!audioState?.isPlaying,
-    updateRate: 20,
+    updateRate: 40,
     audioContext,
     analyserNode
   });
 
   // Use actual audio state or fallback to config
   // Correct calculation: left = base_frequency, right = base_frequency + beat_frequency
-  const leftFreq = audioState?.leftFreq || config?.base_frequency || 0;
-  const rightFreq = audioState?.rightFreq || ((config?.base_frequency || 0) + (config?.beat_frequency || 0));
+  const leftFreq =  config?.base_frequency || 0;
+  const rightFreq = ((config?.base_frequency || 0) + (config?.beat_frequency || 0));
   const beatFreq = Math.abs(rightFreq - leftFreq);
   const isPlaying = audioState?.isPlaying || false;
 
@@ -112,22 +112,24 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
     hasConfig: !!config
   });
 
-  // Timer info display
+  // Timer info display using actual TimerStatus structure
   const getTimerInfo = () => {
     if (!timerStatus) return null;
 
-    const { currentStepIndex, steps, remainingTime, isRunning } = timerStatus;
-    if (!isRunning || currentStepIndex === undefined || !steps) return null;
+    const { current_transition, next_transition, time_remaining_current, isRunning, session } = timerStatus;
+    if (!isRunning || !current_transition || !session?.is_active) return null;
 
-    const currentStep = steps[currentStepIndex];
-    if (!currentStep) return null;
+    // Get total transitions count from session preset
+    const totalTransitions = session?.preset?.transitions_count || 1;
+    const currentIndex = session?.current_transition_index ?? 0;
 
     return {
-      stepName: currentStep.name || `Step ${currentStepIndex + 1}`,
-      stepIndex: currentStepIndex + 1,
-      totalSteps: steps.length,
-      remainingTime,
-      targetFreq: currentStep.targetFrequency
+      stepName: current_transition.frequency_type || current_transition.description || 'Transition',
+      stepIndex: currentIndex + 1,
+      totalSteps: totalTransitions,
+      time_remaining_current: time_remaining_current,
+      targetFreq: current_transition.frequency_hz,
+      nextTransition: next_transition
     };
   };
 
@@ -270,23 +272,25 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
           borderRadius: 1
         }}>
           <Grid container spacing={1} alignItems="center">
-            <Grid item xs={6}>
+            <Grid item xs={12} sm={6}>
               <Typography variant="body2" sx={{ color: '#ff6b00', fontWeight: 'bold' }}>
-                {timerInfo.stepName}
+                🎧 {timerInfo.stepName}
               </Typography>
               <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)' }}>
-                Step {timerInfo.stepIndex}/{timerInfo.totalSteps}
+                Step {timerInfo.stepIndex}/{timerInfo.totalSteps} • {timerInfo.targetFreq}Hz
               </Typography>
             </Grid>
-            <Grid item xs={6} sx={{ textAlign: 'right' }}>
-              <Typography variant="body2" sx={{ color: '#00ff88' }}>
-                {Math.floor(timerInfo.remainingTime / 60)}:{(timerInfo.remainingTime % 60).toString().padStart(2, '0')}
+            <Grid item xs={12} sm={6} sx={{ textAlign: { xs: 'left', sm: 'right' } }}>
+              <Typography variant="body2" sx={{ color: '#00ff88', fontWeight: 'bold' }}>
+                {Math.floor(timerInfo.time_remaining_current / 60)}:{(timerInfo.time_remaining_current % 60).toString().padStart(2, '0')}
               </Typography>
               <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)' }}>
-                Target: {timerInfo.targetFreq}Hz
+                Time Remaining
               </Typography>
             </Grid>
           </Grid>
+
+          {/* Progress bar */}
           <LinearProgress
             variant="determinate"
             value={(timerInfo.stepIndex / timerInfo.totalSteps) * 100}
@@ -300,6 +304,22 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
               }
             }}
           />
+
+          {/* Next transition preview */}
+          {timerInfo.nextTransition && (
+            <Box sx={{
+              mt: 1,
+              pt: 1,
+              borderTop: '1px solid rgba(255, 255, 255, 0.1)'
+            }}>
+              <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.5)', display: 'block' }}>
+                Up Next:
+              </Typography>
+              <Typography variant="caption" sx={{ color: '#8a2be2', fontWeight: 'bold' }}>
+                {timerInfo.nextTransition.frequency_type || timerInfo.nextTransition.description} • {timerInfo.nextTransition.frequency_hz}Hz • {timerInfo.nextTransition.duration_minutes}min
+              </Typography>
+            </Box>
+          )}
         </Box>
       )}
 
