@@ -41,8 +41,8 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
   const rightFreq = base_frequency+ beat_frequency;
 
   // Local state for typing - allows smooth input
-  const [leftInput, setLeftInput] = useState(leftFreq.toString());
-  const [rightInput, setRightInput] = useState(rightFreq.toString());
+  const [leftInput, setLeftInput] = useState(leftFreq);
+  const [rightInput, setRightInput] = useState(rightFreq);
   
   // Remove independent audio engine - parent handles all audio
 
@@ -50,7 +50,7 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
   useEffect(() => {
     const newLeftFreq =  base_frequency;
     console.log('🎛️ BinauralGenerator: Base frequency changed, left freq:', newLeftFreq);
-    setLeftInput(newLeftFreq.toString());
+    setLeftInput(newLeftFreq);
   }, [base_frequency]);
 
   useEffect(() => {

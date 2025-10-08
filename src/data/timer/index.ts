@@ -47,16 +47,13 @@ export interface TimerStatus {
  */
 export interface LocalTimer {
   startTime: number;
-  currentTransitionIndex: number;
+  currentStepIndex: number;
   transitions: FrequencyTransition[];
   isActive: boolean;
   isPaused: boolean;
   forceLoop?: boolean;
-  session?: {
-    is_active?: boolean;
-    is_paused?: boolean;
-    preset?: TimerPreset;
-  };
+  session?: TimerSession;
+  status?: TimerStatus;
 }
 
 /**

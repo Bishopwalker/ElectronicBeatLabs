@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { Box, Typography, Paper, Chip, LinearProgress, Grid } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { useAudioAnalysis } from '../hooks/useAudioAnalysis';
-import type { BinauralBeatConfig, Pattern8D } from '../types';
+import type { BinauralBeatConfig, Pattern8D, AppState} from '../types';
 import type { TimerStatus } from '../data/timer';
 
 interface FrequencyVisualizerProps {
@@ -20,9 +20,10 @@ interface FrequencyVisualizerProps {
     isPlaying: boolean;
     leftFreq: number;
     rightFreq: number;
-  };
+      };
   audioContext?: AudioContext;
   analyserNode?: AnalyserNode;
+  status?:AppState;
 }
 
 const VisualizerContainer = styled(Paper)(({ theme }) => ({
@@ -79,11 +80,12 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
   height = 200,
   width = 800,
   autoStart = false,
-  timerStatus,
   activePattern,
   audioState,
   audioContext,
-  analyserNode
+  analyserNode,
+    timerStatus
+
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [fps, setFps] = useState(0);
@@ -98,12 +100,11 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
 
   // Use actual audio state or fallback to config
   // Correct calculation: left = base_frequency, right = base_frequency + beat_frequency
-  const leftFreq = audioState?.leftFreq || config?.base_frequency;
-  const rightFreq = audioState?.rightFreq || ((config?.base_frequency) + (config?.beat_frequency));
+  const leftFreq =  config?.base_frequency || 0;
+  const rightFreq = ((config?.base_frequency) + (config?.beat_frequency));
   const beatFreq = Math.abs(rightFreq - leftFreq);
   const isPlaying = audioState?.isPlaying || false;
-
-  console.log('📊 FrequencyVisualizer render:', {
+   console.log('📊 FrequencyVisualizer render:', {
     isPlaying,
     leftFreq,
     rightFreq,
@@ -329,7 +330,7 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
               Beat Frequency
             </Typography>
             <Typography variant="h6" sx={{ color: '#ff6b00', fontWeight: 'bold' }}>
-              {beatFreq.toFixed(2)} Hz
+              {parseInt(beatFreq.toFixed(2))} Hz
             </Typography>
           </Box>
           <Box sx={{ textAlign: 'right' }}>
@@ -337,7 +338,7 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
               Right Ear
             </Typography>
             <Typography variant="h6" sx={{ color: '#ff1493', fontWeight: 'bold' }}>
-              {rightFreq.toFixed(2)} Hz
+              {parseInt(rightFreq.toFixed(2))} Hz
             </Typography>
           </Box>
         </FrequencyDisplay>

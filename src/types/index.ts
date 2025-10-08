@@ -1,6 +1,5 @@
 // Electromagnetic Beat Lab - Type Definitions
 import type {BackendAudioEngineState, BinauralBeatConfig, FrontendAudioEngineState} from './audio.types';
-
 export * from './audio.types'
 
 export type PatternMode = 'AUTO' | 'MANUAL' | 'OFF' | 'CUSTOM' | 'SYNC' | 'FLOW';
@@ -271,7 +270,7 @@ export interface VisualizationSettings {
 
 export interface AppState {
     mode: PatternMode;
-    currentPattern: PatternConfig | null;
+    currentPattern?: PatternConfig | null;
     beat_frequency: number;
     base_frequency: number;
     isPlaying: boolean;
@@ -286,6 +285,7 @@ export interface AppState {
     activeTab: string;
     audioContextState?: AudioContextState;
     lastUpdate?: number;
+    presets?: FrequencyTransition;
 
 }
 
@@ -414,6 +414,7 @@ export interface TimerPreset {
     difficulty_level?: 'beginner' | 'intermediate' | 'advanced' | 'expert';
     transitions?: FrequencyTransition; // Will be properly typed when needed
     spatial_config?: SpatialAudioConfig;
+    status?: TimerStatus;
 }
 
 export interface FrequencyTransition {

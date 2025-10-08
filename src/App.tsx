@@ -15,6 +15,7 @@ import { Box, Alert, Tabs, Tab, Typography } from '@mui/material';
 import React from 'react';
 import { WebSocketProvider } from './hooks/useWebsocketContext';
 import { DEFAULT_BASE_FREQUENCY, DEFAULT_BEAT_FREQUENCY, DEFAULT_VOLUME } from './constants/audio.constants';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 // Styled Components theme configuration
 const styledTheme = {
@@ -74,7 +75,7 @@ const AppContent = () => {
 
   // Show the main app (anonymous or logged in users with remaining time)
   return (
-    <>
+    <ErrorBoundary>
       {/* Optional usage indicator for anonymous users - moveable and closable */}
       {!user && usage && showUsageAlert && (
         <Box sx={{ position: 'fixed', top: 16, left: 16, zIndex: 1000 }}>
@@ -235,7 +236,7 @@ const AppContent = () => {
           )}
         </Box>
       </Box>
-    </>
+    </ErrorBoundary>
   );
 };
 
