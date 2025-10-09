@@ -271,6 +271,26 @@ export const ElectromagneticLabStyles = {
     flexDirection: 'column'
   } as SxProps<Theme>,
 
+  // Equalizer panel flex - grows 2x more than other panels
+  equalizerPanelFlex: {
+    flex: '2 1 auto',
+    minWidth: {
+      xs: '320px',
+      sm: '400px',
+      md: '450px',
+      lg: '500px'
+    },
+    maxWidth: {
+      xs: '100%',
+      md: '800px',
+      lg: '900px'
+    },
+    height: 'auto',
+    minHeight: 'fit-content',
+    display: 'flex',
+    flexDirection: 'column'
+  } as SxProps<Theme>,
+
   // Visualization paper
   visualizationPaper: {
     width: '100%',

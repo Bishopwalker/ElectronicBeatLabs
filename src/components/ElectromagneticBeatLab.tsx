@@ -214,13 +214,13 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
       
       console.log('🛑 Stopping frontend engine...');
        frontendEngine.stopBinauralBeat();
-      
+
       // Also clear any patterns
-      updateAppState({ 
+      updateAppState({
         isPlaying: false,
         currentPattern: null
       });
-      
+
       console.log('✅ Master Stop: All engines stopped successfully');
     } catch (error) {
       console.error('❌ Error during master stop:', error);
@@ -263,7 +263,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
             });
           } else {
             console.log('⏹️ Stopping frontend binaural engine...');
-            await frontendEngine.stopBinauralBeat();
+           frontendEngine.stopBinauralBeat();
             // Update app state
             updateAppState({
               isPlaying: false
@@ -291,7 +291,8 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                 beat_frequency: appState.beat_frequency || DEFAULT_BEAT_FREQUENCY,
                 amplitude: appState.volume || DEFAULT_VOLUME,
                 waveform: 'sine' as const,
-                spatial_enabled: appState.spatialAudio?.enabled || false
+                spatial_enabled: appState.spatialAudio?.enabled || false,
+                frequency: appState?.frequency  || null
               };
               await backendEngine.startBackendSession(defaultConfig);
             }
@@ -338,7 +339,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
     <Box sx={ElectromagneticLabStyles.mainContainer}>
       {/* Background Star Field */}
       <StarField {...appState.visualizations.starField} />
-      
+
       {/* Dark Screen Toggle Button */}
       <IconButton
         onClick={toggleDarkScreen}
@@ -461,7 +462,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
               onVolumeChange={handleVolumeChangeBound}
               compact={true}
             />
-            
+
             <SystemStatusChips
               appState={appState}
               audioEngine={activeAudioEngine}
@@ -536,7 +537,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
 
         {/* Equalizer */}
         {!closedSections.includes('equalizer') && (
-          <Box sx={ElectromagneticLabStyles.widePanelFlex}>
+           <Box sx={ElectromagneticLabStyles.equalizerPanelFlex}>
             <CollapsibleSection id="equalizer" title="Equalizer" icon="🎚️" defaultOpen={false} onClose={handleSectionClose}>
               <EqualizerMUI
                 audioContext={activeAudioEngine.audioContext || null}
