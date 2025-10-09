@@ -631,23 +631,17 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                   {appState.isPlaying && (
                     <Box sx={{ mt: 2 }}>
                       <FrequencyVisualizer
-                        config={{
-                          base_frequency:  activeAudioEngine.audioState.leftFreq ,
-                          beat_frequency:  activeAudioEngine.audioState.beat_frequency,
-                          amplitude: activeAudioEngine.audioContext?.amplitude,
-                          waveform: activeAudioEngine.audioContext?.waveform
-                        }}
-                        audioState={{
-                          isPlaying: appState.isPlaying,
-                          leftFreq: activeAudioEngine.audioState.beat_frequency || activeAudioEngine.audioState.leftFreq,
-                          rightFreq: (activeAudioEngine.audioState.base_frequency || activeAudioEngine.audioState.leftFreq ) + (activeAudioEngine.audioState.beat_frequency || activeAudioEngine.audioState.leftFreq )
+                        state={{
+                          ...appState,
+                          base_frequency: activeAudioEngine.audioState.config?.base_frequency || activeAudioEngine.audioState.leftFreq || DEFAULT_BASE_FREQUENCY,
+                          beat_frequency: activeAudioEngine.audioState.config?.beat_frequency || activeAudioEngine.audioState.beat_frequency || DEFAULT_BEAT_FREQUENCY,
+                          timer: appState.timer
                         }}
                         audioContext={activeAudioEngine.audioContext}
                         analyserNode={activeAudioEngine.analyserNode}
                         title="Real-time Frequency Analysis"
                         height={200}
                         width={600}
-                        autoStart={appState.isPlaying}
                       />
                     </Box>
                   )}
