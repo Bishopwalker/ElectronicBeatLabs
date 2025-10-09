@@ -3,50 +3,40 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   ALL_TIMER_PRESETS,
   getPresetTransitions,
-  type TimerPreset,
-  type TimerStatus,
-  type LocalTimer,
-  type FrequencyTransition,
-  type TimerSession,
-  type TimerAction,
-  type CustomPresetForm
 } from '../data/timer';
 import { loadCustomPresets, savePresetToStorage, updatePresetInStorage, deletePresetFromStorage, isCustomPreset } from '../helpers/timer/timerUtils';
 import { WAVE_PATTERNS } from '../data/patterns';
-import type {PatternConfig} from "../types";
+import type {
+  PatternConfig,
+  ElectromagneticField,
+  TimerPreset,
+  TimerStatus,
+  LocalTimer,
+  FrequencyTransition,
+  TimerAction,
+  CustomPresetForm,
+  AnyAudioEngine
+} from "../types";
 import { useWebSocketContext } from './useWebsocketContext';
 
+/**
+ * Props for useTimerLogic hook - extracted from AppState
+ */
 interface UseTimerLogicProps {
-  audioEngine?: {
-    sessionId: string | null;
-    startBinauralBeat: (config: any) => Promise<void>;
-    stopBinauralBeat: () => Promise<void>;
-    updateFrequency: (left: number, right: number) => void;
-    audioState: {
-      isPlaying: boolean;
-    };
-  };
-  patterns8D?: {
+  audioEngine?: AnyAudioEngine;
+  patterns8DControl?: {
     setActivePattern: (pattern: PatternConfig) => void;
     clearActivePattern: () => void;
   };
-  onElectromagneticUpdate?: (electromagnetic: {
-    strength: number;
-    frequency: any;
-    phase: number;
-    coherence: number;
-    resonance: number;
-    state: string;
-    stability: number
-  }) => void;
-  onTimerStatusUpdate?: (status: TimerStatus) => void;
+  onElectromagneticUpdate?: (electromagnetic: ElectromagneticField) => void;
+  onTimerStatusUpdate?: (status: TimerStatus | null) => void;
 }
 
 export const useTimerLogic = (props: UseTimerLogicProps) => {
   // Get props
   const {
     audioEngine,
-    patterns8D,
+    patterns8DControl,
     onElectromagneticUpdate,
     onTimerStatusUpdate
   } = props;
@@ -111,7 +101,7 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
       onElectromagneticUpdate(electromagnetic);
     }
   }, [onElectromagneticUpdate]);
-
+ 2 
   // Save selected preset to localStorage whenever it changes
   useEffect(() => {
     if (selectedPresetId) {
@@ -364,17 +354,20 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
           action: 'start',
           preset: selectedPresetId,
           firstTransition: firstTransition,
-          totalTransitions: mockTransitions.length
+          totalTransitions: mockTransitions.length,
+          isRunning: true,
+          totalTime: mockTransitions.reduce((sum, t) => sum + t.duration_minutes, 0),
+          progress: 0
         });
 
         // If preset specifies a pattern, set it active
         const currentPreset = presets.find(p => p.id === selectedPresetId);
-        if (patterns8D && currentPreset && (currentPreset).pattern_id) {
+        if (patterns8DControl && currentPreset && (currentPreset).pattern_id) {
           const patternId = (currentPreset ).pattern_id;
           const realPattern = WAVE_PATTERNS.find(p => p.id === patternId);
           if (realPattern) {
             console.log('🎨 Timer: Setting REAL pattern for visualizer:', realPattern.name);
-            patterns8D.setActivePattern(realPattern);
+            patterns8DControl.setActivePattern(realPattern);
           }
         }
 
@@ -407,9 +400,9 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
         sendTimerUpdate({ action: 'stop' });
 
         // Clear visualizer pattern
-        if (patterns8D) {
+        if (patterns8DControl) {
           console.log('🎨 Timer: Clearing active pattern from visualizer');
-          patterns8D.clearActivePattern();
+          patterns8DControl.clearActivePattern();
         }
 
         // Clear electromagnetic state
@@ -445,8 +438,8 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
         }
 
         // Clear visualizer pattern temporarily
-        if (patterns8D) {
-          patterns8D.clearActivePattern();
+        if (patterns8DControl) {
+          patterns8DControl.clearActivePattern();
         }
 
         setLocalTimer(null);

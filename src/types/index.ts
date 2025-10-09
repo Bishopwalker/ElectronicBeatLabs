@@ -1,5 +1,5 @@
 // Electromagnetic Beat Lab - Type Definitions
-import type {BackendAudioEngineState, BinauralBeatConfig, FrontendAudioEngineState} from './audio.types';
+import type {BackendAudioEngineState, BinauralBeatConfig, FrontendAudioEngineState,SpatialAudioConfig,ActiveAudioStatus} from './audio.types';
 export * from './audio.types'
 
 export type PatternMode = 'AUTO' | 'MANUAL' | 'OFF' | 'CUSTOM' | 'SYNC' | 'FLOW';
@@ -231,21 +231,6 @@ export interface PatternPreset {
     rating: number;
 }
 
-export interface SpatialAudioConfig {
-    enabled: boolean;
-    hrtf: boolean;
-    roomSize: number;
-    reverbAmount: number;
-    spatialWidth: number;
-    elevation: number;
-    azimuth: number;
-    movement_speed?: number;
-    spatial_intensity?: number;
-    reverb_enabled?: boolean;
-    reverberance?: number;
-    room_scale?: number;
-    hf_damping?: number;
-}
 
 export interface VisualizationSettings {
     starField: {
@@ -268,25 +253,142 @@ export interface VisualizationSettings {
     };
 }
 
+// ============================================
+// TIMER TYPES - Centralized from data/timer
+// ============================================
+
+/**
+ * Timer session information
+ */
+export interface TimerSession {
+    presetId?: TimerPreset;
+    startTime: number;
+    currentPhase: number;
+    isPaused: boolean;
+    loopCount: number;
+    session_id: string;
+    preset?: TimerPreset;
+    is_active?: boolean;
+    current_transition_index?: number;
+}
+
+/**
+ * Timer status for UI display and state management
+ */
+export interface TimerStatus {
+    session?: TimerSession;
+    current_transition?: FrequencyTransition;
+    next_transition?: FrequencyTransition | null;
+    time_remaining_current?: number;
+    time_remaining_total?: number;
+    isRunning: boolean;
+    totalTime: number;
+    progress: number;
+    // WebSocket compatibility fields
+    currentTime?: number;
+    isPaused?: boolean;
+    transitionIndex?: number;
+    totalTransitions?: number;
+    leftFreq?: number;
+    rightFreq?: number;
+    beat_frequency?: number;
+    action?: string;
+    preset?: string;
+    firstTransition?: FrequencyTransition;
+}
+
+/**
+ * Local timer state for useTimerLogic hook
+ */
+export interface LocalTimer {
+    startTime: number;
+    currentTransitionIndex: number;
+    currentStepIndex?: number; // Legacy support
+    transitions: FrequencyTransition[];
+    isActive: boolean;
+    isPaused: boolean;
+    forceLoop?: boolean;
+    session?: TimerSession;
+    status?: TimerStatus;
+}
+
+/**
+ * Timer control actions
+ */
+export type TimerAction = 'stop' | 'pause' | 'resume' | 'restart';
+
+/**
+ * Custom preset form data
+ */
+export interface CustomPresetForm {
+    name: string;
+    description: string;
+    duration: number;
+    tags: string[];
+    transitions: FrequencyTransition[];
+}
+
+// ============================================
+// APP STATE - Main Application State
+// ============================================
+
 export interface AppState {
+    // Pattern & Mode
     mode: PatternMode;
     currentPattern?: PatternConfig | null;
+
+    // Audio Engine
+    audioEngine?: AnyAudioEngine;
+
+    // Timer State
+    timer?: LocalTimer;
+    timerStatus?: TimerStatus | null;
+    selectedPresetId?: string;
+    customPresetTransitions?: {[key: string]: FrequencyTransition[]};
+
+    // Audio State
     beat_frequency: number;
     base_frequency: number;
     isPlaying: boolean;
     volume: number;
+
+    // Electromagnetic & Patterns
     electromagnetic: ElectromagneticField;
     patterns8D: Pattern8D[];
+
+    // System & Visualization
     systemStatus: SystemStatus;
     visualizations: VisualizationSettings;
     spatialAudio: SpatialAudioConfig;
+
+    // Integrations
     youtube: YouTubeIntegration;
+    frequency: FrequencyAnalysis;
     adhd: ADHDProtocol | null;
+
+    // UI State
     activeTab: string;
+    loading?: boolean;
+    error?: string | null;
+    hideSession?: boolean;
+
+    // WebSocket
+    isWebSocketConnected?: boolean;
+
+    // Misc
     audioContextState?: AudioContextState;
     lastUpdate?: number;
-    presets?: FrequencyTransition;
+    presets?: TimerPreset[];
 
+    // Callbacks for timer logic
+    onElectromagneticUpdate?: (electromagnetic: ElectromagneticField) => void;
+    onTimerStatusUpdate?: (status: TimerStatus | null) => void;
+
+    // 8D Pattern control
+    patterns8DControl?: {
+        setActivePattern: (pattern: PatternConfig) => void;
+        clearActivePattern: () => void;
+    };
 }
 
 // Event types
@@ -357,13 +459,7 @@ export interface WaveGuidePanelProps {
 }
 
 
-export interface ActiveAudioStatus {
-    binauralEngine: boolean;
-    backendEngine: boolean;
-    spatialAudio: boolean;
-    patterns: boolean;
-    testTones: boolean;
-}
+
 
 export interface QuickStartProps {
     activeStatus: ActiveAudioStatus;
