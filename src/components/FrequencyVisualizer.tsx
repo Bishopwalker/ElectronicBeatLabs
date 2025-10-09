@@ -85,7 +85,7 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
     timer
   } = state;
 
-  console.log("base:{}beat:{}",base_frequency, beat_frequency);
+
   // Calculate frequencies
   const leftFreq = base_frequency
   const rightFreq = base_frequency + beat_frequency
@@ -126,7 +126,7 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
 
   const timerInfo = getTimerInfo();
 
-  // Performance-optimized visualization at 20 FPS
+  // Performance-optimized visualization at 4 FPS
   useEffect(() => {
     console.log('🎨 FrequencyVisualizer useEffect triggered:', {
       hasCanvas: !!canvasRef.current,

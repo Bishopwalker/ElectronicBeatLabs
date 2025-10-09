@@ -149,6 +149,27 @@ export const ElectromagneticLabStyles = {
     textAlign: 'center'  // Always centered
   } as SxProps<Theme>,
 
+  // Header Frequency Visualizer - positioned top right under theme buttons
+  headerFrequencyVisualizer: {
+    position: 'absolute',
+    top: 100,  // Moved down from 60 to avoid overlapping system status
+    right: 16,
+    width: {
+      xs: 'calc(100vw - 32px)',
+      sm: '400px',
+      md: '450px',
+      lg: '500px'
+    },
+    maxWidth: '35%',
+    zIndex: 99,
+    bgcolor: 'rgba(0, 0, 0, 0.8)',
+    backdropFilter: 'blur(10px)',
+    borderRadius: 2,
+    border: '1px solid rgba(255, 255, 255, 0.2)',
+    p: 1,
+    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)'
+  } as SxProps<Theme>,
+
   // Compact status overview
   compactStatusOverview: {
     display: 'flex',
@@ -247,9 +268,11 @@ export const ElectromagneticLabStyles = {
       md: '400px'
     },
     height: 'auto',
+    maxHeight: '50vh',  // Max 50% viewport height
     minHeight: 'fit-content',
     display: 'flex',
-    flexDirection: 'column'
+    flexDirection: 'column',
+    overflowY: 'auto'  // Scroll when content exceeds 50vh
   } as SxProps<Theme>,
 
   // Wide panel flex (for binaural and visualization)
@@ -266,12 +289,14 @@ export const ElectromagneticLabStyles = {
       md: '450px'
     },
     height: 'auto',
+    maxHeight: '50vh',  // Max 50% viewport height
     minHeight: 'fit-content',
     display: 'flex',
-    flexDirection: 'column'
+    flexDirection: 'column',
+    overflowY: 'auto'  // Scroll when content exceeds 50vh
   } as SxProps<Theme>,
 
-  // Equalizer panel flex - grows 2x more than other panels
+  // Equalizer panel flex - ORIGINAL (vertical layout)
   equalizerPanelFlex: {
     flex: '2 1 auto',
     minWidth: {
@@ -289,6 +314,25 @@ export const ElectromagneticLabStyles = {
     minHeight: 'fit-content',
     display: 'flex',
     flexDirection: 'column'
+  } as SxProps<Theme>,
+
+  // Equalizer panel flex HORIZONTAL - Takes full width horizontally
+  equalizerPanelFlexHorizontal: {
+    flex: '0 0 100%',  // Prevent flex shrinking
+    width: '100%',
+    minWidth: '100%',
+    maxWidth: '100%',
+    height: 'auto',
+    minHeight: '200px',  // Reduced from 250px
+    maxHeight: '40vh',  // Reduced from 50vh for more compact
+    display: 'flex',
+    flexDirection: 'column',
+    order: -1,  // Make it appear first in flex order
+    mb: 1.5,  // Reduced margin
+    position: 'relative',
+    zIndex: 10,  // Ensure it's above other components
+    overflowY: 'auto',  // Make it scrollable
+    overflowX: 'hidden'
   } as SxProps<Theme>,
 
   // Visualization paper

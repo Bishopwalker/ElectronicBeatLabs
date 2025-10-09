@@ -78,7 +78,7 @@ export const EQ_PRESETS = {
 
 export const useEqualizer = (audioContext: AudioContext | null) => {
   const [equalizerState, setEqualizerState] = useState<EqualizerState>({
-    enabled: false,
+    enabled: true,  // Changed to true - enable by default
     bands: DEFAULT_BANDS,
     preset: 'flat'
   });

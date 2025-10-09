@@ -67,9 +67,8 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
   // Hybrid audio engines: Backend for advanced features, Frontend for fallback
   const backendEngine = useBackendAudioEngine();
 
-  // Only initialize frontend engine if backend is not connected
-  const skipFrontendInit = backendEngine.backendConnected || backendEngine.sessionId !== null;
-  const frontendEngine = useAudioEngine(skipFrontendInit);
+  // Initialize frontend engine
+  const frontendEngine = useAudioEngine();
 
   const [sessionId, setSessionId] = useState<string | null>(
     backendEngine.sessionId
@@ -451,6 +450,40 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
           </Box>
         </Box>
 
+        {/* Frequency Visualizer - Now in Header Area */}
+        {!closedSections.includes('frequencyVisualizer') && (
+          <Box  sx={ElectromagneticLabStyles.headerFrequencyVisualizer}>
+            <CollapsibleSection
+              id="frequencyVisualizer"
+              title="Frequency Visualizer"
+              icon="📊"
+              defaultOpen={true}
+              onClose={handleSectionClose}
+              compact={true}
+            >
+              <FrequencyVisualizer
+                state={{
+                  ...appState,
+                  base_frequency: activeAudioEngine.audioState.config?.base_frequency ||
+                    activeAudioEngine.audioState.leftFreq ||
+                    DEFAULT_BASE_FREQUENCY,
+                  beat_frequency: activeAudioEngine.audioState.config?.beat_frequency ||
+                    activeAudioEngine.audioState.beat_frequency ||
+                    DEFAULT_BEAT_FREQUENCY
+                }}
+                title=""
+                showSpectrum={true}
+                showFrequencies={true}
+                showMetrics={false}
+                height={120}
+                width={600}
+                audioContext={activeAudioEngine.audioContext}
+                analyserNode={activeAudioEngine.analyserNode}
+              />
+            </CollapsibleSection>
+          </Box>
+        )}
+
         {/* Compact Status Overview - Show when Master Controls is closed */}
         {closedSections.includes('masterControls') && (
           <Box sx={ElectromagneticLabStyles.compactStatusOverview}>
@@ -494,6 +527,22 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
 
       {/* Dynamic Flex Layout */}
       <Box sx={ElectromagneticLabStyles.mainLayoutContainer(closedSections)}>
+        {/* Equalizer - Placed FIRST for visibility */}
+        {!closedSections.includes('equalizer') && (
+           <Box sx={ElectromagneticLabStyles.equalizerPanelFlexHorizontal}>
+            <CollapsibleSection id="equalizer" title="Equalizer" icon="🎚️" defaultOpen={true} onClose={handleSectionClose}>
+              <EqualizerMUI
+                audioContext={activeAudioEngine.audioContext || null}
+                onEqualizerChange={(inputNode, outputNode) => {
+                  if (activeAudioEngine.setEqualizerNodes) {
+                    activeAudioEngine.setEqualizerNodes(inputNode, outputNode);
+                  }
+                }}
+              />
+            </CollapsibleSection>
+          </Box>
+        )}
+
         {/* Master Controls */}
         {!closedSections.includes('masterControls') && (
           <Box sx={ElectromagneticLabStyles.panelFlex}>
@@ -530,22 +579,6 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                 audioEngine={backendEngine}
                 onToggleEngine={handleEngineToggle}
                 appState={appState}
-              />
-            </CollapsibleSection>
-          </Box>
-        )}
-
-        {/* Equalizer */}
-        {!closedSections.includes('equalizer') && (
-           <Box sx={ElectromagneticLabStyles.equalizerPanelFlex}>
-            <CollapsibleSection id="equalizer" title="Equalizer" icon="🎚️" defaultOpen={false} onClose={handleSectionClose}>
-              <EqualizerMUI
-                audioContext={activeAudioEngine.audioContext || null}
-                onEqualizerChange={(inputNode, outputNode) => {
-                  if (activeAudioEngine.setEqualizerNodes) {
-                    activeAudioEngine.setEqualizerNodes(inputNode, outputNode);
-                  }
-                }}
               />
             </CollapsibleSection>
           </Box>

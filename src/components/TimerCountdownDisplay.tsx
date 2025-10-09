@@ -88,6 +88,7 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
                 borderRadius: 1,
                 position: 'relative',
                 overflow: 'hidden',
+                width: '100%',
                 '&::before': {
                     content: '""',
                     position: 'absolute',
@@ -100,7 +101,21 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
                 }
             }}
         >
-            <Box sx={{position: 'relative', zIndex: 1}}>
+            {/* Horizontal Flex Container - Full Width */}
+            <Box sx={{
+                position: 'relative',
+                zIndex: 1,
+                display: 'flex',
+                gap: 2,
+                alignItems: 'stretch',
+                width: '100%'
+            }}>
+                {/* Timer Section - 50% Width */}
+                <Box sx={{
+                    flex: '1 1 50%',
+                    display: 'flex',
+                    flexDirection: 'column'
+                }}>
                 {/* Header */}
                 <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5}}>
                     <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5}}>
@@ -251,9 +266,29 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
                     </Tooltip>
                 </Box>
 
-                {/* Binaural Beat Frequency Visualizer */}
-                {appState && timerStatus.isRunning && (
-                    <Box sx={{ mt: 1 }}>
+                </Box>
+                
+                {/* Visualizer Section - 50% Width */}
+                {appState && audioContext && (
+                    <Box sx={{
+                        flex: '1 1 50%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                        p: 1,
+                        bgcolor: 'rgba(0, 0, 0, 0.2)',
+                        borderRadius: 1,
+                        border: '1px solid rgba(138, 43, 226, 0.2)'
+                    }}>
+                        <Typography variant="caption" sx={{
+                            fontSize: '0.7rem',
+                            color: '#8a2be2',
+                            fontWeight: 'bold',
+                            mb: 0.5,
+                            textAlign: 'center'
+                        }}>
+                            Live Frequency Visualization
+                        </Typography>
                         <FrequencyVisualizer
                             state={{
                                 ...appState,
@@ -264,10 +299,12 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
                             }}
                             audioContext={audioContext}
                             analyserNode={analyserNode}
-                            title="Timer Binaural Beat Visualization"
-                            height={150}
-                            width={600}
+                            title=""
+                            height={160}
+                            width={'100%'}
                             showMetrics={false}
+                            showFrequencies={true}
+                            showSpectrum={true}
                         />
                     </Box>
                 )}

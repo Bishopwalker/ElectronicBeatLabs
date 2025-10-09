@@ -110,7 +110,8 @@ export const SECTION_DATA = {
   'masterControls': { title: 'Master Controls', icon: '🎛️' },
   'equalizer': { title: 'Equalizer', icon: '🎚️' },
   'binauralBeats': { title: 'Binaural Beat Generator', icon: '🎧' },
-  'timerPanel': { title: 'Timer & Sessions', icon: '⏰' }
+  'timerPanel': { title: 'Timer & Sessions', icon: '⏰' },
+  'frequencyVisualizer': { title: 'Frequency Visualizer', icon: '📊' }
 };
 
 // Default closed sections (Master Controls closed to show compact view)

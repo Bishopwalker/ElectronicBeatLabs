@@ -56,8 +56,14 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
 
 
     useEffect(() => {
-        initializeEqualizer();
-    }, []);
+        // Auto-initialize and enable equalizer on mount
+        if (audioContext && !inputNode) {
+            const nodes = initializeEqualizer();
+            if (nodes && onEqualizerChange) {
+                onEqualizerChange(nodes.input, nodes.output);
+            }
+        }
+    }, [audioContext, initializeEqualizer, onEqualizerChange, inputNode]);
 
   // Handle preset selection
   const handlePresetClick = useCallback((presetName: keyof typeof EQ_PRESETS) => {
@@ -93,9 +99,10 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
         key={band.id}
         sx={{
           display: 'flex',
+            overflow: "auto",
           flexDirection: 'column',
           alignItems: 'center',
-          minWidth: '60px'
+          minWidth: '50px'  // Reduced from 60px
         }}
       >
         {/* Gain value display */}
@@ -122,7 +129,7 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
           step={0.5}
           disabled={!equalizerState.enabled}
           sx={{
-            height: 200,
+            height: 200,  // Reduced from 300
             '& .MuiSlider-thumb': {
               width: 16,
               height: 16,
@@ -188,7 +195,7 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
     <Paper
       elevation={3}
       sx={{
-        p: 2,
+        p: 1.5,  // Reduced from 2
         bgcolor: 'rgba(0, 0, 0, 0.6)',
         backdropFilter: 'blur(10px)',
         borderRadius: 2,
@@ -196,8 +203,8 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
       }}
     >
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h6" sx={{ color: 'white', display: 'flex', alignItems: 'center', gap: 1 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>  {/* Reduced from mb: 2 */}
+        <Typography variant="body1" sx={{ color: 'white', display: 'flex', alignItems: 'center', gap: 0.5, fontSize: '0.9rem' }}>  {/* Smaller font */}
           🎚️ Equalizer
         </Typography>
 
@@ -241,8 +248,8 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
       </Box>
 
       {/* Preset Buttons */}
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.7)', mb: 1, display: 'block' }}>
+      <Box sx={{ mb: 2 }}>  {/* Reduced from mb: 3 */}
+        <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.7)', mb: 0.5, display: 'block', fontSize: '0.65rem' }}>  {/* Smaller */}
           Presets:
         </Typography>
         <ButtonGroup size="small" sx={{ flexWrap: 'wrap', gap: 0.5 }}>
@@ -252,7 +259,7 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
 
       {/* Current Preset Display */}
       {equalizerState.preset !== 'flat' && (
-        <Box sx={{ mb: 2 }}>
+        <Box sx={{ mb: 1 }}>  {/* Reduced from mb: 2 */}
           <Chip
             label={`Active: ${EQ_PRESETS[equalizerState.preset as keyof typeof EQ_PRESETS]?.name || 'Custom'}`}
             size="small"
@@ -271,8 +278,8 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'flex-end',
-          gap: 1,
-          p: 2,
+          gap: 0.5,  // Reduced from 1
+          p: 1.5,  // Reduced from 2
           bgcolor: 'rgba(0, 0, 0, 0.3)',
           borderRadius: 1,
           overflowX: 'auto'
