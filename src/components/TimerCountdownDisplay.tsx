@@ -10,6 +10,7 @@ import SkipNextIcon from '@mui/icons-material/SkipNext';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import type {TimerPreset, TimerStatus} from '../data/timer';
 import type {AppState} from "../types";
+import { FrequencyVisualizer } from './FrequencyVisualizer';
 
 interface TimerCountdownDisplayProps {
     timerStatus: TimerStatus | null,
@@ -17,7 +18,9 @@ interface TimerCountdownDisplayProps {
     presets?: TimerPreset[],
     appState?: AppState,
     onJumpToTransition?: (direction: 'next' | 'previous') => void,
-    onRestartTransition?: () => void
+    onRestartTransition?: () => void,
+    audioContext?: AudioContext,
+    analyserNode?: AnalyserNode
 }
 
 const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
@@ -25,7 +28,9 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
                                                                          isVisible = true,
                                                                          appState,
                                                                          onJumpToTransition,
-                                                                         onRestartTransition
+                                                                         onRestartTransition,
+                                                                         audioContext,
+                                                                         analyserNode
                                                                      }) => {
     // Show countdown if timer is running OR if session is active
     const shouldShow = isVisible && timerStatus && (
@@ -200,7 +205,7 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
                 )}
 
                 {/* Navigation Controls */}
-                <Box sx={{display: 'flex', justifyContent: 'center', gap: 1}}>
+                <Box sx={{display: 'flex', justifyContent: 'center', gap: 1, mb: 1}}>
                     <Tooltip title="Previous Transition">
                         <IconButton
                             size="small"
@@ -245,6 +250,27 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
                         </IconButton>
                     </Tooltip>
                 </Box>
+
+                {/* Binaural Beat Frequency Visualizer */}
+                {appState && timerStatus.isRunning && (
+                    <Box sx={{ mt: 1 }}>
+                        <FrequencyVisualizer
+                            state={{
+                                ...appState,
+                                base_frequency: currentTransition?.left_ear_hz || 140,
+                                beat_frequency: currentTransition?.frequency_hz || 4,
+                                isPlaying: timerStatus.isRunning,
+                                timer: appState.timer
+                            }}
+                            audioContext={audioContext}
+                            analyserNode={analyserNode}
+                            title="Timer Binaural Beat Visualization"
+                            height={150}
+                            width={600}
+                            showMetrics={false}
+                        />
+                    </Box>
+                )}
             </Box>
         </Paper>
     );

@@ -9,8 +9,8 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
 
     // Audio parameters - use actual sample rate from audio context
     this.sampleRate = sampleRate; // Use actual sample rate (48kHz or 44.1kHz)
-    const initialVolume = options.processorOptions?.volume || 0.5;
-    this.volume = isNaN(initialVolume) ? 0.5 : initialVolume; // Protect against NaN
+    const initialVolume = options.processorOptions?.volume || 0.3;
+    this.volume = isNaN(initialVolume) ? 0.3 : initialVolume; // Protect against NaN
 
     // CRITICAL CHANGE #1: Use a ring buffer for efficiency - sized based on actual sample rate
     this.bufferSize = this.sampleRate * 6; // 6 seconds of buffer space for stability
@@ -64,7 +64,7 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
     return [
       {
         name: 'volume',
-        defaultValue: 0.5,
+        defaultValue: 0.3,
         minValue: 0,
         maxValue: 2.0,
         automationRate: 'a-rate'
@@ -234,7 +234,7 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
       }
 
       // Warn if buffer is getting too full
-      if (this._audioBuffer.availableSamples > this.maxBufferSize * 0.85) {
+      if (this._audioBuffer.availableSamples > this.maxBufferSize * 0.95) {
         console.warn(`⚠️ Buffer near maximum: ${this._audioBuffer.availableSamples}/${this.maxBufferSize}`);
       }
 
@@ -263,7 +263,7 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
     const samples = this._audioBuffer.availableSamples;
     if (samples < this.minBufferSize) return 'critical';
     if (samples < this.targetBufferSize) return 'low';
-    if (samples > this.maxBufferSize * 0.8) return 'high';
+    if (samples > this.maxBufferSize * 0.9) return 'high';
     return 'good';
   }
 
@@ -366,7 +366,7 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
     // Get current volume parameter - clamp to safe range with NaN protection
     const volumeParam = parameters.volume;
     const rawVolume = volumeParam[0] || this.volume || 0.3;
-    const volume = Math.min(0.8, isNaN(rawVolume) ? 0.3 : rawVolume); // Max 80% to prevent clipping, default 0.3 if NaN
+    const volume = Math.min(2, isNaN(rawVolume) ? 0.3 : rawVolume); // Max 80% to prevent clipping, default 0.3 if NaN
 
     // Buffer state management
     const availableSamples = this._audioBuffer.availableSamples;
@@ -439,13 +439,13 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
     this.frameCount++;
 
     // Periodic status update (every 5 seconds for better monitoring)
-    if (this.frameCount % 1720 === 0) { // 1720 * 128 = 220160 ≈ 5 seconds at 44.1kHz
+    if (this.frameCount % 3330 === 0) { // 1720 * 128 = 220160 ≈ 5 seconds at 44.1kHz
       const bufferMs = Math.round((this._audioBuffer.availableSamples / this.sampleRate) * 1000);
       const bufferFrames = Math.round(this._audioBuffer.availableSamples / this.frameSamples);
       const bufferHealth = this.getBufferHealth();
 
       // Log more frequently to help debug timing issues
-      if (this.isPlaying || bufferHealth === 'critical' || bufferHealth === 'low' || this.underrunCount > 0) {
+      if (this.isPlaying && bufferHealth === 'critical' || bufferHealth === 'low' || this.underrunCount > 0) {
         console.log(`📊 Status: Buffer=${bufferMs}ms (~${bufferFrames} frames, ${this._audioBuffer.availableSamples} samples), ` +
             `Health=${bufferHealth}, Playing=${this.isPlaying}, ` +
             `Underruns=${this.underrunCount}, Received=${this.totalSamplesReceived}, Played=${this.totalSamplesPlayed}`);

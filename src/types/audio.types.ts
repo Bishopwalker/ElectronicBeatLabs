@@ -86,6 +86,29 @@ export interface FrontendAudioEngineState {
     oscillatorR: OscillatorNode | null;
     context: AudioContext | null;
 }
+export interface ActiveAudioStatus {
+    binauralEngine: boolean;
+    backendEngine: boolean;
+    spatialAudio: boolean;
+    patterns: boolean;
+    testTones: boolean;
+}
+
+export interface SpatialAudioConfig {
+    enabled: boolean;
+    hrtf: boolean;
+    roomSize: number;
+    reverbAmount: number;
+    spatialWidth: number;
+    elevation: number;
+    azimuth: number;
+    movement_speed?: number;
+    spatial_intensity?: number;
+    reverb_enabled?: boolean;
+    reverberance?: number;
+    room_scale?: number;
+    hf_damping?: number;
+}
 
 // ============================================
 // CONVERSION FUNCTIONS - USE THESE EVERYWHERE

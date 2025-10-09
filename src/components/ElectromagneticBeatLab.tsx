@@ -482,8 +482,11 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
           <TimerCountdownDisplay
             timerStatus={timerStatus}
             isVisible={true}
+            appState={appState}
             onJumpToTransition={timerNavigationRef.current.jumpToTransition}
             onRestartTransition={timerNavigationRef.current.restartCurrentTransition}
+            audioContext={activeAudioEngine.audioContext}
+            analyserNode={activeAudioEngine.analyserNode}
           />
         </Box>
       )}
@@ -625,25 +628,6 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                       electromagnetic={appState.electromagnetic}
                       size={300}
                     />
-                  )}
-                  
-                  {/* Real-time Frequency Analyzer */}
-                  {appState.isPlaying && (
-                    <Box sx={{ mt: 2 }}>
-                      <FrequencyVisualizer
-                        state={{
-                          ...appState,
-                          base_frequency: activeAudioEngine.audioState.config?.base_frequency || activeAudioEngine.audioState.leftFreq || DEFAULT_BASE_FREQUENCY,
-                          beat_frequency: activeAudioEngine.audioState.config?.beat_frequency || activeAudioEngine.audioState.beat_frequency || DEFAULT_BEAT_FREQUENCY,
-                          timer: appState.timer
-                        }}
-                        audioContext={activeAudioEngine.audioContext}
-                        analyserNode={activeAudioEngine.analyserNode}
-                        title="Real-time Frequency Analysis"
-                        height={200}
-                        width={600}
-                      />
-                    </Box>
                   )}
                 </Paper>
               </Box>

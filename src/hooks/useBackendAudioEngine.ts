@@ -174,7 +174,10 @@ export const useBackendAudioEngine = () => {
               // Reduced logging - only log every 60 frames (1 second)
               break;
             case 'bufferStatus':
-              console.log('📊 Buffer Status:', message.data);
+              if (message.data.isPlaying==true){
+                console.log('📊 Buffer Status:', message.data);
+              }
+              
               break;
             case 'bufferExhausted':
               console.warn('⚠️ Backend Engine: Audio buffer exhausted, need new frame');
@@ -237,12 +240,12 @@ export const useBackendAudioEngine = () => {
       const volumeParam = audioWorkletNode.current.parameters.get('volume');
       if (volumeParam && !(frame instanceof ArrayBuffer)) {
         volumeParam.setValueAtTime(
-            audioState.config?.amplitude || 1.2,
+            audioState.config?.amplitude,
             audioContext.current.currentTime
         );
       }
 
-      console.log('🔊 Backend Engine: Audio frame sent to AudioWorklet, amplitude:', audioState.config?.amplitude || 1.2);
+      console.log('🔊 Backend Engine: Audio frame sent to AudioWorklet, amplitude:', audioState.config?.amplitude);
 
       // Update frequency state in config (legacy JSON frames only)
       if (!(frame instanceof ArrayBuffer)) {
@@ -252,7 +255,7 @@ export const useBackendAudioEngine = () => {
             ...prev.config!,
             base_frequency: frame.frequencies.left,
             beat_frequency: frame.frequencies.beat,
-            amplitude: audioState.config?.amplitude || 1.2,
+            amplitude: audioState.config?.amplitude,
             duration: audioContext.current?.currentTime || Date.now(),
           }
         }));
@@ -884,7 +887,7 @@ export const useBackendAudioEngine = () => {
   // Update volume
   const updateVolume = useCallback((volume: number) => {
     // Protect against NaN and invalid values
-    const safeVolume = isNaN(volume) ? 1.2 : Math.max(0, Math.min(2, volume));
+    const safeVolume = isNaN(volume) ? 2 : Math.max(0, Math.min(2, volume));
     console.log('🎵 Backend updateVolume:', { original: volume, safe: safeVolume });
 
     updateSettings({

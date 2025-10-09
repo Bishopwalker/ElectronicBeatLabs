@@ -2,28 +2,19 @@ import React, { useRef, useEffect, useState } from 'react';
 import { Box, Typography, Paper, Chip, LinearProgress, Grid } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { useAudioAnalysis } from '../hooks/useAudioAnalysis';
-import type { BinauralBeatConfig, Pattern8D, AppState} from '../types';
-import type { TimerStatus } from '../data/timer';
+import type { AppState} from '../types';
+import { useWebSocketContext } from '../hooks/useWebsocketContext';
 
 interface FrequencyVisualizerProps {
-  config?: BinauralBeatConfig;
+  state: AppState;
   title?: string;
   showSpectrum?: boolean;
   showFrequencies?: boolean;
   showMetrics?: boolean;
   height?: number;
   width?: number;
-  autoStart?: boolean;
-  timerStatus?: TimerStatus;
-  activePattern?: Pattern8D | null;
-  audioState?: {
-    isPlaying: boolean;
-    leftFreq: number;
-    rightFreq: number;
-      };
   audioContext?: AudioContext;
   analyserNode?: AnalyserNode;
-  status?:AppState;
 }
 
 const VisualizerContainer = styled(Paper)(({ theme }) => ({
@@ -72,63 +63,64 @@ const MetricChip = styled(Chip)<{ quality: string }>(({ quality }) => ({
 }));
 
 export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
-  config,
+  state,
   title = 'Binaural Beat Frequency Visualizer',
   showSpectrum = true,
   showFrequencies = true,
   showMetrics = true,
   height = 200,
   width = 800,
-  autoStart = false,
-  activePattern,
-  audioState,
   audioContext,
   analyserNode,
-    timerStatus
-
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [fps, setFps] = useState(0);
+const context=useWebSocketContext();
+  // Deconstruct from state
+  const {
+    base_frequency = 0,
+    beat_frequency = 0,
+    isPlaying = false,
+    patterns8D = [],
+    timer
+  } = state;
+  
+  console.log("base:{}beat:{}",base_frequency, beat_frequency);
+  // Calculate frequencies
+  const leftFreq = base_frequency
+  const rightFreq = base_frequency + beat_frequency
+  const beatFreq = beat_frequency;
 
-  // Initialize audio analysis with external AudioContext/AnalyserNode
+  // Get active pattern (first pattern if available)
+  const activePattern = patterns8D?.[0] || null;
+
+  // Initialize audio analysis
   const { analysisData, stats, isAnalyzing } = useAudioAnalysis({
-    enabled: !!audioState?.isPlaying,
+    enabled: isPlaying,
     updateRate: 20,
     audioContext,
     analyserNode
   });
 
-  // Use actual audio state or fallback to config
-  // Correct calculation: left = base_frequency, right = base_frequency + beat_frequency
-  const leftFreq =  config?.base_frequency || 0;
-  const rightFreq = ((config?.base_frequency) + (config?.beat_frequency));
-  const beatFreq = Math.abs(rightFreq - leftFreq);
-  const isPlaying = audioState?.isPlaying || false;
-   console.log('📊 FrequencyVisualizer render:', {
-    isPlaying,
-    leftFreq,
-    rightFreq,
-    beatFreq,
-    hasAudioState: !!audioState,
-    hasConfig: !!config
-  });
-
   // Timer info display
   const getTimerInfo = () => {
-    if (!timerStatus) return null;
+    if (!timer?.status) return null;
 
-    const { currentStepIndex, steps, remainingTime, isRunning } = timerStatus;
-    if (!isRunning || currentStepIndex === undefined || !steps) return null;
+    const { session, isRunning } = timer.status;
+    const currentStepIndex = session?.current_transition_index;
+    const transitions = timer.transitions;
 
-    const currentStep = steps[currentStepIndex];
+    if (!isRunning || currentStepIndex === undefined || !transitions) return null;
+
+    const currentStep = transitions[currentStepIndex];
     if (!currentStep) return null;
 
     return {
-      stepName: currentStep.name || `Step ${currentStepIndex + 1}`,
+      stepName: currentStep.description || `Step ${currentStepIndex + 1}`,
       stepIndex: currentStepIndex + 1,
-      totalSteps: steps.length,
-      remainingTime,
-      targetFreq: currentStep.targetFrequency
+      totalSteps: transitions.length,
+      targetFreq: currentStep.frequency_hz,
+      remainingTime: timer.status.time_remaining_current || 0
     };
   };
 
