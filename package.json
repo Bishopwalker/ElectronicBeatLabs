@@ -11,7 +11,6 @@
     "dev:stop": "stop-dev.bat",
     "build": "vite build",
     "build:check": "tsc -b && vite build",
-    "lint": "eslint .",
     "preview": "vite preview",
     "backend:install": "cd backend && pip install -r requirements.txt",
     "backend:test": "cd backend && python -m pytest",

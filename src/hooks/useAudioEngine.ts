@@ -12,7 +12,7 @@ import type {
 import {
   DEFAULT_BASE_FREQUENCY,
   DEFAULT_BEAT_FREQUENCY,
-  DEFAULT_AMPLITUDE,
+  DEFAULT_VOLUME,
   DEFAULT_LEFT_FREQUENCY,
   DEFAULT_RIGHT_FREQUENCY
 } from '../constants/audio.constants';
@@ -25,7 +25,7 @@ export const useAudioEngine = () => {
   const equalizerOutputRef = useRef<GainNode | null>(null);
   const [audioState, setAudioState] = useState<FrontendAudioEngineState>({
     isPlaying: false,
-    amplitude: DEFAULT_AMPLITUDE,
+    amplitude: DEFAULT_VOLUME,
     leftFreq: DEFAULT_LEFT_FREQUENCY,
     rightFreq: DEFAULT_RIGHT_FREQUENCY,
     beat_frequency: DEFAULT_BEAT_FREQUENCY,
@@ -237,9 +237,9 @@ export const useAudioEngine = () => {
       const oscL = createOscillator(context, leftFreq, config.waveform);
       const oscR = createOscillator(context, rightFreq, config.waveform);
 
-      // Create gain nodes
-      const gainL = createGainNode(context, config.amplitude * audioState.amplitude);
-      const gainR = createGainNode(context, config.amplitude * audioState.amplitude);
+      // Create gain nodes - use config amplitude or default volume (no multiplication)
+      const gainL = createGainNode(context, config.amplitude ?? DEFAULT_VOLUME);
+      const gainR = createGainNode(context, config.amplitude ?? DEFAULT_VOLUME);
 
       // Create channel merger for proper stereo separation
       const merger = context.createChannelMerger(2);
@@ -387,7 +387,7 @@ export const useAudioEngine = () => {
   // Update volume
   const updateVolume = useCallback((volume: number) => {
     // Protect against NaN and invalid values
-    const safeVolume = isNaN(volume) ? 1.2 : Math.max(0, Math.min(2, volume));
+    const safeVolume = isNaN(volume) ? DEFAULT_VOLUME : Math.max(0, Math.min(2, volume));
     console.log('🎶 Frontend updateVolume:', { original: volume, safe: safeVolume });
 
     if (audioState.gainL && audioState.gainR && audioState.context) {
@@ -432,7 +432,7 @@ export const useAudioEngine = () => {
     const config: BinauralBeatConfig = {
       base_frequency: leftFreq,
       beat_frequency: Math.abs(rightFreq - leftFreq),
-      amplitude: 1.2,
+      amplitude: DEFAULT_VOLUME,
       waveform: 'sine'
     };
 

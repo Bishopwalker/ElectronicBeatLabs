@@ -22,16 +22,25 @@ const VisualizerContainer = styled(Paper)(({ theme }) => ({
   background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)',
   border: '1px solid rgba(255, 255, 255, 0.1)',
   borderRadius: theme.spacing(2),
-  minHeight: '100px',
-  position:'relative'
+  height: '400px',
+  display: 'flex',
+  flexDirection: 'column',
+  overflowX: 'scroll',
+
 }));
 
 const CanvasContainer = styled(Box)({
   position: 'relative',
   border: '1px solid rgba(255, 255, 255, 0.2)',
   borderRadius: '8px',
-  overflow: 'hidden',
+  overflowX: 'scroll',
   background: 'radial-gradient(circle at center, rgba(0, 200, 255, 0.1) 0%, transparent 70%)',
+  width: '100%',
+  minHeight: '300px',
+  maxHeight: '300px',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
 });
 
 const FrequencyDisplay = styled(Box)(({ theme }) => ({
@@ -69,13 +78,13 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
   showSpectrum = true,
   showFrequencies = true,
   showMetrics = true,
-  height = 200,
-  width = 800,
   audioContext,
   analyserNode,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [fps, setFps] = useState(0);
+  const [canvasDimensions, setCanvasDimensions] = useState({ width: 800, height: 300 });
    // Deconstruct from state
   const {
     base_frequency = 0,
@@ -126,7 +135,37 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
 
   const timerInfo = getTimerInfo();
 
-  // Performance-optimized visualization at 4 FPS
+  // Update canvas dimensions based on container size
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const updateDimensions = () => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        setCanvasDimensions({
+          width: rect.width || 800,
+          height: Math.min(rect.height || 300, 300) // Cap at 300px height for visibility
+        });
+      }
+    };
+
+    // Initial size
+    updateDimensions();
+
+    // Observe container size changes
+    const resizeObserver = new ResizeObserver(updateDimensions);
+    resizeObserver.observe(containerRef.current);
+
+    // Also handle window resize
+    window.addEventListener('resize', updateDimensions);
+
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', updateDimensions);
+    };
+  }, []);
+
+  // Performance-optimized visualization at 40 FPS
   useEffect(() => {
     console.log('🎨 FrequencyVisualizer useEffect triggered:', {
       hasCanvas: !!canvasRef.current,
@@ -151,7 +190,7 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
 
     let animationId: number;
     let lastFrameTime = 0;
-    const targetFPS = 20; // Eyes-closed optimized FPS
+    const targetFPS = 40; // Eyes-closed optimized FPS
     const frameInterval = 1000 / targetFPS;
     let frameCount = 0;
     let fpsTime = 0;
@@ -229,7 +268,7 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
 
             // Draw glow
             ctx.beginPath();
-            ctx.arc(x, y, 8, 0, 2 * Math.PI);
+            ctx.arc(x, y, 8, 1, 2 * Math.PI);
             ctx.strokeStyle = activePattern.color + '88';
             ctx.lineWidth = 2;
             ctx.stroke();
@@ -248,8 +287,8 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
   }, [isPlaying, leftFreq, rightFreq, beatFreq, activePattern]);
 
   return (
-    <VisualizerContainer elevation={3}>
-      <Typography variant="h6" gutterBottom sx={{ color: '#fff', textAlign: 'center' }}>
+    <VisualizerContainer elevation={10}>
+      <Typography variant="h6" gutterBottom sx={{ color: '#fff', textAlign: 'center'}}>
         {title}
       </Typography>
 
@@ -299,12 +338,17 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
       )}
 
       {/* Canvas Visualization */}
-      <CanvasContainer>
+      <CanvasContainer ref={containerRef}>
         <canvas
           ref={canvasRef}
-          width={width}
-          height={height}
-          style={{ display: 'block', width: '100%', height: 'auto' }}
+          width={canvasDimensions.width}
+          height={canvasDimensions.height}
+          style={{
+            display: 'block',
+            width: '100%',
+            height: '100%',
+            maxHeight: '300px'
+          }}
         />
       </CanvasContainer>
 
@@ -359,6 +403,27 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
               border: '1px solid #00bfff'
             }}
           />
+          {/* Audio Quality Metrics */}
+          {isAnalyzing && stats && (
+            <>
+              <MetricChip
+                quality={stats.dataQuality}
+                label={`Quality: ${stats.dataQuality.toUpperCase()}`}
+                size="small"
+              />
+              {analysisData?.signalQuality && (
+                <Chip
+                  label={`SNR: ${analysisData.signalQuality.snr.toFixed(1)}dB`}
+                  size="small"
+                  sx={{
+                    backgroundColor: 'rgba(0, 255, 136, 0.2)',
+                    color: '#00ff88',
+                    border: '1px solid #00ff88'
+                  }}
+                />
+              )}
+            </>
+          )}
           {activePattern && (
             <Chip
               label={`Pattern: ${activePattern.name}`}

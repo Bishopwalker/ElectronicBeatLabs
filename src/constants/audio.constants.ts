@@ -10,8 +10,9 @@ export const DEFAULT_LEFT_FREQUENCY = 140;
 export const DEFAULT_RIGHT_FREQUENCY = 144; // base + beat
 
 // Default audio settings
+// Volume/amplitude consolidated to single value (30%)
 export const DEFAULT_VOLUME = 0.3;
-export const DEFAULT_AMPLITUDE = 1.2;
+export const DEFAULT_AMPLITUDE =  DEFAULT_VOLUME;
 export const DEFAULT_WAVEFORM = 'sine' as const;
 
 // Sample rates and frame rates
@@ -21,8 +22,8 @@ export const SAMPLES_PER_FRAME = SAMPLE_RATE / FRAME_RATE; // 800
 
 // Frequency limits
 export const MIN_BASE_FREQUENCY = 20;
-export const MAX_BASE_FREQUENCY = 199; // Per project requirements: all defaults ≤ 199Hz
-export const MIN_BEAT_FREQUENCY = 0.1;
+export const MAX_BASE_FREQUENCY = 2000; // Per project requirements: all defaults ≤ 199Hz
+export const MIN_BEAT_FREQUENCY = 0.01;
 export const MAX_BEAT_FREQUENCY = 100;
 
 // Spatial audio defaults

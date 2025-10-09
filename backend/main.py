@@ -49,10 +49,10 @@ async def startup_event():
     Initialize database and perform startup tasks
     """
     logger.info("Starting up Electromagnetic Beat Lab backend...")
-    
-    # Initialize database tables
-    init_db()
-    logger.info("Database initialized successfully")
+
+    # Initialize database tables - DISABLED (not currently needed)
+    # init_db()
+    # logger.info("Database initialized successfully")
     
     # Log startup completion
     logger.info("Backend startup completed successfully")

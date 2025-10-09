@@ -541,3 +541,28 @@ export interface BinauralTestProps {
 
 // LocalAudio - The Father Type
 export * from './localaudio.types';
+
+// ============================================
+// EQUALIZER TYPES - Audio EQ System
+// ============================================
+
+/**
+ * Equalizer band configuration
+ */
+export interface EqualizerBand {
+  id: string;
+  frequency: number; // Center frequency in Hz
+  gain: number; // Gain in dB (-40 to +40)
+  Q: number; // Quality factor (0.1 to 10)
+  type: BiquadFilterType;
+  label: string;
+}
+
+/**
+ * Equalizer state for UI and audio processing
+ */
+export interface EqualizerState {
+  enabled: boolean;
+  bands: EqualizerBand[];
+  preset: string;
+}

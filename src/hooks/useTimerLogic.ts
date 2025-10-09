@@ -18,6 +18,7 @@ import type {
   AnyAudioEngine
 } from "../types";
 import { useWebSocketContext } from './useWebsocketContext';
+import { DEFAULT_VOLUME } from '../constants/audio.constants';
 
 /**
  * Props for useTimerLogic hook - extracted from AppState
@@ -337,7 +338,7 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
         const config = {
           base_frequency: firstTransition.left_ear_hz,
           beat_frequency: firstTransition.frequency_hz,
-          amplitude: 0.7,
+          amplitude: DEFAULT_VOLUME,
           waveform: 'sine' as const,
         };
 

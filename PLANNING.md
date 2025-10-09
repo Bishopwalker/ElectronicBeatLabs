@@ -77,7 +77,8 @@ src/
 ├── components/           # React components
 │   ├── audio/           # Audio-specific components
 │   ├── controls/        # Control components
-│   └── visualization/   # Three.js visualizations
+│   ├── visualization/   # Three.js visualizations
+│   └── styles/          # Component style definitions
 ├── hooks/               # Custom React hooks
 ├── contexts/            # React contexts
 ├── types/               # TypeScript definitions
@@ -96,7 +97,7 @@ backend/
 
 ### 1. Real-Time Audio Streaming
 - **WebSocket Protocol**: Binary frames for audio data
-- **Sample Rate**: 44.1kHz standard, configurable
+- **Sample Rate**: 48kHz standard, configurable
 - **Buffer Management**: Circular buffers for smooth playback
 - **Latency Target**: <50ms end-to-end
 
@@ -116,6 +117,19 @@ backend/
 - **Backend**: Structured exception handling + logging
 - **WebSocket**: Automatic reconnection with exponential backoff
 - **Audio**: Graceful degradation on device/browser limitations
+
+### 5. UI/UX Layout Architecture
+- **Layout System**: Flexible responsive design with scrollable content
+- **Panel Management**: Dynamic flex values for proportional sizing
+  - Standard panels: `flex: '1 1 auto'`
+  - Wide panels: `flex: '2 1 auto'` (Binaural/Visualization)
+  - Equalizer: Special horizontal full-width layout
+- **Height Strategy**: Auto heights with maxHeight constraints (70vh)
+- **Scrolling**: Full app scrollability with `overflow-y: auto`
+- **Component Integration**:
+  - FrequencyVisualizer in TimerCountdownDisplay (NOT visualization section)
+  - 3D patterns only in main visualization area
+  - Horizontal 50/50 split in timer display for info/visualization
 
 ## Performance Requirements
 

@@ -92,12 +92,52 @@ c- **AudioWorklet**: Modern replacement for deprecated ScriptProcessorNode (see 
 - **Beta (13-30 Hz)**: Focus, concentration, cognitive performance
 - **Gamma (30-100 Hz)**: Peak performance, cognitive binding
 
+## UI/UX ARCHITECTURE (Current State - Updated 2025-10-09)
+
+### Layout System Architecture
+The application uses a flexible, responsive layout system designed for optimal usability:
+
+1. **Main Container Layout**
+   - Full viewport width with scrollable content (overflow-y: auto)
+   - Flexible height (minHeight: 100vh, height: auto) allowing natural content flow
+   - No fixed viewport constraints that prevent scrolling
+
+2. **Panel Flex System**
+   - **Standard Panels**: `flex: '1 1 auto'` - equal grow/shrink behavior
+   - **Wide Panels** (Binaural/Visualization): `flex: '2 1 auto'` - grow 2x more than standard
+   - **Equalizer Panel**: Special horizontal layout taking full width when open
+   - All panels have `maxHeight: '70vh'` with scrollable overflow for long content
+
+3. **Timer Countdown Display**
+   - **IMPORTANT**: FrequencyVisualizer is integrated INTO TimerCountdownDisplay component
+   - Horizontal layout: 50% timer info, 50% live frequency visualization
+   - Shows real-time binaural beat visualization during timer sessions
+   - Located in header area for persistent visibility
+
+4. **Visualization Section**
+   - **NOTE**: FrequencyVisualizer removed from main visualization section
+   - Visualization section now dedicated to 3D electromagnetic field patterns only
+   - Frequency analysis is shown in timer display for better context
+
+5. **Responsive Breakpoints**
+   - xs: < 600px (mobile)
+   - sm: 600-900px (tablet portrait)
+   - md: 900-1200px (tablet landscape/small desktop)
+   - lg: 1200-1536px (desktop)
+   - xl: > 1536px (large desktop)
+
+### Key UI Decisions (DO NOT REVERT)
+- **FrequencyVisualizer placement**: Must remain in TimerCountdownDisplay, NOT in visualization section
+- **Scrolling behavior**: Body must have `overflow-y: auto` for full app access
+- **Panel flex values**: Standard panels use `flex: '1 1 auto'` for proper resizing
+- **Height management**: Use `height: auto` with `maxHeight` constraints, not fixed `vh` values
+
 ## OTHER CONSIDERATIONS:
 
 ### Critical Implementation Details:
 
 1. **Phase Continuity**: Audio generation must maintain phase between frames to prevent clicks/pops
-2. **Sample Rate Consistency**: 44.1kHz throughout entire audio pipeline
+2. **Sample Rate Consistency**: 48kHz throughout entire audio pipeline (updated from 44.1kHz)
 3. **WebSocket Buffer Management**: Handle network latency and buffer underruns gracefully
 4. **CORS Configuration**: Enable localhost origins for development
 5. **Error Handling**: Graceful degradation when Web Audio API unavailable

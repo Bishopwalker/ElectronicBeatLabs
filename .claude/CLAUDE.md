@@ -95,6 +95,16 @@
 - **Buffer Management**: AudioWorklet uses ring buffer with 16-90 frame capacity for smooth playback
 - **Bit Depth**: 16-bit PCM for WebSocket transmission, 32-bit float for Web Audio processing
 
+### 🎨 UI/UX Layout Standards (CRITICAL - DO NOT CHANGE)
+- **FrequencyVisualizer Location**: MUST be in TimerCountdownDisplay component, NOT in main visualization section
+- **Scrolling**: Body MUST have `overflow-y: auto` to allow full app scrolling - NEVER use `overflow: hidden`
+- **Panel Flex Values**: Standard panels use `flex: '1 1 auto'` for proper grow/shrink behavior
+- **Wide Panels**: Binaural/Visualization panels use `flex: '2 1 auto'` to grow 2x more
+- **Height Management**: Use `height: auto` with `maxHeight: '70vh'` constraints - avoid fixed viewport heights
+- **Timer Display Layout**: 50% timer info, 50% live frequency visualization in horizontal layout
+- **Visualization Section**: Dedicated to 3D electromagnetic patterns ONLY - no frequency analyzer
+- **Container Styles**: mainContainer must have `minHeight: '100vh'`, `height: 'auto'`, `overflowY: 'auto'`
+
 ### 🧪 Enhanced Testing & Validation
 - **Always test each feature live** by running it in bash and reading output.
 - **Use Windows MCP server** to actually run the website when bash output isn't adequate for proper validation.

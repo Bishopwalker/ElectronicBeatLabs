@@ -244,31 +244,18 @@ export const ElectromagneticLabStyles = {
       md: 'row',
       lg: 'row'
     },
-    flexWrap: {
-      xs: 'wrap',
-      sm: 'wrap',
-      md: 'wrap',
-      lg: 'wrap',
-      xl: 'wrap'
-    },
+    flexWrap: 'wrap',
+    alignContent: 'flex-start',
     overflow: 'visible'
   }) as SxProps<Theme>,
 
   // Panel flex styles
   panelFlex: {
-    flex: '1 1 auto',
-    minWidth: {
-      xs: '280px',
-      sm: '300px',
-      md: '280px',
-      lg: '320px'
-    },
-    maxWidth: {
-      xs: '100%',
-      md: '400px'
-    },
+    flex: '1 1 auto',  // Changed - grow and shrink, 300px base
+    minWidth: '280px',
+    maxWidth: '100%',  // Remove hard max limit
     height: 'auto',
-    maxHeight: '50vh',  // Max 50% viewport height
+    maxHeight: '70vh',  // Max 50% viewport height
     minHeight: 'fit-content',
     display: 'flex',
     flexDirection: 'column',
@@ -277,19 +264,11 @@ export const ElectromagneticLabStyles = {
 
   // Wide panel flex (for binaural and visualization)
   widePanelFlex: {
-    flex: '1 1 auto',
-    minWidth: {
-      xs: '280px',
-      sm: '320px',
-      md: '320px',
-      lg: '360px'
-    },
-    maxWidth: {
-      xs: '100%',
-      md: '450px'
-    },
+    flex: '2 1 auto',  // Changed - grow more (2x), 400px base
+    minWidth: '320px',
+    maxWidth: '100%',  // Remove hard max limit
     height: 'auto',
-    maxHeight: '50vh',  // Max 50% viewport height
+    maxHeight: '70vh',  // Max 50% viewport height
     minHeight: 'fit-content',
     display: 'flex',
     flexDirection: 'column',
@@ -318,7 +297,7 @@ export const ElectromagneticLabStyles = {
 
   // Equalizer panel flex HORIZONTAL - Takes full width horizontally
   equalizerPanelFlexHorizontal: {
-    flex: '0 0 100%',  // Prevent flex shrinking
+    flex: '0 0 100%',  // No grow/shrink - always full width
     width: '100%',
     minWidth: '100%',
     maxWidth: '100%',

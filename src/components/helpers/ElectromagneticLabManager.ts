@@ -221,6 +221,7 @@ export class ElectromagneticLabManager {
 
   // Handle section close
   handleSectionClose(id: string) {
+    console.log('🔴 Closing section:', id);  // Debug log
     this.setState(prev => ({
       ...prev,
       closedSections: [...prev.closedSections, id]

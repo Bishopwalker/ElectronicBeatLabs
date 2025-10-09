@@ -29,7 +29,7 @@ import ControlTabs from './ControlTabs';
 import BinauralGeneratorMUI from './BinauralGeneratorMUI';
 import QuickStart from './QuickStart';
 import TimerTab from './tabs/TimerTab';
-import { FrequencyVisualizer } from './FrequencyVisualizer';
+import DraggableFrequencyVisualizer from './DraggableFrequencyVisualizer';
 import { formatTime } from '../helpers/timer/timerUtils';
 import type {  TimerStatus} from '../data/timer';
 
@@ -100,6 +100,50 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
   useEffect(() => {
     updateElectromagneticState(activeAudioEngine);
   }, [activeAudioEngine, updateElectromagneticState]);
+
+  // CRITICAL: Sync electromagnetic field frequency with audio engine's actual frequency
+  // This ensures both FrequencyVisualizer and SpatialVisualizer display the same data
+  useEffect(() => {
+    const getActualFrequencies = () => {
+      // Get current frequencies from active audio engine
+      if (activeAudioEngine.audioState.config) {
+        // Backend engine format
+        return {
+          base: activeAudioEngine.audioState.config.base_frequency,
+          beat: activeAudioEngine.audioState.config.beat_frequency
+        };
+      } else {
+        // Frontend engine format
+        return {
+          base: activeAudioEngine.audioState.leftFreq || DEFAULT_BASE_FREQUENCY,
+          beat: activeAudioEngine.audioState.beat_frequency || DEFAULT_BEAT_FREQUENCY
+        };
+      }
+    };
+
+    const frequencies = getActualFrequencies();
+
+    // Update electromagnetic field with actual beat frequency from audio engine
+    // This syncs SpatialVisualizer animations with real audio
+    if (frequencies.beat !== appState.electromagnetic.frequency) {
+      console.log('🔄 Syncing electromagnetic field with audio frequency:', frequencies.beat);
+      updateAppState({
+        electromagnetic: {
+          ...appState.electromagnetic,
+          frequency: frequencies.beat
+        },
+        base_frequency: frequencies.base,
+        beat_frequency: frequencies.beat
+      });
+    }
+  }, [
+    activeAudioEngine.audioState.config?.base_frequency,
+    activeAudioEngine.audioState.config?.beat_frequency,
+    activeAudioEngine.audioState.leftFreq,
+    activeAudioEngine.audioState.beat_frequency,
+    appState.electromagnetic,
+    updateAppState
+  ]);
 
   // Force re-render when backend connection state changes
   useEffect(() => {
@@ -450,38 +494,24 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
           </Box>
         </Box>
 
-        {/* Frequency Visualizer - Now in Header Area */}
+        {/* Draggable Frequency Visualizer - Now moveable and resizable */}
         {!closedSections.includes('frequencyVisualizer') && (
-          <Box  sx={ElectromagneticLabStyles.headerFrequencyVisualizer}>
-            <CollapsibleSection
-              id="frequencyVisualizer"
-              title="Frequency Visualizer"
-              icon="📊"
-              defaultOpen={true}
-              onClose={handleSectionClose}
-              compact={true}
-            >
-              <FrequencyVisualizer
-                state={{
-                  ...appState,
-                  base_frequency: activeAudioEngine.audioState.config?.base_frequency ||
-                    activeAudioEngine.audioState.leftFreq ||
-                    DEFAULT_BASE_FREQUENCY,
-                  beat_frequency: activeAudioEngine.audioState.config?.beat_frequency ||
-                    activeAudioEngine.audioState.beat_frequency ||
-                    DEFAULT_BEAT_FREQUENCY
-                }}
-                title=""
-                showSpectrum={true}
-                showFrequencies={true}
-                showMetrics={false}
-                height={120}
-                width={600}
-                audioContext={activeAudioEngine.audioContext}
-                analyserNode={activeAudioEngine.analyserNode}
-              />
-            </CollapsibleSection>
-          </Box>
+          <DraggableFrequencyVisualizer
+            state={{
+              ...appState,
+              base_frequency: activeAudioEngine.audioState.config?.base_frequency ||
+                activeAudioEngine.audioState.leftFreq ||
+                DEFAULT_BASE_FREQUENCY,
+              beat_frequency: activeAudioEngine.audioState.config?.beat_frequency ||
+                activeAudioEngine.audioState.beat_frequency ||
+                DEFAULT_BEAT_FREQUENCY
+            }}
+            audioContext={activeAudioEngine.audioContext}
+            analyserNode={activeAudioEngine.analyserNode}
+            onClose={() => handleSectionClose('frequencyVisualizer')}
+            defaultPosition={{ x: window.innerWidth - 520, y: 100 }}
+            defaultSize={{ width: 500, height: 200 }}
+          />
         )}
 
         {/* Compact Status Overview - Show when Master Controls is closed */}

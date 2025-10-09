@@ -268,8 +268,8 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
 
                 </Box>
                 
-                {/* Visualizer Section - 50% Width */}
-                {appState && audioContext && (
+                {/* Visualizer Section - 50% Width - Only show when timer is running */}
+                {appState && audioContext && timerStatus.isRunning && (
                     <Box sx={{
                         flex: '1 1 50%',
                         display: 'flex',
@@ -300,8 +300,6 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
                             audioContext={audioContext}
                             analyserNode={analyserNode}
                             title=""
-                            height={160}
-                            width={'100%'}
                             showMetrics={false}
                             showFrequencies={true}
                             showSpectrum={true}

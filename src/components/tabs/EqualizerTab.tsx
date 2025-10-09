@@ -25,7 +25,7 @@ const EqualizerTab: React.FC<EqualizerTabProps> = ({
   };
 
   return (
-    <Box sx={{ p: 2 }}>
+    <Box sx={{ p: 0 }}>
       <EqualizerMUI
         audioContext={audioEngine.audioContext || null}
         onEqualizerChange={handleEqualizerChange}

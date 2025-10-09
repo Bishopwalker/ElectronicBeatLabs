@@ -13,7 +13,6 @@ import type {
 import {
   DEFAULT_BASE_FREQUENCY,
   DEFAULT_BEAT_FREQUENCY,
-  DEFAULT_AMPLITUDE,
   DEFAULT_VOLUME
 } from '../constants/audio.constants';
 
@@ -64,7 +63,7 @@ export const useBackendAudioEngine = () => {
     connected: false,
     isPlaying: false,
     config: {
-      amplitude: DEFAULT_AMPLITUDE,
+      amplitude: DEFAULT_VOLUME,
       base_frequency: DEFAULT_BASE_FREQUENCY,
       beat_frequency: DEFAULT_BEAT_FREQUENCY,
       waveform: 'sine',
@@ -147,7 +146,7 @@ export const useBackendAudioEngine = () => {
       // Create persistent gain node
       if (!gainNode.current) {
         gainNode.current = audioContext.current.createGain();
-        gainNode.current.gain.value = audioState.config?.amplitude || 1.2;
+        gainNode.current.gain.value = audioState.config?.amplitude ?? DEFAULT_VOLUME;
         gainNode.current.connect(audioContext.current.destination);
       }
 
@@ -161,7 +160,7 @@ export const useBackendAudioEngine = () => {
               numberOfOutputs: 1,
               outputChannelCount: [2], // Stereo output
               processorOptions: {
-                amplitude: audioState.config?.amplitude || 1.2
+                amplitude: audioState.config?.amplitude ?? DEFAULT_VOLUME
               }
             }
         );
@@ -632,7 +631,7 @@ export const useBackendAudioEngine = () => {
         // When no config, use current audioState.config with proper fallbacks
         base_frequency: audioState.config?.base_frequency || DEFAULT_BASE_FREQUENCY,
         beat_frequency: audioState.config?.beat_frequency || DEFAULT_BEAT_FREQUENCY,
-        amplitude: audioState.config?.amplitude || DEFAULT_AMPLITUDE,
+        amplitude: audioState.config?.amplitude ?? DEFAULT_VOLUME,
         spatial_enabled: audioState.config?.spatial?.enabled || false,
         spatial_settings: {
           mode: audioState.config?.spatial?.mode || 'binaural',
@@ -887,13 +886,21 @@ export const useBackendAudioEngine = () => {
   // Update volume
   const updateVolume = useCallback((volume: number) => {
     // Protect against NaN and invalid values
-    const safeVolume = isNaN(volume) ? 2 : Math.max(0, Math.min(2, volume));
+    const safeVolume = isNaN(volume) ? DEFAULT_VOLUME : Math.max(0, Math.min(2, volume));
     console.log('🎵 Backend updateVolume:', { original: volume, safe: safeVolume });
 
+    // Send update to backend via WebSocket
     updateSettings({
       amplitude: safeVolume
     });
 
+    // CRITICAL FIX: Update gain node directly for immediate volume change
+    if (gainNode.current && audioContext.current) {
+      console.log('🔊 Updating gain node directly for live volume adjustment:', safeVolume);
+      gainNode.current.gain.setValueAtTime(safeVolume, audioContext.current.currentTime);
+    }
+
+    // Update local state
     setAudioState(prev => ({
       ...prev,
       config: {
@@ -952,7 +959,7 @@ export const useBackendAudioEngine = () => {
     const sessionConfig = {
       base_frequency: config.base_frequency || 80,
       beat_frequency: config.beat_frequency || 15,
-      amplitude: config.amplitude || 1.2,
+      amplitude: config.amplitude ?? DEFAULT_VOLUME,
       waveform: config.waveform || 'sine',
       spatial_enabled: config.spatial?.enabled || true,
       spatial_settings: {
@@ -1021,7 +1028,7 @@ export const useBackendAudioEngine = () => {
     const config: BinauralBeatConfig = {
       base_frequency: leftFreq,
       beat_frequency: Math.abs(rightFreq - leftFreq),
-      amplitude: 1.2,
+      amplitude: DEFAULT_VOLUME,
       waveform: 'sine'
     };
 

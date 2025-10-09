@@ -48,15 +48,41 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
           p: compact ? 0.5 : 1,
           cursor: 'pointer',
           borderBottom: isOpen ? '1px solid rgba(255, 255, 255, 0.1)' : 'none',
-          flexShrink: 0
+          flexShrink: 0,
+          '&:hover': {
+            bgcolor: 'rgba(255, 255, 255, 0.05)'
+          }
         }}
         onClick={() => setIsOpen(!isOpen)}
       >
-        <Typography variant={compact ? "body2" : "h6"} sx={{ display: 'flex', alignItems: 'center', gap: compact ? 0.5 : 1 }}>
+        <Typography variant={compact ? "body2" : "h6"} sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: compact ? 0.5 : 1,
+          userSelect: 'none'
+        }}>
+          <span style={{ fontSize: compact ? '0.9rem' : '1rem' }}>
+            {isOpen ? '▼' : '▶'}
+          </span>
           {icon} {title}
         </Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: compact ? 0.5 : 1 }}>
-          <IconButton size="small" onClick={handleSectionClose} sx={{ color: '#ff4444', padding: compact ? '2px' : '8px' }}>
+          <IconButton 
+            size="small" 
+            onClick={(e) => {
+              e.stopPropagation();
+              console.log('🚫 Closing section:', id);  // Debug
+              handleSectionClose(e);
+            }} 
+            sx={{ 
+              color: '#ff4444', 
+              padding: compact ? '2px' : '8px',
+              '&:hover': {
+                bgcolor: 'rgba(255, 68, 68, 0.2)',
+                color: '#ff6666'
+              }
+            }}
+          >
             ✕
           </IconButton>
         </Box>

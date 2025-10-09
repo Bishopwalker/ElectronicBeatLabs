@@ -1,21 +1,20 @@
 // Electromagnetic Beat Lab - Equalizer Component
 // Professional multi-band audio equalizer with Material-UI interface
 
-import React, { useEffect,useCallback, useMemo } from 'react';
+import React, { useEffect, useCallback, useMemo } from 'react';
 import {
   Box,
   Paper,
   Typography,
   Slider,
   Button,
-  ButtonGroup,
   Switch,
   FormControlLabel,
   Chip,
-  Tooltip,
-  IconButton
+  Tooltip
 } from '@mui/material';
-import { useEqualizer, EQ_PRESETS, type EqualizerBand } from '../hooks/useEqualizer';
+import { useEqualizer, EQ_PRESETS } from '../hooks/useEqualizer';
+import type { EqualizerBand } from '../types';
 
 interface EqualizerMUIProps {
   audioContext: AudioContext | null;
@@ -54,16 +53,17 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
     }
   }, [toggleEqualizer, inputNode, initializeEqualizer, onEqualizerChange]);
 
-
-    useEffect(() => {
-        // Auto-initialize and enable equalizer on mount
-        if (audioContext && !inputNode) {
-            const nodes = initializeEqualizer();
-            if (nodes && onEqualizerChange) {
-                onEqualizerChange(nodes.input, nodes.output);
-            }
-        }
-    }, [audioContext, initializeEqualizer, onEqualizerChange, inputNode]);
+  // Auto-initialize and enable equalizer on mount
+  useEffect(() => {
+    if (audioContext && !inputNode) {
+      console.log('🎚️ Auto-initializing equalizer on mount');
+      const nodes = initializeEqualizer();
+      if (nodes && onEqualizerChange) {
+        console.log('🎚️ Calling onEqualizerChange with nodes:', nodes);
+        onEqualizerChange(nodes.input, nodes.output);
+      }
+    }
+  }, [audioContext, initializeEqualizer, onEqualizerChange, inputNode]);
 
   // Handle preset selection
   const handlePresetClick = useCallback((presetName: keyof typeof EQ_PRESETS) => {
@@ -99,10 +99,10 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
         key={band.id}
         sx={{
           display: 'flex',
-            overflow: "auto",
+          overflow: "auto",
           flexDirection: 'column',
           alignItems: 'center',
-          minWidth: '50px'  // Reduced from 60px
+          minWidth: '40px'  // Reduced from 50px
         }}
       >
         {/* Gain value display */}
@@ -110,9 +110,9 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
           label={`${band.gain >= 0 ? '+' : ''}${band.gain.toFixed(1)}`}
           size="small"
           sx={{
-            mb: 1,
-            fontSize: '0.7rem',
-            height: '20px',
+            mb: 0.5,  // Reduced from 1
+            fontSize: '0.65rem',  // Reduced from 0.7rem
+            height: '18px',  // Reduced from 20px
             bgcolor: getSliderColor(band.gain),
             color: 'white',
             fontWeight: 'bold'
@@ -129,7 +129,7 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
           step={0.5}
           disabled={!equalizerState.enabled}
           sx={{
-            height: 200,  // Reduced from 300
+            height: 150,  // Reduced from 200
             '& .MuiSlider-thumb': {
               width: 16,
               height: 16,
@@ -153,8 +153,8 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
         <Typography
           variant="caption"
           sx={{
-            mt: 1,
-            fontSize: '0.7rem',
+            mt: 0.5,  // Reduced from 1
+            fontSize: '0.65rem',  // Reduced from 0.7rem
             color: 'rgba(255, 255, 255, 0.7)',
             textAlign: 'center'
           }}
@@ -165,17 +165,20 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
     );
   }, [equalizerState.enabled, handleBandChange]);
 
-  // Memoize preset buttons
+  // Memoize preset buttons - optimized for vertical layout
   const presetButtons = useMemo(() => {
     return Object.entries(EQ_PRESETS).map(([key, preset]) => (
-      <Tooltip key={key} title={preset.description} arrow>
+      <Tooltip key={key} title={preset.description} arrow placement="right">
         <Button
           variant={equalizerState.preset === key ? 'contained' : 'outlined'}
           size="small"
+          fullWidth
           onClick={() => handlePresetClick(key as keyof typeof EQ_PRESETS)}
           sx={{
-            minWidth: '80px',
-            fontSize: '0.7rem',
+            fontSize: '0.55rem',
+            py: 0.25,
+            px: 0.5,
+            minWidth: 'unset',
             color: equalizerState.preset === key ? 'white' : '#00bfff',
             borderColor: '#00bfff',
             bgcolor: equalizerState.preset === key ? '#00bfff' : 'transparent',
@@ -195,25 +198,32 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
     <Paper
       elevation={3}
       sx={{
-        p: 1.5,  // Reduced from 2
+        p: 0.5,
         bgcolor: 'rgba(0, 0, 0, 0.6)',
         backdropFilter: 'blur(10px)',
         borderRadius: 2,
-        border: '1px solid rgba(255, 255, 255, 0.1)'
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        overflow: 'auto'
       }}
     >
-      {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>  {/* Reduced from mb: 2 */}
-        <Typography variant="body1" sx={{ color: 'white', display: 'flex', alignItems: 'center', gap: 0.5, fontSize: '0.9rem' }}>  {/* Smaller font */}
-          🎚️ Equalizer
-        </Typography>
+      {/* Main Layout: Presets on left (vertical), Sliders on right */}
+      <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'flex-start' }}>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        {/* Left Column: Presets & Controls */}
+        <Box sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 0.25,
+          minWidth: '90px',
+          maxWidth: '110px'
+        }}>
+          {/* Enable/Disable Switch */}
           <FormControlLabel
             control={
               <Switch
                 checked={equalizerState.enabled}
                 onChange={handleToggle}
+                size="small"
                 sx={{
                   '& .MuiSwitch-switchBase.Mui-checked': {
                     color: '#00ff88'
@@ -225,81 +235,75 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
               />
             }
             label={
-              <Typography variant="body2" sx={{ color: 'white' }}>
-                {equalizerState.enabled ? 'Enabled' : 'Disabled'}
+              <Typography variant="caption" sx={{ color: 'white', fontSize: '0.6rem' }}>
+                {equalizerState.enabled ? 'ON' : 'OFF'}
               </Typography>
             }
+            sx={{ m: 0, mb: 0.25 }}
           />
 
-          <Tooltip title="Reset all bands to 0 dB" arrow>
-            <IconButton
-              onClick={resetEqualizer}
-              disabled={!equalizerState.enabled}
+          {/* Reset Button */}
+          <Button
+            onClick={resetEqualizer}
+            disabled={!equalizerState.enabled}
+            size="small"
+            variant="outlined"
+            sx={{
+              minWidth: '70px',
+              fontSize: '0.55rem',
+              color: '#ff6b00',
+              borderColor: '#ff6b00',
+              py: 0.25,
+              '&:hover': {
+                bgcolor: 'rgba(255, 107, 0, 0.1)',
+                borderColor: '#ff6b00'
+              }
+            }}
+          >
+            🔄 Reset
+          </Button>
+
+          {/* Current Preset Chip */}
+          {equalizerState.preset !== 'flat' && (
+            <Chip
+              label={EQ_PRESETS[equalizerState.preset as keyof typeof EQ_PRESETS]?.name || 'Custom'}
               size="small"
               sx={{
-                color: '#ff6b00',
-                '&:hover': { bgcolor: 'rgba(255, 107, 0, 0.1)' }
+                bgcolor: equalizerState.preset === 'custom' ? '#ff6b00' : '#00bfff',
+                color: 'white',
+                fontWeight: 'bold',
+                fontSize: '0.55rem',
+                height: '16px'
               }}
-            >
-              🔄
-            </IconButton>
-          </Tooltip>
+            />
+          )}
+
+          {/* Preset Buttons - Vertical Stack */}
+          <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.55rem', mt: 0.5 }}>
+            Presets:
+          </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
+            {presetButtons}
+          </Box>
+        </Box>
+
+        {/* Right Column: Frequency Sliders */}
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-end',
+            gap: 0.15,  // Ultra-tight spacing
+            p: 0.5,
+            bgcolor: 'rgba(0, 0, 0, 0.3)',
+            borderRadius: 1,
+            overflowX: 'auto',
+            flex: 1
+          }}
+        >
+          {equalizerState.bands.map(band => renderBandSlider(band))}
         </Box>
       </Box>
-
-      {/* Preset Buttons */}
-      <Box sx={{ mb: 2 }}>  {/* Reduced from mb: 3 */}
-        <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.7)', mb: 0.5, display: 'block', fontSize: '0.65rem' }}>  {/* Smaller */}
-          Presets:
-        </Typography>
-        <ButtonGroup size="small" sx={{ flexWrap: 'wrap', gap: 0.5 }}>
-          {presetButtons}
-        </ButtonGroup>
-      </Box>
-
-      {/* Current Preset Display */}
-      {equalizerState.preset !== 'flat' && (
-        <Box sx={{ mb: 1 }}>  {/* Reduced from mb: 2 */}
-          <Chip
-            label={`Active: ${EQ_PRESETS[equalizerState.preset as keyof typeof EQ_PRESETS]?.name || 'Custom'}`}
-            size="small"
-            sx={{
-              bgcolor: equalizerState.preset === 'custom' ? '#ff6b00' : '#00bfff',
-              color: 'white',
-              fontWeight: 'bold'
-            }}
-          />
-        </Box>
-      )}
-
-      {/* Band Sliders */}
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-end',
-          gap: 0.5,  // Reduced from 1
-          p: 1.5,  // Reduced from 2
-          bgcolor: 'rgba(0, 0, 0, 0.3)',
-          borderRadius: 1,
-          overflowX: 'auto'
-        }}
-      >
-        {equalizerState.bands.map(band => renderBandSlider(band))}
-      </Box>
-
-      {/* Info */}
-      <Typography
-        variant="caption"
-        sx={{
-          mt: 2,
-          display: 'block',
-          color: 'rgba(255, 255, 255, 0.5)',
-          textAlign: 'center'
-        }}
-      >
-        Adjust frequency bands to shape your audio. Range: -40 dB to +40 dB
-      </Typography>
     </Paper>
   );
 };

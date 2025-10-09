@@ -1,7 +1,7 @@
 # TASK.md
 # Electromagnetic Beat Lab - Task Tracking
 
-**Last Updated:** 2025-08-01
+**Last Updated:** 2025-10-09
 
 ## Current Sprint (Week of Aug 1-7, 2025)
 
@@ -63,6 +63,24 @@
 - [ ] Load testing with realistic user patterns
 
 ## ✅ Completed Tasks
+
+### October 2025
+- [x] **Fix UI/UX Layout Issues and Component Placement** (Oct 9, 2025)
+  - Moved FrequencyVisualizer from visualization section to TimerCountdownDisplay
+  - Fixed scrolling issues preventing access to timer presets at bottom of app
+  - Changed body overflow from hidden to auto in index.css
+  - Updated all panel flex values to use `flex: '1 1 auto'` for proper resizing
+  - Implemented 50/50 horizontal layout in timer display (timer info + visualization)
+  - Changed container heights from fixed viewport units to auto with maxHeight constraints
+  - Updated documentation to prevent regression of these critical UI fixes
+
+- [x] **Update Project Documentation to Reflect Current State** (Oct 9, 2025)
+  - Updated INITIAL.md with UI/UX Architecture section documenting current layout patterns
+  - Added UI/UX Layout Standards section to CLAUDE.md with critical DO NOT CHANGE warnings
+  - Enhanced PLANNING.md with UI/UX Layout Architecture architectural decisions
+  - Updated TASK.md with all completed UI fixes and documentation updates
+  - Added explicit warnings against reverting FrequencyVisualizer placement
+  - Documented flexible panel system and scrolling requirements
 
 ### August 2025
 - [x] **Optimize context engineering structure for AI assistants** (Aug 1, 2025)
