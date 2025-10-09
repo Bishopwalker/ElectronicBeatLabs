@@ -2,78 +2,22 @@
 // Central hub for all timer presets and functionality
 
 // ==================================================================
-// IMPORT ALL PRESET COLLECTIONS
+// IMPORT ALL PRESET COLLECTIONS & TYPES
 // ==================================================================
 
 import { ADVANCED_TIMER_PRESETS } from "./advancedTimerPresets";
 import { BUILT_IN_PRESETS, getPresetTransitions } from "./timerPresets";
-import type { TimerPreset, FrequencyTransition } from "../../types";
 
-// ==================================================================
-// TIMER TYPE DEFINITIONS
-// ==================================================================
-
-/**
- * Timer session information
- */
-export interface TimerSession {
-  presetId?: TimerPreset;
-  startTime: number;
-  currentPhase: number;
-  isPaused: boolean;
-  loopCount: number;
-  session_id: string;
-  preset?: TimerPreset;
-  is_active?: boolean;
-  current_transition_index?: number;
-}
-
-/**
- * Timer status for UI display and state management
- */
-export interface TimerStatus {
-  session?: TimerSession;
-  current_transition: FrequencyTransition;
-  next_transition: FrequencyTransition | null;
-  time_remaining_current: number;
-  time_remaining_total: number;
-  isRunning: boolean;
-  totalTime: number;
-  progress: number;
-}
-
-/**
- * Local timer state for useTimerLogic hook
- */
-export interface LocalTimer {
-  startTime: number;
-  currentTransitionIndex: number;
-  transitions: FrequencyTransition[];
-  isActive: boolean;
-  isPaused: boolean;
-  forceLoop?: boolean;
-  session?: {
-    is_active?: boolean;
-    is_paused?: boolean;
-    preset?: TimerPreset;
-  };
-}
-
-/**
- * Timer control actions
- */
-export type TimerAction = 'stop' | 'pause' | 'resume' | 'restart';
-
-/**
- * Custom preset form data
- */
-export interface CustomPresetForm {
-  name: string;
-  description: string;
-  duration: number;
-  tags: string[];
-  transitions: FrequencyTransition[];
-}
+// Import timer types from centralized location (types/index.ts)
+import type {
+  TimerPreset,
+  FrequencyTransition,
+  TimerSession,
+  TimerStatus,
+  LocalTimer,
+  TimerAction,
+  CustomPresetForm
+} from "../../types";
 
 export const PRESET_CATEGORIES = {
   BASIC: {
@@ -225,7 +169,7 @@ export const PRESET_STATS = {
 // EXPORT ALL TYPES AND FUNCTIONS
 // ==================================================================
 export type { TimerPreset, FrequencyTransition };
-export { getPresetTransitions };
+export {getPresetTransitions, TimerStatus};
 
 export const TIMER_SYSTEM_INFO = {
   version: '1.0.0',

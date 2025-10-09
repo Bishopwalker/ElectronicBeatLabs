@@ -1,5 +1,5 @@
-// Electromagnetic Beat Lab - Binaural Test Component (Material UI)
-// Test individual left/right frequencies
+// Electromagnetic Beat Lab - Binaural Generator with Visualization
+// Unified binaural beat generator with frequency and electromagnetic analysis
 
 import React, { useState, useEffect } from 'react';
 import {
@@ -12,11 +12,13 @@ import {
   Paper,
   Chip,
   IconButton,
+  LinearProgress,
+  Grid,
 } from '@mui/material';
 import HeadphonesIcon from '@mui/icons-material/Headphones';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import {calculateRightFreq} from "../types/clean.types.ts";
-//import { calculateLeftFreq, calculateRightFreq, calculateBeatFrequency } from '../types';
+import { useBinauralVisualization } from '../hooks/useBinauralVisualization';
 
 interface BinauralGeneratorProps {
   base_frequency: number;
@@ -41,16 +43,44 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
   const rightFreq = base_frequency+ beat_frequency;
 
   // Local state for typing - allows smooth input
-  const [leftInput, setLeftInput] = useState(leftFreq.toString());
-  const [rightInput, setRightInput] = useState(rightFreq.toString());
-  
-  // Remove independent audio engine - parent handles all audio
+  const [leftInput, setLeftInput] = useState(leftFreq);
+  const [rightInput, setRightInput] = useState(rightFreq);
+
+  // Binaural visualization hook for frequency and electromagnetic analysis
+  const { visualizationData, stats, isPlaying } = useBinauralVisualization({
+    updateRate: 30,
+    enabled: true,
+    showSpectrum: true,
+    showPeaks: true,
+    showAmplitudes: true
+  });
+
+  // Calculate electromagnetic field strength from beat frequency
+  const calculateElectromagneticStrength = (beatFreq: number): number => {
+    // Reason: Map beat frequency to electromagnetic field strength (0-1 range)
+    // Delta (0.5-4Hz): High strength for deep relaxation
+    // Theta (4-8Hz): Medium-high strength for creativity
+    // Alpha (8-13Hz): Medium strength for relaxed focus
+    // Beta (13-30Hz): Lower strength for active focus
+    if (beatFreq <= 4) return 0.9; // Delta - very strong field
+    if (beatFreq <= 8) return 0.75; // Theta - strong field
+    if (beatFreq <= 13) return 0.6; // Alpha - medium field
+    if (beatFreq <= 30) return 0.45; // Beta - moderate field
+    return 0.3; // Gamma - lower field strength
+  };
+
+  const electromagneticStrength = calculateElectromagneticStrength(beat_frequency);
+  const electromagneticState = beat_frequency > 0 ?
+    (beat_frequency <= 4 ? 'DEEP RESONANCE' :
+     beat_frequency <= 8 ? 'CREATIVE FLOW' :
+     beat_frequency <= 13 ? 'FOCUSED CALM' :
+     beat_frequency <= 30 ? 'ACTIVE FOCUS' : 'HIGH ALERT') : 'INACTIVE';
 
   // Update local state when base_frequency/beat_frequency changes
   useEffect(() => {
     const newLeftFreq =  base_frequency;
     console.log('🎛️ BinauralGenerator: Base frequency changed, left freq:', newLeftFreq);
-    setLeftInput(newLeftFreq.toString());
+    setLeftInput(newLeftFreq);
   }, [base_frequency]);
 
   useEffect(() => {
@@ -329,13 +359,121 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
               </Box>
             </Stack>
           </Paper>
-          
+
+          {/* Electromagnetic Field Analyzer */}
+          <Paper
+            elevation={0}
+            sx={{
+              p: 0.75,
+              background: 'rgba(0, 255, 136, 0.05)',
+              border: '1px solid rgba(0, 255, 136, 0.3)',
+            }}
+          >
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+              ⚡ Electromagnetic Field Analysis
+            </Typography>
+            <Grid container spacing={1}>
+              <Grid item xs={6}>
+                <Typography variant="caption" sx={{ fontSize: '0.65rem', color: 'text.secondary' }}>
+                  Field Strength
+                </Typography>
+                <LinearProgress
+                  variant="determinate"
+                  value={electromagneticStrength * 100}
+                  sx={{
+                    height: 8,
+                    borderRadius: 1,
+                    backgroundColor: 'rgba(0, 255, 136, 0.1)',
+                    '& .MuiLinearProgress-bar': {
+                      backgroundColor: '#00ff88'
+                    }
+                  }}
+                />
+                <Typography variant="caption" sx={{ fontSize: '0.7rem', color: '#00ff88', fontWeight: 600 }}>
+                  {(electromagneticStrength * 100).toFixed(0)}%
+                </Typography>
+              </Grid>
+              <Grid item xs={6}>
+                <Typography variant="caption" sx={{ fontSize: '0.65rem', color: 'text.secondary' }}>
+                  State
+                </Typography>
+                <Typography variant="body2" sx={{ fontSize: '0.75rem', color: '#00ff88', fontWeight: 700 }}>
+                  {electromagneticState}
+                </Typography>
+              </Grid>
+            </Grid>
+          </Paper>
+
+          {/* Frequency Analyzer */}
+          {visualizationData && (
+            <Paper
+              elevation={0}
+              sx={{
+                p: 0.75,
+                background: 'rgba(255, 107, 0, 0.05)',
+                border: '1px solid rgba(255, 107, 0, 0.3)',
+              }}
+            >
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                📊 Real-time Frequency Analysis
+              </Typography>
+              <Grid container spacing={1}>
+                <Grid item xs={4}>
+                  <Typography variant="caption" sx={{ fontSize: '0.6rem', color: 'text.secondary' }}>
+                    SNR
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontSize: '0.75rem', color: '#ff6b00', fontWeight: 600 }}>
+                    {visualizationData.signalQuality.snr.toFixed(1)} dB
+                  </Typography>
+                </Grid>
+                <Grid item xs={4}>
+                  <Typography variant="caption" sx={{ fontSize: '0.6rem', color: 'text.secondary' }}>
+                    Clarity
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontSize: '0.75rem', color: '#ff6b00', fontWeight: 600 }}>
+                    {(visualizationData.signalQuality.clarity * 100).toFixed(0)}%
+                  </Typography>
+                </Grid>
+                <Grid item xs={4}>
+                  <Typography variant="caption" sx={{ fontSize: '0.6rem', color: 'text.secondary' }}>
+                    Quality
+                  </Typography>
+                  <Chip
+                    label={stats.dataQuality.toUpperCase()}
+                    size="small"
+                    sx={{
+                      fontSize: '0.55rem',
+                      height: '16px',
+                      backgroundColor:
+                        stats.dataQuality === 'excellent' ? 'rgba(76, 175, 80, 0.2)' :
+                        stats.dataQuality === 'good' ? 'rgba(255, 193, 7, 0.2)' :
+                        stats.dataQuality === 'fair' ? 'rgba(255, 152, 0, 0.2)' :
+                        'rgba(244, 67, 54, 0.2)',
+                      color:
+                        stats.dataQuality === 'excellent' ? '#4caf50' :
+                        stats.dataQuality === 'good' ? '#ffc107' :
+                        stats.dataQuality === 'fair' ? '#ff9800' :
+                        '#f44336',
+                    }}
+                  />
+                </Grid>
+              </Grid>
+              {visualizationData.peakFrequencies.length > 0 && (
+                <Box sx={{ mt: 0.5 }}>
+                  <Typography variant="caption" sx={{ fontSize: '0.6rem', color: 'text.secondary' }}>
+                    Detected Peaks: {visualizationData.peakFrequencies.slice(0, 2).map(p => `${p.frequency.toFixed(1)}Hz`).join(', ')}
+                  </Typography>
+                </Box>
+              )}
+            </Paper>
+          )}
+
           <Stack direction="row" spacing={0.5} justifyContent="center">
-            <IconButton 
+            <IconButton
               onClick={handleReset}
               color="default"
               size="small"
-              sx={{ 
+              sx={{
                 border: '1px solid rgba(255, 255, 255, 0.2)',
                 '&:hover': {
                   background: 'rgba(255, 255, 255, 0.05)',
@@ -345,12 +483,12 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
               <RefreshIcon />
             </IconButton>
           </Stack>
-          
+
           <Stack direction="row" spacing={0.5} justifyContent="center">
-            <Chip label="20Hz - 20kHz Range" size="small" sx={{ fontSize: '0.65rem' }} />
+            <Chip label={`Viz: ${stats.averageFps} FPS`} size="small" sx={{ fontSize: '0.65rem' }} />
             <Chip
-                label="Frequency Display"
-                color="primary"
+              label={isPlaying ? 'ANALYZING' : 'READY'}
+              color={isPlaying ? 'success' : 'default'}
               size="small"
               sx={{ fontSize: '0.65rem' }}
             />

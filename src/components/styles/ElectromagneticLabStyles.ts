@@ -7,10 +7,14 @@ export const ElectromagneticLabStyles = {
   // Main container styles
   mainContainer: {
     width: '100vw',
-    height: '100vh',
-    overflow: 'auto',
+    minHeight: '100vh',
+    height: 'auto',
+    overflowX: 'hidden',
+    overflowY: 'auto',
     display: 'flex',
-    flexDirection: 'column'
+    flexWrap: 'wrap',
+    flexDirection: 'column',
+    position: 'relative',
   } as SxProps<Theme>,
 
   // Dark screen toggle button
@@ -78,7 +82,7 @@ export const ElectromagneticLabStyles = {
     borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
     display: 'flex',
     flexDirection: 'column',
-    overflow: 'hidden'
+    overflowY: 'auto'
   } as SxProps<Theme>,
 
   // Menu header
@@ -211,18 +215,8 @@ export const ElectromagneticLabStyles = {
       sm: '8px',
       md: '10px'
     },
-    height: closedSections.includes('masterControls') 
-      ? {
-          xs: 'calc(100vh - 120px)',
-          sm: 'calc(100vh - 100px)',
-          md: 'calc(100vh - 80px)'
-        }
-      : {
-          xs: 'calc(100vh - 80px)',
-          sm: 'calc(100vh - 60px)',
-          md: 'calc(100vh - 40px)'
-        },
-    minHeight: 0,
+    minHeight: 'auto',
+    height: 'auto',
     flexDirection: {
       xs: 'column',
       sm: 'column',
@@ -230,29 +224,18 @@ export const ElectromagneticLabStyles = {
       lg: 'row'
     },
     flexWrap: {
-      md: 'nowrap',
+      xs: 'wrap',
+      sm: 'wrap',
+      md: 'wrap',
       lg: 'wrap',
-      xl: 'nowrap'
+      xl: 'wrap'
     },
-    overflowX: {
-      xs: 'visible',
-      md: 'auto'
-    },
-    overflowY: {
-      xs: 'auto',
-      md: 'visible'
-    }
+    overflow: 'visible'
   }) as SxProps<Theme>,
 
   // Panel flex styles
   panelFlex: {
-    flex: {
-      xs: '1 1 auto',
-      sm: '1 1 auto',
-      md: '1 1 280px',
-      lg: '1 1 320px',
-      xl: '0 1 350px'
-    },
+    flex: '1 1 auto',
     minWidth: {
       xs: '280px',
       sm: '300px',
@@ -263,23 +246,15 @@ export const ElectromagneticLabStyles = {
       xs: '100%',
       md: '400px'
     },
-    height: {
-      xs: 'auto',
-      md: '100%'
-    },
+    height: 'auto',
+    minHeight: 'fit-content',
     display: 'flex',
     flexDirection: 'column'
   } as SxProps<Theme>,
 
   // Wide panel flex (for binaural and visualization)
   widePanelFlex: {
-    flex: {
-      xs: '1 1 auto',
-      sm: '1 1 auto',
-      md: '1 1 320px',
-      lg: '1 1 360px',
-      xl: '0 1 400px'
-    },
+    flex: '1 1 auto',
     minWidth: {
       xs: '280px',
       sm: '320px',
@@ -290,10 +265,28 @@ export const ElectromagneticLabStyles = {
       xs: '100%',
       md: '450px'
     },
-    height: {
-      xs: 'auto',
-      md: '100%'
+    height: 'auto',
+    minHeight: 'fit-content',
+    display: 'flex',
+    flexDirection: 'column'
+  } as SxProps<Theme>,
+
+  // Equalizer panel flex - grows 2x more than other panels
+  equalizerPanelFlex: {
+    flex: '2 1 auto',
+    minWidth: {
+      xs: '320px',
+      sm: '400px',
+      md: '450px',
+      lg: '500px'
     },
+    maxWidth: {
+      xs: '100%',
+      md: '800px',
+      lg: '900px'
+    },
+    height: 'auto',
+    minHeight: 'fit-content',
     display: 'flex',
     flexDirection: 'column'
   } as SxProps<Theme>,

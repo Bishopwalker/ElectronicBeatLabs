@@ -15,6 +15,7 @@ import { Box, Alert, Tabs, Tab, Typography } from '@mui/material';
 import React from 'react';
 import { WebSocketProvider } from './hooks/useWebsocketContext';
 import { DEFAULT_BASE_FREQUENCY, DEFAULT_BEAT_FREQUENCY, DEFAULT_VOLUME } from './constants/audio.constants';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 // Styled Components theme configuration
 const styledTheme = {
@@ -74,7 +75,7 @@ const AppContent = () => {
 
   // Show the main app (anonymous or logged in users with remaining time)
   return (
-    <>
+    <ErrorBoundary>
       {/* Optional usage indicator for anonymous users - moveable and closable */}
       {!user && usage && showUsageAlert && (
         <Box sx={{ position: 'fixed', top: 16, left: 16, zIndex: 1000 }}>
@@ -94,21 +95,31 @@ const AppContent = () => {
       </Box> */}
       
       {/* Main app with tabs */}
-      <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', }}>
-        <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'rgba(0,0,0,0.8)' }}>
-          <Tabs 
-            value={activeTab} 
+      <Box sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: '100vh',
+        bgcolor: 'background.default'
+      }}>
+        <Box sx={{
+          borderBottom: 1,
+          borderColor: 'divider',
+          bgcolor: 'rgba(0,0,0,0.8)',
+          flexShrink: 0
+        }}>
+          <Tabs
+            value={activeTab}
             onChange={(_, newValue) => setActiveTab(newValue)}
             variant="fullWidth"
-            sx={{ 
-              '& .MuiTab-root': { 
+            sx={{
+              '& .MuiTab-root': {
                 color: 'white',
                 minWidth: 0,
                 flex: 1,
                 '&.Mui-selected': { color: '#ff6b00' }
               },
-              '& .MuiTabs-indicator': { 
-                backgroundColor: '#ff6b00' 
+              '& .MuiTabs-indicator': {
+                backgroundColor: '#ff6b00'
               },
               '& .MuiTabs-flexContainer': {
                 justifyContent: 'stretch'
@@ -120,8 +131,12 @@ const AppContent = () => {
             <Tab label="New Visualizer Engine" />
           </Tabs>
         </Box>
-        
-        <Box sx={{ p: 0 }}>
+
+        <Box sx={{
+          flex: 1,
+          overflowY: 'auto',
+          position: 'relative'
+        }}>
           {activeTab === 0 && (
             <ElectromagneticBeatLab
               autoStart={false}
@@ -129,7 +144,7 @@ const AppContent = () => {
             />
           )}
           {activeTab === 1 && (
-            <Box sx={{ p: 2, minHeight: 'calc(100vh - 64px)' }}>
+            <Box sx={{ p: 2, pb: 4, minHeight: 'fit-content' }}>
               <TimerTab 
                 appState={{
                   mode: 'AUTO',
@@ -235,7 +250,7 @@ const AppContent = () => {
           )}
         </Box>
       </Box>
-    </>
+    </ErrorBoundary>
   );
 };
 
