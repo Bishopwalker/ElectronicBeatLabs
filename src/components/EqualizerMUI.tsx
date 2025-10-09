@@ -1,7 +1,7 @@
 // Electromagnetic Beat Lab - Equalizer Component
 // Professional multi-band audio equalizer with Material-UI interface
 
-import React, { useCallback, useMemo } from 'react';
+import React, { useEffect,useCallback, useMemo } from 'react';
 import {
   Box,
   Paper,
@@ -53,6 +53,11 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
       onEqualizerChange(null, null);
     }
   }, [toggleEqualizer, inputNode, initializeEqualizer, onEqualizerChange]);
+
+
+    useEffect(() => {
+        initializeEqualizer();
+    }, []);
 
   // Handle preset selection
   const handlePresetClick = useCallback((presetName: keyof typeof EQ_PRESETS) => {

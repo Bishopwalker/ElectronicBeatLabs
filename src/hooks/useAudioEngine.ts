@@ -21,6 +21,8 @@ export const useAudioEngine = () => {
   // Persistent audio context that survives start/stop cycles
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserNodeRef = useRef<AnalyserNode | null>(null);
+  const equalizerInputRef = useRef<GainNode | null>(null);
+  const equalizerOutputRef = useRef<GainNode | null>(null);
   const [audioState, setAudioState] = useState<FrontendAudioEngineState>({
     isPlaying: false,
     amplitude: DEFAULT_AMPLITUDE,
@@ -258,8 +260,16 @@ export const useAudioEngine = () => {
       oscR.connect(gainR);
       gainR.connect(merger, 0, 1); // Connect to right output channel
 
-      // Connect merged output to analyser and destination
-      merger.connect(analyserNodeRef.current);
+      // Connect through equalizer if it exists, otherwise direct to analyser
+      if (equalizerInputRef.current && equalizerOutputRef.current) {
+        console.log('🎚️ Routing audio through equalizer');
+        merger.connect(equalizerInputRef.current);
+        equalizerOutputRef.current.connect(analyserNodeRef.current);
+      } else {
+        console.log('🎵 Routing audio directly (no equalizer)');
+        merger.connect(analyserNodeRef.current);
+      }
+
       analyserNodeRef.current.connect(context.destination);
 
       // Add error handling for oscillators
@@ -480,6 +490,25 @@ export const useAudioEngine = () => {
     console.warn('To use spatial audio, connect to the Python backend server');
   }, []);
 
+  // Set equalizer nodes for audio chain routing
+  const setEqualizerNodes = useCallback((inputNode: GainNode | null, outputNode: GainNode | null) => {
+    console.log('🎚️ Setting equalizer nodes:', { inputNode, outputNode });
+    equalizerInputRef.current = inputNode;
+    equalizerOutputRef.current = outputNode;
+
+    // If audio is currently playing, we need to reconnect the audio chain
+    if (audioState.isPlaying && audioContextRef.current) {
+      console.log('🔄 Reconnecting audio chain with equalizer changes');
+      // The audio will automatically route through the equalizer on next start
+      // For now, just log that equalizer is ready
+      if (inputNode && outputNode) {
+        console.log('✅ Equalizer enabled and ready for audio routing');
+      } else {
+        console.log('❌ Equalizer disabled, audio will route directly');
+      }
+    }
+  }, [audioState.isPlaying]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -507,6 +536,7 @@ export const useAudioEngine = () => {
     createGammaProtocol,
     initializeAudio,
     setAudioState,
+    setEqualizerNodes,
     backendConnected: false, // Frontend engine is never connected to backend
     sessionId: null,
     websocketState: {

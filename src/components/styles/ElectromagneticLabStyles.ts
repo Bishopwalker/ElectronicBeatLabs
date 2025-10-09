@@ -275,17 +275,17 @@ export const ElectromagneticLabStyles = {
   equalizerPanelFlex: {
     flex: '2 1 auto',
     minWidth: {
-      xs: '320px',
+      xs: '100vw',
       sm: '400px',
-      md: '450px',
-      lg: '500px'
+      md: '100vw',
+      lg: '100vw'
     },
     maxWidth: {
       xs: '100%',
       md: '800px',
       lg: '900px'
     },
-    height: 'auto',
+    height: '50vh',
     minHeight: 'fit-content',
     display: 'flex',
     flexDirection: 'column'

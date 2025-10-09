@@ -2,25 +2,17 @@ import React, { useRef, useEffect, useState } from 'react';
 import { Box, Typography, Paper, Chip, LinearProgress, Grid } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { useAudioAnalysis } from '../hooks/useAudioAnalysis';
-import type { BinauralBeatConfig, Pattern8D } from '../types';
-import type { TimerStatus } from '../data/timer';
+import type { AppState} from '../types';
+import { useWebSocketContext } from '../hooks/useWebsocketContext';
 
 interface FrequencyVisualizerProps {
-  config?: BinauralBeatConfig;
+  state: AppState;
   title?: string;
   showSpectrum?: boolean;
   showFrequencies?: boolean;
   showMetrics?: boolean;
   height?: number;
   width?: number;
-  autoStart?: boolean;
-  timerStatus?: TimerStatus;
-  activePattern?: Pattern8D | null;
-  audioState?: {
-    isPlaying: boolean;
-    leftFreq: number;
-    rightFreq: number;
-  };
   audioContext?: AudioContext;
   analyserNode?: AnalyserNode;
 }
@@ -30,7 +22,8 @@ const VisualizerContainer = styled(Paper)(({ theme }) => ({
   background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)',
   border: '1px solid rgba(255, 255, 255, 0.1)',
   borderRadius: theme.spacing(2),
-  minHeight: '300px',
+  minHeight: '100px',
+  position:'relative'
 }));
 
 const CanvasContainer = styled(Box)({
@@ -71,67 +64,63 @@ const MetricChip = styled(Chip)<{ quality: string }>(({ quality }) => ({
 }));
 
 export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
-  config,
+  state,
   title = 'Binaural Beat Frequency Visualizer',
   showSpectrum = true,
   showFrequencies = true,
   showMetrics = true,
   height = 200,
   width = 800,
-  autoStart = false,
-  timerStatus,
-  activePattern,
-  audioState,
   audioContext,
-  analyserNode
+  analyserNode,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [fps, setFps] = useState(0);
+   // Deconstruct from state
+  const {
+    base_frequency = 0,
+    beat_frequency = 0,
+    isPlaying = false,
+    patterns8D = [],
+    timer
+  } = state;
 
-  // Initialize audio analysis with external AudioContext/AnalyserNode
+  console.log("base:{}beat:{}",base_frequency, beat_frequency);
+  // Calculate frequencies
+  const leftFreq = base_frequency
+  const rightFreq = base_frequency + beat_frequency
+  const beatFreq = beat_frequency;
+
+  // Get active pattern (first pattern if available)
+  const activePattern = patterns8D?.[0] || null;
+
+  // Initialize audio analysis
   const { analysisData, stats, isAnalyzing } = useAudioAnalysis({
-    enabled: !!audioState?.isPlaying,
+    enabled: isPlaying,
     updateRate: 40,
     audioContext,
     analyserNode
   });
 
-  // Use actual audio state or fallback to config
-  // Support both frontend (leftFreq/rightFreq) and backend (base_frequency/beat_frequency) formats
-  const leftFreq = audioState?.leftFreq || config?.base_frequency || 0;
-  const rightFreq = audioState?.rightFreq || ((config?.base_frequency || 0) + (config?.beat_frequency || 0));
-  const beatFreq = Math.abs(rightFreq - leftFreq);
-  const isPlaying = audioState?.isPlaying || false;
-
-  console.log('📊 FrequencyVisualizer render:', {
-    isPlaying,
-    leftFreq,
-    rightFreq,
-    beatFreq,
-    hasAudioState: !!audioState,
-    hasConfig: !!config,
-    audioStateValues: audioState,
-    configValues: config
-  });
-
-  // Timer info display using actual TimerStatus structure
+  // Timer info display
   const getTimerInfo = () => {
-    if (!timerStatus) return null;
+    if (!timer?.status) return null;
 
-    const { current_transition, next_transition, time_remaining_current, isRunning, session } = timerStatus;
-    if (!isRunning || !current_transition || !session?.is_active) return null;
+    const { session, isRunning } = timer.status;
+    const currentStepIndex = session?.current_transition_index;
+    const transitions = timer.transitions;
 
-    // Get total transitions count from session preset
-    const totalTransitions = session?.preset?.transitions_count || 1;
-    const currentIndex = session?.current_transition_index ?? 0;
+    if (!isRunning || currentStepIndex === undefined || !transitions) return null;
+
+    const currentStep = transitions[currentStepIndex];
+    if (!currentStep) return null;
 
     return {
-      stepName: current_transition.frequency_type || current_transition.description || 'Transition',
-      stepIndex: currentIndex + 1,
-      totalSteps: totalTransitions,
-      time_remaining_current: time_remaining_current,
-      targetFreq: current_transition.frequency_hz,
-      nextTransition: next_transition
+      stepName: currentStep.description || `Step ${currentStepIndex + 1}`,
+      stepIndex: currentStepIndex + 1,
+      totalSteps: transitions.length,
+      targetFreq: currentStep.frequency_hz,
+      remainingTime: timer.status.time_remaining_current || 0
     };
   };
 
@@ -143,8 +132,7 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
       hasCanvas: !!canvasRef.current,
       isPlaying,
       leftFreq,
-      rightFreq,
-      beatFreq,
+      rightFreq
     });
 
     if (!canvasRef.current || !isPlaying) {
@@ -275,20 +263,20 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
           borderRadius: 1
         }}>
           <Grid container spacing={1} alignItems="center">
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={6}>
               <Typography variant="body2" sx={{ color: '#ff6b00', fontWeight: 'bold' }}>
                 🎧 {timerInfo.stepName}
               </Typography>
               <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)' }}>
-                Step {timerInfo.stepIndex}/{timerInfo.totalSteps} • {timerInfo.targetFreq}Hz
+                Step {timerInfo.stepIndex}/{timerInfo.totalSteps}
               </Typography>
             </Grid>
-            <Grid item xs={12} sm={6} sx={{ textAlign: { xs: 'left', sm: 'right' } }}>
-              <Typography variant="body2" sx={{ color: '#00ff88', fontWeight: 'bold' }}>
-                {Math.floor(timerInfo.time_remaining_current / 60)}:{(timerInfo.time_remaining_current % 60).toString().padStart(2, '0')}
+            <Grid item xs={6} sx={{ textAlign: 'right' }}>
+              <Typography variant="body2" sx={{ color: '#00ff88' }}>
+                {Math.floor(timerInfo.remainingTime / 60)}:{(timerInfo.remainingTime % 60).toString().padStart(2, '0')}
               </Typography>
               <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)' }}>
-                Time Remaining
+                Target: {timerInfo.targetFreq}Hz
               </Typography>
             </Grid>
           </Grid>
@@ -307,22 +295,6 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
               }
             }}
           />
-
-          {/* Next transition preview */}
-          {timerInfo.nextTransition && (
-            <Box sx={{
-              mt: 1,
-              pt: 1,
-              borderTop: '1px solid rgba(255, 255, 255, 0.1)'
-            }}>
-              <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.5)', display: 'block' }}>
-                Up Next:
-              </Typography>
-              <Typography variant="caption" sx={{ color: '#8a2be2', fontWeight: 'bold' }}>
-                {timerInfo.nextTransition.frequency_type || timerInfo.nextTransition.description} • {timerInfo.nextTransition.frequency_hz}Hz • {timerInfo.nextTransition.duration_minutes}min
-              </Typography>
-            </Box>
-          )}
         </Box>
       )}
 
@@ -352,7 +324,7 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
               Beat Frequency
             </Typography>
             <Typography variant="h6" sx={{ color: '#ff6b00', fontWeight: 'bold' }}>
-              {beatFreq.toFixed(2)} Hz
+              {parseInt(beatFreq.toFixed(2))} Hz
             </Typography>
           </Box>
           <Box sx={{ textAlign: 'right' }}>
@@ -360,7 +332,7 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
               Right Ear
             </Typography>
             <Typography variant="h6" sx={{ color: '#ff1493', fontWeight: 'bold' }}>
-              {rightFreq.toFixed(2)} Hz
+              {parseInt(rightFreq.toFixed(2))} Hz
             </Typography>
           </Box>
         </FrequencyDisplay>
