@@ -1,79 +1,107 @@
-version: '3.8'
 
 services:
-  # PostgreSQL Database
-  postgres:
-    image: postgres:15-alpine
-    container_name: ebl-postgres-dev
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ebl_dev
-      POSTGRES_USER: ebl_dev_user
-      POSTGRES_PASSWORD: dev_password
-    volumes:
-      - postgres_dev_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    networks:
-      - ebl-dev-network
-
-  # Redis Cache
-  redis:
-    image: redis:7-alpine
-    container_name: ebl-redis-dev
-    restart: unless-stopped
-    ports:
-      - "6379:6379"
-    networks:
-      - ebl-dev-network
-
-  # Development Application (Hot-reload enabled)
-  app-dev:
+  # Backend only for development (frontend runs via npm)
+  backend-dev:
     build:
       context: .
-      dockerfile: Dockerfile.dev
-    container_name: ebl-app-dev
+      dockerfile: Dockerfile.backend
+      target: builder  # Use builder stage for dev
+    container_name: ebl-backend-dev
     restart: unless-stopped
     ports:
-      - "5173:5173"  # Frontend Vite
-      - "8000:8000"  # Backend FastAPI
+      - "8000:8000"
     environment:
-
-      # Development
-      NODE_ENV: development
+      # Development settings
       PYTHON_ENV: development
       DEBUG: "true"
-
+      
+      # Database - using SQLite for dev simplicity
+      DATABASE_URL: sqlite:///./ebl_database.db
+      
+      # CORS - allow frontend dev server
+      ALLOWED_ORIGINS: "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173"
+      
+      # Audio settings
+      SAMPLE_RATE: 48000
+      BUFFER_SIZE: 800
+      MAX_FREQUENCY: 199
+      AUDIO_FRAME_RATE: 60
+      
+      # WebSocket
+      WS_HEARTBEAT_INTERVAL: 30
+      WS_CONNECTION_TIMEOUT: 60
+      
       # Security (dev keys)
       SECRET_KEY: dev-secret-key-not-for-production
       JWT_SECRET: dev-jwt-secret-not-for-production
-
-      # CORS (allow all in dev)
-      ALLOWED_ORIGINS: "*"
+      
+      # Hot reload
+      RELOAD: "true"
     volumes:
-      # Mount source for hot-reload
-      - ./src:/app/src
       - ./backend:/app/backend
-      - ./public:/app/public
-      - ./index.html:/app/index.html
-      - ./vite.config.ts:/app/vite.config.ts
-      - ./tsconfig.json:/app/tsconfig.json
-
-      # Persist data
       - ./logs:/app/logs
       - ./data:/app/data
-
-      # Exclude node_modules
-      - /app/node_modules
-    depends_on:
-      - postgres
-      - redis
+      - ./ebl_database.db:/app/ebl_database.db
+    command: >
+      sh -c "
+        cd /app &&
+        python -m uvicorn backend.main:app 
+        --host 0.0.0.0 
+        --port 8000 
+        --reload 
+        --reload-dir backend
+        --ws-ping-interval 20
+        --ws-ping-timeout 20
+      "
     networks:
       - ebl-dev-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Optional: PostgreSQL for development
+  postgres-dev:
+    image: postgres:15-alpine
+    container_name: ebl-postgres-dev
+    environment:
+      POSTGRES_DB: ebl_dev
+      POSTGRES_USER: ebl_dev
+      POSTGRES_PASSWORD: dev_password
+    ports:
+      - "5433:5432"  # Different port to avoid conflicts
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    networks:
+      - ebl-dev-network
+    profiles:
+      - with-postgres  # Only starts with --profile with-postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ebl_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Optional: Redis for development
+  redis-dev:
+    image: redis:7-alpine
+    container_name: ebl-redis-dev
+    command: redis-server
+    ports:
+      - "6380:6379"  # Different port to avoid conflicts
+    networks:
+      - ebl-dev-network
+    profiles:
+      - with-redis  # Only starts with --profile with-redis
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres_dev_data:
-    driver: local
 
 networks:
   ebl-dev-network:

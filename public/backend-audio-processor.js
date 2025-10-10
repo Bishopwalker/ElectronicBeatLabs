@@ -9,8 +9,8 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
 
     // Audio parameters - use actual sample rate from audio context
     this.sampleRate = sampleRate; // Use actual sample rate (48kHz or 44.1kHz)
-    const initialVolume = options.processorOptions?.volume || 0.3;
-    this.volume = isNaN(initialVolume) ? 0.3 : initialVolume; // Protect against NaN
+    const initialVolume = options.processorOptions?.volume || 0.8;
+    this.volume = isNaN(initialVolume) ? 0.8 : initialVolume; // Protect against NaN
 
     // CRITICAL CHANGE #1: Use a ring buffer for efficiency - sized based on actual sample rate
     this.bufferSize = this.sampleRate * 6; // 6 seconds of buffer space for stability
@@ -64,7 +64,7 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
     return [
       {
         name: 'volume',
-        defaultValue: 0.3,
+        defaultValue: 0.8,
         minValue: 0,
         maxValue: 2.0,
         automationRate: 'a-rate'
@@ -365,8 +365,8 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
 
     // Get current volume parameter - clamp to safe range with NaN protection
     const volumeParam = parameters.volume;
-    const rawVolume = volumeParam[0] || this.volume || 0.3;
-    const volume = Math.min(2, isNaN(rawVolume) ? 0.3 : rawVolume); // Max 80% to prevent clipping, default 0.3 if NaN
+    const rawVolume = volumeParam[0] || this.volume || 0.8;
+    const volume = Math.min(2, isNaN(rawVolume) ? 0.8 : rawVolume); // Max 200% for flexibility, default 0.8 (80%) if NaN
 
     // Buffer state management
     const availableSamples = this._audioBuffer.availableSamples;
@@ -422,8 +422,8 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
       if (this.isPlaying && this._audioBuffer.availableSamples > 0) {
         const sample = this.readFromRingBuffer();
         // Apply volume and fade, then clamp to prevent clipping
-        const leftOut = Math.max(-1.0, Math.min(1.0, sample.left * volume * fadeMultiplier));
-        const rightOut = Math.max(-1.0, Math.min(1.0, sample.right * volume * fadeMultiplier));
+        const leftOut = Math.max(-1.0, Math.min(2.0, sample.left * volume * fadeMultiplier));
+        const rightOut = Math.max(-1.0, Math.min(2.0, sample.right * volume * fadeMultiplier));
         leftChannel[i] = leftOut;
         rightChannel[i] = rightOut;
         consumed++;

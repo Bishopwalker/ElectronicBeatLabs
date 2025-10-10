@@ -1,7 +1,8 @@
 // Electromagnetic Beat Lab - Equalizer Component
 // Professional multi-band audio equalizer with Material-UI interface
+// FIXED: Hooks order violation - all hooks now at top level
 
-import React, { useEffect, useCallback, useMemo } from 'react';
+import React, { useEffect, useCallback, useMemo, useState, useRef } from 'react';
 import {
   Box,
   Paper,
@@ -16,15 +17,89 @@ import {
 import { useEqualizer, EQ_PRESETS } from '../hooks/useEqualizer';
 import type { EqualizerBand } from '../types';
 
+// Simple Frequency Visualizer Component
+const SimpleFrequencyVisualizer: React.FC<{ 
+  audioContext: AudioContext | null; 
+  analyserNode: AnalyserNode | null;
+  isPlaying?: boolean;
+}> = ({ audioContext, analyserNode, isPlaying }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animationRef = useRef<number>();
+
+  useEffect(() => {
+    if (!analyserNode || !canvasRef.current) return;
+
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const bufferLength = analyserNode.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+
+    const draw = () => {
+      animationRef.current = requestAnimationFrame(draw);
+      analyserNode.getByteFrequencyData(dataArray);
+
+      // Clear canvas with fade effect
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const barWidth = (canvas.width / bufferLength) * 2.5;
+      let x = 0;
+
+      for (let i = 0; i < bufferLength; i++) {
+        const barHeight = (dataArray[i] / 255) * canvas.height * 0.8;
+        
+        // Create gradient colors
+        const r = barHeight + 25 * (i / bufferLength);
+        const g = 250 * (i / bufferLength);
+        const b = 250;
+        
+        ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+        ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+        
+        x += barWidth + 1;
+      }
+    };
+
+    draw();
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [analyserNode]);
+
+  return (
+    <Box sx={{ width: '100%', height: '100%', bgcolor: 'black', borderRadius: 1 }}>
+      <canvas 
+        ref={canvasRef}
+        width={400}
+        height={100}
+        style={{ width: '100%', height: '100%', borderRadius: '4px' }}
+      />
+    </Box>
+  );
+};
+
 interface EqualizerMUIProps {
   audioContext: AudioContext | null;
+  analyserNode?: AnalyserNode | null;
+  isPlaying?: boolean;
   onEqualizerChange?: (inputNode: GainNode | null, outputNode: GainNode | null) => void;
 }
 
 const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
   audioContext,
+  analyserNode,
+  isPlaying = false,
   onEqualizerChange
 }) => {
+  // ALL HOOKS MUST BE AT THE TOP - NO CONDITIONALS BEFORE THIS
+  const [isInitialized, setIsInitialized] = useState(false);
+  
+  // Call useEqualizer hook UNCONDITIONALLY at top level
   const {
     equalizerState,
     initializeEqualizer,
@@ -36,7 +111,21 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
     outputNode
   } = useEqualizer(audioContext);
 
-  // Initialize equalizer when enabled
+  // Initialize equalizer when audio context is ready
+  useEffect(() => {
+    if (audioContext && !isInitialized) {
+      console.log('🎚️ Initializing equalizer with audio context');
+      const nodes = initializeEqualizer();
+      if (nodes) {
+        setIsInitialized(true);
+        if (onEqualizerChange) {
+          onEqualizerChange(nodes.input, nodes.output);
+        }
+      }
+    }
+  }, [audioContext, isInitialized, initializeEqualizer, onEqualizerChange]);
+
+  // Handle toggle
   const handleToggle = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const enabled = event.target.checked;
     toggleEqualizer(enabled);
@@ -53,18 +142,6 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
     }
   }, [toggleEqualizer, inputNode, initializeEqualizer, onEqualizerChange]);
 
-  // Auto-initialize and enable equalizer on mount
-  useEffect(() => {
-    if (audioContext && !inputNode) {
-      console.log('🎚️ Auto-initializing equalizer on mount');
-      const nodes = initializeEqualizer();
-      if (nodes && onEqualizerChange) {
-        console.log('🎚️ Calling onEqualizerChange with nodes:', nodes);
-        onEqualizerChange(nodes.input, nodes.output);
-      }
-    }
-  }, [audioContext, initializeEqualizer, onEqualizerChange, inputNode]);
-
   // Handle preset selection
   const handlePresetClick = useCallback((presetName: keyof typeof EQ_PRESETS) => {
     if (!equalizerState.enabled) {
@@ -77,47 +154,47 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
     loadPreset(presetName);
   }, [equalizerState.enabled, toggleEqualizer, initializeEqualizer, loadPreset, onEqualizerChange]);
 
-  // Handle band gain change
+  // Handle band gain change with proper typing
   const handleBandChange = useCallback((bandId: string) => (
     _event: Event,
     value: number | number[]
   ) => {
-    updateBandGain(bandId, value as number);
+    const gainValue = Array.isArray(value) ? value[0] : value;
+    updateBandGain(bandId, gainValue);
   }, [updateBandGain]);
 
-  // Render vertical slider for each band
-  const renderBandSlider = useCallback((band: EqualizerBand) => {
-    // Calculate color based on gain (green for boost, red for cut)
-    const getSliderColor = (gain: number) => {
-      if (gain > 0) return '#00ff88'; // Green for boost
-      if (gain < 0) return '#ff6b6b'; // Red for cut
-      return '#888'; // Gray for neutral
-    };
+  // Helper function to get slider color
+  const getSliderColor = useCallback((gain: number) => {
+    if (gain > 0) return '#00ff88';
+    if (gain < 0) return '#ff6b6b';
+    return '#888';
+  }, []);
 
+  // Render vertical slider for each band - ULTRA COMPACT
+  const renderBandSlider = useCallback((band: EqualizerBand) => {
     return (
       <Box
         key={band.id}
         sx={{
           display: 'flex',
-          overflow: "auto",
           flexDirection: 'column',
           alignItems: 'center',
-          minWidth: '40px'  // Reduced from 50px
+          width: '28px', // Ultra compact width
+          mx: '1px' // Minimal margin between sliders
         }}
       >
         {/* Gain value display */}
-        <Chip
-          label={`${band.gain >= 0 ? '+' : ''}${band.gain.toFixed(1)}`}
-          size="small"
+        <Typography
           sx={{
-            mb: 0.5,  // Reduced from 1
-            fontSize: '0.65rem',  // Reduced from 0.7rem
-            height: '18px',  // Reduced from 20px
-            bgcolor: getSliderColor(band.gain),
-            color: 'white',
-            fontWeight: 'bold'
+            fontSize: '0.55rem',
+            color: getSliderColor(band.gain),
+            fontWeight: 'bold',
+            mb: 0.25,
+            height: '14px'
           }}
-        />
+        >
+          {band.gain >= 0 ? '+' : ''}{band.gain.toFixed(0)}
+        </Typography>
 
         {/* Vertical slider */}
         <Slider
@@ -126,24 +203,26 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
           onChange={handleBandChange(band.id)}
           min={-40}
           max={40}
-          step={0.5}
+          step={1}
           disabled={!equalizerState.enabled}
           sx={{
-            height: 150,  // Reduced from 200
+            height: 100, // Reduced height
             '& .MuiSlider-thumb': {
-              width: 16,
-              height: 16,
+              width: 10,
+              height: 10,
               bgcolor: getSliderColor(band.gain),
-              border: '2px solid white',
-              '&:hover, &.Mui-focusVisible': {
-                boxShadow: `0 0 0 8px rgba(${band.gain > 0 ? '0, 255, 136' : '255, 107, 107'}, 0.16)`
+              border: '1px solid white',
+              '&:hover': {
+                boxShadow: `0 0 0 4px rgba(${band.gain > 0 ? '0, 255, 136' : '255, 107, 107'}, 0.16)`
               }
             },
             '& .MuiSlider-track': {
+              width: 2,
               bgcolor: getSliderColor(band.gain),
               border: 'none'
             },
             '& .MuiSlider-rail': {
+              width: 2,
               bgcolor: 'rgba(255, 255, 255, 0.2)'
             }
           }}
@@ -151,31 +230,28 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
 
         {/* Frequency label */}
         <Typography
-          variant="caption"
           sx={{
-            mt: 0.5,  // Reduced from 1
-            fontSize: '0.65rem',  // Reduced from 0.7rem
-            color: 'rgba(255, 255, 255, 0.7)',
-            textAlign: 'center'
+            fontSize: '0.5rem',
+            color: 'rgba(255, 255, 255, 0.5)',
+            mt: 0.25
           }}
         >
           {band.label}
         </Typography>
       </Box>
     );
-  }, [equalizerState.enabled, handleBandChange]);
+  }, [equalizerState.enabled, handleBandChange, getSliderColor]);
 
-  // Memoize preset buttons - optimized for vertical layout
+  // Memoize preset buttons
   const presetButtons = useMemo(() => {
     return Object.entries(EQ_PRESETS).map(([key, preset]) => (
-      <Tooltip key={key} title={preset.description} arrow placement="right">
+      <Tooltip key={key} title={preset.description} arrow placement="top">
         <Button
           variant={equalizerState.preset === key ? 'contained' : 'outlined'}
           size="small"
-          fullWidth
           onClick={() => handlePresetClick(key as keyof typeof EQ_PRESETS)}
           sx={{
-            fontSize: '0.55rem',
+            fontSize: '0.5rem',
             py: 0.25,
             px: 0.5,
             minWidth: 'unset',
@@ -183,8 +259,7 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
             borderColor: '#00bfff',
             bgcolor: equalizerState.preset === key ? '#00bfff' : 'transparent',
             '&:hover': {
-              bgcolor: equalizerState.preset === key ? '#0099cc' : 'rgba(0, 191, 255, 0.1)',
-              borderColor: '#00bfff'
+              bgcolor: equalizerState.preset === key ? '#0099cc' : 'rgba(0, 191, 255, 0.1)'
             }
           }}
         >
@@ -198,26 +273,16 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
     <Paper
       elevation={3}
       sx={{
-        p: 0.5,
+        p: 1,
         bgcolor: 'rgba(0, 0, 0, 0.6)',
         backdropFilter: 'blur(10px)',
         borderRadius: 2,
-        border: '1px solid rgba(255, 255, 255, 0.1)',
-        overflow: 'auto'
+        border: '1px solid rgba(255, 255, 255, 0.1)'
       }}
     >
-      {/* Main Layout: Presets on left (vertical), Sliders on right */}
-      <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'flex-start' }}>
-
-        {/* Left Column: Presets & Controls */}
-        <Box sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 0.25,
-          minWidth: '90px',
-          maxWidth: '110px'
-        }}>
-          {/* Enable/Disable Switch */}
+      {/* Header with controls */}
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <FormControlLabel
             control={
               <Switch
@@ -235,73 +300,108 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
               />
             }
             label={
-              <Typography variant="caption" sx={{ color: 'white', fontSize: '0.6rem' }}>
-                {equalizerState.enabled ? 'ON' : 'OFF'}
+              <Typography variant="caption" sx={{ color: 'white', fontSize: '0.7rem' }}>
+                EQ {equalizerState.enabled ? 'ON' : 'OFF'}
               </Typography>
             }
-            sx={{ m: 0, mb: 0.25 }}
+            sx={{ m: 0 }}
           />
-
-          {/* Reset Button */}
-          <Button
-            onClick={resetEqualizer}
-            disabled={!equalizerState.enabled}
-            size="small"
-            variant="outlined"
-            sx={{
-              minWidth: '70px',
-              fontSize: '0.55rem',
-              color: '#ff6b00',
-              borderColor: '#ff6b00',
-              py: 0.25,
-              '&:hover': {
-                bgcolor: 'rgba(255, 107, 0, 0.1)',
-                borderColor: '#ff6b00'
-              }
-            }}
-          >
-            🔄 Reset
-          </Button>
-
-          {/* Current Preset Chip */}
+          
           {equalizerState.preset !== 'flat' && (
             <Chip
-              label={EQ_PRESETS[equalizerState.preset as keyof typeof EQ_PRESETS]?.name || 'Custom'}
+              label={equalizerState.preset === 'custom' ? 'Custom' : EQ_PRESETS[equalizerState.preset as keyof typeof EQ_PRESETS]?.name}
               size="small"
               sx={{
                 bgcolor: equalizerState.preset === 'custom' ? '#ff6b00' : '#00bfff',
                 color: 'white',
-                fontWeight: 'bold',
-                fontSize: '0.55rem',
-                height: '16px'
+                height: '18px',
+                fontSize: '0.6rem'
               }}
             />
           )}
-
-          {/* Preset Buttons - Vertical Stack */}
-          <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.55rem', mt: 0.5 }}>
-            Presets:
-          </Typography>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
-            {presetButtons}
-          </Box>
         </Box>
 
-        {/* Right Column: Frequency Sliders */}
+        <Button
+          onClick={resetEqualizer}
+          disabled={!equalizerState.enabled}
+          size="small"
+          variant="outlined"
+          sx={{
+            fontSize: '0.6rem',
+            color: '#ff6b00',
+            borderColor: '#ff6b00',
+            py: 0.25,
+            px: 0.5
+          }}
+        >
+          Reset
+        </Button>
+      </Box>
+
+      {/* Main content row - Sliders and Visualizer on same row */}
+      <Box sx={{ display: 'flex', gap: 1, alignItems: 'stretch' }}>
+        
+        {/* Frequency sliders - Ultra compact */}
         <Box
           sx={{
             display: 'flex',
-            justifyContent: 'space-between',
+            justifyContent: 'center',
             alignItems: 'flex-end',
-            gap: 0.15,  // Ultra-tight spacing
+            gap: 0, // No gap between sliders
             p: 0.5,
             bgcolor: 'rgba(0, 0, 0, 0.3)',
             borderRadius: 1,
-            overflowX: 'auto',
-            flex: 1
+            flex: '0 0 auto'
           }}
         >
           {equalizerState.bands.map(band => renderBandSlider(band))}
+        </Box>
+
+        {/* Right side - Presets and Visualizer stacked */}
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          gap: 1, 
+          flex: 1,
+          minWidth: '250px'
+        }}>
+          
+          {/* Presets grid - 2 rows */}
+          <Box sx={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(4, 1fr)', 
+            gap: 0.5
+          }}>
+            {presetButtons}
+          </Box>
+
+          {/* Frequency Visualizer */}
+          {audioContext && analyserNode && (
+            <Box sx={{ 
+              flex: 1, 
+              minHeight: '80px',
+              bgcolor: 'rgba(0, 0, 0, 0.5)',
+              borderRadius: 1,
+              p: 0.5
+            }}>
+              <Typography 
+                variant="caption" 
+                sx={{ 
+                  color: 'rgba(255, 255, 255, 0.5)', 
+                  fontSize: '0.6rem',
+                  display: 'block',
+                  mb: 0.5
+                }}
+              >
+                Live Frequency Spectrum {isPlaying ? '(Active)' : '(Idle)'}
+              </Typography>
+              <SimpleFrequencyVisualizer 
+                audioContext={audioContext}
+                analyserNode={analyserNode}
+                isPlaying={isPlaying}
+              />
+            </Box>
+          )}
         </Box>
       </Box>
     </Paper>

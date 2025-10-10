@@ -1,19 +1,16 @@
 # Electromagnetic Beat Lab - Frontend Production Build
-# Serves static React app via Nginx
+# React + Vite + Nginx with WebSocket Support
 
-# ==========================================
-# Stage 1: Build Frontend
-# ==========================================
 FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files for better layer caching
+# Copy package files
 COPY package*.json ./
 COPY yarn.lock* ./
 
-# Install dependencies
-RUN npm ci --no-audit --prefer-offline
+# Clean install dependencies
+RUN rm -rf node_modules && npm ci --no-audit --prefer-offline
 
 # Copy source files
 COPY src/ ./src/
@@ -21,32 +18,87 @@ COPY public/ ./public/
 COPY index.html ./
 COPY vite.config.ts ./
 COPY tsconfig*.json ./
+COPY .env.example .env
 
-# Build frontend for production
+# Build with proper backend URL
+ARG VITE_API_URL=http://localhost:8000
+ARG VITE_WS_URL=ws://localhost:8000
+ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_WS_URL=$VITE_WS_URL
+
 RUN npm run build
 
 # ==========================================
-# Stage 2: Nginx Production Server
+# Production Server
 # ==========================================
 FROM nginx:alpine AS production
 
 # Copy built frontend assets
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Copy custom nginx config (if exists, otherwise use default)
-COPY nginx-frontend.conf /etc/nginx/conf.d/default.conf
+# Copy custom nginx config (if exists, otherwise create default)
+COPY nginx-frontend.conf /etc/nginx/conf.d/default.conf 2>/dev/null || \
+RUN cat > /etc/nginx/conf.d/default.conf << 'EOF'
+server {
+    listen 80;
+    server_name localhost;
+    
+    root /usr/share/nginx/html;
+    index index.html;
+    
+    # Enable gzip
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
+    
+    # Proxy API calls to backend
+    location /api/ {
+        proxy_pass http://backend:8000/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # WebSocket support
+        proxy_read_timeout 86400;
+    }
+    
+    # WebSocket endpoint
+    location /ws {
+        proxy_pass http://backend:8000/ws;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # Disable buffering for WebSocket
+        proxy_buffering off;
+        proxy_cache off;
+        
+        # Timeouts for WebSocket
+        proxy_read_timeout 86400s;
+        proxy_send_timeout 86400s;
+    }
+    
+    # SPA routing
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
+EOF
 
-# Add healthcheck
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD wget --quiet --tries=1 --spider http://localhost/ || exit 1
 
-# Expose port
 EXPOSE 80
 
-# Metadata
 LABEL maintainer="bishop8-group" \
       version="1.0.0" \
       description="EBL Frontend - React + Vite + Nginx"
 
-# Start nginx
 CMD ["nginx", "-g", "daemon off;"]

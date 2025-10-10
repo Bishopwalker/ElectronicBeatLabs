@@ -17,13 +17,18 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Node dependencies
+# Install Node dependencies (force reinstall for Linux platform)
 COPY package*.json ./
-RUN npm install
+RUN npm ci --ignore-scripts && npm rebuild
 
-# Install Python dependencies
+# Create Python virtual environment (mirrors GitLab CI cache strategy)
+RUN python3 -m venv backend/.venv
+
+# Install Python dependencies in virtual environment with cache mount
 COPY backend/requirements.txt ./backend/
-RUN pip3 install --no-cache-dir -r backend/requirements.txt
+RUN --mount=type=cache,target=/root/.cache/pip \
+    backend/.venv/bin/pip install --upgrade pip && \
+    backend/.venv/bin/pip install -r backend/requirements.txt
 
 # Copy source code
 COPY . .
@@ -35,6 +40,9 @@ EXPOSE 5173 8000
 ENV NODE_ENV=development
 ENV PYTHON_ENV=development
 ENV PYTHONUNBUFFERED=1
+ENV PATH="/app/backend/.venv/bin:$PATH"
+ENV PYTHONPATH="/app/backend:$PYTHONPATH"
 
-# Start both frontend and backend with hot-reload
-CMD ["sh", "-c", "npm run dev & python3 -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload"]
+# Start both frontend and backend with hot-reload (using venv python)
+# Rebuild npm packages at startup to ensure Linux compatibility when using volume mounts
+CMD ["sh", "-c", "(npm rebuild && npm run dev) & cd /app && /app/backend/.venv/bin/python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload"]

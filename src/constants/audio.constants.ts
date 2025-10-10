@@ -11,10 +11,10 @@ export const DEFAULT_RIGHT_FREQUENCY = 144; // base + beat
 
 // Default audio settings
 // Volume/amplitude consolidated to single value (30%)
-export const DEFAULT_VOLUME = 0.3;
+export const DEFAULT_VOLUME = 0.8;
 export const DEFAULT_AMPLITUDE =  DEFAULT_VOLUME;
 export const DEFAULT_WAVEFORM = 'sine' as const;
-
+export const DEFAULT_MAX_VOLUME = 200;
 // Sample rates and frame rates
 export const SAMPLE_RATE = 48000;
 export const FRAME_RATE = 60;

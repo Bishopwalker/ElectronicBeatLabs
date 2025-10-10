@@ -2,7 +2,7 @@
 // Extracted from main component for better organization
 
 import type { AppState } from '../../types';
-import { DEFAULT_BASE_FREQUENCY, DEFAULT_BEAT_FREQUENCY, DEFAULT_VOLUME } from '../../constants/audio.constants';
+import { DEFAULT_BASE_FREQUENCY, DEFAULT_BEAT_FREQUENCY, DEFAULT_VOLUME, DEFAULT_MAX_VOLUME } from '../../constants/audio.constants';
 
 // Default app state configuration
 export const DEFAULT_APP_STATE: AppState = {
@@ -11,6 +11,8 @@ export const DEFAULT_APP_STATE: AppState = {
   base_frequency: DEFAULT_BASE_FREQUENCY,
   beat_frequency: DEFAULT_BEAT_FREQUENCY,
   isPlaying: false,
+  frequency: DEFAULT_BASE_FREQUENCY,
+  maxVolume: DEFAULT_MAX_VOLUME,
   volume: DEFAULT_VOLUME,
   electromagnetic: {
     strength: 0,
