@@ -342,7 +342,7 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
                   color="secondary"
                   sx={{ fontFamily: 'monospace', fontWeight: 600, fontSize: '0.8rem' }}
                 >
-                  {base_frequency.toFixed(1)} Hz
+                  {base_frequency.toFixed(2)} Hz
                 </Typography>
               </Box>
               <Box>
@@ -354,7 +354,7 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
                   color="secondary"
                   sx={{ fontFamily: 'monospace', fontWeight: 600, fontSize: '0.8rem' }}
                 >
-                  {beat_frequency.toFixed(1)} Hz
+                  {beat_frequency.toFixed(2)} Hz
                 </Typography>
               </Box>
             </Stack>

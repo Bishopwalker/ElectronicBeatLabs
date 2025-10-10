@@ -1,40 +1,5 @@
-version: '3.8'
-
 services:
   # PostgreSQL Database
-  postgres:
-    image: postgres:15-alpine
-    container_name: ebl-postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-ebl_db}
-      POSTGRES_USER: ${POSTGRES_USER:-ebl_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ebl_password}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - ebl-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ebl_user}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # Redis Cache
-  redis:
-    image: redis:7-alpine
-    container_name: ebl-redis
-    restart: unless-stopped
-    command: redis-server --requirepass ${REDIS_PASSWORD:-ebl_redis_password}
-    volumes:
-      - redis_data:/data
-    networks:
-      - ebl-network
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   # Backend API (FastAPI)
   backend:
@@ -46,19 +11,16 @@ services:
     ports:
       - "8000:8000"
     environment:
-      # Database
-      DATABASE_URL: postgresql://${POSTGRES_USER:-ebl_user}:${POSTGRES_PASSWORD:-ebl_password}@postgres:5432/${POSTGRES_DB:-ebl_db}
-      
-      # Redis
-      REDIS_URL: redis://default:${REDIS_PASSWORD:-ebl_redis_password}@redis:6379/0
-      
+
       # Application
       PYTHON_ENV: ${PYTHON_ENV:-production}
-      
-      # Security
+
+      # Security (Optional - only needed for timer API and subscription features)
+      # Core audio/WebSocket functionality works without these
+      # Required when enabling: /api/timer/* or /api/subscription/*
       SECRET_KEY: ${SECRET_KEY:-your-secret-key-change-in-production}
       JWT_SECRET: ${JWT_SECRET:-your-jwt-secret-change-in-production}
-      
+
       # CORS - FIXED to allow proper origins
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost,http://localhost:80,http://localhost:5173}
       
@@ -71,15 +33,21 @@ services:
       BUFFER_SIZE: ${BUFFER_SIZE:-800}  # 800 samples per frame at 48kHz/60fps
       MAX_FREQUENCY: ${MAX_FREQUENCY:-199}
       AUDIO_FRAME_RATE: 60
+
     volumes:
+      # Mount backend source files only (exclude .venv)
+      - ./backend/main.py:/app/backend/main.py
+      - ./backend/core:/app/backend/core
+      - ./backend/api:/app/backend/api
+      - ./backend/schemas:/app/backend/schemas
+      - ./backend/utils:/app/backend/utils
+      - ./backend/requirements.txt:/app/backend/requirements.txt
+
+      # Persist data
       - ./logs:/app/logs
       - ./data:/app/data
       - ./uploads:/app/uploads
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+
     networks:
       - ebl-network
     healthcheck:
@@ -96,16 +64,19 @@ services:
       dockerfile: Dockerfile.frontend
       args:
         VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
-        VITE_WS_URL: ${VITE_WS_URL:-ws://localhost:8000}
+        VITE_WS_URL: ${VITE_WS_URL:-ws://localhost:5173}
     container_name: ebl-frontend
     restart: unless-stopped
     ports:
-      - "80:80"
+      - "5173:5173"  # Frontend Vite
     depends_on:
       - backend
     networks:
       - ebl-network
     environment:
+      PYTHON_ENV: development
+      DEBUG: "true"
+
       # Runtime nginx environment
       BACKEND_URL: http://backend:8000
     healthcheck:
@@ -116,9 +87,9 @@ services:
       start_period: 5s
 
 volumes:
-  postgres_data:
+  node_modules_volume:
     driver: local
-  redis_data:
+  python_venv_volume:
     driver: local
 
 networks:

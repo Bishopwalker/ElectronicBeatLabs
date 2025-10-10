@@ -156,7 +156,7 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
 
   // Handle band gain change with proper typing
   const handleBandChange = useCallback((bandId: string) => (
-    _event: Event,
+    _event: Event | React.SyntheticEvent,
     value: number | number[]
   ) => {
     const gainValue = Array.isArray(value) ? value[0] : value;

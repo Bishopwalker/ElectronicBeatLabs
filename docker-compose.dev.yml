@@ -1,11 +1,12 @@
+version: '3.8'
 
 services:
-  # Backend only for development (frontend runs via npm)
-  backend-dev:
+  # Backend Development (FastAPI with hot-reload)
+  backend:
     build:
       context: .
       dockerfile: Dockerfile.backend
-      target: builder  # Use builder stage for dev
+      target: builder  # Use builder stage with dev dependencies
     container_name: ebl-backend-dev
     restart: unless-stopped
     ports:
@@ -14,8 +15,9 @@ services:
       # Development settings
       PYTHON_ENV: development
       DEBUG: "true"
+      PYTHONPATH: /app/backend
       
-      # Database - using SQLite for dev simplicity
+      # Database - using SQLite for dev
       DATABASE_URL: sqlite:///./ebl_database.db
       
       # CORS - allow frontend dev server
@@ -34,25 +36,12 @@ services:
       # Security (dev keys)
       SECRET_KEY: dev-secret-key-not-for-production
       JWT_SECRET: dev-jwt-secret-not-for-production
-      
-      # Hot reload
-      RELOAD: "true"
     volumes:
+      # Mount backend source for hot-reload
       - ./backend:/app/backend
       - ./logs:/app/logs
       - ./data:/app/data
-      - ./ebl_database.db:/app/ebl_database.db
-    command: >
-      sh -c "
-        cd /app &&
-        python -m uvicorn backend.main:app 
-        --host 0.0.0.0 
-        --port 8000 
-        --reload 
-        --reload-dir backend
-        --ws-ping-interval 20
-        --ws-ping-timeout 20
-      "
+    command: python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app/backend --ws-ping-interval 20 --ws-ping-timeout 20
     networks:
       - ebl-dev-network
     healthcheck:
@@ -60,48 +49,47 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 40s
 
-  # Optional: PostgreSQL for development
-  postgres-dev:
-    image: postgres:15-alpine
-    container_name: ebl-postgres-dev
+  # Frontend Development (Vite with hot-reload)
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend.dev
+    container_name: ebl-frontend-dev
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
     environment:
-      POSTGRES_DB: ebl_dev
-      POSTGRES_USER: ebl_dev
-      POSTGRES_PASSWORD: dev_password
-    ports:
-      - "5433:5432"  # Different port to avoid conflicts
+      NODE_ENV: development
+      VITE_API_URL: http://localhost:8000
+      VITE_WS_URL: ws://localhost:8000/ws
     volumes:
-      - postgres_dev_data:/var/lib/postgresql/data
+      # Mount frontend source for hot-reload
+      - ./src:/app/src
+      - ./public:/app/public
+      - ./index.html:/app/index.html
+      - ./vite.config.ts:/app/vite.config.ts
+      - ./tsconfig.json:/app/tsconfig.json
+      - ./tsconfig.node.json:/app/tsconfig.node.json
+      - ./package.json:/app/package.json
+      # Use named volume for node_modules
+      - node_modules_volume:/app/node_modules
+    command: npm run dev -- --host 0.0.0.0
+    depends_on:
+      - backend
     networks:
       - ebl-dev-network
-    profiles:
-      - with-postgres  # Only starts with --profile with-postgres
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ebl_dev"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # Optional: Redis for development
-  redis-dev:
-    image: redis:7-alpine
-    container_name: ebl-redis-dev
-    command: redis-server
-    ports:
-      - "6380:6379"  # Different port to avoid conflicts
-    networks:
-      - ebl-dev-network
-    profiles:
-      - with-redis  # Only starts with --profile with-redis
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      test: ["CMD", "curl", "-f", "http://localhost:5173"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
 volumes:
-  postgres_dev_data:
+  node_modules_volume:
+    driver: local
 
 networks:
   ebl-dev-network:

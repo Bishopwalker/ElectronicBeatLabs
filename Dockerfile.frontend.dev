@@ -1,0 +1,18 @@
+# Frontend Development Container
+# Vite + React with hot-reload support
+
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install dependencies first (for better caching)
+COPY package*.json ./
+RUN npm ci --no-audit
+
+# The source code will be mounted as volume
+# So we don't COPY it here
+
+EXPOSE 5173
+
+# Vite needs to bind to 0.0.0.0 for Docker
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]

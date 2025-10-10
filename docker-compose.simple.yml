@@ -41,9 +41,20 @@ services:
       - ./logs:/app/logs
       - ./data:/app/data
 
-      # Use named volumes for node_modules and Python venv (prevent host conflicts)
-      - node_modules_volume:/app/node_modules
-      - python_venv_volume:/app/backend/.venv
+      # Mount source for hot-reload
+      - ./src:/app/src
+      - ./public:/app/public
+      - ./index.html:/app/index.html
+      - ./vite.config.ts:/app/vite.config.ts
+      - ./tsconfig.json:/app/tsconfig.json
+
+      # Mount backend source files only (exclude .venv)
+      - ./backend/main.py:/app/backend/main.py
+      - ./backend/core:/app/backend/core
+      - ./backend/api:/app/backend/api
+      - ./backend/schemas:/app/backend/schemas
+      - ./backend/utils:/app/backend/utils
+      - ./backend/requirements.txt:/app/backend/requirements.txt
     networks:
       - ebl-dev-network
 
