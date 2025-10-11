@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Box, Paper, Typography, Button } from '@mui/material';
-import SpatialAudioControls from '../SpatialAudioControls';
+// import SpatialAudioControls from '../SpatialAudioControls'; // REMOVED - component deleted
 import type { AppState, AudioEngine, Pattern8D } from '../../types';
 import TimerCountdownDisplay from "../TimerCountdownDisplay.tsx";
 import type {TimerStatus} from "../../data/timer";
@@ -223,6 +223,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
         gap: 1
       }}
     >
+      {/* Spatial Audio Controls - TEMPORARILY DISABLED (component deleted during cleanup)
       <Paper
         sx={{
           background: 'rgba(255, 255, 255, 0.02)',
@@ -240,22 +241,10 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
             fontStyle: 'italic'
           }}
         >
-          💡 8D Spatial Audio requires Backend Engine (Python DSP) • Basic binaural beats use Frontend Engine (Web Audio)
+          💡 8D Spatial Audio settings moved to Advanced Controls
         </Typography>
-        <SpatialAudioControls
-          settings={{
-            enabled: appState.spatialAudio?.enabled || false,
-            movement_speed: appState.spatialAudio?.movement_speed || 0.08,
-            spatial_intensity: appState.spatialAudio?.spatial_intensity || 0.85,
-            reverb_enabled: appState.spatialAudio?.reverb_enabled || true,
-            reverberance: appState.spatialAudio?.reverberance || 0.5,
-            room_scale: appState.spatialAudio?.room_scale || 1.0,
-            hf_damping: appState.spatialAudio?.hf_damping || 0.5
-          }}
-          onChange={handleSpatialSettingsChange}
-          backendConnected={backendConnected}
-        />
       </Paper>
+      */}
 
       <Paper
         sx={{

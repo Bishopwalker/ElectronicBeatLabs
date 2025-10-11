@@ -3,7 +3,6 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useWebSocketContext } from './useWebsocketContext';
-import { useBackendAPI } from './useBackendAPI';
 import type {
   BackendAudioEngineState,
   ElectromagneticField,
@@ -97,9 +96,8 @@ export const useBackendAudioEngine = () => {
   const audioWorkletNode = useRef<AudioWorkletNode | null>(null);
   const workletLoaded = useRef<boolean>(false);
 
-  // Backend communication hooks - FIXED IMPORT
+  // Backend communication hooks
   const websocket = useWebSocketContext();
-  const api = useBackendAPI();
 // When creating AudioContext
 
 
@@ -470,9 +468,9 @@ export const useBackendAudioEngine = () => {
 
     console.log('🔌 Backend Engine: Connecting to backend...');
     try {
-      // First check backend health
-      const healthResponse = await api.healthCheck();
-      if (healthResponse.status !== 200) {
+      // First check backend health with direct fetch
+      const healthResponse = await fetch('http://localhost:8000/health');
+      if (!healthResponse.ok) {
         throw new Error('Backend health check failed');
       }
 
@@ -537,7 +535,7 @@ export const useBackendAudioEngine = () => {
       setBackendConnected(false);
       throw error;
     }
-  }, [api, backendConnected, sessionId, websocket]);
+  }, [backendConnected, sessionId, websocket]);
 
   // Stop backend session
   const stopBackendSession = useCallback(async () => {

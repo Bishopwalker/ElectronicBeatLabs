@@ -3,21 +3,7 @@
 // FIXED: Proper initialization and state management for working sliders
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-
-export interface EqualizerBand {
-  id: string;
-  frequency: number; // Center frequency in Hz
-  gain: number; // Gain in dB (-40 to +40)
-  Q: number; // Quality factor (0.1 to 10)
-  type: BiquadFilterType;
-  label: string;
-}
-
-export interface EqualizerState {
-  enabled: boolean;
-  bands: EqualizerBand[];
-  preset: string;
-}
+import type { EqualizerBand, EqualizerState } from '../types';
 
 // Default 10-band equalizer configuration - more compact labels
 const DEFAULT_BANDS: EqualizerBand[] = [
