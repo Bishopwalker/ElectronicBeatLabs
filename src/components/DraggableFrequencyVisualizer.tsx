@@ -5,6 +5,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Box, Paper, IconButton, Typography } from '@mui/material';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import CloseIcon from '@mui/icons-material/Close';
+import FullscreenIcon from '@mui/icons-material/Fullscreen';
+import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
 import { FrequencyVisualizer } from './FrequencyVisualizer';
 
 interface DraggableFrequencyVisualizerProps {
@@ -21,7 +23,7 @@ const DraggableFrequencyVisualizer: React.FC<DraggableFrequencyVisualizerProps> 
   audioContext,
   analyserNode,
   onClose,
-  defaultPosition = { x: window.innerWidth - 520, y: 100 },
+  defaultPosition = { x: window.innerWidth - 520, y: 150 },
   defaultSize = { width: 500, height: 200 }
 }) => {
   const [position, setPosition] = useState(defaultPosition);
@@ -31,6 +33,9 @@ const DraggableFrequencyVisualizer: React.FC<DraggableFrequencyVisualizerProps> 
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [collapsed, setCollapsed] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [isFullScreen, setIsFullScreen] = useState(false);
+  const [previousSize, setPreviousSize] = useState(defaultSize);
+  const [previousPosition, setPreviousPosition] = useState(defaultPosition);
 
   // Handle drag start
   const handleDragStart = (e: React.MouseEvent) => {
@@ -89,6 +94,7 @@ const DraggableFrequencyVisualizer: React.FC<DraggableFrequencyVisualizerProps> 
       setIsResizing(false);
     };
 
+    
     if (isDragging || isResizing) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
@@ -99,6 +105,32 @@ const DraggableFrequencyVisualizer: React.FC<DraggableFrequencyVisualizerProps> 
       };
     }
   }, [isDragging, isResizing, dragStart, size, collapsed]);
+
+  // Toggle full screen mode
+  const makeFullScreen = () => {
+    if (isFullScreen) {
+      // Restore to previous size and position
+      setSize(previousSize);
+      setPosition(previousPosition);
+      setIsFullScreen(false);
+      console.log('Exiting full screen mode, restoring to:', previousSize);
+    } else {
+      // Save current size and position before going full screen
+      setPreviousSize(size);
+      setPreviousPosition(position);
+
+      // Set to full screen dimensions
+      const fullScreenSize = {
+        width: window.innerWidth - 40, // Leave 20px margin on each side
+        height: window.innerHeight - 100 // Leave space for top position
+      };
+
+      setSize(fullScreenSize);
+      setPosition({ x: 20, y: 50 }); // Center with margin
+      setIsFullScreen(true);
+      console.log('Entering full screen mode:', fullScreenSize);
+    }
+  };
 
   return (
     <Paper
@@ -148,8 +180,17 @@ const DraggableFrequencyVisualizer: React.FC<DraggableFrequencyVisualizerProps> 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
           <IconButton
             size="small"
+            onClick={makeFullScreen}
+            sx={{ color: 'white', p: 0.5 }}
+            title={isFullScreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+          >
+            {isFullScreen ? <FullscreenExitIcon fontSize="small" /> : <FullscreenIcon fontSize="small" />}
+          </IconButton>
+          <IconButton
+            size="small"
             onClick={() => setCollapsed(!collapsed)}
             sx={{ color: 'white', p: 0.5 }}
+            title={collapsed ? 'Expand' : 'Collapse'}
           >
             {collapsed ? '▼' : '▲'}
           </IconButton>
@@ -157,10 +198,12 @@ const DraggableFrequencyVisualizer: React.FC<DraggableFrequencyVisualizerProps> 
             size="small"
             onClick={onClose}
             sx={{ color: '#ff4444', p: 0.5 }}
+            title="Close"
           >
             <CloseIcon fontSize="small" />
           </IconButton>
         </Box>
+
       </Box>
 
       {/* Content */}
@@ -183,6 +226,7 @@ const DraggableFrequencyVisualizer: React.FC<DraggableFrequencyVisualizerProps> 
           />
           
           {/* Resize handle */}
+      
           <Box
             sx={{
               position: 'absolute',

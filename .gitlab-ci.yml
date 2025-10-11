@@ -180,9 +180,9 @@ build:frontend:
   image: node:${NODE_VERSION}
   <<: *cache_config
   script:
-    # Fix rollup dependency issue on Linux
-    - rm -rf node_modules package-lock.json
-    - npm install --no-audit
+    # Clean node_modules but preserve package-lock.json for reproducible builds
+    - rm -rf node_modules
+    - npm ci --no-audit
     # Type check and build
     - npm run build
     # Verify build artifacts

@@ -8,8 +8,8 @@ FROM node:20-alpine AS frontend-builder
 WORKDIR /app
 
 # Copy package files
-COPY package*.json ./
-COPY yarn.lock ./
+COPY package.json ./
+COPY package-lock.json ./
 
 # Install all dependencies (including devDependencies for build)
 RUN npm ci --no-audit

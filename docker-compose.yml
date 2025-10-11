@@ -5,7 +5,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: Dockerfile.backend
+      dockerfile: Dockerfile.backend.render
     container_name: ebl-backend
     restart: unless-stopped
     ports:
@@ -68,7 +68,7 @@ services:
     container_name: ebl-frontend
     restart: unless-stopped
     ports:
-      - "5173:5173"  # Frontend Vite
+      - "80:80"  # Frontend Nginx production server
     depends_on:
       - backend
     networks:
