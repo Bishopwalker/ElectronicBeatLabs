@@ -83,6 +83,7 @@ export const useEqualizer = (audioContext: AudioContext | null) => {
   // Initialize equalizer filter chain
   const initializeEqualizer = useCallback(() => {
     if (!audioContext) {
+      console.log(audioContext)
       console.warn('⚠️ Cannot initialize equalizer: AudioContext not available');
       return null;
     }

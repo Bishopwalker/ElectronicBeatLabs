@@ -101,6 +101,13 @@ export const useAudioEngine = () => {
 
       // Store the persistent context
       audioContextRef.current = context;
+
+      // Update state to trigger re-render with new context
+      setAudioState(prev => ({
+        ...prev,
+        context: context
+      }));
+
       console.log('✅ Persistent audio context initialized successfully');
       return context;
     } catch (error) {
@@ -545,7 +552,7 @@ export const useAudioEngine = () => {
       error: null
     },
     isSupported: !!(window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext),
-    audioContext: audioContextRef.current,
+    audioContext: audioState.context, // ✅ FIXED: Use reactive state value instead of ref
     analyserNode: analyserNodeRef.current
   };
 };
