@@ -1,7 +1,7 @@
 // Electromagnetic Beat Lab - Settings Tab Component
 
 import React, { useEffect, useState } from 'react';
-import { Box, Paper, Typography, Button } from '@mui/material';
+import { Box, Paper, Typography, Button, Slider, Switch, FormControlLabel } from '@mui/material';
 // import SpatialAudioControls from '../SpatialAudioControls'; // REMOVED - component deleted
 import type { AppState, AudioEngine, Pattern8D } from '../../types';
 import TimerCountdownDisplay from "../TimerCountdownDisplay.tsx";
@@ -223,29 +223,6 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
         gap: 1
       }}
     >
-      {/* Spatial Audio Controls - TEMPORARILY DISABLED (component deleted during cleanup)
-      <Paper
-        sx={{
-          background: 'rgba(255, 255, 255, 0.02)',
-          borderRadius: 3,
-          p: 1,
-          border: '1px solid rgba(255, 255, 255, 0.1)'
-        }}
-      >
-        <Typography
-          variant="body2"
-          sx={{
-            color: '#00ff88',
-            mb: 1,
-            fontSize: '0.8rem',
-            fontStyle: 'italic'
-          }}
-        >
-          💡 8D Spatial Audio settings moved to Advanced Controls
-        </Typography>
-      </Paper>
-      */}
-
       <Paper
         sx={{
           background: 'rgba(255, 255, 255, 0.02)',
@@ -321,6 +298,150 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
           </Box>
         )}
       </Paper>
+
+      {/* Spatial Audio Controls Section - only show when backend is connected */}
+      {backendConnected && (
+        <Paper
+          sx={{
+            background: 'rgba(0, 191, 255, 0.05)',
+            borderRadius: 3,
+            p: 2,
+            border: '1px solid rgba(0, 191, 255, 0.3)'
+          }}
+        >
+          <Typography
+            variant="h6"
+            component="h4"
+            sx={{
+              color: '#00bfff',
+              mb: 2,
+              fontSize: '1.1rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.5
+            }}
+          >
+            🎧 8D Spatial Audio Settings
+          </Typography>
+
+          <Box sx={{ mb: 2 }}>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={appState.spatialAudio?.enabled || false}
+                  onChange={(e) => handleSpatialSettingsChange({
+                    ...appState.spatialAudio,
+                    enabled: e.target.checked,
+                    movement_speed: appState.spatialAudio?.movement_speed || 1.0,
+                    spatial_intensity: appState.spatialAudio?.spatial_intensity || 0.5,
+                    reverb_enabled: appState.spatialAudio?.reverb_enabled || false
+                  })}
+                  sx={{
+                    '& .MuiSwitch-switchBase.Mui-checked': {
+                      color: '#00bfff'
+                    },
+                    '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                      bgcolor: '#00bfff'
+                    }
+                  }}
+                />
+              }
+              label={
+                <Typography sx={{ color: '#e0e0e0', fontSize: '0.9rem' }}>
+                  Enable Spatial Audio {appState.spatialAudio?.enabled ? '🟢' : '🔴'}
+                </Typography>
+              }
+            />
+          </Box>
+
+          {appState.spatialAudio?.enabled && (
+            <>
+              {/* Movement Speed */}
+              <Box sx={{ mb: 2 }}>
+                <Typography sx={{ color: '#e0e0e0', fontSize: '0.85rem', mb: 0.5 }}>
+                  Movement Speed: {(appState.spatialAudio?.movement_speed || 1.0).toFixed(2)}x
+                </Typography>
+                <Slider
+                  value={appState.spatialAudio?.movement_speed || 1.0}
+                  onChange={(_, value) => handleSpatialSettingsChange({
+                    ...appState.spatialAudio,
+                    enabled: true,
+                    movement_speed: value as number,
+                    spatial_intensity: appState.spatialAudio?.spatial_intensity || 0.5,
+                    reverb_enabled: appState.spatialAudio?.reverb_enabled || false
+                  })}
+                  min={0.1}
+                  max={5.0}
+                  step={0.1}
+                  sx={{
+                    color: '#00bfff',
+                    '& .MuiSlider-thumb': {
+                      bgcolor: '#00bfff'
+                    }
+                  }}
+                />
+              </Box>
+
+              {/* Spatial Intensity */}
+              <Box sx={{ mb: 2 }}>
+                <Typography sx={{ color: '#e0e0e0', fontSize: '0.85rem', mb: 0.5 }}>
+                  Spatial Intensity: {((appState.spatialAudio?.spatial_intensity || 0.5) * 100).toFixed(0)}%
+                </Typography>
+                <Slider
+                  value={appState.spatialAudio?.spatial_intensity || 0.5}
+                  onChange={(_, value) => handleSpatialSettingsChange({
+                    ...appState.spatialAudio,
+                    enabled: true,
+                    movement_speed: appState.spatialAudio?.movement_speed || 1.0,
+                    spatial_intensity: value as number,
+                    reverb_enabled: appState.spatialAudio?.reverb_enabled || false
+                  })}
+                  min={0}
+                  max={1}
+                  step={0.05}
+                  sx={{
+                    color: '#00bfff',
+                    '& .MuiSlider-thumb': {
+                      bgcolor: '#00bfff'
+                    }
+                  }}
+                />
+              </Box>
+
+              {/* Reverb Toggle */}
+              <Box sx={{ mb: 1 }}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={appState.spatialAudio?.reverb_enabled || false}
+                      onChange={(e) => handleSpatialSettingsChange({
+                        ...appState.spatialAudio,
+                        enabled: true,
+                        movement_speed: appState.spatialAudio?.movement_speed || 1.0,
+                        spatial_intensity: appState.spatialAudio?.spatial_intensity || 0.5,
+                        reverb_enabled: e.target.checked
+                      })}
+                      sx={{
+                        '& .MuiSwitch-switchBase.Mui-checked': {
+                          color: '#00bfff'
+                        },
+                        '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                          bgcolor: '#00bfff'
+                        }
+                      }}
+                    />
+                  }
+                  label={
+                    <Typography sx={{ color: '#e0e0e0', fontSize: '0.85rem' }}>
+                      Enable Reverb {appState.spatialAudio?.reverb_enabled ? '🎵' : '🔇'}
+                    </Typography>
+                  }
+                />
+              </Box>
+            </>
+          )}
+        </Paper>
+      )}
 
       <Paper
         sx={{
