@@ -47,7 +47,7 @@ export const ADVANCED_HEALING_PROTOCOL: ComprehensiveTimerPreset = {
       
       volume_envelope: {
         fade_in_seconds: 10,
-        sustain_level: 0.3,
+        sustain_level: 0.7,
         fade_out_seconds: 15
       },
       
@@ -301,8 +301,159 @@ export const ADVANCED_HEALING_PROTOCOL: ComprehensiveTimerPreset = {
     }
   ],
   
-  // Pattern progression (simplified for template)
-  pattern_progression: [],
+  // Pattern progression through the healing journey
+  pattern_progression: [
+    {
+      start_time_minutes: 0,
+      end_time_minutes: 10,
+      pattern_config: {
+        id: 'interference-balance-grounding',
+        name: 'Earth Grounding Balance',
+        type: 'interference',
+        description: 'Schumann resonance grounding with balanced interference patterns',
+        instructions: 'Relax and feel connection to Earth energy',
+        benefits: ['Grounding', 'Energy balance', 'Foundation building'],
+        frequencies: {
+          carrier: 144,
+          beat: 7.83,
+          range: 'alpha'
+        },
+        duration: 10,
+        electromagnetic: {
+          fieldStrength: 0.5,
+          resonanceFreq: 7.83,
+          coherence: 0.7
+        },
+        visualization: {
+          color: '#4CAF50',
+          intensity: 0.5,
+          pattern: 'interference-balance'
+        }
+      },
+      transition_duration_seconds: 30,
+      transition_type: 'crossfade'
+    },
+    {
+      start_time_minutes: 10,
+      end_time_minutes: 30,
+      pattern_config: {
+        id: 'toroidal-love-frequency',
+        name: '528Hz Love Frequency Healing',
+        type: 'toroidal',
+        description: 'DNA repair and heart chakra activation with toroidal field',
+        instructions: 'Focus on heart center, visualize green healing light',
+        benefits: ['DNA repair', 'Heart opening', 'Love frequency activation', 'Cellular regeneration'],
+        frequencies: {
+          carrier: 144,
+          beat: 4,
+          range: 'theta'
+        },
+        duration: 20,
+        electromagnetic: {
+          fieldStrength: 0.8,
+          resonanceFreq: 528,
+          coherence: 0.9
+        },
+        visualization: {
+          color: '#00FF88',
+          intensity: 0.8,
+          pattern: 'toroidal-healing'
+        }
+      },
+      transition_duration_seconds: 45,
+      transition_type: 'morph'
+    },
+    {
+      start_time_minutes: 30,
+      end_time_minutes: 45,
+      pattern_config: {
+        id: 'spiral-cellular-repair',
+        name: 'Deep Cellular Transformation',
+        type: 'spiral',
+        description: 'Theta healing spiral for immune boost and cellular harmony',
+        instructions: 'Allow deep healing to penetrate every cell',
+        benefits: ['Cellular repair', 'Immune system boost', 'Energy meridian flow', 'Deep healing'],
+        frequencies: {
+          carrier: 142.5,
+          beat: 7.5,
+          range: 'theta'
+        },
+        duration: 15,
+        electromagnetic: {
+          fieldStrength: 0.9,
+          resonanceFreq: 7.5,
+          coherence: 0.95
+        },
+        visualization: {
+          color: '#9C27B0',
+          intensity: 0.9,
+          pattern: 'spiral-transformation'
+        }
+      },
+      transition_duration_seconds: 35,
+      transition_type: 'morph'
+    },
+    {
+      start_time_minutes: 45,
+      end_time_minutes: 55,
+      pattern_config: {
+        id: 'toroidal-gamma-integration',
+        name: 'Gamma Healing Integration',
+        type: 'toroidal',
+        description: 'Neural optimization and healing completion with gamma resonance',
+        instructions: 'Feel the integration of all healing energies',
+        benefits: ['Neural optimization', 'Healing completion', 'Light body activation', 'Energy integration'],
+        frequencies: {
+          carrier: 144,
+          beat: 30,
+          range: 'gamma'
+        },
+        duration: 10,
+        electromagnetic: {
+          fieldStrength: 1.0,
+          resonanceFreq: 40,
+          coherence: 0.98
+        },
+        visualization: {
+          color: '#FFD700',
+          intensity: 1.0,
+          pattern: 'toroidal-max-resonance'
+        }
+      },
+      transition_duration_seconds: 30,
+      transition_type: 'crossfade'
+    },
+    {
+      start_time_minutes: 55,
+      end_time_minutes: 60,
+      pattern_config: {
+        id: 'helix-stabilization',
+        name: 'DNA Helix Stabilization',
+        type: 'helix',
+        description: 'Final integration and healing stabilization with DNA helix pattern',
+        instructions: 'Rest in complete healing and wellness',
+        benefits: ['Healing stabilization', 'Energy grounding', 'Wellness integration', 'DNA harmony'],
+        frequencies: {
+          carrier: 144,
+          beat: 8,
+          range: 'alpha'
+        },
+        duration: 5,
+        electromagnetic: {
+          fieldStrength: 0.6,
+          resonanceFreq: 8,
+          coherence: 0.8
+        },
+        visualization: {
+          color: '#00BCD4',
+          intensity: 0.6,
+          pattern: 'helix-dna-activation'
+        }
+      },
+      transition_duration_seconds: 20,
+      transition_type: 'crossfade'
+    }
+  ],
   
   // 8D Spatial configuration  
   spatial_8d_config: {
@@ -361,13 +512,255 @@ export const ADVANCED_HEALING_PROTOCOL: ComprehensiveTimerPreset = {
       modulation_speed: 0.015
     }
   },
-  
-  // Electromagnetic progression (simplified)
-  electromagnetic_progression: [],
-  
-  // Visualization progression (simplified)
-  visualization_progression: [],
-  
+
+  // Electromagnetic field progression through healing journey
+  electromagnetic_progression: [
+    {
+      timestamp_minutes: 0,
+      field_config: {
+        strength: 0.5,
+        frequency: 7.83,
+        phase: 0,
+        coherence: 0.7,
+        resonance: 0.6,
+        state: 'ACTIVE',
+        stability: 0.9
+      },
+      transition_duration_seconds: 30,
+      resonance_targets: {
+        brain_waves: 'alpha',
+        chakra_alignment: 'root',
+        healing_frequency: 7.83
+      }
+    },
+    {
+      timestamp_minutes: 10,
+      field_config: {
+        strength: 0.8,
+        frequency: 528,
+        phase: 90,
+        coherence: 0.9,
+        resonance: 0.8,
+        state: 'RESONANT',
+        stability: 0.8
+      },
+      transition_duration_seconds: 45,
+      resonance_targets: {
+        brain_waves: 'theta',
+        chakra_alignment: 'heart',
+        healing_frequency: 528
+      }
+    },
+    {
+      timestamp_minutes: 30,
+      field_config: {
+        strength: 0.9,
+        frequency: 7.5,
+        phase: 180,
+        coherence: 0.95,
+        resonance: 0.9,
+        state: 'RESONANT',
+        stability: 0.85
+      },
+      transition_duration_seconds: 35,
+      resonance_targets: {
+        brain_waves: 'theta',
+        chakra_alignment: 'solar_plexus',
+        healing_frequency: 7.5
+      }
+    },
+    {
+      timestamp_minutes: 45,
+      field_config: {
+        strength: 1.0,
+        frequency: 40,
+        phase: 270,
+        coherence: 0.98,
+        resonance: 1.0,
+        state: 'CRITICAL',
+        stability: 0.9
+      },
+      transition_duration_seconds: 30,
+      resonance_targets: {
+        brain_waves: 'gamma',
+        chakra_alignment: 'crown',
+        healing_frequency: 40
+      }
+    },
+    {
+      timestamp_minutes: 55,
+      field_config: {
+        strength: 0.6,
+        frequency: 8,
+        phase: 0,
+        coherence: 0.8,
+        resonance: 0.7,
+        state: 'ACTIVE',
+        stability: 1.0
+      },
+      transition_duration_seconds: 20,
+      resonance_targets: {
+        brain_waves: 'alpha',
+        chakra_alignment: 'all_balanced',
+        healing_frequency: 8
+      }
+    }
+  ],
+
+  // Visualization progression evolving through healing journey
+  visualization_progression: [
+    {
+      timestamp_minutes: 0,
+      settings: {
+        starField: {
+          density: 80,
+          speed: 0.5,
+          color: '#4CAF50',
+          twinkle: true
+        },
+        spatial: {
+          gridSize: 40,
+          opacity: 0.3,
+          color: '#4CAF50',
+          animation: true
+        },
+        frequency: {
+          bars: 32,
+          sensitivity: 0.8,
+          color: '#66BB6A',
+          glow: true
+        }
+      },
+      transition_duration_seconds: 30,
+      special_effects: {
+        particle_burst: false,
+        color_cycling: false,
+        mandala_overlay: false,
+        fractal_zoom: false
+      }
+    },
+    {
+      timestamp_minutes: 10,
+      settings: {
+        starField: {
+          density: 120,
+          speed: 1.0,
+          color: '#00FF88',
+          twinkle: true
+        },
+        spatial: {
+          gridSize: 60,
+          opacity: 0.5,
+          color: '#00FF88',
+          animation: true
+        },
+        frequency: {
+          bars: 64,
+          sensitivity: 1.2,
+          color: '#00FF88',
+          glow: true
+        }
+      },
+      transition_duration_seconds: 45,
+      special_effects: {
+        particle_burst: true,
+        color_cycling: true,
+        mandala_overlay: true,
+        fractal_zoom: false
+      }
+    },
+    {
+      timestamp_minutes: 30,
+      settings: {
+        starField: {
+          density: 150,
+          speed: 1.5,
+          color: '#9C27B0',
+          twinkle: true
+        },
+        spatial: {
+          gridSize: 80,
+          opacity: 0.7,
+          color: '#BA68C8',
+          animation: true
+        },
+        frequency: {
+          bars: 64,
+          sensitivity: 1.5,
+          color: '#E1BEE7',
+          glow: true
+        }
+      },
+      transition_duration_seconds: 35,
+      special_effects: {
+        particle_burst: true,
+        color_cycling: true,
+        mandala_overlay: true,
+        fractal_zoom: true
+      }
+    },
+    {
+      timestamp_minutes: 45,
+      settings: {
+        starField: {
+          density: 200,
+          speed: 2.0,
+          color: '#FFD700',
+          twinkle: true
+        },
+        spatial: {
+          gridSize: 100,
+          opacity: 0.9,
+          color: '#FDD835',
+          animation: true
+        },
+        frequency: {
+          bars: 128,
+          sensitivity: 2.0,
+          color: '#FFD700',
+          glow: true
+        }
+      },
+      transition_duration_seconds: 30,
+      special_effects: {
+        particle_burst: true,
+        color_cycling: true,
+        mandala_overlay: true,
+        fractal_zoom: true
+      }
+    },
+    {
+      timestamp_minutes: 55,
+      settings: {
+        starField: {
+          density: 100,
+          speed: 0.8,
+          color: '#00BCD4',
+          twinkle: true
+        },
+        spatial: {
+          gridSize: 50,
+          opacity: 0.4,
+          color: '#80DEEA',
+          animation: true
+        },
+        frequency: {
+          bars: 32,
+          sensitivity: 1.0,
+          color: '#B2EBF2',
+          glow: true
+        }
+      },
+      transition_duration_seconds: 20,
+      special_effects: {
+        particle_burst: false,
+        color_cycling: false,
+        mandala_overlay: false,
+        fractal_zoom: false
+      }
+    }
+  ],
+
   // Pre-session preparation
   preparation: {
     duration_minutes: 5,
@@ -659,10 +1052,151 @@ export const ADHD_GAMMA_FOCUS_BLAST: ComprehensiveTimerPreset = {
       }
     }
   ],
-  
-  // Pattern progression (simplified)
-  pattern_progression: [],
-  
+
+  // Pattern progression optimized for ADHD focus enhancement
+  pattern_progression: [
+    {
+      start_time_minutes: 0,
+      end_time_minutes: 5,
+      pattern_config: {
+        id: 'vortex-beta-activation',
+        name: 'Beta Wave Vortex Activation',
+        type: 'vortex',
+        description: 'Mental alertness boost with focused vortex energy',
+        instructions: 'Sit upright, focus on a single point ahead',
+        benefits: ['Mental alertness', 'Attention activation', 'Cognitive boost', 'Focus preparation'],
+        frequencies: {
+          carrier: 144,
+          beat: 16,
+          range: 'beta'
+        },
+        duration: 5,
+        electromagnetic: {
+          fieldStrength: 0.7,
+          resonanceFreq: 16,
+          coherence: 0.8
+        },
+        visualization: {
+          color: '#2196F3',
+          intensity: 0.7,
+          pattern: 'vortex-focus-enhancement'
+        },
+        adhd: {
+          protocol: 'beta-activation',
+          duration: 5,
+          intensity: 70
+        }
+      },
+      transition_duration_seconds: 15,
+      transition_type: 'crossfade'
+    },
+    {
+      start_time_minutes: 5,
+      end_time_minutes: 13,
+      pattern_config: {
+        id: 'toroidal-high-beta-concentration',
+        name: 'High Beta Concentration Field',
+        type: 'toroidal',
+        description: 'Peak concentration with toroidal field resonance',
+        instructions: 'Maintain unwavering focus on your task',
+        benefits: ['Peak concentration', 'Mental sharpness', 'Sustained attention', 'Cognitive enhancement'],
+        frequencies: {
+          carrier: 144,
+          beat: 20,
+          range: 'beta'
+        },
+        duration: 8,
+        electromagnetic: {
+          fieldStrength: 0.8,
+          resonanceFreq: 20,
+          coherence: 0.85
+        },
+        visualization: {
+          color: '#FF9800',
+          intensity: 0.8,
+          pattern: 'toroidal-max-resonance'
+        },
+        adhd: {
+          protocol: 'high-beta-concentration',
+          duration: 8,
+          intensity: 80
+        }
+      },
+      transition_duration_seconds: 20,
+      transition_type: 'morph'
+    },
+    {
+      start_time_minutes: 13,
+      end_time_minutes: 25,
+      pattern_config: {
+        id: 'custom-gamma-hyperfocus',
+        name: 'Gamma Hyperfocus Matrix',
+        type: 'custom',
+        description: 'Ultimate ADHD focus enhancement with gamma wave synchronization',
+        instructions: 'Channel all attention into laser-focused work',
+        benefits: ['Hyperfocus state', 'Gamma burst activation', 'Neural optimization', 'ADHD enhancement', 'Peak performance'],
+        frequencies: {
+          carrier: 124,
+          beat: 30,
+          range: 'gamma'
+        },
+        duration: 12,
+        electromagnetic: {
+          fieldStrength: 1.0,
+          resonanceFreq: 40,
+          coherence: 0.9
+        },
+        visualization: {
+          color: '#E91E63',
+          intensity: 1.0,
+          pattern: 'adhd-focus-gamma'
+        },
+        adhd: {
+          protocol: 'gamma-hyperfocus',
+          duration: 12,
+          intensity: 100
+        }
+      },
+      transition_duration_seconds: 30,
+      transition_type: 'morph'
+    },
+    {
+      start_time_minutes: 25,
+      end_time_minutes: 30,
+      pattern_config: {
+        id: 'interference-sustained-focus',
+        name: 'Sustained Focus Integration',
+        type: 'interference',
+        description: 'Calm concentrated state for continued productivity',
+        instructions: 'Settle into sustained focused work mode',
+        benefits: ['Sustained attention', 'Calm alertness', 'Focus maintenance', 'Productive flow state'],
+        frequencies: {
+          carrier: 124,
+          beat: 12,
+          range: 'alpha'
+        },
+        duration: 5,
+        electromagnetic: {
+          fieldStrength: 0.7,
+          resonanceFreq: 12,
+          coherence: 0.85
+        },
+        visualization: {
+          color: '#4CAF50',
+          intensity: 0.7,
+          pattern: 'interference-balance'
+        },
+        adhd: {
+          protocol: 'sustained-focus',
+          duration: 5,
+          intensity: 70
+        }
+      },
+      transition_duration_seconds: 15,
+      transition_type: 'crossfade'
+    }
+  ],
+
   // 8D Spatial configuration optimized for ADHD
   spatial_8d_config: {
     enabled: true,
@@ -670,9 +1204,9 @@ export const ADHD_GAMMA_FOCUS_BLAST: ComprehensiveTimerPreset = {
       {
         start_time_minutes: 0,
         pattern_type: 'figure8',
-        speed: 0.06,
+        speed: 0.46,
         radius: 40,
-        elevation_range: [0, 0],
+        elevation_range: [6, 9],
         direction: 'alternating'
       },
       {
@@ -696,7 +1230,7 @@ export const ADHD_GAMMA_FOCUS_BLAST: ComprehensiveTimerPreset = {
         pattern_type: 'circular',
         speed: 0.04,
         radius: 40,
-        elevation_range: [0, 0],
+        elevation_range: [33, 66],
         direction: 'clockwise'
       }
     ],
@@ -712,13 +1246,199 @@ export const ADHD_GAMMA_FOCUS_BLAST: ComprehensiveTimerPreset = {
       modulation_speed: 0.02
     }
   },
-  
-  // Electromagnetic progression (simplified)
-  electromagnetic_progression: [],
-  
-  // Visualization progression (simplified)
-  visualization_progression: [],
-  
+
+  // Electromagnetic field progression optimized for ADHD focus
+  electromagnetic_progression: [
+    {
+      timestamp_minutes: 0,
+      field_config: {
+        strength: 0.7,
+        frequency: 16,
+        phase: 0,
+        coherence: 0.8,
+        resonance: 0.7,
+        state: 'ACTIVE',
+        stability: 0.8
+      },
+      transition_duration_seconds: 15,
+      resonance_targets: {
+        brain_waves: 'beta'
+      }
+    },
+    {
+      timestamp_minutes: 5,
+      field_config: {
+        strength: 0.8,
+        frequency: 20,
+        phase: 90,
+        coherence: 0.85,
+        resonance: 0.8,
+        state: 'RESONANT',
+        stability: 0.85
+      },
+      transition_duration_seconds: 20,
+      resonance_targets: {
+        brain_waves: 'beta'
+      }
+    },
+    {
+      timestamp_minutes: 13,
+      field_config: {
+        strength: 1.0,
+        frequency: 40,
+        phase: 180,
+        coherence: 0.9,
+        resonance: 1.0,
+        state: 'CRITICAL',
+        stability: 0.8
+      },
+      transition_duration_seconds: 30,
+      resonance_targets: {
+        brain_waves: 'gamma'
+      }
+    },
+    {
+      timestamp_minutes: 25,
+      field_config: {
+        strength: 0.7,
+        frequency: 12,
+        phase: 0,
+        coherence: 0.85,
+        resonance: 0.8,
+        state: 'ACTIVE',
+        stability: 0.9
+      },
+      transition_duration_seconds: 15,
+      resonance_targets: {
+        brain_waves: 'alpha'
+      }
+    }
+  ],
+
+  // Visualization progression evolving through ADHD focus session
+  visualization_progression: [
+    {
+      timestamp_minutes: 0,
+      settings: {
+        starField: {
+          density: 60,
+          speed: 1.2,
+          color: '#2196F3',
+          twinkle: true
+        },
+        spatial: {
+          gridSize: 30,
+          opacity: 0.6,
+          color: '#1976D2',
+          animation: true
+        },
+        frequency: {
+          bars: 32,
+          sensitivity: 1.2,
+          color: '#42A5F5',
+          glow: true
+        }
+      },
+      transition_duration_seconds: 15,
+      special_effects: {
+        particle_burst: false,
+        color_cycling: false,
+        mandala_overlay: false,
+        fractal_zoom: false
+      }
+    },
+    {
+      timestamp_minutes: 5,
+      settings: {
+        starField: {
+          density: 100,
+          speed: 1.5,
+          color: '#FF9800',
+          twinkle: true
+        },
+        spatial: {
+          gridSize: 50,
+          opacity: 0.7,
+          color: '#F57C00',
+          animation: true
+        },
+        frequency: {
+          bars: 64,
+          sensitivity: 1.5,
+          color: '#FFB74D',
+          glow: true
+        }
+      },
+      transition_duration_seconds: 20,
+      special_effects: {
+        particle_burst: true,
+        color_cycling: false,
+        mandala_overlay: false,
+        fractal_zoom: false
+      }
+    },
+    {
+      timestamp_minutes: 13,
+      settings: {
+        starField: {
+          density: 150,
+          speed: 2.0,
+          color: '#E91E63',
+          twinkle: true
+        },
+        spatial: {
+          gridSize: 80,
+          opacity: 0.9,
+          color: '#C2185B',
+          animation: true
+        },
+        frequency: {
+          bars: 128,
+          sensitivity: 2.0,
+          color: '#F06292',
+          glow: true
+        }
+      },
+      transition_duration_seconds: 30,
+      special_effects: {
+        particle_burst: true,
+        color_cycling: true,
+        mandala_overlay: true,
+        fractal_zoom: true
+      }
+    },
+    {
+      timestamp_minutes: 25,
+      settings: {
+        starField: {
+          density: 80,
+          speed: 1.0,
+          color: '#4CAF50',
+          twinkle: true
+        },
+        spatial: {
+          gridSize: 40,
+          opacity: 0.5,
+          color: '#388E3C',
+          animation: true
+        },
+        frequency: {
+          bars: 32,
+          sensitivity: 1.0,
+          color: '#66BB6A',
+          glow: true
+        }
+      },
+      transition_duration_seconds: 15,
+      special_effects: {
+        particle_burst: false,
+        color_cycling: false,
+        mandala_overlay: false,
+        fractal_zoom: false
+      }
+    }
+  ],
+
   // Pre-session preparation
   preparation: {
     duration_minutes: 2,

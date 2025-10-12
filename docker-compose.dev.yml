@@ -9,7 +9,7 @@ services:
     container_name: ebl-backend-dev
     restart: unless-stopped
     ports:
-      - "8000:8000"
+      - "8000:8000"  # Backend API port
     environment:
       # Development settings
       PYTHON_ENV: development
@@ -54,11 +54,11 @@ services:
   frontend:
     build:
       context: .
-      dockerfile: Dockerfile.frontend.dev.vite
-    container_name: ebl-frontend-dev.vite
+      dockerfile: Dockerfile.frontend
+    container_name: ebl-frontend-dev
     restart: unless-stopped
     ports:
-      - "5173:5173"
+      - "5173:5173"  # Frontend dev server
     environment:
       NODE_ENV: development
       VITE_API_URL: http://localhost:8080

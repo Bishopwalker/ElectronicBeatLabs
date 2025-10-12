@@ -206,7 +206,98 @@ export const DELTA_HEALING_TOROIDAL: ComprehensiveTimerPreset = {
   ],
   
   // Pattern progression
-  pattern_progression: [],
+  pattern_progression: [
+    {
+      start_time_minutes: 0,
+      end_time_minutes: 10,
+      pattern_config: {
+        id: 'toroidal-alpha-healing-prep',
+        name: 'Alpha Toroidal Healing Preparation',
+        type: 'toroidal',
+        description: 'Maximum Resonance Toroidal pattern at 8Hz Alpha for healing field activation',
+        instructions: 'Relax deeply and visualize golden toroidal field activating around your body',
+        benefits: ['Healing field activation', 'Alpha relaxation', 'Energy preparation', 'Toroidal resonance initiation'],
+        frequencies: {
+          carrier: 144,
+          beat: 8,
+          range: 'alpha'
+        },
+        duration: 10,
+        electromagnetic: {
+          fieldStrength: 0.6,
+          resonanceFreq: 8,
+          coherence: 0.7
+        },
+        visualization: {
+          color: '#FFD700',
+          intensity: 0.6,
+          pattern: 'toroidal-activation'
+        }
+      },
+      transition_duration_seconds: 60,
+      transition_type: 'crossfade'
+    },
+    {
+      start_time_minutes: 10,
+      end_time_minutes: 25,
+      pattern_config: {
+        id: 'toroidal-theta-healing-gateway',
+        name: 'Theta Toroidal Healing Gateway',
+        type: 'toroidal',
+        description: 'Maximum Resonance Toroidal at 4Hz Theta for deep healing and cellular regeneration',
+        instructions: 'Enter deep meditative state as toroidal healing field intensifies',
+        benefits: ['Deep healing activation', 'Theta consciousness', 'Cellular regeneration', 'Maximum toroidal resonance'],
+        frequencies: {
+          carrier: 144,
+          beat: 4,
+          range: 'theta'
+        },
+        duration: 15,
+        electromagnetic: {
+          fieldStrength: 0.8,
+          resonanceFreq: 4,
+          coherence: 0.9
+        },
+        visualization: {
+          color: '#50C878',
+          intensity: 0.8,
+          pattern: 'toroidal-healing-flow'
+        }
+      },
+      transition_duration_seconds: 45,
+      transition_type: 'smooth'
+    },
+    {
+      start_time_minutes: 25,
+      end_time_minutes: 45,
+      pattern_config: {
+        id: 'toroidal-delta-healing-mastery',
+        name: 'Deep Delta Toroidal Healing Mastery',
+        type: 'toroidal',
+        description: 'Maximum Resonance Toroidal at 2Hz Delta - ultimate healing frequency with maximum field strength',
+        instructions: 'Surrender to the deepest healing state as toroidal field reaches maximum power',
+        benefits: ['Ultimate healing mastery', 'Deep delta consciousness', 'DNA repair activation', 'Complete energy restoration', 'Maximum toroidal resonance'],
+        frequencies: {
+          carrier: 144,
+          beat: 2,
+          range: 'delta'
+        },
+        duration: 20,
+        electromagnetic: {
+          fieldStrength: 1.0,
+          resonanceFreq: 2,
+          coherence: 0.95
+        },
+        visualization: {
+          color: '#1B4D3E',
+          intensity: 1.0,
+          pattern: 'toroidal-healing-peak'
+        }
+      },
+      transition_duration_seconds: 60,
+      transition_type: 'smooth'
+    }
+  ],
   
   // 8D Spatial configuration for healing
   spatial_8d_config: {
@@ -249,10 +340,72 @@ export const DELTA_HEALING_TOROIDAL: ComprehensiveTimerPreset = {
       modulation_speed: 0.01
     }
   },
-  
-  electromagnetic_progression: [],
-  visualization_progression: [],
-  
+
+  electromagnetic_progression: [
+    {
+      start_time_minutes: 0,
+      end_time_minutes: 10,
+      field_state: 'CHARGING',
+      strength: 0.6,
+      coherence: 0.7,
+      resonance: 0.6,
+      stability: 0.8,
+      transition_type: 'exponential'
+    },
+    {
+      start_time_minutes: 10,
+      end_time_minutes: 25,
+      field_state: 'ACTIVE',
+      strength: 0.8,
+      coherence: 0.9,
+      resonance: 0.8,
+      stability: 0.9,
+      transition_type: 'smooth'
+    },
+    {
+      start_time_minutes: 25,
+      end_time_minutes: 45,
+      field_state: 'RESONANT',
+      strength: 1.0,
+      coherence: 0.95,
+      resonance: 1.0,
+      stability: 0.95,
+      transition_type: 'smooth'
+    }
+  ],
+  visualization_progression: [
+    {
+      start_time_minutes: 0,
+      end_time_minutes: 10,
+      color_scheme: 'alpha-toroidal-gold',
+      intensity: 0.6,
+      animation_speed: 0.4,
+      effects: ['toroidal-field', 'gentle-healing-glow', 'alpha-preparation'],
+      particle_density: 0.6,
+      glow_radius: 40
+    },
+    {
+      start_time_minutes: 10,
+      end_time_minutes: 25,
+      color_scheme: 'theta-toroidal-emerald',
+      intensity: 0.8,
+      animation_speed: 0.3,
+      effects: ['maximum-toroidal-resonance', 'theta-healing-field', 'cellular-regeneration', 'energy-flow'],
+      particle_density: 0.8,
+      glow_radius: 60
+    },
+    {
+      start_time_minutes: 25,
+      end_time_minutes: 45,
+      color_scheme: 'delta-toroidal-deep-emerald',
+      intensity: 1.0,
+      animation_speed: 0.2,
+      effects: ['maximum-toroidal-resonance', 'delta-healing-mastery', 'cellular-regeneration-peak', 'energy-restoration-complete', 'dna-repair-activation'],
+      particle_density: 1.0,
+      glow_radius: 80
+    }
+  ],
+
   preparation: {
     duration_minutes: 5,
     instructions: [
@@ -436,8 +589,69 @@ export const THETA_CREATIVITY_TOROIDAL: ComprehensiveTimerPreset = {
       }
     }
   ],
-  
-  pattern_progression: [],
+
+  pattern_progression: [
+    {
+      start_time_minutes: 0,
+      end_time_minutes: 10,
+      pattern_config: {
+        id: 'toroidal-alpha-creative-prep',
+        name: 'Alpha Creative Toroidal Activation',
+        type: 'toroidal',
+        description: 'Maximum Resonance Toroidal at 10Hz Alpha for creative field activation and inspiration',
+        instructions: 'Open your mind to creative possibilities as the toroidal field activates',
+        benefits: ['Creative activation', 'Alpha inspiration', 'Artistic readiness', 'Toroidal resonance preparation'],
+        frequencies: {
+          carrier: 144,
+          beat: 10,
+          range: 'alpha'
+        },
+        duration: 10,
+        electromagnetic: {
+          fieldStrength: 0.7,
+          resonanceFreq: 10,
+          coherence: 0.8
+        },
+        visualization: {
+          color: '#FF8C00',
+          intensity: 0.7,
+          pattern: 'toroidal-creative-activation'
+        }
+      },
+      transition_duration_seconds: 45,
+      transition_type: 'smooth'
+    },
+    {
+      start_time_minutes: 10,
+      end_time_minutes: 30,
+      pattern_config: {
+        id: 'toroidal-theta-creative-mastery',
+        name: 'Theta Creative Toroidal Flow',
+        type: 'toroidal',
+        description: 'Maximum Resonance Toroidal at 6Hz Theta - pure creative inspiration and artistic vision',
+        instructions: 'Flow with unlimited creative inspiration as the toroidal field reaches peak resonance',
+        benefits: ['Pure creative flow', 'Theta artistic mastery', 'Innovative thinking', 'Inspiration cascade', 'Maximum toroidal resonance'],
+        frequencies: {
+          carrier: 144,
+          beat: 6,
+          range: 'theta'
+        },
+        duration: 20,
+        electromagnetic: {
+          fieldStrength: 0.9,
+          resonanceFreq: 6,
+          coherence: 0.85
+        },
+        visualization: {
+          color: '#9400D3',
+          intensity: 0.9,
+          pattern: 'toroidal-creative-peak'
+        }
+      },
+      transition_duration_seconds: 30,
+      transition_type: 'smooth'
+    }
+  ],
   spatial_8d_config: {
     enabled: true,
     movement_progression: [
@@ -470,10 +684,52 @@ export const THETA_CREATIVITY_TOROIDAL: ComprehensiveTimerPreset = {
       modulation_speed: 0.02
     }
   },
-  
-  electromagnetic_progression: [],
-  visualization_progression: [],
-  
+
+  electromagnetic_progression: [
+    {
+      start_time_minutes: 0,
+      end_time_minutes: 10,
+      field_state: 'CHARGING',
+      strength: 0.7,
+      coherence: 0.8,
+      resonance: 0.7,
+      stability: 0.8,
+      transition_type: 'smooth'
+    },
+    {
+      start_time_minutes: 10,
+      end_time_minutes: 30,
+      field_state: 'ACTIVE',
+      strength: 0.9,
+      coherence: 0.85,
+      resonance: 0.9,
+      stability: 0.8,
+      transition_type: 'smooth'
+    }
+  ],
+  visualization_progression: [
+    {
+      start_time_minutes: 0,
+      end_time_minutes: 10,
+      color_scheme: 'alpha-creative-orange',
+      intensity: 0.7,
+      animation_speed: 0.5,
+      effects: ['creative-toroidal-field', 'inspiration-flow', 'artistic-activation'],
+      particle_density: 0.7,
+      glow_radius: 50
+    },
+    {
+      start_time_minutes: 10,
+      end_time_minutes: 30,
+      color_scheme: 'theta-creative-spectrum',
+      intensity: 0.9,
+      animation_speed: 0.6,
+      effects: ['maximum-toroidal-resonance', 'theta-creative-mastery', 'inspiration-cascade', 'artistic-vision-enhancement', 'innovative-thinking-boost'],
+      particle_density: 0.9,
+      glow_radius: 70
+    }
+  ],
+
   preparation: {
     duration_minutes: 3,
     instructions: [
@@ -657,8 +913,69 @@ export const ALPHA_FOCUS_TOROIDAL: ComprehensiveTimerPreset = {
       }
     }
   ],
-  
-  pattern_progression: [],
+
+  pattern_progression: [
+    {
+      start_time_minutes: 0,
+      end_time_minutes: 5,
+      pattern_config: {
+        id: 'toroidal-focus-activation',
+        name: 'Focus Toroidal Activation',
+        type: 'toroidal',
+        description: 'Maximum Resonance Toroidal at 12Hz Alpha for focus field activation and mental clarity',
+        instructions: 'Clear your mind and prepare for sustained focus as the toroidal field activates',
+        benefits: ['Focus activation', 'Mental clarity', 'Concentration preparation', 'Toroidal resonance initiation'],
+        frequencies: {
+          carrier: 144,
+          beat: 12,
+          range: 'alpha'
+        },
+        duration: 5,
+        electromagnetic: {
+          fieldStrength: 0.7,
+          resonanceFreq: 12,
+          coherence: 0.8
+        },
+        visualization: {
+          color: '#4169E1',
+          intensity: 0.7,
+          pattern: 'toroidal-focus-activation'
+        }
+      },
+      transition_duration_seconds: 30,
+      transition_type: 'smooth'
+    },
+    {
+      start_time_minutes: 5,
+      end_time_minutes: 25,
+      pattern_config: {
+        id: 'toroidal-sustained-focus-mastery',
+        name: 'Sustained Focus Toroidal Mastery',
+        type: 'toroidal',
+        description: 'Maximum Resonance Toroidal at 10Hz Alpha - sustained deep focus with maintenance loop support',
+        instructions: 'Enter peak focus state with maximum concentration as the toroidal field maintains optimal resonance',
+        benefits: ['Sustained deep focus', 'Productivity enhancement', 'Mental clarity peak', 'Concentration mastery', 'Maximum toroidal resonance'],
+        frequencies: {
+          carrier: 144,
+          beat: 10,
+          range: 'alpha'
+        },
+        duration: 20,
+        electromagnetic: {
+          fieldStrength: 0.8,
+          resonanceFreq: 10,
+          coherence: 0.9
+        },
+        visualization: {
+          color: '#FFD700',
+          intensity: 0.8,
+          pattern: 'toroidal-focus-peak'
+        }
+      },
+      transition_duration_seconds: 15,
+      transition_type: 'smooth'
+    }
+  ],
   spatial_8d_config: {
     enabled: true,
     movement_progression: [
@@ -691,10 +1008,52 @@ export const ALPHA_FOCUS_TOROIDAL: ComprehensiveTimerPreset = {
       modulation_speed: 0.01
     }
   },
-  
-  electromagnetic_progression: [],
-  visualization_progression: [],
-  
+
+  electromagnetic_progression: [
+    {
+      start_time_minutes: 0,
+      end_time_minutes: 5,
+      field_state: 'CHARGING',
+      strength: 0.7,
+      coherence: 0.8,
+      resonance: 0.7,
+      stability: 0.9,
+      transition_type: 'smooth'
+    },
+    {
+      start_time_minutes: 5,
+      end_time_minutes: 25,
+      field_state: 'ACTIVE',
+      strength: 0.8,
+      coherence: 0.9,
+      resonance: 0.8,
+      stability: 0.95,
+      transition_type: 'smooth'
+    }
+  ],
+  visualization_progression: [
+    {
+      start_time_minutes: 0,
+      end_time_minutes: 5,
+      color_scheme: 'focus-prep-blue',
+      intensity: 0.7,
+      animation_speed: 0.5,
+      effects: ['focus-toroidal-activation', 'mental-clarity-boost', 'concentration-field'],
+      particle_density: 0.7,
+      glow_radius: 45
+    },
+    {
+      start_time_minutes: 5,
+      end_time_minutes: 25,
+      color_scheme: 'sustained-focus-gold',
+      intensity: 0.8,
+      animation_speed: 0.4,
+      effects: ['maximum-toroidal-resonance', 'sustained-focus-field', 'productivity-enhancement', 'mental-clarity-peak', 'concentration-mastery'],
+      particle_density: 0.8,
+      glow_radius: 55
+    }
+  ],
+
   preparation: {
     duration_minutes: 2,
     instructions: [

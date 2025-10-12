@@ -12,8 +12,11 @@ import {
   Switch,
   FormControlLabel,
   Chip,
-  Tooltip
+  Tooltip,
+  IconButton
 } from '@mui/material';
+import FullscreenIcon from '@mui/icons-material/Fullscreen';
+import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
 import { useEqualizer, EQ_PRESETS } from '../hooks/useEqualizer';
 import type { EqualizerBand } from '../types';
 
@@ -98,7 +101,8 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
 }) => {
   // ALL HOOKS MUST BE AT THE TOP - NO CONDITIONALS BEFORE THIS
   const [isInitialized, setIsInitialized] = useState(false);
-  
+  const [visualizerFullscreen, setVisualizerFullscreen] = useState(false);
+
   // Call useEqualizer hook UNCONDITIONALLY at top level
   const {
     equalizerState,
@@ -111,15 +115,22 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
     outputNode
   } = useEqualizer(audioContext);
 
+  // Track if we showed the "needs audio" warning
+  const [showAudioWarning, setShowAudioWarning] = useState(!audioContext);
+
   // Initialize equalizer when audio context is ready
   useEffect(() => {
-    if (audioContext && !isInitialized) {
-      console.log('🎚️ Initializing equalizer with audio context');
-      const nodes = initializeEqualizer();
-      if (nodes) {
-        setIsInitialized(true);
-        if (onEqualizerChange) {
-          onEqualizerChange(nodes.input, nodes.output);
+    if (audioContext) {
+      setShowAudioWarning(false); // Hide warning once we have audio context
+
+      if (!isInitialized) {
+        console.log('🎚️ Initializing equalizer with audio context');
+        const nodes = initializeEqualizer();
+        if (nodes) {
+          setIsInitialized(true);
+          if (onEqualizerChange) {
+            onEqualizerChange(nodes.input, nodes.output);
+          }
         }
       }
     }
@@ -160,6 +171,7 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
     value: number | number[]
   ) => {
     const gainValue = Array.isArray(value) ? value[0] : value;
+    console.log(`🎚️ EQ Slider moved - Band: ${bandId}, New Value: ${gainValue}dB`);
     updateBandGain(bandId, gainValue);
   }, [updateBandGain]);
 
@@ -207,11 +219,16 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
           disabled={!equalizerState.enabled}
           sx={{
             height: 100, // Reduced height
+            pointerEvents: equalizerState.enabled ? 'auto' : 'none',
+            userSelect: 'none',
+            touchAction: 'none',
             '& .MuiSlider-thumb': {
               width: 10,
               height: 10,
               bgcolor: getSliderColor(band.gain),
               border: '1px solid white',
+              pointerEvents: equalizerState.enabled ? 'auto' : 'none',
+              cursor: equalizerState.enabled ? 'pointer' : 'not-allowed',
               '&:hover': {
                 boxShadow: `0 0 0 4px rgba(${band.gain > 0 ? '0, 255, 136' : '255, 107, 107'}, 0.16)`
               }
@@ -219,11 +236,13 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
             '& .MuiSlider-track': {
               width: 2,
               bgcolor: getSliderColor(band.gain),
-              border: 'none'
+              border: 'none',
+              pointerEvents: 'none'
             },
             '& .MuiSlider-rail': {
               width: 2,
-              bgcolor: 'rgba(255, 255, 255, 0.2)'
+              bgcolor: 'rgba(255, 255, 255, 0.2)',
+              pointerEvents: 'none'
             }
           }}
         />
@@ -277,9 +296,43 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
         bgcolor: 'rgba(0, 0, 0, 0.6)',
         backdropFilter: 'blur(10px)',
         borderRadius: 2,
-        border: '1px solid rgba(255, 255, 255, 0.1)'
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        position: 'relative'
       }}
     >
+      {/* Audio Context Warning Overlay */}
+      {showAudioWarning && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            bgcolor: 'rgba(0, 0, 0, 0.85)',
+            backdropFilter: 'blur(5px)',
+            borderRadius: 2,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10,
+            gap: 2,
+            p: 3
+          }}
+        >
+          <Typography variant="h6" sx={{ color: '#ff6b00', fontWeight: 'bold', textAlign: 'center' }}>
+            🎵 Audio Not Initialized
+          </Typography>
+          <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)', textAlign: 'center', maxWidth: '400px' }}>
+            Click the <strong style={{ color: '#00ff88' }}>Play ▶️</strong> button in the Master Controls section to initialize audio, then the EQ will become available.
+          </Typography>
+          <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.5)', textAlign: 'center', fontStyle: 'italic' }}>
+            (Browser security requires user interaction to enable audio)
+          </Typography>
+        </Box>
+      )}
+
       {/* Header with controls */}
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -377,25 +430,41 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
 
           {/* Frequency Visualizer */}
           {audioContext && analyserNode && (
-            <Box sx={{ 
-              flex: 1, 
-              minHeight: '80px',
+            <Box sx={{
+              flex: 1,
+              minHeight: visualizerFullscreen ? '300px' : '80px',
+              maxHeight: visualizerFullscreen ? '500px' : 'auto',
               bgcolor: 'rgba(0, 0, 0, 0.5)',
               borderRadius: 1,
-              p: 0.5
+              p: 0.5,
+              position: 'relative'
             }}>
-              <Typography 
-                variant="caption" 
-                sx={{ 
-                  color: 'rgba(255, 255, 255, 0.5)', 
-                  fontSize: '0.6rem',
-                  display: 'block',
-                  mb: 0.5
-                }}
-              >
-                Live Frequency Spectrum {isPlaying ? '(Active)' : '(Idle)'}
-              </Typography>
-              <SimpleFrequencyVisualizer 
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: 'rgba(255, 255, 255, 0.5)',
+                    fontSize: '0.6rem'
+                  }}
+                >
+                  Live Frequency Spectrum {isPlaying ? '(Active)' : '(Idle)'}
+                </Typography>
+                <IconButton
+                  size="small"
+                  onClick={() => setVisualizerFullscreen(!visualizerFullscreen)}
+                  sx={{
+                    color: 'white',
+                    p: 0.25,
+                    '&:hover': {
+                      bgcolor: 'rgba(255, 255, 255, 0.1)'
+                    }
+                  }}
+                  title={visualizerFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+                >
+                  {visualizerFullscreen ? <FullscreenExitIcon fontSize="small" /> : <FullscreenIcon fontSize="small" />}
+                </IconButton>
+              </Box>
+              <SimpleFrequencyVisualizer
                 audioContext={audioContext}
                 analyserNode={analyserNode}
                 isPlaying={isPlaying}

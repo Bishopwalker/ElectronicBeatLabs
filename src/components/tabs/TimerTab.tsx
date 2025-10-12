@@ -214,7 +214,9 @@ const TimerTab: React.FC<TimerTabProps> = ({
             sx={{
                 py: 1,
                 maxWidth: 1200,
-                mx: 'auto'
+                mx: 'auto',
+                height: 'auto',
+                overflow: 'visible'
             }}
         >
             {/* Header Section */}

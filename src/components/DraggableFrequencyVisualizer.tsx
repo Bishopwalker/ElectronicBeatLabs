@@ -148,7 +148,8 @@ const DraggableFrequencyVisualizer: React.FC<DraggableFrequencyVisualizerProps> 
         backdropFilter: 'blur(10px)',
         border: '1px solid rgba(255, 255, 255, 0.2)',
         borderRadius: 2,
-        overflow: 'hidden',
+        overflowx: 'hidden',
+        overfloxy: 'auto',
         userSelect: isDragging || isResizing ? 'none' : 'auto',
         cursor: isDragging ? 'grabbing' : 'default',
         transition: collapsed ? 'height 0.3s ease' : 'none'
@@ -160,6 +161,8 @@ const DraggableFrequencyVisualizer: React.FC<DraggableFrequencyVisualizerProps> 
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          overflowY: 'auto',
+          wrap: 'wrap',
           p: 1,
           bgcolor: 'rgba(138, 43, 226, 0.2)',
           borderBottom: '1px solid rgba(255, 255, 255, 0.1)',

@@ -55,9 +55,9 @@ export const LUCID_DREAMING_MASTER: ComprehensiveTimerPreset = {
       },
       
       volume_envelope: {
-        fade_in_seconds: 30,
-        sustain_level: 0.4,
-        fade_out_seconds: 20
+        fade_in_seconds: 3,
+        sustain_level: 0.7,
+        fade_out_seconds: 2
       },
       
       spatial_config: {
@@ -126,7 +126,7 @@ export const LUCID_DREAMING_MASTER: ComprehensiveTimerPreset = {
         spatialWidth: 1.0,
         elevation: 0.2,
         azimuth: 0,
-        movement_speed: 0.025,
+        movement_speed: 0.45,
         spatial_intensity: 0.7,
         reverberance: 0.6,
         room_scale: 1.3
@@ -209,8 +209,8 @@ export const LUCID_DREAMING_MASTER: ComprehensiveTimerPreset = {
       },
       
       transition_effects: {
-        crossfade_duration: 90,
-        harmonic_blending: false
+        crossfade_duration: 30,
+        harmonic_blending: true
       }
     },
     
@@ -331,40 +331,155 @@ export const LUCID_DREAMING_MASTER: ComprehensiveTimerPreset = {
     }
   ],
   
-  // Pattern progression
+  // Pattern progression through lucid dreaming journey
   pattern_progression: [
     {
       start_time_minutes: 0,
-      end_time_minutes: 10,
-      pattern_config: {} as' spiral-transformation',
-      transition_duration_seconds: 30,
+      end_time_minutes: 2,
+      pattern_config: {
+        id: 'spiral-cooldown-descent',
+        name: 'Spiral Cooldown Descent',
+        type: 'spiral',
+        description: 'Beta cooldown with gentle spiral descent',
+        instructions: 'Let your mind begin to quiet and relax',
+        benefits: ['Mental quieting', 'Relaxation initiation', 'Mind-body alignment'],
+        frequencies: {
+          carrier: 80,
+          beat: 13,
+          range: 'beta'
+        },
+        duration: 2,
+        electromagnetic: {
+          fieldStrength: 0.4,
+          resonanceFreq: 13,
+          coherence: 0.6
+        },
+        visualization: {
+          color: '#4169e1',
+          intensity: 0.5,
+          pattern: 'spiral-transformation'
+        }
+      },
+      transition_duration_seconds: 13,
       transition_type: 'crossfade'
     },
     {
-      start_time_minutes: 10,
-      end_time_minutes: 20,
-      pattern_config: {} as 'helix-dna-activation',
+      start_time_minutes: 2,
+      end_time_minutes: 12,
+      pattern_config: {
+        id: 'helix-theta-gateway',
+        name: 'DNA Helix Theta Gateway',
+        type: 'helix',
+        description: 'Theta gateway with DNA helix activation for dream preparation',
+        instructions: 'Allow consciousness to drift toward the dream threshold',
+        benefits: ['Dream state preparation', 'Cellular alignment', 'Theta activation', 'Sleep gateway'],
+        frequencies: {
+          carrier: 58,
+          beat: 6,
+          range: 'theta'
+        },
+        duration: 10,
+        electromagnetic: {
+          fieldStrength: 0.6,
+          resonanceFreq: 6,
+          coherence: 0.8
+        },
+        visualization: {
+          color: '#9370db',
+          intensity: 0.7,
+          pattern: 'helix-dna-activation'
+        }
+      },
       transition_duration_seconds: 60,
       transition_type: 'morph'
     },
     {
-      start_time_minutes: 20,
-      end_time_minutes: 50,
-      pattern_config: {} as 'standing-wave-meditation',
+      start_time_minutes: 12,
+      end_time_minutes: 42,
+      pattern_config: {
+        id: 'standing-wave-deep-delta',
+        name: 'Standing Wave Deep Delta Sleep',
+        type: 'standing',
+        description: 'Ultra-low delta with standing wave for deep restorative sleep',
+        instructions: 'Surrender completely into deep sleep state',
+        benefits: ['Deep sleep', 'Delta rest', 'Restorative healing', 'Sleep depths'],
+        frequencies: {
+          carrier: 50,
+          beat: 0.3,
+          range: 'delta'
+        },
+        duration: 30,
+        electromagnetic: {
+          fieldStrength: 0.3,
+          resonanceFreq: 0.3,
+          coherence: 0.9
+        },
+        visualization: {
+          color: '#191970',
+          intensity: 0.3,
+          pattern: 'standing-wave-meditation'
+        }
+      },
       transition_duration_seconds: 90,
       transition_type: 'crossfade'
     },
     {
-      start_time_minutes: 50,
+      start_time_minutes: 42,
       end_time_minutes: 57,
-      pattern_config: {} as 'vortex-focus-enhancement',
+      pattern_config: {
+        id: 'vortex-gamma-activation',
+        name: 'Gamma Consciousness Vortex',
+        type: 'vortex',
+        description: 'Gamma vortex for consciousness activation and lucid awareness',
+        instructions: 'Become aware within the dream state',
+        benefits: ['Consciousness activation', 'Lucid awareness', 'Gamma awakening', 'Dream control preparation'],
+        frequencies: {
+          carrier: 40,
+          beat: 25,
+          range: 'gamma'
+        },
+        duration: 7,
+        electromagnetic: {
+          fieldStrength: 0.8,
+          resonanceFreq: 25,
+          coherence: 0.7
+        },
+        visualization: {
+          color: '#ffd700',
+          intensity: 0.8,
+          pattern: 'vortex-focus-enhancement'
+        }
+      },
       transition_duration_seconds: 25,
       transition_type: 'instant'
     },
     {
       start_time_minutes: 57,
       end_time_minutes: 62,
-      pattern_config: {} as 'toroidal-max-resonance',
+      pattern_config: {
+        id: 'toroidal-peak-lucidity',
+        name: 'Toroidal Peak Lucidity Mastery',
+        type: 'toroidal',
+        description: 'Maximum resonance toroidal field for peak lucid consciousness',
+        instructions: 'Master complete control of your dream experience',
+        benefits: ['Peak lucidity', 'Dream mastery', 'Conscious dreaming', 'Maximum resonance', 'Toroidal control'],
+        frequencies: {
+          carrier: 85,
+          beat: 40,
+          range: 'gamma'
+        },
+        duration: 5,
+        electromagnetic: {
+          fieldStrength: 1.0,
+          resonanceFreq: 40,
+          coherence: 0.95
+        },
+        visualization: {
+          color: '#ffffff',
+          intensity: 1.0,
+          pattern: 'toroidal-max-resonance'
+        }
+      },
       transition_duration_seconds: 20,
       transition_type: 'morph'
     }

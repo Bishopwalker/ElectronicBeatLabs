@@ -224,7 +224,7 @@ export const ElectromagneticLabStyles = {
 
   // Main layout container
   mainLayoutContainer: (closedSections: string[]) => ({
-    flex: 1,
+    flex: '1 1',
     p: {
       xs: '5px',
       sm: '8px',
@@ -255,9 +255,10 @@ export const ElectromagneticLabStyles = {
     minWidth: '280px',
     maxWidth: '100%',  // Remove hard max limit
     height: 'auto',
-    maxHeight: '70vh',  // Max 50% viewport height
+    maxHeight: '100vh',  // Max 50% viewport height
     minHeight: 'fit-content',
     display: 'flex',
+    flexWrap: 'wrap',
     flexDirection: 'column',
     overflowY: 'auto'  // Scroll when content exceeds 50vh
   } as SxProps<Theme>,

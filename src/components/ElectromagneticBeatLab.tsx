@@ -563,6 +563,8 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
             <CollapsibleSection id="equalizer" title="Equalizer" icon="🎚️" defaultOpen={true} onClose={handleSectionClose}>
               <EqualizerMUI
                 audioContext={activeAudioEngine.audioContext || null}
+                analyserNode={activeAudioEngine.analyserNode || null}
+                isPlaying={appState.isPlaying}
                 onEqualizerChange={(inputNode, outputNode) => {
                   if (activeAudioEngine.setEqualizerNodes) {
                     activeAudioEngine.setEqualizerNodes(inputNode, outputNode);
@@ -703,7 +705,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
         {!closedSections.includes('timerPanel') && (
           <Box sx={ElectromagneticLabStyles.widePanelFlex}>
             <CollapsibleSection id="timerPanel" title="Timer & Sessions" icon="⏰" defaultOpen={true} onClose={handleSectionClose}>
-              <Box sx={{ maxHeight: '500px', minHeight: '300px', overflowY: 'auto' }}>
+              <Box sx={{ height: 'auto', minHeight: '300px', maxHeight: '70vh', overflowY: 'auto', overflowX: 'hidden' }}>
                 <TimerTab
                   appState={appState}
                   audioEngine={backendEngine.backendConnected ? backendEngine : frontendEngine}

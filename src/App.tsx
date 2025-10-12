@@ -135,7 +135,8 @@ const AppContent = () => {
         <Box sx={{
           flex: 1,
           overflowY: 'auto',
-          position: 'relative'
+          position: 'relative',
+          height: 'auto'
         }}>
           {activeTab === 0 && (
             <ElectromagneticBeatLab
@@ -144,7 +145,7 @@ const AppContent = () => {
             />
           )}
           {activeTab === 1 && (
-            <Box sx={{ p: 2, pb: 4, minHeight: 'fit-content' }}>
+            <Box sx={{ p: 2, pb: 4, height: 'auto', overflow: 'visible' }}>
               <TimerTab 
                 appState={{
                   mode: 'AUTO',
