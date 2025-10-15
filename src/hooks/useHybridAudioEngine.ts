@@ -32,7 +32,7 @@ import type { BinauralBeatConfig, PatternConfig } from '../types';
 import { DEFAULT_VOLUME } from '../constants/audio.constants';
 
 export const useHybridAudioEngine = () => {
-  // Initialize both engines
+  // Initialize both engines (will be routed through mixer after mixer is created)
   const frontendEngine = useAudioEngine();
   const backendEngine = useBackendAudioEngine();
 
@@ -64,13 +64,28 @@ export const useHybridAudioEngine = () => {
         // Create mixer
         mixerRef.current = new AudioMixer(frontendEngine.audioContext);
 
-        console.log('✅ Hybrid Engine: Audio mixer initialized successfully');
+        // 🔥 CRITICAL FIX: Connect BOTH engines to mixer
+        // This ensures both frontend and backend audio route through mixer for synchronized volume control
+
+        // Connect frontend engine to mixer's frontend gain
+        frontendEngine.setExternalNodes(
+          mixerRef.current.getFrontendGain(),
+          mixerRef.current.analyserNode
+        );
+
+        // Connect backend engine to mixer's backend gain
+        backendEngine.setExternalNodes(
+          mixerRef.current.getBackendGain(),
+          mixerRef.current.analyserNode
+        );
+
+        console.log('✅ Hybrid Engine: Audio mixer initialized and connected to BOTH engines');
         setIsInitialized(true);
       }
     } catch (error) {
       console.error('❌ Hybrid Engine: Failed to initialize mixer:', error);
     }
-  }, [frontendEngine]);
+  }, [frontendEngine, backendEngine]);
 
   /**
    * Initialize mixer when frontend context becomes available

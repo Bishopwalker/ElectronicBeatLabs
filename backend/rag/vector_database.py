@@ -12,7 +12,7 @@ from enum import Enum
 
 # Base imports
 from sentence_transformers import SentenceTransformer
-from backend.rag.chunking_strategy import CodeChunk
+from .chunking_strategy import CodeChunk
 
 
 class VectorProvider(Enum):
@@ -170,7 +170,7 @@ class CloudRAGPipeline:
             provider: Which vector database to use
             **vector_config: Provider-specific configuration
         """
-        from backend.rag.chunking_strategy import EBLChunkingStrategy
+        from .chunking_strategy import EBLChunkingStrategy
 
         self.project_root = project_root
         self.chunker = EBLChunkingStrategy(project_root)

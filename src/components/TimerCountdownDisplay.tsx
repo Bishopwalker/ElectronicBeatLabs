@@ -301,6 +301,7 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
                         </Tooltip>
 
                         <Tooltip title="Next Transition">
+                            <span>
                             <IconButton
                                 size="small"
                                 onClick={() => onJumpToTransition?.('next')}
@@ -310,9 +311,9 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
                                     '&:hover': {bgcolor: 'rgba(255, 107, 0, 0.3)'},
                                     '&:disabled': {opacity: 0.3}
                                 }}
-                            >
-                                <SkipNextIcon sx={{fontSize: '1.2rem', color: '#ff6b00'}} />
+                            >   <SkipNextIcon sx={{fontSize: '1.2rem', color: '#ff6b00'}} />
                             </IconButton>
+                                </span>
                         </Tooltip>
                     </Box>
                 </Box>

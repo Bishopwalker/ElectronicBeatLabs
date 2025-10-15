@@ -97,6 +97,10 @@ export const useBackendAudioEngine = () => {
   const analyserNode = useRef<AnalyserNode | null>(null);
   const workletLoaded = useRef<boolean>(false);
 
+  // Store external mixer nodes (can be set dynamically)
+  const externalOutputNodeRef = useRef<GainNode | null>(null);
+  const externalAnalyserRef = useRef<AnalyserNode | null>(null);
+
   // Backend communication hooks
   const websocket = useWebSocketContext();
 // When creating AudioContext
@@ -142,23 +146,41 @@ export const useBackendAudioEngine = () => {
         }
       }
 
-      // Create persistent gain node
-      if (!gainNode.current) {
-        gainNode.current = audioContext.current.createGain();
-        gainNode.current.gain.value = audioState.config?.amplitude ?? DEFAULT_VOLUME;
-        gainNode.current.connect(audioContext.current.destination);
-      }
+      // 🔥 CRITICAL FIX: Use external nodes if provided (AudioMixer integration)
+      const outputNode = externalOutputNodeRef.current;
+      const analyser = externalAnalyserRef.current;
 
-      // Create persistent analyser node for visualizations
-      if (!analyserNode.current) {
-        analyserNode.current = audioContext.current.createAnalyser();
-        analyserNode.current.fftSize = 2048;
-        analyserNode.current.smoothingTimeConstant = 0.8;
-        // Connect gain node through analyser for visualization
-        gainNode.current.disconnect();
-        gainNode.current.connect(analyserNode.current);
-        analyserNode.current.connect(audioContext.current.destination);
-        console.log('✅ Backend Engine: AnalyserNode created for visualization');
+      if (outputNode) {
+        // AudioMixer mode: Route directly to mixer's backend gain node
+        console.log('🎚️ Backend Engine: Using external mixer nodes (AudioMixer mode)');
+
+        // Don't create local gain node, mixer handles all gain control
+        // Don't create local analyser, mixer provides shared analyser
+        analyserNode.current = analyser; // Store reference for return value
+
+        console.log('✅ Backend Engine: External nodes configured for mixer routing');
+      } else {
+        // Standalone mode: Create local gain and analyser nodes
+        console.log('🎵 Backend Engine: Standalone mode - creating local nodes');
+
+        // Create persistent gain node
+        if (!gainNode.current) {
+          gainNode.current = audioContext.current.createGain();
+          gainNode.current.gain.value = audioState.config?.amplitude ?? DEFAULT_VOLUME;
+          gainNode.current.connect(audioContext.current.destination);
+        }
+
+        // Create persistent analyser node for visualizations
+        if (!analyserNode.current) {
+          analyserNode.current = audioContext.current.createAnalyser();
+          analyserNode.current.fftSize = 2048;
+          analyserNode.current.smoothingTimeConstant = 0.8;
+          // Connect gain node through analyser for visualization
+          gainNode.current.disconnect();
+          gainNode.current.connect(analyserNode.current);
+          analyserNode.current.connect(audioContext.current.destination);
+          console.log('✅ Backend Engine: Local AnalyserNode created for visualization');
+        }
       }
 
       // Create AudioWorkletNode for real-time audio processing
@@ -187,7 +209,7 @@ export const useBackendAudioEngine = () => {
               if (message.data.isPlaying==true){
                 console.log('📊 Buffer Status:', message.data);
               }
-              
+
               break;
             case 'bufferExhausted':
               console.warn('⚠️ Backend Engine: Audio buffer exhausted, need new frame');
@@ -200,9 +222,16 @@ export const useBackendAudioEngine = () => {
           }
         };
 
-        // Connect AudioWorklet to gain node
-        audioWorkletNode.current.connect(gainNode.current);
-        console.log('✅ Backend Engine: AudioWorklet node created and connected to gain node');
+        // 🔥 CRITICAL FIX: Route AudioWorklet based on mode
+        if (outputNode) {
+          // AudioMixer mode: Connect directly to mixer's backend gain
+          audioWorkletNode.current.connect(outputNode);
+          console.log('✅ Backend Engine: AudioWorklet routed through AudioMixer');
+        } else {
+          // Standalone mode: Connect to local gain node
+          audioWorkletNode.current.connect(gainNode.current!);
+          console.log('✅ Backend Engine: AudioWorklet connected to local gain node');
+        }
       }
     } catch (error) {
       console.error('❌ Backend Engine: Failed to initialize AudioWorklet audio:', error);
@@ -1112,12 +1141,29 @@ export const useBackendAudioEngine = () => {
     }, (protocol.duration || 10) * 60 * 1000);
   }, [startBinauralBeat, stopBinauralBeat]);
 
+  /**
+   * Set external mixer nodes for AudioMixer integration
+   * Call this after creating the AudioMixer to route backend audio through it
+   */
+  const setExternalNodes = useCallback((outputGainNode: GainNode | null, analyserNode: AnalyserNode | null) => {
+    console.log('🎚️ Backend Engine: Setting external mixer nodes:', { outputGainNode, analyserNode });
+    externalOutputNodeRef.current = outputGainNode;
+    externalAnalyserRef.current = analyserNode;
+
+    // If AudioWorklet exists, warn that restart is needed
+    if (audioWorkletNode.current) {
+      console.warn('⚠️ Backend Engine: External nodes changed while AudioWorklet exists. Restart session for changes to take effect.');
+    } else {
+      console.log('✅ Backend Engine: External nodes set successfully, will be used when AudioWorklet initializes');
+    }
+  }, []);
+
   // Cleanup on unmount ONLY - not on sessionId changes
   useEffect(() => {
     return () => {
       // Only clean up on actual unmount, not on sessionId changes
       console.log('🧹 Backend Engine: Component unmounting, cleaning up...');
-      
+
       // Clean up audio pipeline
       if (audioWorkletNode.current) {
         audioWorkletNode.current.port.postMessage({ type: 'clearBuffer' });
@@ -1156,6 +1202,7 @@ export const useBackendAudioEngine = () => {
     frequencySweep,
     createGammaProtocol,
     updateSettings,
+    setExternalNodes, // 🔥 NEW: Allow dynamic routing through AudioMixer
     isSupported: !!(window.AudioContext || (window as any).webkitAudioContext),
     // CRITICAL: Expose audioContext and analyserNode for visualizations and frequency analysis
     audioContext: audioContext.current,

@@ -17,12 +17,22 @@ import {
   DEFAULT_RIGHT_FREQUENCY
 } from '../constants/audio.constants';
 
+/**
+ * Frontend Audio Engine Hook
+ */
 export const useAudioEngine = () => {
   // Persistent audio context that survives start/stop cycles
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserNodeRef = useRef<AnalyserNode | null>(null);
+  // Store external mixer nodes (can be set dynamically)
+  const externalOutputNodeRef = useRef<GainNode | null>(null);
+  const externalAnalyserRef = useRef<AnalyserNode | null>(null);
   const equalizerInputRef = useRef<GainNode | null>(null);
   const equalizerOutputRef = useRef<GainNode | null>(null);
+  
+  // 🔥 CRITICAL FIX: Stop lock to prevent auto-restart race conditions
+  const stopLockRef = useRef<boolean>(false);
+  
   const [audioState, setAudioState] = useState<FrontendAudioEngineState>({
     isPlaying: false,
     amplitude: DEFAULT_VOLUME,
@@ -202,6 +212,13 @@ export const useAudioEngine = () => {
   // Start binaural beat playback
   const startBinauralBeat = useCallback(async (config: BinauralBeatConfig) => {
     console.log('🎵 Frontend Engine: startBinauralBeat called with config:', config);
+    
+    // 🔥 CRITICAL FIX: Check stop lock to prevent auto-restart after stop
+    if (stopLockRef.current) {
+      console.warn('⚠️ Frontend Engine: BLOCKED start - stop lock active (prevents auto-restart)');
+      return;
+    }
+    
     try {
       // Stop any existing audio first
       if (audioState.isPlaying) {
@@ -227,6 +244,10 @@ export const useAudioEngine = () => {
         return;
       }
       console.log('✅ Frontend Engine: Audio context ready, state:', context.state);
+      
+      // 🔥 CRITICAL FIX: Clear stop lock when explicitly starting audio
+      stopLockRef.current = false;
+      console.log('🔓 Frontend Engine: Stop lock CLEARED (user explicitly started audio)');
 
       // Ensure context is running
       if (context.state === 'suspended') {
@@ -251,12 +272,17 @@ export const useAudioEngine = () => {
       // Create channel merger for proper stereo separation
       const merger = context.createChannelMerger(2);
 
-      // Create or reuse analyser node for visualization
-      if (!analyserNodeRef.current) {
+      // Use external analyser if provided (for AudioMixer integration), otherwise create/reuse local one
+      const analyser = externalAnalyserRef.current || analyserNodeRef.current;
+      if (!analyser) {
         analyserNodeRef.current = context.createAnalyser();
         analyserNodeRef.current.fftSize = 2048;
         analyserNodeRef.current.smoothingTimeConstant = 0.8;
-        console.log('✅ Created AnalyserNode for visualization');
+        console.log('✅ Created local AnalyserNode for visualization');
+      } else if (externalAnalyserRef.current) {
+        // Use external analyser but keep local reference for compatibility
+        analyserNodeRef.current = externalAnalyserRef.current;
+        console.log('✅ Using external AnalyserNode from AudioMixer');
       }
 
       // Connect left oscillator to left channel only
@@ -267,17 +293,39 @@ export const useAudioEngine = () => {
       oscR.connect(gainR);
       gainR.connect(merger, 0, 1); // Connect to right output channel
 
-      // Connect through equalizer if it exists, otherwise direct to analyser
-      if (equalizerInputRef.current && equalizerOutputRef.current) {
-        console.log('🎚️ Routing audio through equalizer');
-        merger.connect(equalizerInputRef.current);
-        equalizerOutputRef.current.connect(analyserNodeRef.current);
-      } else {
-        console.log('🎵 Routing audio directly (no equalizer)');
-        merger.connect(analyserNodeRef.current);
-      }
+      // 🔥 CRITICAL FIX: Route through external output gain node if provided (AudioMixer integration)
+      // This ensures the mixer can control frontend engine volume
+      const outputNode = externalOutputNodeRef.current;
+      if (outputNode) {
+        console.log('🎚️ Frontend Engine: Routing through external gain node (AudioMixer mode)');
 
-      analyserNodeRef.current.connect(context.destination);
+        // Route: merger → equalizer (if exists) → external gain node
+        if (equalizerInputRef.current && equalizerOutputRef.current) {
+          console.log('🎵 With equalizer: merger → equalizer → mixerGain');
+          merger.connect(equalizerInputRef.current);
+          equalizerOutputRef.current.connect(outputNode);
+        } else {
+          console.log('🎵 Direct: merger → mixerGain');
+          merger.connect(outputNode);
+        }
+
+        // Analyser already connected by mixer, no need to connect here
+        console.log('✅ Frontend Engine: Audio routed through AudioMixer successfully');
+      } else {
+        // Standalone mode: route directly to analyser → destination
+        console.log('🎵 Frontend Engine: Standalone mode - routing to destination');
+
+        if (equalizerInputRef.current && equalizerOutputRef.current) {
+          console.log('🎚️ With equalizer: merger → equalizer → analyser → destination');
+          merger.connect(equalizerInputRef.current);
+          equalizerOutputRef.current.connect(analyserNodeRef.current!);
+        } else {
+          console.log('🎵 Direct: merger → analyser → destination');
+          merger.connect(analyserNodeRef.current!);
+        }
+
+        analyserNodeRef.current!.connect(context.destination);
+      }
 
       // Add error handling for oscillators
       oscL.addEventListener('ended', () => {
@@ -319,6 +367,12 @@ export const useAudioEngine = () => {
 
   // Stop binaural beat playback
   const stopBinauralBeat = useCallback(() => {
+    console.log('🛑 Frontend Engine: stopBinauralBeat called');
+    
+    // 🔥 CRITICAL FIX: Set stop lock to prevent auto-restart
+    stopLockRef.current = true;
+    console.log('🔒 Frontend Engine: Stop lock ENABLED');
+    
     try {
       if (audioState.oscillatorL) {
         audioState.oscillatorL.stop();
@@ -516,6 +570,23 @@ export const useAudioEngine = () => {
     }
   }, [audioState.isPlaying]);
 
+  /**
+   * Set external mixer nodes for AudioMixer integration
+   * Call this after creating the AudioMixer to route frontend audio through it
+   */
+  const setExternalNodes = useCallback((outputGainNode: GainNode | null, analyserNode: AnalyserNode | null) => {
+    console.log('🎚️ Frontend Engine: Setting external mixer nodes:', { outputGainNode, analyserNode });
+    externalOutputNodeRef.current = outputGainNode;
+    externalAnalyserRef.current = analyserNode;
+
+    // If audio is currently playing, warn that restart is needed
+    if (audioState.isPlaying) {
+      console.warn('⚠️ Frontend Engine: External nodes changed while playing. Restart audio for changes to take effect.');
+    } else {
+      console.log('✅ Frontend Engine: External nodes set successfully, will be used on next audio start');
+    }
+  }, [audioState.isPlaying]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -544,6 +615,7 @@ export const useAudioEngine = () => {
     initializeAudio,
     setAudioState,
     setEqualizerNodes,
+    setExternalNodes, // 🔥 NEW: Allow dynamic routing through AudioMixer
     backendConnected: false, // Frontend engine is never connected to backend
     sessionId: null,
     websocketState: {
