@@ -1,6 +1,6 @@
 // Electromagnetic Beat Lab - Equalizer Component
 // Professional multi-band audio equalizer with Material-UI interface
-// FIXED: Hooks order violation - all hooks now at top level
+// FIXED: Proper fullscreen functionality for EQ and visualizer
 
 import React, { useEffect, useCallback, useMemo, useState, useRef } from 'react';
 import {
@@ -13,7 +13,8 @@ import {
   FormControlLabel,
   Chip,
   Tooltip,
-  IconButton
+  IconButton,
+  Dialog
 } from '@mui/material';
 import FullscreenIcon from '@mui/icons-material/Fullscreen';
 import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
@@ -25,9 +26,10 @@ const SimpleFrequencyVisualizer: React.FC<{
   audioContext: AudioContext | null; 
   analyserNode: AnalyserNode | null;
   isPlaying?: boolean;
-}> = ({ audioContext, analyserNode, isPlaying }) => {
+  height?: number;
+}> = ({ audioContext, analyserNode, isPlaying, height = 100 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationRef = useRef<number>();
+  //const animationRef = useRef<number>();
 
   useEffect(() => {
     if (!analyserNode || !canvasRef.current) return;
@@ -39,48 +41,48 @@ const SimpleFrequencyVisualizer: React.FC<{
     const bufferLength = analyserNode.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
 
-    const draw = () => {
-      animationRef.current = requestAnimationFrame(draw);
-      analyserNode.getByteFrequencyData(dataArray);
-
-      // Clear canvas with fade effect
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      const barWidth = (canvas.width / bufferLength) * 2.5;
-      let x = 0;
-
-      for (let i = 0; i < bufferLength; i++) {
-        const barHeight = (dataArray[i] / 255) * canvas.height * 0.8;
-        
-        // Create gradient colors
-        const r = barHeight + 25 * (i / bufferLength);
-        const g = 250 * (i / bufferLength);
-        const b = 250;
-        
-        ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
-        ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
-        
-        x += barWidth + 1;
-      }
-    };
-
-    draw();
-
-    return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-    };
-  }, [analyserNode]);
+  //   const draw = () => {
+  //     animationRef.current = requestAnimationFrame(draw);
+  //     analyserNode.getByteFrequencyData(dataArray);
+  //
+  //     // Clear canvas with fade effect
+  //     ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+  //     ctx.fillRect(0, 0, canvas.width, canvas.height);
+  //
+  //     const barWidth = (canvas.width / bufferLength) * 2.5;
+  //     let x = 0;
+  //
+  //     for (let i = 0; i < bufferLength; i++) {
+  //       const barHeight = (dataArray[i] / 255) * canvas.height * 0.8;
+  //
+  //       // Create gradient colors
+  //       const r = barHeight + 25 * (i / bufferLength);
+  //       const g = 250 * (i / bufferLength);
+  //       const b = 250;
+  //
+  //       ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+  //       ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+  //
+  //       x += barWidth + 1;
+  //     }
+  //   };
+  //
+  //   draw();
+  //
+  //   return () => {
+  //     if (animationRef.current) {
+  //       cancelAnimationFrame(animationRef.current);
+  //     }
+  //   };
+  // }, [analyserNode]);
 
   return (
     <Box sx={{ width: '100%', height: '100%', bgcolor: 'black', borderRadius: 1 }}>
       <canvas 
         ref={canvasRef}
-        width={400}
-        height={100}
-        style={{ width: '100%', height: '100%', borderRadius: '4px' }}
+        // width={800}
+        // height={height * 2}
+        // style={{ width: '100%', height: '100%', borderRadius: '4px' }}
       />
     </Box>
   );
@@ -102,6 +104,7 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
   // ALL HOOKS MUST BE AT THE TOP - NO CONDITIONALS BEFORE THIS
   const [isInitialized, setIsInitialized] = useState(false);
   const [visualizerFullscreen, setVisualizerFullscreen] = useState(false);
+  const [eqFullscreen, setEqFullscreen] = useState(false);
 
   // Use ref to track initialization (doesn't cause re-renders)
   const initializedRef = useRef(false);
@@ -122,10 +125,9 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
   const [showAudioWarning, setShowAudioWarning] = useState(!audioContext);
 
   // Initialize equalizer when audio context is ready
-  // FIXED: Removed unstable function dependencies to prevent infinite loop
   useEffect(() => {
     if (audioContext && !initializedRef.current) {
-      setShowAudioWarning(false); // Hide warning once we have audio context
+      setShowAudioWarning(false);
 
       console.log('🎚️ Initializing equalizer with audio context');
       const nodes = initializeEqualizer();
@@ -138,10 +140,9 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
         }
       }
     } else if (audioContext) {
-      // Just hide warning if already initialized
       setShowAudioWarning(false);
     }
-  }, [audioContext]); // Only depend on audioContext (stable)
+  }, [audioContext]);
 
   // Handle toggle
   const handleToggle = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
@@ -149,13 +150,11 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
     toggleEqualizer(enabled);
 
     if (enabled && !inputNode) {
-      // Initialize equalizer
       const nodes = initializeEqualizer();
       if (nodes && onEqualizerChange) {
         onEqualizerChange(nodes.input, nodes.output);
       }
     } else if (!enabled && onEqualizerChange) {
-      // Bypass equalizer
       onEqualizerChange(null, null);
     }
   }, [toggleEqualizer, inputNode, initializeEqualizer, onEqualizerChange]);
@@ -172,7 +171,7 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
     loadPreset(presetName);
   }, [equalizerState.enabled, toggleEqualizer, initializeEqualizer, loadPreset, onEqualizerChange]);
 
-  // Handle band gain change with proper typing
+  // Handle band gain change
   const handleBandChange = useCallback((bandId: string) => (
     _event: Event | React.SyntheticEvent,
     value: number | number[]
@@ -189,27 +188,31 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
     return '#888';
   }, []);
 
-  // Render vertical slider for each band - ULTRA COMPACT
+  // Render vertical slider for each band
   const renderBandSlider = useCallback((band: EqualizerBand) => {
+    const sliderHeight = eqFullscreen ? 400 : 220;
+    const thumbSize = eqFullscreen ? 16 : 10;
+    
     return (
       <Box
         key={band.id}
-        sx={{
+        sx={
+          {height: '400',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          width: '28px', // Ultra compact width
-          mx: '1px' // Minimal margin between sliders
+          width: eqFullscreen ? '50px' : '32px',
+          mx: eqFullscreen ? 1 : '2px'
         }}
       >
         {/* Gain value display */}
         <Typography
           sx={{
-            fontSize: '0.55rem',
+            fontSize: eqFullscreen ? '0.75rem' : '0.55rem',
             color: getSliderColor(band.gain),
             fontWeight: 'bold',
             mb: 0.25,
-            height: '14px'
+            height: eqFullscreen ? '20px' : '14px'
           }}
         >
           {band.gain >= 0 ? '+' : ''}{band.gain.toFixed(0)}
@@ -225,29 +228,29 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
           step={1}
           disabled={!equalizerState.enabled}
           sx={{
-            height: 100, // Reduced height
+            height: sliderHeight,
             pointerEvents: equalizerState.enabled ? 'auto' : 'none',
             userSelect: 'none',
             touchAction: 'none',
             '& .MuiSlider-thumb': {
-              width: 10,
-              height: 10,
+              width: thumbSize,
+              height: thumbSize,
               bgcolor: getSliderColor(band.gain),
               border: '1px solid white',
               pointerEvents: equalizerState.enabled ? 'auto' : 'none',
               cursor: equalizerState.enabled ? 'pointer' : 'not-allowed',
               '&:hover': {
-                boxShadow: `0 0 0 4px rgba(${band.gain > 0 ? '0, 255, 136' : '255, 107, 107'}, 0.16)`
+                boxShadow: `0 0 0 ${eqFullscreen ? 6 : 4}px rgba(${band.gain > 0 ? '0, 255, 136' : '255, 107, 107'}, 0.16)`
               }
             },
             '& .MuiSlider-track': {
-              width: 2,
+              width: eqFullscreen ? 3 : 2,
               bgcolor: getSliderColor(band.gain),
               border: 'none',
               pointerEvents: 'none'
             },
             '& .MuiSlider-rail': {
-              width: 2,
+              width: eqFullscreen ? 3 : 2,
               bgcolor: 'rgba(255, 255, 255, 0.2)',
               pointerEvents: 'none'
             }
@@ -257,7 +260,7 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
         {/* Frequency label */}
         <Typography
           sx={{
-            fontSize: '0.5rem',
+            fontSize: eqFullscreen ? '0.65rem' : '0.5rem',
             color: 'rgba(255, 255, 255, 0.5)',
             mt: 0.25
           }}
@@ -266,7 +269,7 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
         </Typography>
       </Box>
     );
-  }, [equalizerState.enabled, handleBandChange, getSliderColor]);
+  }, [equalizerState.enabled, handleBandChange, getSliderColor, eqFullscreen]);
 
   // Memoize preset buttons
   const presetButtons = useMemo(() => {
@@ -277,9 +280,9 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
           size="small"
           onClick={() => handlePresetClick(key as keyof typeof EQ_PRESETS)}
           sx={{
-            fontSize: '0.5rem',
-            py: 0.25,
-            px: 0.5,
+            fontSize: eqFullscreen ? '0.65rem' : '0.5rem',
+            py: eqFullscreen ? 0.5 : 0.25,
+            px: eqFullscreen ? 1 : 0.5,
             minWidth: 'unset',
             color: equalizerState.preset === key ? 'white' : '#00bfff',
             borderColor: '#00bfff',
@@ -293,20 +296,17 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
         </Button>
       </Tooltip>
     ));
-  }, [equalizerState.preset, handlePresetClick]);
+  }, [equalizerState.preset, handlePresetClick, eqFullscreen]);
 
-  return (
-    <Paper
-      elevation={3}
-      sx={{
-        p: 1,
-        bgcolor: 'rgba(0, 0, 0, 0.6)',
-        backdropFilter: 'blur(10px)',
-        borderRadius: 2,
-        border: '1px solid rgba(255, 255, 255, 0.1)',
-        position: 'relative'
-      }}
-    >
+  const eqContent = (
+    <Box sx={{
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+        wrap: "wrap",
+        overflow: "scroll",
+        width: '40%'
+    }}>
       {/* Audio Context Warning Overlay */}
       {showAudioWarning && (
         <Box
@@ -360,7 +360,7 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
               />
             }
             label={
-              <Typography variant="caption" sx={{ color: 'white', fontSize: '0.7rem' }}>
+              <Typography variant="caption" sx={{ color: 'white', fontSize: eqFullscreen ? '0.85rem' : '0.7rem' }}>
                 EQ {equalizerState.enabled ? 'ON' : 'OFF'}
               </Typography>
             }
@@ -374,65 +374,106 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
               sx={{
                 bgcolor: equalizerState.preset === 'custom' ? '#ff6b00' : '#00bfff',
                 color: 'white',
-                height: '18px',
-                fontSize: '0.6rem'
+                height: eqFullscreen ? '22px' : '18px',
+                fontSize: eqFullscreen ? '0.7rem' : '0.6rem'
               }}
             />
           )}
         </Box>
 
-        <Button
-          onClick={resetEqualizer}
-          disabled={!equalizerState.enabled}
-          size="small"
-          variant="outlined"
-          sx={{
-            fontSize: '0.6rem',
-            color: '#ff6b00',
-            borderColor: '#ff6b00',
-            py: 0.25,
-            px: 0.5
-          }}
-        >
-          Reset
-        </Button>
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+          <Button
+            onClick={resetEqualizer}
+            disabled={!equalizerState.enabled}
+            size="small"
+            variant="outlined"
+            sx={{
+              fontSize: eqFullscreen ? '0.7rem' : '0.6rem',
+              color: '#ff6b00',
+              borderColor: '#ff6b00',
+              py: eqFullscreen ? 0.5 : 0.25,
+              px: eqFullscreen ? 1 : 0.5
+            }}
+          >
+            Reset
+          </Button>
+          
+          {!eqFullscreen && (
+            <IconButton
+              size="small"
+              onClick={() => setEqFullscreen(true)}
+              sx={{
+                color: 'white',
+                p: 0.25,
+                '&:hover': {
+                  bgcolor: 'rgba(255, 255, 255, 0.1)'
+                }
+              }}
+              title="Fullscreen EQ"
+            >
+              <FullscreenIcon fontSize="small" />
+            </IconButton>
+          )}
+        </Box>
       </Box>
 
-      {/* Main content row - Sliders and Visualizer on same row */}
-      <Box sx={{ display: 'flex', gap: 1, alignItems: 'stretch' }}>
+      {/* Main content - Sliders and Visualizer */}
+      <Box sx={{ 
+        display: 'flex', 
+        gap: eqFullscreen ? 3 : 1, 
+        alignItems: 'stretch',
+        flex: 1,
+        minHeight: 0
+      }}>
         
-        {/* Frequency sliders - Ultra compact */}
+        {/* Frequency sliders */}
         <Box
           sx={{
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'flex-end',
-            gap: 0, // No gap between sliders
-            p: 0.5,
+            gap: eqFullscreen ? 0.5 : 0,
+            p: eqFullscreen ? 2 : 0.5,
             bgcolor: 'rgba(0, 0, 0, 0.3)',
             borderRadius: 1,
             flex: '0 0 auto',
-            overflowX: 'auto', // Allow horizontal scrolling if needed
-            maxWidth: '100%' // Don't exceed parent width
+            overflowX: 'auto',
+            overflowY: 'hidden',
+            maxWidth: '100%',
+            '&::-webkit-scrollbar': {
+              height: '6px'
+            },
+            '&::-webkit-scrollbar-track': {
+              bgcolor: 'rgba(255, 255, 255, 0.1)',
+              borderRadius: '3px'
+            },
+            '&::-webkit-scrollbar-thumb': {
+              bgcolor: 'rgba(255, 255, 255, 0.3)',
+              borderRadius: '3px',
+              '&:hover': {
+                bgcolor: 'rgba(255, 255, 255, 0.5)'
+              }
+            }
           }}
         >
           {equalizerState.bands.map(band => renderBandSlider(band))}
         </Box>
 
-        {/* Right side - Presets and Visualizer stacked */}
+        {/* Right side - Presets and Visualizer */}
         <Box sx={{ 
           display: 'flex', 
           flexDirection: 'column', 
-          gap: 1, 
+          gap: eqFullscreen ? 2 : 1, 
           flex: 1,
-          minWidth: '250px'
+          minWidth: eqFullscreen ? '400px' : '250px',
+          minHeight: 0
         }}>
           
-          {/* Presets grid - 2 rows */}
+          {/* Presets grid */}
           <Box sx={{ 
             display: 'grid', 
-            gridTemplateColumns: 'repeat(4, 1fr)', 
-            gap: 0.5
+            gridTemplateColumns: eqFullscreen ? 'repeat(4, 1fr)' : 'repeat(4, 1fr)', 
+            gap: eqFullscreen ? 1 : 0.5
           }}>
             {presetButtons}
           </Box>
@@ -441,19 +482,21 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
           {audioContext && analyserNode && (
             <Box sx={{
               flex: 1,
-              minHeight: visualizerFullscreen ? '300px' : '80px',
-              maxHeight: visualizerFullscreen ? '500px' : 'auto',
+              minHeight: visualizerFullscreen ? (eqFullscreen ? '500px' : '300px') : (eqFullscreen ? '200px' : '80px'),
+              maxHeight: visualizerFullscreen ? '90vh' : 'auto',
               bgcolor: 'rgba(0, 0, 0, 0.5)',
               borderRadius: 1,
-              p: 0.5,
-              position: 'relative'
+              p: eqFullscreen ? 1 : 0.5,
+              position: 'relative',
+              display: 'flex',
+              flexDirection: 'column'
             }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
                 <Typography
                   variant="caption"
                   sx={{
                     color: 'rgba(255, 255, 255, 0.5)',
-                    fontSize: '0.6rem'
+                    fontSize: eqFullscreen ? '0.75rem' : '0.6rem'
                   }}
                 >
                   Live Frequency Spectrum {isPlaying ? '(Active)' : '(Idle)'}
@@ -468,20 +511,91 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
                       bgcolor: 'rgba(255, 255, 255, 0.1)'
                     }
                   }}
-                  title={visualizerFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+                  title={visualizerFullscreen ? 'Exit visualizer fullscreen' : 'Visualizer fullscreen'}
                 >
                   {visualizerFullscreen ? <FullscreenExitIcon fontSize="small" /> : <FullscreenIcon fontSize="small" />}
                 </IconButton>
               </Box>
-              <SimpleFrequencyVisualizer
-                audioContext={audioContext}
-                analyserNode={analyserNode}
-                isPlaying={isPlaying}
-              />
+              <Box sx={{ flex: 1, minHeight: 0 }}>
+                <SimpleFrequencyVisualizer
+                  audioContext={audioContext}
+                  analyserNode={analyserNode}
+                  isPlaying={isPlaying}
+                  height={visualizerFullscreen ? (eqFullscreen ? 500 : 300) : (eqFullscreen ? 200 : 100)}
+                />
+              </Box>
             </Box>
           )}
         </Box>
       </Box>
+    </Box>
+  );
+
+  // Fullscreen Dialog
+  if (eqFullscreen) {
+    return (
+      <Dialog
+        open={eqFullscreen}
+        onClose={() => setEqFullscreen(false)}
+        maxWidth={false}
+        fullWidth
+        PaperProps={{
+          sx: {
+            width: '95vw',
+            height: '95vh',
+            maxWidth: '95vw',
+            maxHeight: '95vh',
+            bgcolor: 'rgba(0, 0, 0, 0.95)',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            borderRadius: 2,
+            p: 2
+          }
+        }}
+      >
+        <Box sx={{ 
+          height: '100%', 
+          display: 'flex', 
+          flexDirection: 'column',
+          position: 'relative'
+        }}>
+          <IconButton
+            onClick={() => setEqFullscreen(false)}
+            sx={{
+              position: 'absolute',
+              right: 8,
+              top: 8,
+              color: 'white',
+              zIndex: 1,
+              bgcolor: 'rgba(0, 0, 0, 0.5)',
+              '&:hover': {
+                bgcolor: 'rgba(255, 255, 255, 0.1)'
+              }
+            }}
+            title="Exit fullscreen"
+          >
+            <FullscreenExitIcon />
+          </IconButton>
+          {eqContent}
+        </Box>
+      </Dialog>
+    );
+  }
+
+  // Normal view
+  return (
+    <Paper
+      elevation={3}
+      sx={{
+        p: 1,
+        bgcolor: 'rgba(0, 0, 0, 0.6)',
+        backdropFilter: 'blur(10px)',
+        borderRadius: 2,
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        position: 'relative'
+      }}
+    >
+      {eqContent}
     </Paper>
   );
 };

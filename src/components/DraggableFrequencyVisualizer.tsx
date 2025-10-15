@@ -1,5 +1,6 @@
 // Draggable Frequency Visualizer Component
 // Wraps the FrequencyVisualizer in a draggable/resizable container
+// FIXED: Proper fullscreen, fixed overflow typos, better sizing
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Box, Paper, IconButton, Typography } from '@mui/material';
@@ -24,7 +25,7 @@ const DraggableFrequencyVisualizer: React.FC<DraggableFrequencyVisualizerProps> 
   analyserNode,
   onClose,
   defaultPosition = { x: window.innerWidth - 520, y: 150 },
-  defaultSize = { width: 500, height: 200 }
+  defaultSize = { width: 500, height: 400 }
 }) => {
   const [position, setPosition] = useState(defaultPosition);
   const [size, setSize] = useState(defaultSize);
@@ -78,8 +79,8 @@ const DraggableFrequencyVisualizer: React.FC<DraggableFrequencyVisualizerProps> 
         const deltaY = e.clientY - dragStart.y;
         
         setSize(prev => ({
-          width: Math.max(300, Math.min(800, prev.width + deltaX)),
-          height: Math.max(150, Math.min(400, prev.height + deltaY))
+          width: Math.max(400, Math.min(1200, prev.width + deltaX)),
+          height: Math.max(300, Math.min(800, prev.height + deltaY))
         }));
         
         setDragStart({
@@ -113,46 +114,49 @@ const DraggableFrequencyVisualizer: React.FC<DraggableFrequencyVisualizerProps> 
       setSize(previousSize);
       setPosition(previousPosition);
       setIsFullScreen(false);
-      console.log('Exiting full screen mode, restoring to:', previousSize);
+      console.log('📊 Exiting full screen mode, restoring to:', previousSize);
     } else {
       // Save current size and position before going full screen
       setPreviousSize(size);
       setPreviousPosition(position);
 
-      // Set to full screen dimensions
+      // Set to full screen dimensions (leave small margins)
       const fullScreenSize = {
-        width: window.innerWidth - 40, // Leave 20px margin on each side
-        height: window.innerHeight - 100 // Leave space for top position
+        width: window.innerWidth - 40,
+        height: window.innerHeight - 80
       };
 
       setSize(fullScreenSize);
-      setPosition({ x: 20, y: 50 }); // Center with margin
+      setPosition({ x: 20, y: 40 });
       setIsFullScreen(true);
-      console.log('Entering full screen mode:', fullScreenSize);
+      console.log('📊 Entering full screen mode:', fullScreenSize);
     }
   };
 
   return (
     <Paper
       ref={containerRef}
-      elevation={6}
+      elevation={8}
       sx={{
         position: 'fixed',
         left: position.x,
         top: position.y,
         width: size.width,
-        minHeight: '450px',
         height: collapsed ? 'auto' : size.height,
+        minHeight: collapsed ? 'auto' : '300px',
         zIndex: 1000,
-        bgcolor: 'rgba(0, 0, 0, 0.9)',
+        bgcolor: 'rgba(0, 0, 0, 0.95)',
         backdropFilter: 'blur(10px)',
-        border: '1px solid rgba(255, 255, 255, 0.2)',
+        border: isFullScreen ? '2px solid rgba(138, 43, 226, 0.5)' : '1px solid rgba(255, 255, 255, 0.2)',
         borderRadius: 2,
-        overflowx: 'hidden',
-        overfloxy: 'auto',
+        overflowX: 'hidden',
+        overflowY: 'auto',
         userSelect: isDragging || isResizing ? 'none' : 'auto',
         cursor: isDragging ? 'grabbing' : 'default',
-        transition: collapsed ? 'height 0.3s ease' : 'none'
+        transition: collapsed ? 'height 0.3s ease' : 'none',
+        boxShadow: isFullScreen 
+          ? '0 0 30px rgba(138, 43, 226, 0.3)' 
+          : '0 8px 32px rgba(0, 0, 0, 0.6)'
       }}
     >
       {/* Header with drag handle */}
@@ -161,38 +165,58 @@ const DraggableFrequencyVisualizer: React.FC<DraggableFrequencyVisualizerProps> 
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          overflowY: 'auto',
-          wrap: 'wrap',
-          p: 1,
-          bgcolor: 'rgba(138, 43, 226, 0.2)',
+          flexWrap: 'wrap',
+          p: 1.5,
+          bgcolor: 'rgba(138, 43, 226, 0.3)',
           borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-          cursor: 'grab',
+          cursor: isDragging ? 'grabbing' : 'grab',
           '&:active': {
             cursor: 'grabbing'
           }
         }}
         onMouseDown={handleDragStart}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '75%'}}>
-          <DragIndicatorIcon sx={{ color: '#8a2be2', fontSize: '1.2rem' }} />
-          <Typography variant="body2" sx={{ color: 'white', fontWeight: 'bold', userSelect: 'none' }}>
-            📊 Frequency Visualizer
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: '200px' }}>
+          <DragIndicatorIcon sx={{ color: '#8a2be2', fontSize: '1.4rem' }} />
+          <Typography 
+            variant="body2" 
+            sx={{ 
+              color: 'white', 
+              fontWeight: 'bold', 
+              userSelect: 'none',
+              fontSize: isFullScreen ? '1rem' : '0.9rem'
+            }}
+          >
+            📊 Frequency Visualizer {isFullScreen && '(Fullscreen)'}
           </Typography>
         </Box>
         
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <IconButton
             size="small"
             onClick={makeFullScreen}
-            sx={{ color: 'white', p: 0.5 }}
-            title={isFullScreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+            sx={{ 
+              color: isFullScreen ? '#8a2be2' : 'white', 
+              p: 0.5,
+              bgcolor: isFullScreen ? 'rgba(138, 43, 226, 0.2)' : 'transparent',
+              '&:hover': {
+                bgcolor: 'rgba(138, 43, 226, 0.3)'
+              }
+            }}
+            title={isFullScreen ? 'Exit fullscreen (restore size)' : 'Enter fullscreen (maximize)'}
           >
-            {isFullScreen ? <FullscreenExitIcon fontSize="small" /> : <FullscreenIcon fontSize="small" />}
+            {isFullScreen ? <FullscreenExitIcon /> : <FullscreenIcon />}
           </IconButton>
           <IconButton
             size="small"
             onClick={() => setCollapsed(!collapsed)}
-            sx={{ color: 'white', p: 0.5 }}
+            sx={{ 
+              color: 'white', 
+              p: 0.5,
+              '&:hover': {
+                bgcolor: 'rgba(255, 255, 255, 0.1)'
+              }
+            }}
             title={collapsed ? 'Expand' : 'Collapse'}
           >
             {collapsed ? '▼' : '▲'}
@@ -200,21 +224,26 @@ const DraggableFrequencyVisualizer: React.FC<DraggableFrequencyVisualizerProps> 
           <IconButton
             size="small"
             onClick={onClose}
-            sx={{ color: '#ff4444', p: 0.5 }}
-            title="Close"
+            sx={{ 
+              color: '#ff4444', 
+              p: 0.5,
+              '&:hover': {
+                bgcolor: 'rgba(255, 68, 68, 0.2)'
+              }
+            }}
+            title="Close visualizer"
           >
             <CloseIcon fontSize="small" />
           </IconButton>
         </Box>
-
       </Box>
 
       {/* Content */}
       {!collapsed && (
         <Box sx={{ 
-          height: `calc(100% - 40px)`,
+          height: `calc(100% - ${isFullScreen ? '55px' : '48px'})`,
           position: 'relative',
-          p: 1
+          p: isFullScreen ? 2 : 1
         }}>
           <FrequencyVisualizer
             state={state}
@@ -223,35 +252,39 @@ const DraggableFrequencyVisualizer: React.FC<DraggableFrequencyVisualizerProps> 
             title=""
             showSpectrum={true}
             showFrequencies={true}
-            showMetrics={false}
-            height={size.height - 60}
-            width={100}
+            showMetrics={true}
+            height={size.height - (isFullScreen ? 80 : 70)}
+            width={size.width}
           />
           
-          {/* Resize handle */}
-      
-          <Box
-            sx={{
-              position: 'absolute',
-              bottom: 0,
-              right: 0,
-              width: 20,
-              height: 20,
-              cursor: 'nwse-resize',
-              bgcolor: 'transparent',
-              '&::after': {
-                content: '""',
+          {/* Resize handle - hide in fullscreen */}
+          {!isFullScreen && (
+            <Box
+              sx={{
                 position: 'absolute',
-                bottom: 2,
-                right: 2,
-                width: 10,
-                height: 10,
-                borderRight: '2px solid rgba(255, 255, 255, 0.3)',
-                borderBottom: '2px solid rgba(255, 255, 255, 0.3)'
-              }
-            }}
-            onMouseDown={handleResizeStart}
-          />
+                bottom: 0,
+                right: 0,
+                width: 24,
+                height: 24,
+                cursor: 'nwse-resize',
+                bgcolor: 'transparent',
+                '&::after': {
+                  content: '""',
+                  position: 'absolute',
+                  bottom: 3,
+                  right: 3,
+                  width: 12,
+                  height: 12,
+                  borderRight: '2px solid rgba(138, 43, 226, 0.6)',
+                  borderBottom: '2px solid rgba(138, 43, 226, 0.6)'
+                },
+                '&:hover::after': {
+                  borderColor: 'rgba(138, 43, 226, 1)'
+                }
+              }}
+              onMouseDown={handleResizeStart}
+            />
+          )}
         </Box>
       )}
     </Paper>
