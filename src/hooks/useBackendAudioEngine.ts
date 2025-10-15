@@ -1204,8 +1204,9 @@ export const useBackendAudioEngine = () => {
     updateSettings,
     setExternalNodes, // 🔥 NEW: Allow dynamic routing through AudioMixer
     isSupported: !!(window.AudioContext || (window as any).webkitAudioContext),
-    // CRITICAL: Expose audioContext and analyserNode for visualizations and frequency analysis
+    // 🔥 CRITICAL FIX: Return external analyser if set (AudioMixer integration)
+    // This ensures visualizers work even before audio starts
     audioContext: audioContext.current,
-    analyserNode: analyserNode.current
+    analyserNode: externalAnalyserRef.current || analyserNode.current
   };
 };

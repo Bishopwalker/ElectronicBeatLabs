@@ -625,6 +625,8 @@ export const useAudioEngine = () => {
     },
     isSupported: !!(window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext),
     audioContext: audioState.context, // ✅ FIXED: Use reactive state value instead of ref
-    analyserNode: analyserNodeRef.current
+    // 🔥 CRITICAL FIX: Return external analyser if set (AudioMixer integration)
+    // This ensures visualizers work even before audio starts
+    analyserNode: externalAnalyserRef.current || analyserNodeRef.current
   };
 };
