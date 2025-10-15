@@ -404,7 +404,7 @@ export const useBackendAudioEngine = () => {
                 }
 
                 // Stop audio playback
-                setAudioState(prev => ({
+      z          setAudioState(prev => ({
                   ...prev,
                   isPlaying: false
                 }));

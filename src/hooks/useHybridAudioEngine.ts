@@ -193,7 +193,7 @@ export const useHybridAudioEngine = () => {
 
   /**
    * Update frequency (applies to BOTH engines for synchronization)
-   * 🔥 CRITICAL FIX: Always update both engines to keep them synchronized
+   * 🔥 CRITICAL FIX: ALWAYS update both engines regardless of connection state
    */
   const updateFrequency = useCallback((leftFreq: number, rightFreq: number) => {
     const beatFreq = Math.abs(rightFreq - leftFreq);
@@ -206,11 +206,12 @@ export const useHybridAudioEngine = () => {
       beatFreq
     });
 
-    // Update FRONTEND engine (uses leftFreq/rightFreq format)
+    // 🔥 FIXED: Update FRONTEND engine (uses leftFreq/rightFreq format)
     frontendEngine.updateFrequency(leftFreq, rightFreq);
 
-    // Update BACKEND engine (uses base_frequency/beat_frequency format)
-    if (backendEngine.backendConnected) {
+    // 🔥 FIXED: Update BACKEND engine ALWAYS (not just when connected)
+    // This ensures when backend connects later, it has the correct settings
+    if (backendEngine.updateFrequency) {
       backendEngine.updateFrequency(baseFreq, beatFreq);
     }
   }, [frontendEngine, backendEngine]);
@@ -400,30 +401,26 @@ export const useHybridAudioEngine = () => {
     ? mixerRef.current.analyserNode  // Backend → use mixer analyser
     : frontendEngine.analyserNode;    // Frontend → use frontend analyser
 
-  // Compute unified audio state
+  // 🔥 FIXED: Compute unified audio state showing ACTUAL synchronized values
+  // Instead of showing only one engine's state, show the REAL state that's playing
+  const baseFreq = frontendEngine.audioState.leftFreq || backendEngine.audioState.config?.base_frequency || 140;
+  const beatFreq = frontendEngine.audioState.beat_frequency || backendEngine.audioState.config?.beat_frequency || 4;
+  const leftFreq = baseFreq;
+  const rightFreq = baseFreq + beatFreq;
+  
   const audioState = {
     isPlaying,
-    amplitude: currentEngine === 'backend'
-      ? backendEngine.audioState.config?.amplitude
-      : frontendEngine.audioState.amplitude,
-    leftFreq: currentEngine === 'backend'
-      ? backendEngine.audioState.leftFreq
-      : frontendEngine.audioState.leftFreq,
-    rightFreq: currentEngine === 'backend'
-      ? backendEngine.audioState.rightFreq
-      : frontendEngine.audioState.rightFreq,
-    beat_frequency: currentEngine === 'backend'
-      ? backendEngine.audioState.beat_frequency
-      : frontendEngine.audioState.beat_frequency,
+    amplitude: frontendEngine.audioState.amplitude || backendEngine.audioState.config?.amplitude || DEFAULT_VOLUME,
+    leftFreq,
+    rightFreq,
+    beat_frequency: beatFreq,
     waveform: frontendEngine.audioState.waveform,
-    config: currentEngine === 'backend'
-      ? backendEngine.audioState.config
-      : {
-          base_frequency: frontendEngine.audioState.leftFreq,
-          beat_frequency: frontendEngine.audioState.beat_frequency,
-          amplitude: frontendEngine.audioState.amplitude,
-          waveform: frontendEngine.audioState.waveform
-        }
+    config: {
+      base_frequency: baseFreq,
+      beat_frequency: beatFreq,
+      amplitude: frontendEngine.audioState.amplitude || backendEngine.audioState.config?.amplitude || DEFAULT_VOLUME,
+      waveform: frontendEngine.audioState.waveform
+    }
   };
 
   return {
