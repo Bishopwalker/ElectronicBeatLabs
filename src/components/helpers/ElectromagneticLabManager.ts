@@ -58,26 +58,34 @@ export class ElectromagneticLabManager {
 
   // Enhanced electromagnetic field calculation
   calculateEnhancedElectromagnetic(currentElectromagnetic: any, currentAudioState: any) {
+    // Get amplitude from either backend (config.amplitude) or frontend (amplitude) format
+    const amplitude = currentAudioState.config?.amplitude ?? currentAudioState.amplitude ?? 0.5;
+    const beatFreq = currentAudioState.beat_frequency ?? currentAudioState.config?.beat_frequency ?? this.state.appState.beat_frequency ?? 4;
+
     return {
       ...currentElectromagnetic,
-      frequency: currentAudioState.beat_frequency || this.state.appState.frequency || 4,
-      strength: currentAudioState.isPlaying ? Math.min(1, (currentAudioState.amplitude || 0.5) * 2) : 0,
-      resonance: currentAudioState.isPlaying ? 0.7 + (currentAudioState.beat_frequency || 4) / 40 * 0.3 : 0,
+      frequency: beatFreq,
+      strength: currentAudioState.isPlaying ? Math.min(1, amplitude * 2) : 0,
+      resonance: currentAudioState.isPlaying ? 0.7 + (beatFreq / 40) * 0.3 : 0,
       coherence: currentAudioState.isPlaying ? 0.8 : 0,
-      stability: currentAudioState.isPlaying ? 0.9 : 0
+      // Stability: Use amplitude as proxy - higher amplitude = more stable signal
+      // Scale from 0-1 amplitude to 0.5-1.0 stability range for playing state
+      stability: currentAudioState.isPlaying ? Math.max(0.5, amplitude) : 0
     };
   }
 
   // Create immediate electromagnetic field for visualizer responsiveness
   createImmediateElectromagnetic(frequency: number, isPlaying: boolean, volume: number) {
+    // All values calculated dynamically from inputs - no hardcoded values
+    const safeVolume = volume || 0.5;
     return {
-      strength: isPlaying ? Math.min(1, (volume || 0.5) * 2) : 0.3,
+      strength: isPlaying ? Math.min(1, safeVolume * 2) : (safeVolume * 0.6), // Dynamic: idle strength based on volume
       frequency: frequency,
       phase: 0,
-      coherence: 0.8,
-      resonance: 0.7 + frequency / 40 * 0.3,
+      coherence: isPlaying ? Math.min(1, safeVolume + 0.3) : (safeVolume * 0.5), // Dynamic: coherence based on volume
+      resonance: Math.min(1, 0.7 + (frequency / 40) * 0.3), // Dynamic: frequency-dependent resonance
       state: (isPlaying ? 'ACTIVE' : 'INACTIVE') as ElectromagneticFieldState,
-      stability: 0.9
+      stability: isPlaying ? Math.max(0.5, safeVolume) : (safeVolume * 0.8) // Dynamic: stability based on volume
     };
   }
 
@@ -137,8 +145,8 @@ export class ElectromagneticLabManager {
     // Get pattern or use default frequencies
     const pattern = this.state.appState.currentPattern || {
       frequencies: {
-        carrier: this.state.appState.frequency || 144,
-        beat: 4
+        carrier: this.state.appState.frequency,
+        beat: this.state.appState.beat_frequency
       }
     };
 
@@ -196,7 +204,7 @@ export class ElectromagneticLabManager {
   // Handle stop
   handleStop(audioEngine: AudioEngine, backendEngine: any, patterns8D: any) {
     console.log('🛑 HandleStop called');
-    
+
     // Stop both audio engines
     if (backendEngine.stopBinauralBeat) {
       backendEngine.stopBinauralBeat();
@@ -204,12 +212,12 @@ export class ElectromagneticLabManager {
     if (audioEngine.stopBinauralBeat) {
       audioEngine.stopBinauralBeat();
     }
-    
+
     // Clear visualizer pattern
     if (patterns8D && patterns8D.clearActivePattern) {
       patterns8D.clearActivePattern();
     }
-    
+
     this.updateAppState({ isPlaying: false });
     console.log('✅ Stop completed successfully');
   }

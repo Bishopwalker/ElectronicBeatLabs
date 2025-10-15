@@ -4,41 +4,43 @@
 
 import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { Box, Chip, IconButton, Paper, Typography } from '@mui/material';
-import type { ElectromagneticBeatLabProps } from '../types';
+import type { ElectromagneticBeatLabProps } from '../../types';
 
 // Constants
-import { DEFAULT_BASE_FREQUENCY, DEFAULT_BEAT_FREQUENCY, DEFAULT_VOLUME } from '../constants/audio.constants';
+import { DEFAULT_BASE_FREQUENCY, DEFAULT_BEAT_FREQUENCY, DEFAULT_VOLUME } from '../../constants/audio.constants';
+
+// Centralized Audio Controls
+import { startBinauralAudio, stopBinauralAudio } from '../../utils/audioControls';
 
 // Hooks and Data
-import { useBackendAudioEngine } from '../hooks/useBackendAudioEngine';
-import { useAudioEngine } from '../hooks/useAudioEngine';
-import { useElectromagneticLabState } from '../hooks/useElectromagneticLabState';
-import { useCurrentPresetTracker } from '../hooks/useCurrentPresetTracker';
-import { WAVE_PATTERNS } from '../data/patterns';
+import { useHybridAudioEngine } from '../../hooks';
+import { useElectromagneticLabState } from '../../hooks/useElectromagneticLabState';
+import { useCurrentPresetTracker } from '../../hooks/useCurrentPresetTracker';
+import { WAVE_PATTERNS } from '../../data/patterns';
 // Configuration and Styles
-import { TAB_CONFIG, SECTION_DATA } from './config/ElectromagneticLabConfig';
-import { ElectromagneticLabStyles } from './styles/ElectromagneticLabStyles';
+import { TAB_CONFIG, SECTION_DATA } from '../config/ElectromagneticLabConfig';
+import { ElectromagneticLabStyles } from '../styles/ElectromagneticLabStyles';
 
 // Components
-import StarField from './StarField';
-import SpatialVisualizer from './SpatialVisualizer';
-import PatternSelectorMUI from './PatternSelectorMUI';
-import ElectromagneticStatus from './ElectromagneticStatus';
-import MainControlsMUI from './MainControlsMUI';
-import ControlTabs from './ControlTabs';
-import BinauralGeneratorMUI from './BinauralGeneratorMUI';
-import QuickStart from './QuickStart';
-import TimerTab from './tabs/TimerTab';
-import DraggableFrequencyVisualizer from './DraggableFrequencyVisualizer';
-import { formatTime } from '../helpers/timer/timerUtils';
-import type {  TimerStatus} from '../data/timer';
+import StarField from '../StarField';
+import SpatialVisualizer from '../SpatialVisualizer';
+import PatternSelectorMUI from '../PatternSelectorMUI';
+import ElectromagneticStatus from '../ElectromagneticStatus';
+import MainControlsMUI from '../MainControlsMUI';
+import ControlTabs from '../ControlTabs';
+import BinauralGeneratorMUI from '../BinauralGeneratorMUI';
+import QuickStart from '../QuickStart';
+import TimerTab from '../tabs/TimerTab';
+import DraggableFrequencyVisualizer from '../DraggableFrequencyVisualizer';
+import { formatTime } from '../../helpers/timer/timerUtils';
+import type {  TimerStatus} from '../../data/timer';
 
 // Extracted Components
-import CollapsibleSection from './shared/CollapsibleSection';
-import TabContentRenderer from './shared/TabContentRenderer';
-import SystemStatusChips from './shared/SystemStatusChips';
-import TimerCountdownDisplay from './TimerCountdownDisplay';
-import EqualizerMUI from './EqualizerMUI';
+import CollapsibleSection from '../shared/CollapsibleSection';
+import TabContentRenderer from '../shared/TabContentRenderer';
+import SystemStatusChips from '../shared/SystemStatusChips';
+import TimerCountdownDisplay from '../TimerCountdownDisplay';
+import EqualizerMUI from '../EqualizerMUI';
 
 const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
   initialPattern,
@@ -64,18 +66,22 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
     updateElectromagneticState
   } = useElectromagneticLabState(initialPattern , autoStart);
 
-  // Hybrid audio engines: Backend for advanced features, Frontend for fallback
-  const backendEngine = useBackendAudioEngine();
+  // SINGLE AUDIO ENGINE: Hybrid engine manages both frontend + backend internally
+  // This ensures ONE audio context, ONE WebSocket connection, seamless failover
+  const hybridEngine = useHybridAudioEngine();
 
-  // Initialize frontend engine
-  const frontendEngine = useAudioEngine();
+  // LEGACY COMPONENT REFERENCES: Extract internal engines for components that need them
+  // These are NOT new instances - they're the SAME engines hybrid uses internally
+  const backendEngine = hybridEngine.backendEngine;
+  const frontendEngine = hybridEngine.frontendEngine;
 
-  const [sessionId, setSessionId] = useState<string | null>(
-    backendEngine.sessionId
-  );
+  // CRITICAL: Active engine is ALWAYS the hybrid engine (manages both internally)
+  // It provides audioContext and analyserNode from frontend engine for visualizations
+  // while managing backend connection and crossfading automatically
+  const activeAudioEngine = hybridEngine;
 
-  // Smart audio engine selector - use backend if connected, fallback to frontend
-  const activeAudioEngine = sessionId ? backendEngine : frontendEngine;
+  // Session ID tracking from hybrid engine's backend connection
+  const sessionId = hybridEngine.backendSessionId;
 
   // Timer status for preset tracking
   const [timerStatus, setTimerStatus] = useState<TimerStatus | undefined>(undefined);
@@ -89,6 +95,13 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
     restartCurrentTransition: () => console.warn('Timer navigation not initialized')
   });
 
+  // Timer control callback ref for stopping timer
+  const timerControlRef = useRef<{
+    stopTimer: () => void;
+  }>({
+    stopTimer: () => console.warn('Timer control not initialized')
+  });
+
   // Current preset tracking
   const { currentPreset } = useCurrentPresetTracker({
     timerStatus,
@@ -96,10 +109,8 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
     audioState: backendEngine.audioState
   });
 
-  // Handle electromagnetic state updates
-  useEffect(() => {
-    updateElectromagneticState(activeAudioEngine);
-  }, [activeAudioEngine, updateElectromagneticState]);
+  // NOTE: Electromagnetic state updates removed from useEffect to prevent infinite loops
+  // Updates are now handled by the sync effect below which has proper value-based dependencies
 
   // CRITICAL: Sync electromagnetic field frequency with audio engine's actual frequency
   // This ensures both FrequencyVisualizer and SpatialVisualizer display the same data
@@ -125,6 +136,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
 
     // Update electromagnetic field with actual beat frequency from audio engine
     // This syncs SpatialVisualizer animations with real audio
+    // Guard prevents infinite loop by checking if value actually changed
     if (frequencies.beat !== appState.electromagnetic.frequency) {
       console.log('🔄 Syncing electromagnetic field with audio frequency:', frequencies.beat);
       updateAppState({
@@ -137,13 +149,18 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
       });
     }
   }, [
+    // Only depend on the actual VALUES, not the objects
     activeAudioEngine.audioState.config?.base_frequency,
     activeAudioEngine.audioState.config?.beat_frequency,
     activeAudioEngine.audioState.leftFreq,
     activeAudioEngine.audioState.beat_frequency,
-    appState.electromagnetic,
-    updateAppState
+    appState.electromagnetic.frequency // Only the frequency value, not the whole object!
+    // updateAppState removed - already guarded with if condition above
   ]);
+
+  // NOTE: Auto-pattern matching REMOVED - was causing infinite loops with timer
+  // Patterns must be manually selected from the Patterns section
+  // Timer manages its own frequency transitions without pattern interference
 
   // Force re-render when backend connection state changes
   useEffect(() => {
@@ -176,7 +193,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
     if (!backendEngine.backendConnected) {
       hasAutoEnabledRef.current = false;
     }
-  }, [backendEngine.backendConnected, backendEngine.sessionId, appState.spatialAudio?.enabled, updateAppState]);
+  }, [backendEngine.backendConnected, backendEngine.sessionId, updateAppState]);
 
   // Simple one-time backend connection attempt on startup
   useEffect(() => {
@@ -187,12 +204,6 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
       });
     }
   }, []); // Empty dependency array - only run once on mount
-
-  // Update sessionId when backend state changes
-  useEffect(() => {
-    setSessionId(backendEngine.sessionId);
-  }, [backendEngine.sessionId, backendEngine.backendConnected]);
-
 
   // Bound handler functions with context
   const handlePatternSelectBound = useCallback((patternId: string) => {
@@ -222,53 +233,32 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
   }, [handleVolumeChange, activeAudioEngine]);
 
   const handlePlayBound = useCallback(async () => {
-    console.log('▶️ Play button pressed - initializing audio context...');
+    // Use centralized audio control utility
+    const success = await startBinauralAudio(hybridEngine, {
+      base_frequency: appState.base_frequency,
+      beat_frequency: appState.beat_frequency,
+      amplitude: appState.volume,
+      waveform: 'sine'
+    });
 
-    // Initialize frontend audio context first (requires user gesture)
-    if (frontendEngine.initializeAudio) {
-      try {
-        console.log('🎵 Initializing frontend audio context...');
-        const audioContext = await frontendEngine.initializeAudio();
-        if (audioContext) {
-          console.log('✅ Frontend audio context initialized:', audioContext.state);
-          // Update the frontend engine's audio state with the context
-          if (frontendEngine.setAudioState) {
-            frontendEngine.setAudioState(prev => ({
-              ...prev,
-              context: audioContext
-            }));
-          }
-        }
-      } catch (error) {
-        console.warn('⚠️ Frontend audio context initialization failed:', error);
-      }
+    // Update app state if successful
+    if (success) {
+      updateAppState({ isPlaying: true });
     }
-
-    // Now proceed with normal play logic
-    handlePlay(activeAudioEngine, backendEngine, activeAudioEngine);
-  }, [handlePlay, activeAudioEngine, backendEngine, frontendEngine]);
+  }, [hybridEngine, appState.base_frequency, appState.beat_frequency, appState.volume, updateAppState]);
 
   const handleStop = useCallback(async () => {
-    console.log('🛑 Master Stop: Stopping all audio engines');
-    try {
-      // Always try to stop both engines regardless of state
-      console.log('🛑 Stopping backend engine...');
-      await backendEngine.stopBackendSession();
-      
-      console.log('🛑 Stopping frontend engine...');
-       frontendEngine.stopBinauralBeat();
+    // Use centralized audio control utility with timer control
+    const success = await stopBinauralAudio(
+      hybridEngine,
+      timerStatus?.session?.is_active ? timerControlRef.current : undefined
+    );
 
-      // Also clear any patterns
-      updateAppState({
-        isPlaying: false,
-        currentPattern: null
-      });
-
-      console.log('✅ Master Stop: All engines stopped successfully');
-    } catch (error) {
-      console.error('❌ Error during master stop:', error);
+    // Update app state if successful
+    if (success) {
+      updateAppState({ isPlaying: false });
     }
-  }, [backendEngine, frontendEngine, updateAppState]);
+  }, [hybridEngine, updateAppState, timerStatus]);
 
   const handleToggleAdvancedControls = useCallback(() => {
     toggleAdvancedControls(backendEngine);
@@ -494,26 +484,8 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
           </Box>
         </Box>
 
-        {/* Draggable Frequency Visualizer - Now moveable and resizable */}
-        {!closedSections.includes('frequencyVisualizer') && (
-          <DraggableFrequencyVisualizer
-            state={{
-              ...appState,
-              base_frequency: activeAudioEngine.audioState.config?.base_frequency ||
-                activeAudioEngine.audioState.leftFreq ||
-                DEFAULT_BASE_FREQUENCY,
-              beat_frequency: activeAudioEngine.audioState.config?.beat_frequency ||
-                activeAudioEngine.audioState.beat_frequency ||
-                DEFAULT_BEAT_FREQUENCY
-            }}
-            audioContext={activeAudioEngine.audioContext}
-            analyserNode={activeAudioEngine.analyserNode}
-            onClose={() => handleSectionClose('frequencyVisualizer')}
-            defaultPosition={{ x: window.innerWidth - 520, y: 100 }}
-            defaultSize={{ width: 500, height: 200 }}
-          />
-        )}
-
+       
+200
         {/* Compact Status Overview - Show when Master Controls is closed */}
         {closedSections.includes('masterControls') && (
           <Box sx={ElectromagneticLabStyles.compactStatusOverview}>
@@ -708,7 +680,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
               <Box sx={{ height: 'auto', minHeight: '300px', maxHeight: '70vh', overflowY: 'auto', overflowX: 'hidden' }}>
                 <TimerTab
                   appState={appState}
-                  audioEngine={backendEngine.backendConnected ? backendEngine : frontendEngine}
+                  audioEngine={hybridEngine}
                   patterns8D={WAVE_PATTERNS}
                   patterns8DEngine={{
                     setActivePattern: (pattern) => {
@@ -723,6 +695,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                   onStateChange={updateAppState}
                   onTimerStatusUpdate={setTimerStatus}
                   onTransitionNavigation={timerNavigationRef.current}
+                  onTimerControl={timerControlRef.current}
                 />
               </Box>
             </CollapsibleSection>

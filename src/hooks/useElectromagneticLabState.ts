@@ -91,43 +91,13 @@ export const useElectromagneticLabState = (initialPattern?: string, autoStart: b
     if (state.appState.currentPattern) {
       const frequency = state.appState.currentPattern.frequencies.beat;
       const isPlaying = state.appState.isPlaying;
-      
-      const immediateElectromagnetic = manager.createImmediateElectromagnetic(
-        frequency, 
-        isPlaying, 
-        state.appState.volume
-      );
-      
-      setState(prev => ({
-        ...prev,
-        appState: {
-          ...prev.appState,
-          electromagnetic: immediateElectromagnetic,
-          frequency: frequency
-        }
-      }));
-      
-      console.log('🎨 Visualizer updated for pattern:', state.appState.currentPattern.name, 'Frequency:', frequency);
-    }
-  }, [
-    state.appState.currentPattern?.id, 
-    state.appState.currentPattern?.frequencies.beat,
-    state.appState.isPlaying, 
-    state.appState.volume
-  ]);
 
-  // Trigger electromagnetic update when relevant values change
-  useEffect(() => {
-    if (state.appState.currentPattern) {
-      const frequency = state.appState.currentPattern.frequencies.beat;
-      const isPlaying = state.appState.isPlaying;
-      
       const immediateElectromagnetic = manager.createImmediateElectromagnetic(
-        frequency, 
-        isPlaying, 
+        frequency,
+        isPlaying,
         state.appState.volume
       );
-      
+
       setState(prev => ({
         ...prev,
         appState: {
@@ -136,15 +106,15 @@ export const useElectromagneticLabState = (initialPattern?: string, autoStart: b
           frequency: frequency
         }
       }));
-      
+
       console.log('🎨 Visualizer updated for pattern:', state.appState.currentPattern.name, 'Frequency:', frequency);
     }
   }, [
-    state.appState.currentPattern?.id, 
-    state.appState.currentPattern?.name,
+    state.appState.currentPattern?.id,
     state.appState.currentPattern?.frequencies.beat,
-    state.appState.isPlaying, 
-    state.appState.volume
+    state.appState.isPlaying,
+    state.appState.volume,
+    manager
   ]);
 
   return {
