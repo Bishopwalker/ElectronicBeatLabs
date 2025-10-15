@@ -16,26 +16,29 @@ interface FrequencyVisualizerProps {
   analyserNode?: AnalyserNode;
 }
 
+// 🔥 FIXED: Made container flexible for embedding
 const VisualizerContainer = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(2),
   background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)',
   border: '1px solid rgba(255, 255, 255, 0.1)',
   borderRadius: theme.spacing(2),
-  height: '400px',
+  height: '100%', // 🔥 FIXED: Was '400px', now flexible
+  minHeight: '250px', // Minimum usable height
   display: 'flex',
   flexDirection: 'column',
-  overflowX: 'scroll',
+  overflow: 'auto', // 🔥 FIXED: Was 'scroll', now auto
 }));
 
+// 🔥 FIXED: Made canvas container flexible
 const CanvasContainer = styled(Box)({
   position: 'relative',
   border: '1px solid rgba(255, 255, 255, 0.2)',
   borderRadius: '8px',
-  overflowX: 'scroll',
+  overflow: 'hidden', // 🔥 FIXED: Was 'scroll'
   background: 'radial-gradient(circle at center, rgba(0, 200, 255, 0.1) 0%, transparent 70%)',
   width: '100%',
-  minHeight: '300px',
-  maxHeight: '300px',
+  flex: 1, // 🔥 FIXED: Take remaining space
+  minHeight: '200px', // Minimum canvas height
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -49,6 +52,7 @@ const FrequencyDisplay = styled(Box)(({ theme }) => ({
   background: 'rgba(0, 0, 0, 0.3)',
   borderRadius: theme.spacing(1),
   border: '1px solid rgba(255, 255, 255, 0.1)',
+  flexShrink: 0, // 🔥 Don't shrink when space is tight
 }));
 
 export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
@@ -114,16 +118,19 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
 
   const timerInfo = getTimerInfo();
 
-  // Update canvas dimensions based on container size
+  // 🔥 FIXED: Better responsive canvas sizing
   useEffect(() => {
     if (!containerRef.current) return;
 
     const updateDimensions = () => {
       if (containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
+        const width = rect.width || 800;
+        const height = rect.height || 300;
+        
         setCanvasDimensions({
-          width: rect.width || 800,
-          height: Math.min(rect.height || 300, 300)
+          width: Math.max(width, 400), // Minimum 400px width
+          height: Math.max(height, 200) // Minimum 200px height
         });
       }
     };
@@ -146,7 +153,9 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
       isPlaying,
       leftFreq,
       rightFreq,
-      hasElectromagnetic: !!electromagnetic
+      hasElectromagnetic: !!electromagnetic,
+      canvasWidth: canvasDimensions.width,
+      canvasHeight: canvasDimensions.height
     });
 
     if (!canvasRef.current || !isPlaying) {
@@ -161,11 +170,10 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
       return;
     }
 
-    console.log('✅ FrequencyVisualizer: Starting animation loop with electromagnetic field integration');
 
     let animationId: number;
     let lastFrameTime = 0;
-    const targetFPS = 40;
+    const targetFPS = 60;
     const frameInterval = 1000 / targetFPS;
     let frameCount = 0;
     let fpsTime = 0;
@@ -217,15 +225,19 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
 
         for (let i = 0; i < samples; i++) {
           const x = (i / samples) * canvas.width;
-          const t = time + (i / samples) * 0.1;
+          const normalizedPos = i / samples;
 
-          // Left and right ear frequencies
-          const leftWave = Math.sin(2 * Math.PI * leftFreq * t);
-          const rightWave = Math.sin(2 * Math.PI * rightFreq * t);
+          // Show 2-3 complete cycles across the canvas for better visualization
+          const cycles = 3;
+          const visualT = normalizedPos * cycles;
+
+          // Left and right ear frequencies with scaled time
+          const leftWave = Math.sin(2 * Math.PI * visualT);
+          const rightWave = Math.sin(2 * Math.PI * visualT + (beatFreq / leftFreq) * 2 * Math.PI * cycles);
 
           // Binaural beat interference pattern with electromagnetic modulation
           const binauralBeat = (leftWave + rightWave) / 2;
-          const fieldModulation = Math.sin(2 * Math.PI * fieldFrequency * t) * fieldStrength;
+          const fieldModulation = Math.sin(2 * Math.PI * fieldFrequency * time) * fieldStrength;
           const amplitude = 40 + (beatFreq * 2) + (fieldModulation * 30);
 
           const y = centerY + (binauralBeat + fieldModulation * 0.3) * amplitude;
@@ -304,75 +316,7 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
           }
         }
 
-        // ENHANCED: Liquid countdown display at bottom with electromagnetic glow
-        if (timerInfo) {
-          const progress = timerInfo.remainingTime / (timerInfo.remainingTime + 1);
-          const liquidHeight = 35;
-          const liquidY = canvas.height - liquidHeight;
-          
-          // Liquid background with field glow
-          const glowIntensity = fieldStrength * 0.3;
-          ctx.fillStyle = `rgba(255, 107, 0, ${0.2 + glowIntensity})`;
-          ctx.fillRect(0, liquidY, canvas.width, liquidHeight);
-          
-          // Liquid progress with animated wave effect
-          const waveAmplitude = 3 + (fieldStrength * 2);
-          const waveFrequency = 0.02;
-          const waveOffset = timestamp * 0.001 * (1 + fieldCoherence);
-          
-          ctx.beginPath();
-          ctx.moveTo(0, liquidY + liquidHeight);
-          
-          for (let x = 0; x <= canvas.width; x += 2) {
-            const wave = Math.sin(x * waveFrequency + waveOffset) * waveAmplitude;
-            const fieldWave = Math.sin(x * 0.01 + time * fieldFrequency * 0.1) * fieldStrength * 2;
-            const y = liquidY + liquidHeight - (progress * liquidHeight) + wave + fieldWave;
-            ctx.lineTo(x, y);
-          }
-          
-          ctx.lineTo(canvas.width, liquidY + liquidHeight);
-          ctx.closePath();
-          
-          // Gradient with electromagnetic influence
-          const gradient = ctx.createLinearGradient(0, liquidY, 0, canvas.height);
-          gradient.addColorStop(0, `rgba(255, 107, 0, ${0.8 + glowIntensity})`);
-          gradient.addColorStop(0.5, `rgba(${180 + fieldCoherence * 75}, 43, 226, 0.8)`);
-          gradient.addColorStop(1, `rgba(138, 43, 226, ${0.8 + glowIntensity})`);
-          ctx.fillStyle = gradient;
-          ctx.fill();
-          
-          // Glow effect on liquid surface
-          ctx.shadowColor = `rgba(255, 107, 0, ${fieldStrength})`;
-          ctx.shadowBlur = 10 + (fieldStrength * 10);
-          ctx.stroke();
-          ctx.shadowBlur = 0;
-          
-          // Timer text overlay with electromagnetic pulsing
-          const textScale = 1 + (fieldStrength * 0.1);
-          ctx.save();
-          ctx.translate(centerX, liquidY + liquidHeight / 2);
-          ctx.scale(textScale, textScale);
-          
-          ctx.font = 'bold 16px monospace';
-          ctx.fillStyle = '#ffffff';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
-          ctx.shadowBlur = 4;
-          
-          const minutes = Math.floor(timerInfo.remainingTime / 60);
-          const seconds = Math.floor(timerInfo.remainingTime % 60);
-          const timeText = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-          
-          ctx.fillText(timeText, 0, 0);
-          
-          // Step indicator
-          ctx.font = 'bold 10px monospace';
-          ctx.fillText(`Step ${timerInfo.stepIndex}/${timerInfo.totalSteps}`, 0, 14);
-          
-          ctx.restore();
-          ctx.shadowBlur = 0;
-        }
+        // Don't draw timer info overlay in canvas (shows in UI instead)
       }
 
       animationId = requestAnimationFrame(draw);
@@ -383,99 +327,14 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
     return () => {
       cancelAnimationFrame(animationId);
     };
-  }, [isPlaying, leftFreq, rightFreq, beatFreq, activePattern, timerInfo, analyserNode, electromagnetic, showSpectrum]);
+  }, [isPlaying, leftFreq, rightFreq, beatFreq, activePattern, analyserNode, electromagnetic, showSpectrum, canvasDimensions]);
 
   return (
     <VisualizerContainer elevation={10}>
-      <Typography variant="h6" gutterBottom sx={{ color: '#fff', textAlign: 'center'}}>
-        {title}
-      </Typography>
-
-      {/* Electromagnetic Field Status */}
-      {electromagnetic && (
-        <Box sx={{
-          mb: 1,
-          p: 1,
-          background: 'rgba(0, 200, 255, 0.1)',
-          border: '1px solid rgba(0, 200, 255, 0.3)',
-          borderRadius: 1
-        }}>
-          <Grid container spacing={1} alignItems="center">
-            <Grid item xs={4}>
-              <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.7rem' }}>
-                Field Strength
-              </Typography>
-              <Typography variant="body2" sx={{ color: '#00bfff', fontWeight: 'bold', fontSize: '0.85rem' }}>
-                {(electromagnetic.strength * 100).toFixed(0)}%
-              </Typography>
-            </Grid>
-            <Grid item xs={4} sx={{ textAlign: 'center' }}>
-              <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.7rem' }}>
-                Coherence
-              </Typography>
-              <Typography variant="body2" sx={{ color: '#00ff88', fontWeight: 'bold', fontSize: '0.85rem' }}>
-                {(electromagnetic.coherence * 100).toFixed(0)}%
-              </Typography>
-            </Grid>
-            <Grid item xs={4} sx={{ textAlign: 'right' }}>
-              <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.7rem' }}>
-                State
-              </Typography>
-              <Typography variant="body2" sx={{ 
-                color: electromagnetic.state === 'RESONANT' ? '#ff6b00' : 
-                       electromagnetic.state === 'CRITICAL' ? '#ff1493' : '#8a2be2',
-                fontWeight: 'bold',
-                fontSize: '0.85rem'
-              }}>
-                {electromagnetic.state}
-              </Typography>
-            </Grid>
-          </Grid>
-        </Box>
-      )}
-
-      {/* Timer Status Display */}
-      {timerInfo && (
-        <Box sx={{
-          mb: 2,
-          p: 1.5,
-          background: 'rgba(255, 107, 0, 0.1)',
-          border: '1px solid rgba(255, 107, 0, 0.3)',
-          borderRadius: 1
-        }}>
-          <Grid container spacing={1} alignItems="center">
-            <Grid item xs={6}>
-              <Typography variant="body2" sx={{ color: '#ff6b00', fontWeight: 'bold' }}>
-                🎧 {timerInfo.stepName}
-              </Typography>
-              <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)' }}>
-                Step {timerInfo.stepIndex}/{timerInfo.totalSteps}
-              </Typography>
-            </Grid>
-            <Grid item xs={6} sx={{ textAlign: 'right' }}>
-              <Typography variant="body2" sx={{ color: '#00ff88' }}>
-                {Math.floor(timerInfo.remainingTime / 60)}:{(timerInfo.remainingTime % 60).toString().padStart(2, '0')}
-              </Typography>
-              <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)' }}>
-                Target: {timerInfo.targetFreq}Hz
-              </Typography>
-            </Grid>
-          </Grid>
-
-          <LinearProgress
-            variant="determinate"
-            value={(timerInfo.stepIndex / timerInfo.totalSteps) * 100}
-            sx={{
-              mt: 1,
-              height: 4,
-              borderRadius: 2,
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
-              '& .MuiLinearProgress-bar': {
-                backgroundColor: '#ff6b00'
-              }
-            }}
-          />
-        </Box>
+      {title && (
+        <Typography variant="h6" gutterBottom sx={{ color: '#fff', textAlign: 'center', flexShrink: 0}}>
+          {title}
+        </Typography>
       )}
 
       {/* Canvas Visualization */}
@@ -487,8 +346,7 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
           style={{
             display: 'block',
             width: '100%',
-            height: '100%',
-            maxHeight: '300px'
+            height: '100%'
           }}
         />
       </CanvasContainer>
@@ -497,27 +355,27 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
       {showFrequencies && (
         <FrequencyDisplay sx={{ mt: 2 }}>
           <Box>
-            <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)' }}>
+            <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.7rem' }}>
               Left Ear
             </Typography>
-            <Typography variant="h6" sx={{ color: '#00bfff', fontWeight: 'bold' }}>
+            <Typography variant="body2" sx={{ color: '#00bfff', fontWeight: 'bold', fontSize: '0.9rem' }}>
               {leftFreq.toFixed(2)} Hz
             </Typography>
           </Box>
           <Box sx={{ textAlign: 'center' }}>
-            <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)' }}>
+            <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.7rem' }}>
               Beat Frequency
             </Typography>
-            <Typography variant="h6" sx={{ color: '#ff6b00', fontWeight: 'bold' }}>
-              {parseInt(beatFreq.toFixed(2))} Hz
+            <Typography variant="body2" sx={{ color: '#ff6b00', fontWeight: 'bold', fontSize: '0.9rem' }}>
+              {beatFreq.toFixed(2)} Hz
             </Typography>
           </Box>
           <Box sx={{ textAlign: 'right' }}>
-            <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)' }}>
+            <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.7rem' }}>
               Right Ear
             </Typography>
-            <Typography variant="h6" sx={{ color: '#ff1493', fontWeight: 'bold' }}>
-              {parseInt(rightFreq.toFixed(2))} Hz
+            <Typography variant="body2" sx={{ color: '#ff1493', fontWeight: 'bold', fontSize: '0.9rem' }}>
+              {rightFreq.toFixed(2)} Hz
             </Typography>
           </Box>
         </FrequencyDisplay>
@@ -525,7 +383,7 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
 
       {/* Metrics */}
       {showMetrics && (
-        <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: 'center' }}>
+        <Box sx={{ mt: 1, display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: 'center', flexShrink: 0 }}>
           <Chip
             label={isPlaying ? 'PLAYING' : 'PAUSED'}
             size="small"

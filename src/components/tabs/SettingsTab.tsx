@@ -223,6 +223,27 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
         gap: 1
       }}
     >
+       <Paper
+        sx={{
+          background: 'rgba(255, 255, 255, 0.02)',
+          borderRadius: 3,
+          p: 1,
+          border: '1px solid rgba(255, 255, 255, 0.1)'
+        }}
+      >
+        <Typography
+          variant="body2"
+          sx={{
+            color: '#00ff88',
+            mb: 1,
+            fontSize: '0.8rem',
+            fontStyle: 'italic'
+          }}
+        >
+          💡 8D Spatial Audio settings moved to Advanced Controls
+        </Typography>
+      </Paper>
+  
       <Paper
         sx={{
           background: 'rgba(255, 255, 255, 0.02)',

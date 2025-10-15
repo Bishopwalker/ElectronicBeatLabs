@@ -5,10 +5,13 @@ import { ThemeProvider as StyledThemeProvider } from 'styled-components';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import GlobalStyles from './styles/GlobalStyles';
-import ElectromagneticBeatLab from './components/ElectromagneticBeatLab';
+import ElectromagneticBeatLab from './components/homePage/ElectromagneticBeatLab';
 import SimpleAuth from './components/SimpleAuth';
 import TimerTab from './components/tabs/TimerTab';
+import TimerCountdownDisplay from './components/TimerCountdownDisplay';
 import { AuthProvider } from './contexts/AuthContext';
+import { TimerProvider, useTimerContext } from './contexts/TimerContext';
+import { AudioEngineProvider, useAudioEngineContext } from './contexts/AudioEngineContext';
 import { useAuth } from './hooks/useAuth';
 import { muiTheme } from './theme/muiTheme';
 import { Box, Alert, Tabs, Tab, Typography } from '@mui/material';
@@ -38,11 +41,65 @@ const styledTheme = {
   }
 };
 
-// Main app content component
+// Main app content component (with contexts available)
 const AppContent = () => {
   const { user, canUseApp, requiresLogin, usage } = useAuth();
   const [activeTab, setActiveTab] = React.useState(0);
   const [showUsageAlert, setShowUsageAlert] = React.useState(true);
+
+  // Get timer state from context
+  const { timerStatus, timerNavigationRef, timerControlRef } = useTimerContext();
+
+  // Get hybrid audio engine from context
+  const hybridEngine = useAudioEngineContext();
+
+  // CRITICAL: Extract the actual app state for TimerCountdownDisplay
+  // This ensures the visualizer has the current frequency data
+  const [appState, setAppState] = React.useState({
+    frequency: DEFAULT_BASE_FREQUENCY,
+    beat_frequency: DEFAULT_BEAT_FREQUENCY,
+    isPlaying: false,
+    electromagnetic: {
+      strength: 0,
+      frequency: 0,
+      phase: 0,
+      coherence: 0,
+      resonance: 0,
+      state: 'INACTIVE' as const,
+      stability: 0
+    }
+  });
+
+  // Sync app state with audio engine
+  React.useEffect(() => {
+    const getActualFrequencies = () => {
+      if (hybridEngine.audioState.config) {
+        return {
+          base: hybridEngine.audioState.config.base_frequency,
+          beat: hybridEngine.audioState.config.beat_frequency
+        };
+      } else {
+        return {
+          base: hybridEngine.audioState.leftFreq || DEFAULT_BASE_FREQUENCY,
+          beat: hybridEngine.audioState.beat_frequency || DEFAULT_BEAT_FREQUENCY
+        };
+      }
+    };
+
+    const frequencies = getActualFrequencies();
+    setAppState(prev => ({
+      ...prev,
+      frequency: frequencies.base,
+      beat_frequency: frequencies.beat,
+      isPlaying: hybridEngine.audioState.isPlaying
+    }));
+  }, [
+    hybridEngine.audioState.config?.base_frequency,
+    hybridEngine.audioState.config?.beat_frequency,
+    hybridEngine.audioState.leftFreq,
+    hybridEngine.audioState.beat_frequency,
+    hybridEngine.audioState.isPlaying
+  ]);
 
   // If anonymous usage limit reached, require login
   if (!user && requiresLogin) {
@@ -89,11 +146,6 @@ const AppContent = () => {
         </Box>
       )}
       
-      {/* Show usage tracking demo for testing */}
-      {/* <Box sx={{ position: 'fixed', top: 16, left: 16, zIndex: 1000 }}>
-        <UsageTrackingExample />
-      </Box> */}
-      
       {/* Main app with tabs */}
       <Box sx={{
         display: 'flex',
@@ -131,6 +183,26 @@ const AppContent = () => {
             <Tab label="New Visualizer Engine" />
           </Tabs>
         </Box>
+
+        {/* CRITICAL: Timer Countdown Display - Rendered ABOVE tabs so it shows everywhere */}
+        {timerStatus && (
+          <Box sx={{
+            p: { xs: '5px', sm: '8px', md: '10px' },
+            bgcolor: 'rgba(0,0,0,0.5)',
+            borderBottom: '1px solid rgba(255, 107, 0, 0.2)'
+          }}>
+            <TimerCountdownDisplay
+              timerStatus={timerStatus}
+              isVisible={true}
+              appState={appState as any}
+              onJumpToTransition={timerNavigationRef.current.jumpToTransition}
+              onRestartTransition={timerNavigationRef.current.restartCurrentTransition}
+              audioContext={hybridEngine.audioContext}
+              analyserNode={hybridEngine.analyserNode}
+              hybridEngine={hybridEngine}
+            />
+          </Box>
+        )}
 
         <Box sx={{
           flex: 1,
@@ -225,18 +297,7 @@ const AppContent = () => {
                   adhd: null,
                   activeTab: 'timer'
                 }}
-                audioEngine={{
-                  startBinauralBeat: (config: any) => console.log('Starting binaural beat:', config),
-                  stopBinauralBeat: () => console.log('Stopping binaural beat'),
-                  updateFrequency: (left: number, right: number) => console.log('Updating frequency:', left, right),
-                  audioState: {
-                    isPlaying: false,
-                    leftFreq: DEFAULT_BASE_FREQUENCY,
-                    rightFreq: DEFAULT_BASE_FREQUENCY + DEFAULT_BEAT_FREQUENCY,
-                    beat_frequency: DEFAULT_BEAT_FREQUENCY,
-                    volume: DEFAULT_VOLUME
-                  }
-                } as any}
+                audioEngine={hybridEngine}
                 patterns8D={[]}
                 onStateChange={() => {}}
               />
@@ -263,7 +324,13 @@ function App() {
         <GlobalStyles />
         <AuthProvider>
           <WebSocketProvider>
-            <AppContent />
+            {/* CRITICAL: AudioEngineProvider must wrap everything that needs the hybrid engine */}
+            <AudioEngineProvider>
+              {/* CRITICAL: TimerProvider must wrap everything that needs timer state */}
+              <TimerProvider>
+                <AppContent />
+              </TimerProvider>
+            </AudioEngineProvider>
           </WebSocketProvider>
         </AuthProvider>
       </StyledThemeProvider>

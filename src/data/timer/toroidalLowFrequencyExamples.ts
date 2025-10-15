@@ -343,66 +343,147 @@ export const DELTA_HEALING_TOROIDAL: ComprehensiveTimerPreset = {
 
   electromagnetic_progression: [
     {
-      start_time_minutes: 0,
-      end_time_minutes: 10,
-      field_state: 'CHARGING',
-      strength: 0.6,
-      coherence: 0.7,
-      resonance: 0.6,
-      stability: 0.8,
-      transition_type: 'exponential'
+      timestamp_minutes: 0,
+      field_config: {
+        strength: 0.6,
+        frequency: 8,
+        phase: 0,
+        coherence: 0.7,
+        resonance: 0.6,
+        state: 'CHARGING',
+        stability: 0.8
+      },
+      transition_duration_seconds: 60,
+      resonance_targets: {
+        brain_waves: 'alpha',
+        healing_frequency: 8
+      }
     },
     {
-      start_time_minutes: 10,
-      end_time_minutes: 25,
-      field_state: 'ACTIVE',
-      strength: 0.8,
-      coherence: 0.9,
-      resonance: 0.8,
-      stability: 0.9,
-      transition_type: 'smooth'
+      timestamp_minutes: 10,
+      field_config: {
+        strength: 0.8,
+        frequency: 4,
+        phase: 90,
+        coherence: 0.9,
+        resonance: 0.8,
+        state: 'ACTIVE',
+        stability: 0.9
+      },
+      transition_duration_seconds: 45,
+      resonance_targets: {
+        brain_waves: 'theta',
+        healing_frequency: 4
+      }
     },
     {
-      start_time_minutes: 25,
-      end_time_minutes: 45,
-      field_state: 'RESONANT',
-      strength: 1.0,
-      coherence: 0.95,
-      resonance: 1.0,
-      stability: 0.95,
-      transition_type: 'smooth'
+      timestamp_minutes: 25,
+      field_config: {
+        strength: 1.0,
+        frequency: 2,
+        phase: 180,
+        coherence: 0.95,
+        resonance: 1.0,
+        state: 'RESONANT',
+        stability: 0.95
+      },
+      transition_duration_seconds: 60,
+      resonance_targets: {
+        brain_waves: 'delta',
+        healing_frequency: 2
+      }
     }
   ],
   visualization_progression: [
     {
-      start_time_minutes: 0,
-      end_time_minutes: 10,
-      color_scheme: 'alpha-toroidal-gold',
-      intensity: 0.6,
-      animation_speed: 0.4,
-      effects: ['toroidal-field', 'gentle-healing-glow', 'alpha-preparation'],
-      particle_density: 0.6,
-      glow_radius: 40
+      timestamp_minutes: 0,
+      settings: {
+        starField: {
+          density: 80,
+          speed: 0.5,
+          color: '#FFD700',
+          twinkle: true
+        },
+        spatial: {
+          gridSize: 40,
+          opacity: 0.3,
+          color: '#FFD700',
+          animation: true
+        },
+        frequency: {
+          bars: 32,
+          sensitivity: 0.8,
+          color: '#FDD835',
+          glow: true
+        }
+      },
+      transition_duration_seconds: 60,
+      special_effects: {
+        particle_burst: false,
+        color_cycling: false,
+        mandala_overlay: false,
+        fractal_zoom: false
+      }
     },
     {
-      start_time_minutes: 10,
-      end_time_minutes: 25,
-      color_scheme: 'theta-toroidal-emerald',
-      intensity: 0.8,
-      animation_speed: 0.3,
-      effects: ['maximum-toroidal-resonance', 'theta-healing-field', 'cellular-regeneration', 'energy-flow'],
-      particle_density: 0.8,
-      glow_radius: 60
+      timestamp_minutes: 10,
+      settings: {
+        starField: {
+          density: 120,
+          speed: 0.8,
+          color: '#50C878',
+          twinkle: true
+        },
+        spatial: {
+          gridSize: 60,
+          opacity: 0.5,
+          color: '#50C878',
+          animation: true
+        },
+        frequency: {
+          bars: 64,
+          sensitivity: 1.2,
+          color: '#66CDAA',
+          glow: true
+        }
+      },
+      transition_duration_seconds: 45,
+      special_effects: {
+        particle_burst: true,
+        color_cycling: true,
+        mandala_overlay: true,
+        fractal_zoom: false
+      }
     },
     {
-      start_time_minutes: 25,
-      end_time_minutes: 45,
-      color_scheme: 'delta-toroidal-deep-emerald',
-      intensity: 1.0,
-      animation_speed: 0.2,
-      effects: ['maximum-toroidal-resonance', 'delta-healing-mastery', 'cellular-regeneration-peak', 'energy-restoration-complete', 'dna-repair-activation'],
-      particle_density: 1.0,
-      glow_radius: 80
+      timestamp_minutes: 25,
+      settings: {
+        starField: {
+          density: 150,
+          speed: 1.0,
+          color: '#1B4D3E',
+          twinkle: true
+        },
+        spatial: {
+          gridSize: 80,
+          opacity: 0.7,
+          color: '#1B4D3E',
+          animation: true
+        },
+        frequency: {
+          bars: 128,
+          sensitivity: 1.5,
+          color: '#228B22',
+          glow: true
+        }
+      },
+      transition_duration_seconds: 60,
+      special_effects: {
+        particle_burst: true,
+        color_cycling: true,
+        mandala_overlay: true,
+        fractal_zoom: true
+      }
     }
   ],
 
@@ -687,46 +768,100 @@ export const THETA_CREATIVITY_TOROIDAL: ComprehensiveTimerPreset = {
 
   electromagnetic_progression: [
     {
-      start_time_minutes: 0,
-      end_time_minutes: 10,
-      field_state: 'CHARGING',
-      strength: 0.7,
-      coherence: 0.8,
-      resonance: 0.7,
-      stability: 0.8,
-      transition_type: 'smooth'
+      timestamp_minutes: 0,
+      field_config: {
+        strength: 0.7,
+        frequency: 10,
+        phase: 0,
+        coherence: 0.8,
+        resonance: 0.7,
+        state: 'CHARGING',
+        stability: 0.8
+      },
+      transition_duration_seconds: 45,
+      resonance_targets: {
+        brain_waves: 'alpha',
+        healing_frequency: 10
+      }
     },
     {
-      start_time_minutes: 10,
-      end_time_minutes: 30,
-      field_state: 'ACTIVE',
-      strength: 0.9,
-      coherence: 0.85,
-      resonance: 0.9,
-      stability: 0.8,
-      transition_type: 'smooth'
+      timestamp_minutes: 10,
+      field_config: {
+        strength: 0.9,
+        frequency: 6,
+        phase: 90,
+        coherence: 0.85,
+        resonance: 0.9,
+        state: 'ACTIVE',
+        stability: 0.8
+      },
+      transition_duration_seconds: 30,
+      resonance_targets: {
+        brain_waves: 'theta',
+        healing_frequency: 6
+      }
     }
   ],
   visualization_progression: [
     {
-      start_time_minutes: 0,
-      end_time_minutes: 10,
-      color_scheme: 'alpha-creative-orange',
-      intensity: 0.7,
-      animation_speed: 0.5,
-      effects: ['creative-toroidal-field', 'inspiration-flow', 'artistic-activation'],
-      particle_density: 0.7,
-      glow_radius: 50
+      timestamp_minutes: 0,
+      settings: {
+        starField: {
+          density: 90,
+          speed: 1.0,
+          color: '#FF8C00',
+          twinkle: true
+        },
+        spatial: {
+          gridSize: 50,
+          opacity: 0.4,
+          color: '#FFA500',
+          animation: true
+        },
+        frequency: {
+          bars: 48,
+          sensitivity: 1.0,
+          color: '#FFB74D',
+          glow: true
+        }
+      },
+      transition_duration_seconds: 45,
+      special_effects: {
+        particle_burst: false,
+        color_cycling: true,
+        mandala_overlay: false,
+        fractal_zoom: false
+      }
     },
     {
-      start_time_minutes: 10,
-      end_time_minutes: 30,
-      color_scheme: 'theta-creative-spectrum',
-      intensity: 0.9,
-      animation_speed: 0.6,
-      effects: ['maximum-toroidal-resonance', 'theta-creative-mastery', 'inspiration-cascade', 'artistic-vision-enhancement', 'innovative-thinking-boost'],
-      particle_density: 0.9,
-      glow_radius: 70
+      timestamp_minutes: 10,
+      settings: {
+        starField: {
+          density: 140,
+          speed: 1.5,
+          color: '#9400D3',
+          twinkle: true
+        },
+        spatial: {
+          gridSize: 70,
+          opacity: 0.6,
+          color: '#BA68C8',
+          animation: true
+        },
+        frequency: {
+          bars: 96,
+          sensitivity: 1.5,
+          color: '#E1BEE7',
+          glow: true
+        }
+      },
+      transition_duration_seconds: 30,
+      special_effects: {
+        particle_burst: true,
+        color_cycling: true,
+        mandala_overlay: true,
+        fractal_zoom: true
+      }
     }
   ],
 
@@ -1011,46 +1146,100 @@ export const ALPHA_FOCUS_TOROIDAL: ComprehensiveTimerPreset = {
 
   electromagnetic_progression: [
     {
-      start_time_minutes: 0,
-      end_time_minutes: 5,
-      field_state: 'CHARGING',
-      strength: 0.7,
-      coherence: 0.8,
-      resonance: 0.7,
-      stability: 0.9,
-      transition_type: 'smooth'
+      timestamp_minutes: 0,
+      field_config: {
+        strength: 0.7,
+        frequency: 12,
+        phase: 0,
+        coherence: 0.8,
+        resonance: 0.7,
+        state: 'CHARGING',
+        stability: 0.9
+      },
+      transition_duration_seconds: 30,
+      resonance_targets: {
+        brain_waves: 'alpha',
+        healing_frequency: 12
+      }
     },
     {
-      start_time_minutes: 5,
-      end_time_minutes: 25,
-      field_state: 'ACTIVE',
-      strength: 0.8,
-      coherence: 0.9,
-      resonance: 0.8,
-      stability: 0.95,
-      transition_type: 'smooth'
+      timestamp_minutes: 5,
+      field_config: {
+        strength: 0.8,
+        frequency: 10,
+        phase: 90,
+        coherence: 0.9,
+        resonance: 0.8,
+        state: 'ACTIVE',
+        stability: 0.95
+      },
+      transition_duration_seconds: 15,
+      resonance_targets: {
+        brain_waves: 'alpha',
+        healing_frequency: 10
+      }
     }
   ],
   visualization_progression: [
     {
-      start_time_minutes: 0,
-      end_time_minutes: 5,
-      color_scheme: 'focus-prep-blue',
-      intensity: 0.7,
-      animation_speed: 0.5,
-      effects: ['focus-toroidal-activation', 'mental-clarity-boost', 'concentration-field'],
-      particle_density: 0.7,
-      glow_radius: 45
+      timestamp_minutes: 0,
+      settings: {
+        starField: {
+          density: 70,
+          speed: 0.8,
+          color: '#4169E1',
+          twinkle: true
+        },
+        spatial: {
+          gridSize: 35,
+          opacity: 0.4,
+          color: '#4169E1',
+          animation: true
+        },
+        frequency: {
+          bars: 32,
+          sensitivity: 0.9,
+          color: '#5C85D6',
+          glow: true
+        }
+      },
+      transition_duration_seconds: 30,
+      special_effects: {
+        particle_burst: false,
+        color_cycling: false,
+        mandala_overlay: false,
+        fractal_zoom: false
+      }
     },
     {
-      start_time_minutes: 5,
-      end_time_minutes: 25,
-      color_scheme: 'sustained-focus-gold',
-      intensity: 0.8,
-      animation_speed: 0.4,
-      effects: ['maximum-toroidal-resonance', 'sustained-focus-field', 'productivity-enhancement', 'mental-clarity-peak', 'concentration-mastery'],
-      particle_density: 0.8,
-      glow_radius: 55
+      timestamp_minutes: 5,
+      settings: {
+        starField: {
+          density: 100,
+          speed: 1.0,
+          color: '#FFD700',
+          twinkle: true
+        },
+        spatial: {
+          gridSize: 45,
+          opacity: 0.5,
+          color: '#FFD700',
+          animation: true
+        },
+        frequency: {
+          bars: 48,
+          sensitivity: 1.2,
+          color: '#FDD835',
+          glow: true
+        }
+      },
+      transition_duration_seconds: 15,
+      special_effects: {
+        particle_burst: true,
+        color_cycling: false,
+        mandala_overlay: false,
+        fractal_zoom: false
+      }
     }
   ],
 

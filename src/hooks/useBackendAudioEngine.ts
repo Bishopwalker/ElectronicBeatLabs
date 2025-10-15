@@ -94,6 +94,7 @@ export const useBackendAudioEngine = () => {
   const audioContext = useRef<AudioContext | null>(null);
   const gainNode = useRef<GainNode | null>(null);
   const audioWorkletNode = useRef<AudioWorkletNode | null>(null);
+  const analyserNode = useRef<AnalyserNode | null>(null);
   const workletLoaded = useRef<boolean>(false);
 
   // Backend communication hooks
@@ -148,6 +149,18 @@ export const useBackendAudioEngine = () => {
         gainNode.current.connect(audioContext.current.destination);
       }
 
+      // Create persistent analyser node for visualizations
+      if (!analyserNode.current) {
+        analyserNode.current = audioContext.current.createAnalyser();
+        analyserNode.current.fftSize = 2048;
+        analyserNode.current.smoothingTimeConstant = 0.8;
+        // Connect gain node through analyser for visualization
+        gainNode.current.disconnect();
+        gainNode.current.connect(analyserNode.current);
+        analyserNode.current.connect(audioContext.current.destination);
+        console.log('✅ Backend Engine: AnalyserNode created for visualization');
+      }
+
       // Create AudioWorkletNode for real-time audio processing
       if (!audioWorkletNode.current) {
         audioWorkletNode.current = new AudioWorkletNode(
@@ -199,6 +212,7 @@ export const useBackendAudioEngine = () => {
     //     'Left:', frame.frequencies.left, 'Hz Right:', frame.frequencies.right, 'Hz Beat:', frame.frequencies.beat, 'Hz');
 */
   // Process backend audio frame (send to AudioWorklet)
+  // CRITICAL: NO DEPENDENCIES to avoid infinite loop when registering frame handler
   const processAudioFrame = useCallback((frame: BackendAudioFrame | ArrayBuffer) => {
 
     if (!audioContext.current) {
@@ -322,6 +336,7 @@ export const useBackendAudioEngine = () => {
   }, [websocket.isConnected, initializeAudio, initializePersistentAudio]);
 
   // CRITICAL FIX: Register frame handler to receive audio frames from WebSocket
+  // Register ONCE on mount, processAudioFrame is now stable (empty deps)
   useEffect(() => {
     console.log('🎵 Backend Engine: Registering frame handler for audio processing');
 
@@ -344,7 +359,7 @@ export const useBackendAudioEngine = () => {
     });
 
     console.log('✅ Backend Engine: Frame handler registered successfully');
-  }, [websocket, processAudioFrame]);
+  }, [websocket,processAudioFrame]); // processAudioFrame is stable now (empty deps)
 
   // Handle WebSocket messages with debouncing for frame messages
   const lastProcessedMessageRef = useRef<number>(0);
@@ -441,6 +456,12 @@ export const useBackendAudioEngine = () => {
 
           case 'session_stopped':
             console.log('🛑 Backend Engine: Session stopped message received');
+            setAudioState(prevState=>({
+              ...prevState,
+              setBackendConnected:false,
+              isPlaying:false,
+              audioContext
+            }))
             setBackendConnected(false);
             break;
 
@@ -1136,7 +1157,8 @@ export const useBackendAudioEngine = () => {
     createGammaProtocol,
     updateSettings,
     isSupported: !!(window.AudioContext || (window as any).webkitAudioContext),
-    audioContext: null, // Backend engine doesn't use local AudioContext
-    analyserNode: null  // Backend engine doesn't use local AnalyserNode
+    // CRITICAL: Expose audioContext and analyserNode for visualizations and frequency analysis
+    audioContext: audioContext.current,
+    analyserNode: analyserNode.current
   };
 };

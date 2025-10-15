@@ -47,6 +47,9 @@ interface TimerTabProps {
         jumpToTransition: (direction: 'next' | 'previous') => void;
         restartCurrentTransition: () => void;
     };
+    onTimerControl?: {
+        stopTimer: () => void;
+    };
     audioEngine?: {
         startBinauralBeat: (config: BinauralBeatConfig) => Promise<void>;
         stopBinauralBeat: () => Promise<void>;
@@ -68,7 +71,8 @@ const TimerTab: React.FC<TimerTabProps> = ({
     onStateChange,
     onTimerStatusUpdate,
     onElectromagneticUpdate,
-    onTransitionNavigation
+    onTransitionNavigation,
+    onTimerControl
 }) => {
     // Timer logic hook
     const {
@@ -102,6 +106,16 @@ const TimerTab: React.FC<TimerTabProps> = ({
             onTransitionNavigation.restartCurrentTransition = restartCurrentTransition;
         }
     }, [jumpToTransition, restartCurrentTransition, onTransitionNavigation]);
+
+    // Expose control functions to parent via callback
+    React.useEffect(() => {
+        if (onTimerControl) {
+            onTimerControl.stopTimer = () => {
+                console.log('⏰ Timer control: Stop requested from parent');
+                controlTimer('stop');
+            };
+        }
+    }, [controlTimer, onTimerControl]);
 
     // Local state for dialogs and custom presets
     const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -277,7 +291,7 @@ const TimerTab: React.FC<TimerTabProps> = ({
                         <Select
                             labelId="preset-select-label"
                             id="preset-select"
-                            value={selectedPresetId}
+                            value={presets.some(p => p.id === selectedPresetId) ? selectedPresetId : ''}
                             label="Choose Preset"
                             onChange={(e) => {
                                 console.log('🔄 Timer preset selected:', e.target.value);

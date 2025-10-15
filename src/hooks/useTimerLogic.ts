@@ -242,7 +242,7 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
     });
 
     setTimerStatus(status);
-
+    console.log('📤 AudioEngine Pimping', audioEngine);
     // Notify parent component of timer status changes
     if (onTimerStatusUpdate) {
       console.log('📤 Calling onTimerStatusUpdate with status:', status);
@@ -345,6 +345,19 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
         console.log('🔥 Timer: Starting audio engine');
         console.log('🔥 Timer: Config:', config);
         console.log('🔥 Timer: Has backend session:', !!audioEngine?.sessionId);
+
+        // CRITICAL: Initialize audio context first (requires user gesture)
+        if ((audioEngine as any).initializeAudio) {
+          try {
+            console.log('🎵 Timer: Initializing audio context...');
+            const audioContext = await (audioEngine as any).initializeAudio();
+            if (audioContext) {
+              console.log('✅ Timer: Audio context initialized:', audioContext.state);
+            }
+          } catch (error) {
+            console.warn('⚠️ Timer: Audio context initialization failed:', error);
+          }
+        }
 
         // Start the audio engine (it will handle reusing existing sessions)
         console.log('🚀 Timer: Starting audio engine with config:', config);
@@ -587,6 +600,19 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
       return false;
     }
   };
+
+  // 🔥 FIXED: Validate selectedPresetId after presets are loaded
+  useEffect(() => {
+    if (presets.length > 0 && selectedPresetId) {
+      // Check if selected preset exists in available presets
+      const presetExists = presets.some(p => p.id === selectedPresetId);
+      if (!presetExists) {
+        console.warn(`⚠️ Selected preset "${selectedPresetId}" no longer exists, resetting to empty`);
+        setSelectedPresetId('');
+        localStorage.removeItem('ebl_selected_preset');
+      }
+    }
+  }, [presets, selectedPresetId]);
 
   useEffect(() => {
     loadPresets();

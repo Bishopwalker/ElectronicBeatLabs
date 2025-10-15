@@ -22,6 +22,7 @@ from protocols.adhd_protocols import ADHDProtocols
 from routes.audio_websocket import router as audio_router
 from routes.simple_routes import router as simple_router
 from routes.timer import router as timer_router
+from routes.rag_routes import router as rag_router, initialize_rag
 from utils.logger import setup_logger, RequestLogger, AudioLogger
 from utils.metrics import MetricsCollector, get_metrics, CONTENT_TYPE_LATEST
 
@@ -39,6 +40,8 @@ app = FastAPI(
 # Include simplified auth and subscription routes
 app.include_router(simple_router, prefix="/api")
 app.include_router(timer_router, prefix="/api")
+# RAG code intelligence router
+app.include_router(rag_router)
 # Audio router includes WebSocket endpoint, no /api prefix needed
 app.include_router(audio_router)
 
@@ -53,7 +56,18 @@ async def startup_event():
     # Initialize database tables - DISABLED (not currently needed)
     # init_db()
     # logger.info("Database initialized successfully")
-    
+
+    # Initialize RAG system for code intelligence
+    logger.info("Initializing RAG (Retrieval-Augmented Generation) system...")
+    import os
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    rag_initialized = initialize_rag(project_root=project_root, use_enhanced=True)
+    if rag_initialized:
+        logger.info("RAG system initialized successfully")
+    else:
+        logger.warning("RAG system failed to initialize - code search will be unavailable")
+        logger.warning("Install dependencies: pip install sentence-transformers scikit-learn chromadb")
+
     # Log startup completion
     logger.info("Backend startup completed successfully")
 

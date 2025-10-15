@@ -105,7 +105,8 @@
       "Bash(echo:*)",
       "Bash(git worktree:*)",
       "Bash(git log:*)",
-      "Bash(docker-compose:*)"
+      "Bash(docker-compose:*)",
+      "Bash(docker:*)"
     ],
     "deny": [],
     "ask": []

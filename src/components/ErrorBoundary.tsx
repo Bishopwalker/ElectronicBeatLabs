@@ -115,11 +115,42 @@ export class ErrorBoundary extends Component<Props, State> {
                     color: '#f44336',
                     fontFamily: 'monospace',
                     display: 'block',
-                    wordBreak: 'break-word'
+                    wordBreak: 'break-word',
+                    mb: 1
                   }}
                 >
-                  {this.state.error.message}
+                  {this.state.error.name}: {this.state.error.message}
                 </Typography>
+
+                {this.state.error.cause && (
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: '#ff9800',
+                      fontFamily: 'monospace',
+                      display: 'block',
+                      wordBreak: 'break-word',
+                      mb: 1
+                    }}
+                  >
+                    Caused by: {String(this.state.error.cause)}
+                  </Typography>
+                )}
+
+                {this.state.errorInfo && (
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: '#f44336',
+                      fontFamily: 'monospace',
+                      display: 'block',
+                      wordBreak: 'break-word',
+                      fontSize: '0.7rem'
+                    }}
+                  >
+                    Component Stack: {this.state.errorInfo.componentStack}
+                  </Typography>
+                )}
               </Box>
             )}
 

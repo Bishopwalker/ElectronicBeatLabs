@@ -87,7 +87,7 @@ const SimpleFrequencyVisualizer: React.FC<{
 };
 
 interface EqualizerMUIProps {
-  audioContext: AudioContext | null;
+  audioContext?: AudioContext | null;
   analyserNode?: AnalyserNode | null;
   isPlaying?: boolean;
   onEqualizerChange?: (inputNode: GainNode | null, outputNode: GainNode | null) => void;
@@ -102,6 +102,9 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
   // ALL HOOKS MUST BE AT THE TOP - NO CONDITIONALS BEFORE THIS
   const [isInitialized, setIsInitialized] = useState(false);
   const [visualizerFullscreen, setVisualizerFullscreen] = useState(false);
+
+  // Use ref to track initialization (doesn't cause re-renders)
+  const initializedRef = useRef(false);
 
   // Call useEqualizer hook UNCONDITIONALLY at top level
   const {
@@ -119,22 +122,26 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
   const [showAudioWarning, setShowAudioWarning] = useState(!audioContext);
 
   // Initialize equalizer when audio context is ready
+  // FIXED: Removed unstable function dependencies to prevent infinite loop
   useEffect(() => {
-    if (audioContext) {
+    if (audioContext && !initializedRef.current) {
       setShowAudioWarning(false); // Hide warning once we have audio context
 
-      if (!isInitialized) {
-        console.log('🎚️ Initializing equalizer with audio context');
-        const nodes = initializeEqualizer();
-        if (nodes) {
-          setIsInitialized(true);
-          if (onEqualizerChange) {
-            onEqualizerChange(nodes.input, nodes.output);
-          }
+      console.log('🎚️ Initializing equalizer with audio context');
+      const nodes = initializeEqualizer();
+      audioContext.resume();
+      if (nodes) {
+        initializedRef.current = true;
+        setIsInitialized(true);
+        if (onEqualizerChange) {
+          onEqualizerChange(nodes.input, nodes.output);
         }
       }
+    } else if (audioContext) {
+      // Just hide warning if already initialized
+      setShowAudioWarning(false);
     }
-  }, [audioContext, isInitialized, initializeEqualizer, onEqualizerChange]);
+  }, [audioContext]); // Only depend on audioContext (stable)
 
   // Handle toggle
   const handleToggle = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
@@ -404,7 +411,9 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
             p: 0.5,
             bgcolor: 'rgba(0, 0, 0, 0.3)',
             borderRadius: 1,
-            flex: '0 0 auto'
+            flex: '0 0 auto',
+            overflowX: 'auto', // Allow horizontal scrolling if needed
+            maxWidth: '100%' // Don't exceed parent width
           }}
         >
           {equalizerState.bands.map(band => renderBandSlider(band))}

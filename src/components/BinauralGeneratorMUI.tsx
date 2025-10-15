@@ -62,11 +62,11 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
     // Theta (4-8Hz): Medium-high strength for creativity
     // Alpha (8-13Hz): Medium strength for relaxed focus
     // Beta (13-30Hz): Lower strength for active focus
-    if (beatFreq <= 4) return 0.9; // Delta - very strong field
-    if (beatFreq <= 8) return 0.75; // Theta - strong field
-    if (beatFreq <= 13) return 0.6; // Alpha - medium field
-    if (beatFreq <= 30) return 0.45; // Beta - moderate field
-    return 0.3; // Gamma - lower field strength
+    if (beatFreq <= 4) return 0.333; // Delta - Low field
+    if (beatFreq <= 8) return 0.444; // Theta - medium field
+    if (beatFreq <= 13) return 0.666; // Alpha - medium field
+    if (beatFreq <= 30) return 0.777; // Beta - moderate field
+    return 0.999; // Delta - very strong field very strong field
   };
 
   const electromagneticStrength = calculateElectromagneticStrength(beat_frequency);
@@ -86,14 +86,14 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
   useEffect(() => {
     const newRightFreq = calculateRightFreq(base_frequency, beat_frequency);
     console.log('🎛️ BinauralGenerator: Beat frequency changed, right freq:', newRightFreq);
-    setRightInput(newRightFreq.toString());
+    setRightInput(newRightFreq);
   }, [base_frequency, beat_frequency]);
 
-  const handleLeftChange = (value: string) => {
+  const handleLeftChange = (value: number) => {
     console.log('🎛️ Left Hz input changed:', value);
     setLeftInput(value);
 
-    const leftNum = parseFloat(value);
+    const leftNum = parseFloat(value.toString());
     if (!isNaN(leftNum)) {
       // Convert left freq back to base_frequency, keep current beat_frequency
       const newBaseFreq = leftNum; // left = base
@@ -122,8 +122,9 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
     const defaultBeatFreq = 4;
     const newLeftFreq = defaultBaseFreq;
     const newRightFreq = defaultBaseFreq+defaultBeatFreq;
-    setLeftInput(newLeftFreq.toString());
-    setRightInput(newRightFreq.toString());
+    setLeftInput(newLeftFreq);
+    setRightInput(newRightFreq);
+
     onFrequencyChange(defaultBaseFreq, defaultBeatFreq);
   };
 
@@ -373,7 +374,7 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
               ⚡ Electromagnetic Field Analysis
             </Typography>
             <Grid container spacing={1}>
-              <Grid item xs={6}>
+              <Grid size={6}>
                 <Typography variant="caption" sx={{ fontSize: '0.65rem', color: 'text.secondary' }}>
                   Field Strength
                 </Typography>
@@ -393,7 +394,8 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
                   {(electromagneticStrength * 100).toFixed(0)}%
                 </Typography>
               </Grid>
-              <Grid item xs={6}>
+
+              <Grid size={6}>
                 <Typography variant="caption" sx={{ fontSize: '0.65rem', color: 'text.secondary' }}>
                   State
                 </Typography>
@@ -403,7 +405,6 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
               </Grid>
             </Grid>
           </Paper>
-
           {/* Frequency Analyzer */}
           {visualizationData && (
             <Paper
@@ -418,7 +419,7 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
                 📊 Real-time Frequency Analysis
               </Typography>
               <Grid container spacing={1}>
-                <Grid item xs={4}>
+                <Grid size={4}>
                   <Typography variant="caption" sx={{ fontSize: '0.6rem', color: 'text.secondary' }}>
                     SNR
                   </Typography>
@@ -426,7 +427,7 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
                     {visualizationData.signalQuality.snr.toFixed(1)} dB
                   </Typography>
                 </Grid>
-                <Grid item xs={4}>
+                <Grid size={4}>
                   <Typography variant="caption" sx={{ fontSize: '0.6rem', color: 'text.secondary' }}>
                     Clarity
                   </Typography>
@@ -434,7 +435,7 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
                     {(visualizationData.signalQuality.clarity * 100).toFixed(0)}%
                   </Typography>
                 </Grid>
-                <Grid item xs={4}>
+                <Grid size={4}>
                   <Typography variant="caption" sx={{ fontSize: '0.6rem', color: 'text.secondary' }}>
                     Quality
                   </Typography>

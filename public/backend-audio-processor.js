@@ -28,18 +28,20 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
     this.framesPerSecond = 60;
 
     // ULTRA-STABLE buffer thresholds for 48kHz/800 samples per frame - MAXIMUM RELIABILITY
-    this.minBufferSize = this.frameSamples * 10; // ~10 frames minimum (167ms) - ultra-stable startup
-    this.targetBufferSize = this.frameSamples * 12; // ~12 frames target (200ms) - generous buffer for smooth playback
-    this.maxBufferSize = this.frameSamples * 50; // ~50 frames max (833ms) - large max buffering
-    this.restartThreshold = this.frameSamples * 6; // ~6 frames (100ms) - very safe restart threshold
+    // 🔥 FIXED: Increased thresholds to prevent beeping from buffer underruns
+    this.minBufferSize = this.frameSamples * 16; // ~16 frames minimum (267ms) - ultra-stable startup
+    this.targetBufferSize = this.frameSamples * 20; // ~20 frames target (333ms) - generous buffer for smooth playback
+    this.maxBufferSize = this.frameSamples * 90; // ~90 frames max (1500ms) - large max buffering
+    this.restartThreshold = this.frameSamples * 8; // ~8 frames (133ms) - safe restart threshold with hysteresis
 
     // Playback state management
     this.isPlaying = false;
     this.isPrimed = false; // Track if we've ever reached minimum buffer
+    this.underrunRecoveryFrames = 0; // 🔥 Track frames since underrun for hysteresis
 
     // Smooth transitions to prevent clicks - scale with sample rate
-    this.fadeInSamples = Math.floor(this.sampleRate * 0.003); // ~3ms fade in
-    this.fadeOutSamples = Math.floor(this.sampleRate * 0.003); // ~3ms fade out
+    this.fadeInSamples = Math.floor(this.sampleRate * 0.005); // ~5ms fade in (smoother)
+    this.fadeOutSamples = Math.floor(this.sampleRate * 0.005); // ~5ms fade out (smoother)
     this.currentFade = 0; // Current fade position
     this.fadingIn = false;
     this.fadingOut = false;
@@ -380,22 +382,31 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
       console.log(`▶️ Starting playback with fade-in: ${availableSamples} samples (target: ${this.targetBufferSize})`);
     }
 
-    // Stop playing if buffer runs too low (but don't reset isPrimed)
+    // 🔥 FIXED: Stop playing if buffer runs too low (with hysteresis to prevent rapid cycling)
     if (this.isPlaying && availableSamples < this.restartThreshold) {
       if (!this.fadingOut) {
         this.fadingOut = true;
         this.currentFade = 0;
         this.underrunCount++;
-        console.warn(`⚠️ UNDERRUN #${this.underrunCount}! Buffer below ${this.restartThreshold} samples (${availableSamples} available), starting fade-out. Will restart when buffer reaches ${this.targetBufferSize}`);
+        this.underrunRecoveryFrames = 0; // Reset recovery counter
+        console.warn(`⚠️ UNDERRUN #${this.underrunCount}! Buffer below ${this.restartThreshold} samples (${availableSamples} available), starting fade-out. Will restart when buffer reaches ${this.targetBufferSize} AND stabilizes`);
       }
     }
 
-    // Restart playback when buffer recovers to target level after underrun
+    // 🔥 FIXED: Restart playback when buffer recovers AND has been stable for ~100ms (prevent rapid cycling)
     if (!this.isPlaying && this.isPrimed && !this.fadingOut && availableSamples >= this.targetBufferSize) {
-      this.isPlaying = true;
-      this.fadingIn = true;
-      this.currentFade = 0;
-      console.log(`🔄 Restarting playback after buffer recovery: ${availableSamples} samples`);
+      this.underrunRecoveryFrames++;
+      // Require buffer to stay full for at least 60 frames (~1 second at 128 samples/frame) before restarting
+      if (this.underrunRecoveryFrames > 60) {
+        this.isPlaying = true;
+        this.fadingIn = true;
+        this.currentFade = 0;
+        console.log(`🔄 Restarting playback after buffer recovery and stabilization: ${availableSamples} samples`);
+        this.underrunRecoveryFrames = 0;
+      }
+    } else if (availableSamples < this.targetBufferSize) {
+      // Reset recovery counter if buffer drops below target
+      this.underrunRecoveryFrames = 0;
     }
 
     // Fill output buffer with smooth transitions
@@ -472,4 +483,15 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
 }
 
 // Register the processor
-registerProcessor('backend-audio-processor', BackendAudioProcessor);
+// Guard against double registration (Vite HMR causes this)
+try {
+  registerProcessor('backend-audio-processor', BackendAudioProcessor);
+  console.log('✅ Backend audio processor registered successfully');
+} catch (error) {
+  if (error.name === 'NotSupportedError' && error.message.includes('already registered')) {
+    console.warn('⚠️ Backend audio processor already registered (HMR reload)');
+  } else {
+    console.error('❌ Failed to register backend audio processor:', error);
+    throw error;
+  }
+}

@@ -154,7 +154,8 @@ const TimerControls: React.FC<TimerControlsProps> = ({
                         frequency_type: 'Alpha',
                         left_ear_hz: 140,
                         right_ear_hz: 150,
-                        description: 'Alpha waves'
+                        description: 'Alpha waves',
+
                     }]
                 });
             }

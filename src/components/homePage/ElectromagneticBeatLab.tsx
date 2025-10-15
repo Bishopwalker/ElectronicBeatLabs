@@ -523,6 +523,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
             onRestartTransition={timerNavigationRef.current.restartCurrentTransition}
             audioContext={activeAudioEngine.audioContext}
             analyserNode={activeAudioEngine.analyserNode}
+            hybridEngine={hybridEngine}
           />
         </Box>
       )}

@@ -36,15 +36,28 @@ const SystemStatusChips: React.FC<SystemStatusChipsProps> = ({
     useEffect(() => {
         const isNowConnected = audioEngine.backendConnected || false;
 
-        setBackendConnected(isNowConnected);
-        setWebsocketState({
-            connected: audioEngine.websocketState?.connected || false,
-            connecting: audioEngine.websocketState?.connecting || false,
-            error: audioEngine.websocketState?.error || null
-        });
+        // Only update if value actually changed
+        if (backendConnected !== isNowConnected) {
+            setBackendConnected(isNowConnected);
+        }
+
+        // Only update websocket state if values changed
+        const newWsConnected = audioEngine.websocketState?.connected || false;
+        const newWsConnecting = audioEngine.websocketState?.connecting || false;
+        const newWsError = audioEngine.websocketState?.error || null;
+
+        if (websocketState.connected !== newWsConnected ||
+            websocketState.connecting !== newWsConnecting ||
+            websocketState.error !== newWsError) {
+            setWebsocketState({
+                connected: newWsConnected,
+                connecting: newWsConnecting,
+                error: newWsError
+            });
+        }
 
         // Reset checking state when connected
-        if (isNowConnected) {
+        if (isNowConnected && (isCheckingBackend || backendRetryCount > 0)) {
             setIsCheckingBackend(false);
             setBackendRetryCount(0);
         }
