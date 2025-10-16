@@ -106,7 +106,9 @@
       "Bash(git worktree:*)",
       "Bash(git log:*)",
       "Bash(docker-compose:*)",
-      "Bash(docker:*)"
+      "Bash(docker:*)",
+      "Bash(set FILTER_BRANCH_SQUELCH_WARNING=1)",
+      "Bash(git filter-branch:*)"
     ],
     "deny": [],
     "ask": []

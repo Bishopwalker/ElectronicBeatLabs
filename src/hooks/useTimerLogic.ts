@@ -258,12 +258,17 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
       // Update frequencies based on engine type
       // Backend engine uses updateSettings({ base_frequency, beat_frequency })
       // Frontend engine uses updateFrequency(leftFreq, rightFreq)
+
+      // 🔥 FIXED: Calculate correct base_frequency (must be the LOWER of the two frequencies)
+      const baseFreq = Math.min(currentTransition.left_ear_hz, currentTransition.right_ear_hz);
+      const beatFreq = Math.abs(currentTransition.right_ear_hz - currentTransition.left_ear_hz);
+
       if ((audioEngine as any).updateSettings) {
         // Backend engine - use base/beat model
-        console.log('🎛️ Timer: Updating backend engine with base:', currentTransition.left_ear_hz, 'beat:', currentTransition.frequency_hz);
+        console.log('🎛️ Timer: Updating backend engine with base:', baseFreq, 'beat:', beatFreq);
         (audioEngine as any).updateSettings({
-          base_frequency: currentTransition.left_ear_hz,
-          beat_frequency: currentTransition.frequency_hz
+          base_frequency: baseFreq,  // 🔥 FIXED: Use calculated minimum frequency as carrier
+          beat_frequency: beatFreq   // 🔥 FIXED: Use calculated beat frequency
         });
       } else if (audioEngine.updateFrequency) {
         // Frontend engine - use left/right model
@@ -335,9 +340,14 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
         // Convert timer frequencies to proper format for BOTH engines
         // Backend engine expects: { base_frequency, beat_frequency }
         // Frontend engine expects: { base_frequency, beat_frequency } (same now!)
+
+        // 🔥 FIXED: Calculate correct base_frequency (must be the LOWER of the two frequencies)
+        const baseFreq = Math.min(firstTransition.left_ear_hz, firstTransition.right_ear_hz);
+        const beatFreq = Math.abs(firstTransition.right_ear_hz - firstTransition.left_ear_hz);
+
         const config = {
-          base_frequency: firstTransition.left_ear_hz,
-          beat_frequency: firstTransition.frequency_hz,
+          base_frequency: baseFreq,   // 🔥 FIXED: Use calculated minimum frequency as carrier
+          beat_frequency: beatFreq,   // 🔥 FIXED: Use calculated beat frequency
           amplitude: DEFAULT_VOLUME,
           waveform: 'sine' as const,
         };

@@ -1,0 +1,17 @@
+"""
+Pytest configuration for backend tests
+Adds the backend directory to the Python path
+"""
+
+import sys
+import os
+from pathlib import Path
+
+# Add backend directory to Python path
+backend_dir = Path(__file__).parent
+if str(backend_dir) not in sys.path:
+    sys.path.insert(0, str(backend_dir))
+
+# Print for debugging
+print(f"Added to Python path: {backend_dir}")
+print(f"Current sys.path: {sys.path[:3]}...")

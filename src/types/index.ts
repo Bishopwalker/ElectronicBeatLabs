@@ -261,7 +261,7 @@ export interface VisualizationSettings {
  * Timer session information
  */
 export interface TimerSession {
-    presetId?: TimerPreset;
+    presetId?: string; // 🔥 FIXED: Should be preset ID string, not TimerPreset object
     startTime: number;
     currentPhase: number;
     isPaused: boolean;
@@ -508,7 +508,7 @@ export interface TimerPreset {
     loop_transitions?: number[];
     pattern_id?: string;
     difficulty_level?: 'beginner' | 'intermediate' | 'advanced' | 'expert';
-    transitions?: FrequencyTransition; // Will be properly typed when needed
+    transitions?: FrequencyTransition[]; // 🔥 FIXED: Array of transitions, not single transition
     spatial_config?: SpatialAudioConfig;
     status?: TimerStatus;
 }
@@ -521,7 +521,7 @@ export interface FrequencyTransition {
     right_ear_hz: number;
     description: string;
     pattern?: string;
-    spatial_settings?: ActiveAudioStatus; // Will be SpatialAudioConfig when needed
+    spatial_settings?: SpatialAudioConfig; // 🔥 FIXED: Should be SpatialAudioConfig, not ActiveAudioStatus
 }
 
 
