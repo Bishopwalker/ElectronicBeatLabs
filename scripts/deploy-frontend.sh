@@ -16,17 +16,17 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-echo -e "${GREEN}🚀 Deploying Frontend to ${ENVIRONMENT}${NC}"
+echo -e "${GREEN} Deploying Frontend to ${ENVIRONMENT}${NC}"
 
 # Check AWS CLI is installed
 if ! command -v aws &> /dev/null; then
-    echo -e "${RED}❌ AWS CLI is not installed${NC}"
+    echo -e "${RED}AWS CLI is not installed${NC}"
     exit 1
 fi
 
 # Check if logged in to AWS
 if ! aws sts get-caller-identity &> /dev/null; then
-    echo -e "${RED}❌ Not logged in to AWS. Please run 'aws configure'${NC}"
+    echo -e "${RED} Not logged in to AWS. Please run 'aws configure'${NC}"
     exit 1
 fi
 
@@ -36,12 +36,12 @@ npm run build
 
 # Check if build was successful
 if [ ! -d "dist" ]; then
-    echo -e "${RED}❌ Build failed - dist directory not found${NC}"
+    echo -e "${RED} Build failed - dist directory not found${NC}"
     exit 1
 fi
 
 # Deploy CloudFormation stack if it doesn't exist
-echo -e "${YELLOW}☁️ Checking CloudFormation stack...${NC}"
+echo -e "${YELLOW}☁ Checking CloudFormation stack...${NC}"
 if ! aws cloudformation describe-stacks --stack-name "$STACK_NAME" --region "$AWS_REGION" &> /dev/null; then
     echo -e "${YELLOW}Creating CloudFormation stack...${NC}"
     aws cloudformation create-stack \

@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Box, Typography, Paper, Chip, LinearProgress, Grid } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { useAudioAnalysis } from '../hooks/useAudioAnalysis';
+import { useAudioAnalysis, useTimerLogic } from '../hooks/index.ts';
 import type { AppState} from '../types';
 
 interface FrequencyVisualizerProps {
@@ -70,10 +70,10 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
   const [canvasDimensions, setCanvasDimensions] = useState({ width: 800, height: 300 });
    // Deconstruct from state
   const {
-    base_frequency = 0,
-    beat_frequency = 0,
-    isPlaying = false,
-    patterns8D = [],
+    base_frequency,
+    beat_frequency,
+    isPlaying,
+    patterns8D,
     timer,
     electromagnetic
   } = state;
@@ -93,30 +93,31 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
     audioContext,
     analyserNode
   });
-
+const timerInfo = useTimerLogic({audioEngine:state,
+});
   // Timer info display
-  const getTimerInfo = () => {
-    if (!timer?.status) return null;
+  // const getTimerInfo = () => {
+  //   if (!timer?.status) return null;
+  //
+  //   const { session, isRunning } = timer.status;
+  //   const currentStepIndex = session?.current_transition_index;
+  //   const transitions = timer.transitions;
+  //
+  //   if (!isRunning || currentStepIndex === undefined || !transitions) return null;
+  //
+  //   const currentStep = transitions[currentStepIndex];
+  //   if (!currentStep) return null;
+  //
+  //   return {
+  //     stepName: currentStep.description || `Step ${currentStepIndex + 1}`,
+  //     stepIndex: currentStepIndex + 1,
+  //     totalSteps: transitions.length,
+  //     targetFreq: currentStep.frequency_hz,
+  //     remainingTime: timer.status.time_remaining_current || 0
+  //   };
+  // };
 
-    const { session, isRunning } = timer.status;
-    const currentStepIndex = session?.current_transition_index;
-    const transitions = timer.transitions;
-
-    if (!isRunning || currentStepIndex === undefined || !transitions) return null;
-
-    const currentStep = transitions[currentStepIndex];
-    if (!currentStep) return null;
-
-    return {
-      stepName: currentStep.description || `Step ${currentStepIndex + 1}`,
-      stepIndex: currentStepIndex + 1,
-      totalSteps: transitions.length,
-      targetFreq: currentStep.frequency_hz,
-      remainingTime: timer.status.time_remaining_current || 0
-    };
-  };
-
-  const timerInfo = getTimerInfo();
+  //const timerInfo = getTimerInfo();
 
   // 🔥 FIXED: Better responsive canvas sizing
   useEffect(() => {
