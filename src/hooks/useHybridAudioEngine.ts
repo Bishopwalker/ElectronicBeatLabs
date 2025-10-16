@@ -29,7 +29,13 @@ import { useAudioEngine } from './useAudioEngine';
 import { useBackendAudioEngine } from './useBackendAudioEngine';
 import { AudioMixer } from '../utils/AudioMixer';
 import type { BinauralBeatConfig, PatternConfig } from '../types';
-import { DEFAULT_VOLUME } from '../constants/audio.constants';
+import { 
+  DEFAULT_VOLUME,
+  DEFAULT_LEFT_FREQUENCY,
+  DEFAULT_RIGHT_FREQUENCY,
+  DEFAULT_BEAT_FREQUENCY,
+  DEFAULT_BASE_FREQUENCY
+} from '../constants/audio.constants';
 
 export const useHybridAudioEngine = () => {
   // Initialize both engines (will be routed through mixer after mixer is created)
@@ -117,7 +123,7 @@ export const useHybridAudioEngine = () => {
       setCurrentEngine('frontend');
     }
 
-    previousBackendConnected.current = backendNowConnected;
+    previousBackendConnected.current as unknown as String ;
   }, [backendEngine.backendConnected, backendEngine.sessionId]);
 
   /**

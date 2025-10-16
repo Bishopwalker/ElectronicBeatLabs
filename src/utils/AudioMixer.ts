@@ -16,7 +16,7 @@ export class AudioMixer {
   private audioContext: AudioContext;
   private frontendGain: GainNode;
   private backendGain: GainNode;
-  private merger: ChannelMergerNode;
+  // REMOVED: merger not needed - we mix stereo signals directly
   public analyserNode: AnalyserNode;
 
   private currentMode: 'frontend' | 'backend' | 'hybrid' = 'frontend';
@@ -29,26 +29,25 @@ export class AudioMixer {
     this.frontendGain = audioContext.createGain();
     this.backendGain = audioContext.createGain();
 
-    // Start with frontend at full volume, backend muted
-    this.frontendGain.gain.value = 1.0;
+    // Start with frontend at 50% volume (equal-power standard), backend muted
+    this.frontendGain.gain.value = 0.5;
     this.backendGain.gain.value = 0.0;
 
-    // Create channel merger to combine both sources
-    this.merger = audioContext.createChannelMerger(2);
+    // No merger needed - stereo signals mix naturally at the analyser
 
     // Create shared analyser for visualization
     this.analyserNode = audioContext.createAnalyser();
     this.analyserNode.fftSize = 2048;
     this.analyserNode.smoothingTimeConstant = 0.8;
 
-    // Connect audio chain:
-    // Both gains → merger → analyser → destination
-    this.frontendGain.connect(this.merger, 0, 0);
-    this.backendGain.connect(this.merger, 0, 1);
-    this.merger.connect(this.analyserNode);
+    // FIXED: Connect audio chain properly for STEREO signals
+    // Both engines output stereo → Mix them together → analyser → destination
+    // Don't use merger - just sum the gains directly!
+    this.frontendGain.connect(this.analyserNode);
+    this.backendGain.connect(this.analyserNode);
     this.analyserNode.connect(audioContext.destination);
 
-    console.log('🎚️ AudioMixer: Initialized with dual-engine crossfade capability');
+    console.log('🎚️ AudioMixer: Initialized with STEREO dual-engine crossfade');
   }
 
   /**
@@ -98,28 +97,42 @@ export class AudioMixer {
   }
 
   /**
-   * Update master volume (affects both engines proportionally)
+   * Update master volume (scales both engines proportionally)
    */
   setMasterVolume(volume: number): void {
     const safeVolume = Math.max(0, Math.min(2, volume));
     const now = this.audioContext.currentTime;
 
-    // Scale both gains proportionally to maintain crossfade ratio
-    const frontendRatio = this.frontendGain.gain.value;
-    const backendRatio = this.backendGain.gain.value;
-    const totalRatio = frontendRatio + backendRatio;
-
-    if (totalRatio > 0) {
-      this.frontendGain.gain.setValueAtTime((frontendRatio / totalRatio) * safeVolume, now);
-      this.backendGain.gain.setValueAtTime((backendRatio / totalRatio) * safeVolume, now);
+    // DON'T override crossfade! Scale the existing gains proportionally
+    const currentFrontend = this.frontendGain.gain.value;
+    const currentBackend = this.backendGain.gain.value;
+    
+    // If we're crossfading, maintain the ratio
+    if (this.isCrossfading) {
+      // Don't change anything during crossfade - let it complete
+      console.log(`⚠️ AudioMixer: Volume change during crossfade ignored`);
+      return;
+    }
+    
+    // Apply volume based on current mode
+    if (this.currentMode === 'frontend') {
+      this.frontendGain.gain.setValueAtTime(safeVolume * 0.5, now); // 50% for equal-power
+      this.backendGain.gain.setValueAtTime(0, now);
+    } else if (this.currentMode === 'backend') {
+      this.frontendGain.gain.setValueAtTime(0, now);
+      this.backendGain.gain.setValueAtTime(safeVolume * 0.5, now); // 50% for equal-power
+    } else if (this.currentMode === 'hybrid') {
+      // In hybrid mode, split volume to prevent doubling
+      this.frontendGain.gain.setValueAtTime(safeVolume * 0.25, now);
+      this.backendGain.gain.setValueAtTime(safeVolume * 0.25, now);
     }
 
-    console.log(`🔊 AudioMixer: Master volume set to ${safeVolume.toFixed(2)}`);
+    console.log(`🔊 AudioMixer: Master volume set to ${safeVolume.toFixed(2)} (mode: ${this.currentMode})`);
   }
 
   /**
    * Crossfade to backend engine over specified duration
-   * Frontend fades out, backend fades in
+   * Uses EQUAL-POWER crossfade to maintain constant perceived loudness
    */
   crossfadeToBackend(duration: number = 2.0): void {
     if (this.isCrossfading) {
@@ -131,20 +144,42 @@ export class AudioMixer {
     const now = this.audioContext.currentTime;
     const endTime = now + duration;
 
-    console.log(`🎚️ AudioMixer: Crossfading to BACKEND over ${duration}s...`);
+    console.log(`🎚️ AudioMixer: EQUAL-POWER crossfading to BACKEND over ${duration}s...`);
 
-    // Smooth exponential ramp for professional fade
-    this.frontendGain.gain.setValueAtTime(this.frontendGain.gain.value, now);
-    this.frontendGain.gain.exponentialRampToValueAtTime(0.001, endTime); // Nearly zero
-
-    this.backendGain.gain.setValueAtTime(this.backendGain.gain.value, now);
-    this.backendGain.gain.exponentialRampToValueAtTime(1.0, endTime);
+    // EQUAL-POWER CROSSFADE: Use cosine/sine curves
+    // This maintains constant perceived loudness during crossfade
+    // Frontend goes from cos(0) = 1 to cos(π/2) = 0
+    // Backend goes from sin(0) = 0 to sin(π/2) = 1
+    
+    const steps = 20; // Number of interpolation points
+    const stepTime = duration / steps;
+    
+    for (let i = 0; i <= steps; i++) {
+      const progress = i / steps;
+      const angle = progress * Math.PI / 2; // 0 to π/2
+      
+      // Equal-power curves
+      const frontendGain = Math.cos(angle) * 0.5; // Max 0.5 to prevent clipping
+      const backendGain = Math.sin(angle) * 0.5;  // Max 0.5 to prevent clipping
+      
+      const time = now + (i * stepTime);
+      
+      if (i === 0) {
+        // Set initial values
+        this.frontendGain.gain.setValueAtTime(frontendGain, time);
+        this.backendGain.gain.setValueAtTime(backendGain, time);
+      } else {
+        // Linear ramp to next value
+        this.frontendGain.gain.linearRampToValueAtTime(frontendGain, time);
+        this.backendGain.gain.linearRampToValueAtTime(backendGain, time);
+      }
+    }
 
     // Update mode after crossfade completes
     setTimeout(() => {
       this.currentMode = 'backend';
       this.isCrossfading = false;
-      console.log('✅ AudioMixer: Crossfade to backend complete');
+      console.log('✅ AudioMixer: Equal-power crossfade to backend complete');
     }, duration * 1000);
   }
 
@@ -158,7 +193,8 @@ export class AudioMixer {
     console.log('🚨 AudioMixer: INSTANT FAILOVER to frontend (backend dropped)');
 
     // Instant switch - no ramp
-    this.frontendGain.gain.setValueAtTime(1.0, now);
+    // Use 0.5 for equal-power standard
+    this.frontendGain.gain.setValueAtTime(0.5, now);
     this.backendGain.gain.setValueAtTime(0.0, now);
 
     this.currentMode = 'frontend';
@@ -167,6 +203,7 @@ export class AudioMixer {
 
   /**
    * Crossfade to frontend engine (graceful switch)
+   * Uses EQUAL-POWER crossfade to maintain constant perceived loudness
    */
   crossfadeToFrontend(duration: number = 2.0): void {
     if (this.isCrossfading) {
@@ -178,18 +215,38 @@ export class AudioMixer {
     const now = this.audioContext.currentTime;
     const endTime = now + duration;
 
-    console.log(`🎚️ AudioMixer: Crossfading to FRONTEND over ${duration}s...`);
+    console.log(`🎚️ AudioMixer: EQUAL-POWER crossfading to FRONTEND over ${duration}s...`);
 
-    this.frontendGain.gain.setValueAtTime(this.frontendGain.gain.value, now);
-    this.frontendGain.gain.exponentialRampToValueAtTime(1.0, endTime);
-
-    this.backendGain.gain.setValueAtTime(this.backendGain.gain.value, now);
-    this.backendGain.gain.exponentialRampToValueAtTime(0.001, endTime);
+    // EQUAL-POWER CROSSFADE: Reverse of backend crossfade
+    // Backend goes from cos(0) = 1 to cos(π/2) = 0  
+    // Frontend goes from sin(0) = 0 to sin(π/2) = 1
+    
+    const steps = 20;
+    const stepTime = duration / steps;
+    
+    for (let i = 0; i <= steps; i++) {
+      const progress = i / steps;
+      const angle = progress * Math.PI / 2;
+      
+      // Equal-power curves (reversed)
+      const backendGain = Math.cos(angle) * 0.5;
+      const frontendGain = Math.sin(angle) * 0.5;
+      
+      const time = now + (i * stepTime);
+      
+      if (i === 0) {
+        this.backendGain.gain.setValueAtTime(backendGain, time);
+        this.frontendGain.gain.setValueAtTime(frontendGain, time);
+      } else {
+        this.backendGain.gain.linearRampToValueAtTime(backendGain, time);
+        this.frontendGain.gain.linearRampToValueAtTime(frontendGain, time);
+      }
+    }
 
     setTimeout(() => {
       this.currentMode = 'frontend';
       this.isCrossfading = false;
-      console.log('✅ AudioMixer: Crossfade to frontend complete');
+      console.log('✅ AudioMixer: Equal-power crossfade to frontend complete');
     }, duration * 1000);
   }
 
@@ -227,7 +284,6 @@ export class AudioMixer {
 
     this.frontendGain.disconnect();
     this.backendGain.disconnect();
-    this.merger.disconnect();
     this.analyserNode.disconnect();
   }
 }

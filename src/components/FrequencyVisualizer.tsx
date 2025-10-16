@@ -56,19 +56,19 @@ const FrequencyDisplay = styled(Box)(({ theme }) => ({
 }));
 
 export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
-  state,
-  title = 'Binaural Beat Frequency Visualizer',
-  showSpectrum = true,
-  showFrequencies = true,
-  showMetrics = true,
-  audioContext,
-  analyserNode,
-}) => {
+                                                                          state,
+                                                                          title = 'Binaural Beat Frequency Visualizer',
+                                                                          showSpectrum = true,
+                                                                          showFrequencies = true,
+                                                                          showMetrics = true,
+                                                                          audioContext,
+                                                                          analyserNode,
+                                                                        }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [fps, setFps] = useState(0);
   const [canvasDimensions, setCanvasDimensions] = useState({ width: 800, height: 300 });
-   // Deconstruct from state
+  // Deconstruct from state
   const {
     base_frequency,
     beat_frequency,
@@ -128,7 +128,7 @@ const timerInfo = useTimerLogic({audioEngine:state,
         const rect = containerRef.current.getBoundingClientRect();
         const width = rect.width || 800;
         const height = rect.height || 300;
-        
+
         setCanvasDimensions({
           width: Math.max(width, 400), // Minimum 400px width
           height: Math.max(height, 200) // Minimum 200px height
@@ -257,12 +257,12 @@ const timerInfo = useTimerLogic({audioEngine:state,
         if (analyserNode && frequencyData.length > 0 && showSpectrum) {
           const barWidth = canvas.width / 64;
           const maxBarHeight = canvas.height * 0.2;
-          
+
           for (let i = 0; i < 64; i++) {
             const barHeight = (frequencyData[i] / 255) * maxBarHeight;
             const x = i * barWidth;
             const y = 10;
-            
+
             // Color based on frequency and electromagnetic coherence
             const hue = (i / 64) * 240 + (fieldCoherence * 60);
             const intensity = 0.4 + (fieldStrength * 0.4);
@@ -275,16 +275,16 @@ const timerInfo = useTimerLogic({audioEngine:state,
         if (electromagnetic && fieldStrength > 0.1) {
           const fieldRadius = 60 + (fieldStrength * 40);
           const numRings = 5;
-          
+
           for (let ring = 0; ring < numRings; ring++) {
             const progress = ring / numRings;
             const radius = fieldRadius * (1 - progress);
             const alpha = (1 - progress) * fieldStrength * 0.5;
-            
+
             const angle = time * fieldFrequency * 0.1 + (ring * Math.PI / numRings);
             const offsetX = Math.cos(angle) * 10;
             const offsetY = Math.sin(angle) * 10;
-            
+
             ctx.beginPath();
             ctx.arc(centerX + offsetX, centerY + offsetY, radius, 0, 2 * Math.PI);
             ctx.strokeStyle = `hsla(${180 + fieldCoherence * 60}, 80%, 60%, ${alpha})`;
