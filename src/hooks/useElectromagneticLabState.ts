@@ -98,12 +98,12 @@ export const useElectromagneticLabState = (initialPattern?: string, autoStart: b
         state.appState.volume
       );
 
-      setState(prev => ({
+      setState((prev:AppState => ({
         ...prev,
         appState: {
           ...prev.appState,
           electromagnetic: immediateElectromagnetic,
-          frequency: frequency
+          frequency: parseFloat(frequency)
         }
       }));
 

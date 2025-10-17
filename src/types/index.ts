@@ -365,7 +365,8 @@ export interface AppState {
     youtube: YouTubeIntegration;
     frequency: FrequencyAnalysis;
     adhd: ADHDProtocol | null;
-
+    frequencyRange: FrequencyRange;
+    waveGuide: WaveGuideConfig;
     // UI State
     activeTab: string;
     loading?: boolean;
@@ -373,6 +374,9 @@ export interface AppState {
     hideSession?: boolean;
 
     // WebSocket
+    websocketState?: WebSocketState;
+    webSocket?: WebSocket | null;
+    webSocketError?: string | null;
     isWebSocketConnected?: boolean;
 
     // Misc
@@ -388,6 +392,22 @@ export interface AppState {
     patterns8DControl?: {
         setActivePattern: (pattern: PatternConfig) => void;
         clearActivePattern: () => void;
+    };
+    starFieldControl?: {
+        setDensity: (density: number) => void;
+        setSpeed: (speed: number) => void;
+        setColor: (color: string) => void;
+        setTwinkle: (twinkle: boolean) => void;
+    };
+    spatialVisualizerControl?: {
+        setGridSize: (gridSize: number) => void;
+        setOpacity: (opacity: number) => void;
+        setColor: (color: string) => void;
+        setAnimation: (animation: boolean) => void;
+    };
+    frequencyDisplayControl?: {
+        setFrequency: (frequency: number) => void;
+        setRange: (range: FrequencyRange) => void;
     };
 }
 
@@ -540,7 +560,7 @@ export interface BinauralTestProps {
 }
 
 // LocalAudio - The Father Type
-export * from './localaudio.types';
+export * from './audio.types';
 
 // ============================================
 // EQUALIZER TYPES - Audio EQ System

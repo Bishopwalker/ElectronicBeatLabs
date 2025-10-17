@@ -512,8 +512,9 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
       {/* Timer Countdown Display - Positioned above layout */}
       {timerStatus && (
         <Box sx={{
-          p: { xs: '5px', sm: '8px', md: '10px' },
-          pt: 0
+          p: { xs: '10px', sm: '15px', md: '20px' },  // ✅ INCREASED: More padding all around
+          pt: 3,  // ✅ CHANGED: Added top padding (was 0) to separate from header
+          pb: 3   // ✅ ADDED: Bottom padding to separate from EQ
         }}>
           <TimerCountdownDisplay
             timerStatus={timerStatus}

@@ -271,7 +271,7 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
     );
   }, [equalizerState.enabled, handleBandChange, getSliderColor, eqFullscreen]);
 
-  // Memoize preset buttons
+  // Memoize preset buttons - COMPACT 2-COLUMN LAYOUT
   const presetButtons = useMemo(() => {
     return Object.entries(EQ_PRESETS).map(([key, preset]) => (
       <Tooltip key={key} title={preset.description} arrow placement="top">
@@ -280,10 +280,11 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
           size="small"
           onClick={() => handlePresetClick(key as keyof typeof EQ_PRESETS)}
           sx={{
-            fontSize: eqFullscreen ? '0.65rem' : '0.5rem',
-            py: eqFullscreen ? 0.5 : 0.25,
-            px: eqFullscreen ? 1 : 0.5,
+            fontSize: eqFullscreen ? '0.55rem' : '0.45rem',  // ✅ SMALLER: reduced from 0.65/0.5
+            py: eqFullscreen ? 0.3 : 0.2,                     // ✅ SMALLER: reduced from 0.5/0.25
+            px: eqFullscreen ? 0.75 : 0.4,                    // ✅ SMALLER: reduced from 1/0.5
             minWidth: 'unset',
+            minHeight: eqFullscreen ? '24px' : '20px',        // ✅ ADDED: fixed compact height
             color: equalizerState.preset === key ? 'white' : '#00bfff',
             borderColor: '#00bfff',
             bgcolor: equalizerState.preset === key ? '#00bfff' : 'transparent',
@@ -303,9 +304,8 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
       height: '100%',
       display: 'flex',
       flexDirection: 'column',
-        wrap: "wrap",
-        overflow: "scroll",
-        width: '40%'
+      width: '98%',  // ✅ INCREASED: from 95% for even better visibility
+      mx: 'auto'
     }}>
       {/* Audio Context Warning Overlay */}
       {showAudioWarning && (
@@ -469,11 +469,12 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
           minHeight: 0
         }}>
           
-          {/* Presets grid */}
+          {/* Presets grid - ✅ COMPACT 2-COLUMN LAYOUT */}
           <Box sx={{ 
             display: 'grid', 
-            gridTemplateColumns: eqFullscreen ? 'repeat(4, 1fr)' : 'repeat(4, 1fr)', 
-            gap: eqFullscreen ? 1 : 0.5
+            gridTemplateColumns: eqFullscreen ? 'repeat(2, 1fr)' : 'repeat(2, 1fr)',  // ✅ CHANGED: from 4 columns to 2
+            gap: eqFullscreen ? 0.75 : 0.4,                                          // ✅ REDUCED: from 1/0.5 to 0.75/0.4
+            maxWidth: eqFullscreen ? '250px' : '180px'                               // ✅ ADDED: limit width to use less space
           }}>
             {presetButtons}
           </Box>

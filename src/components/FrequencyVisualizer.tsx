@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Box, Typography, Paper, Chip, LinearProgress, Grid } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { useAudioAnalysis, useTimerLogic } from '../hooks/index.ts';
+import { useAudioAnalysis } from '../hooks/index.ts';
 import type { AppState} from '../types';
 
 interface FrequencyVisualizerProps {
@@ -18,10 +18,10 @@ interface FrequencyVisualizerProps {
 
 // 🔥 FIXED: Made container flexible for embedding
 const VisualizerContainer = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(2),
+  padding: theme.spacing(1), // 🔥 FIXED: Reduced from 2 to 1 for tighter fit
   background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)',
   border: '1px solid rgba(255, 255, 255, 0.1)',
-  borderRadius: theme.spacing(2),
+  borderRadius: theme.spacing(1), // 🔥 FIXED: Reduced from 2 to 1
   height: '100%', // 🔥 FIXED: Was '400px', now flexible
   minHeight: '250px', // Minimum usable height
   display: 'flex',
@@ -66,8 +66,10 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
                                                                         }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [fps, setFps] = useState(0);
+  const fpsRef = useRef<number>(0); // 🔥 FIXED: Use ref instead of state to avoid re-renders
+  const [fps, setFps] = useState(0); // 🔥 FIXED: State for UI display only, updated from ref
   const [canvasDimensions, setCanvasDimensions] = useState({ width: 800, height: 300 });
+  const dimensionsRef = useRef(canvasDimensions); // 🔥 FIXED: Ref for animation access
   // Deconstruct from state
   const {
     base_frequency,
@@ -93,8 +95,6 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
     audioContext,
     analyserNode
   });
-const timerInfo = useTimerLogic({audioEngine:state,
-});
   // Timer info display
   // const getTimerInfo = () => {
   //   if (!timer?.status) return null;
@@ -119,20 +119,47 @@ const timerInfo = useTimerLogic({audioEngine:state,
 
   //const timerInfo = getTimerInfo();
 
-  // 🔥 FIXED: Better responsive canvas sizing
+  // 🔥 FIXED: Update dimensionsRef when canvasDimensions changes
+  useEffect(() => {
+    dimensionsRef.current = canvasDimensions;
+  }, [canvasDimensions]);
+
+  // 🔥 FIXED: Update FPS display from ref (separate from animation to avoid re-renders)
+  useEffect(() => {
+    if (!isPlaying) return;
+
+    const fpsUpdateInterval = setInterval(() => {
+      setFps(fpsRef.current);
+    }, 1000); // Update UI every second
+
+    return () => clearInterval(fpsUpdateInterval);
+  }, [isPlaying]);
+
+  // 🔥 FIXED: Throttled responsive canvas sizing (prevents resize loops)
   useEffect(() => {
     if (!containerRef.current) return;
+
+    let resizeTimeout: NodeJS.Timeout | null = null;
+    let lastWidth = 0;
+    let lastHeight = 0;
 
     const updateDimensions = () => {
       if (containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
-        const width = rect.width || 800;
-        const height = rect.height || 300;
+        const width = Math.max(Math.floor(rect.width) || 800, 400);
+        const height = Math.max(Math.floor(rect.height) || 300, 200);
 
-        setCanvasDimensions({
-          width: Math.max(width, 400), // Minimum 400px width
-          height: Math.max(height, 200) // Minimum 200px height
-        });
+        // 🔥 CRITICAL: Only update if size actually changed significantly (>5px)
+        if (Math.abs(width - lastWidth) > 5 || Math.abs(height - lastHeight) > 5) {
+          lastWidth = width;
+          lastHeight = height;
+
+          // 🔥 Throttle updates to prevent rapid-fire resize loops
+          if (resizeTimeout) clearTimeout(resizeTimeout);
+          resizeTimeout = setTimeout(() => {
+            setCanvasDimensions({ width, height });
+          }, 150); // 150ms debounce
+        }
       }
     };
 
@@ -142,6 +169,7 @@ const timerInfo = useTimerLogic({audioEngine:state,
     window.addEventListener('resize', updateDimensions);
 
     return () => {
+      if (resizeTimeout) clearTimeout(resizeTimeout);
       resizeObserver.disconnect();
       window.removeEventListener('resize', updateDimensions);
     };
@@ -188,11 +216,11 @@ const timerInfo = useTimerLogic({audioEngine:state,
       if (elapsed >= frameInterval) {
         lastFrameTime = timestamp - (elapsed % frameInterval);
 
-        // FPS calculation
+        // 🔥 FIXED: FPS calculation (use ref to avoid re-renders)
         frameCount++;
         fpsTime += elapsed;
         if (fpsTime >= 1000) {
-          setFps(Math.round((frameCount * 1000) / fpsTime));
+          fpsRef.current = Math.round((frameCount * 1000) / fpsTime);
           frameCount = 0;
           fpsTime = 0;
         }
@@ -328,7 +356,8 @@ const timerInfo = useTimerLogic({audioEngine:state,
     return () => {
       cancelAnimationFrame(animationId);
     };
-  }, [isPlaying, leftFreq, rightFreq, beatFreq, activePattern, analyserNode, electromagnetic, showSpectrum, canvasDimensions]);
+  }, [isPlaying, leftFreq, rightFreq, beatFreq, activePattern, analyserNode, electromagnetic, showSpectrum]);
+  // 🔥 CRITICAL: canvasDimensions removed from deps - animation uses current canvas.width/height directly!
 
   return (
     <VisualizerContainer elevation={10}>

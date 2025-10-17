@@ -251,29 +251,30 @@ export const ElectromagneticLabStyles = {
 
   // Panel flex styles
   panelFlex: {
-    flex: '1 1 auto',  // Changed - grow and shrink, 300px base
+    flex: '1 1 300px',  // ✅ FIXED: proper flex-basis for predictable sizing
     minWidth: '280px',
-    maxWidth: '100%',  // Remove hard max limit
+    maxWidth: '100%',
     height: 'auto',
-    maxHeight: '100vh',  // Max 50% viewport height
+    maxHeight: '70vh',  // ✅ FIXED: reduced from 100vh to prevent overflow
     minHeight: 'fit-content',
     display: 'flex',
-    flexWrap: 'wrap',
-    flexDirection: 'column',
-    overflowY: 'auto'  // Scroll when content exceeds 50vh
+    flexDirection: 'column',  // ✅ flexWrap removed - not needed for column layout
+    overflowY: 'auto',
+    overflowX: 'hidden'
   } as SxProps<Theme>,
 
   // Wide panel flex (for binaural and visualization)
   widePanelFlex: {
-    flex: '2 1 auto',  // Changed - grow more (2x), 400px base
+    flex: '2 1 400px',  // ✅ FIXED: proper flex-basis for 2x growth ratio
     minWidth: '320px',
-    maxWidth: '100%',  // Remove hard max limit
+    maxWidth: '100%',
     height: 'auto',
-    maxHeight: '70vh',  // Max 50% viewport height
+    maxHeight: '70vh',
     minHeight: 'fit-content',
     display: 'flex',
     flexDirection: 'column',
-    overflowY: 'auto'  // Scroll when content exceeds 50vh
+    overflowY: 'auto',
+    overflowX: 'hidden'
   } as SxProps<Theme>,
 
   // Equalizer panel flex - ORIGINAL (vertical layout)
@@ -296,23 +297,31 @@ export const ElectromagneticLabStyles = {
     flexDirection: 'column'
   } as SxProps<Theme>,
 
-  // Equalizer panel flex HORIZONTAL - Takes full width horizontally
+  // Equalizer panel flex HORIZONTAL - Flexes to available space
   equalizerPanelFlexHorizontal: {
-    flex: '0 0 100%',  // No grow/shrink - always full width
-    width: '100%',
-    minWidth: '100%',
-    maxWidth: '100%',
+    flex: '1 1 auto',    // ✅ FIXED: grow/shrink to available space (was '0 0 100%' forcing full width!)
+    width: 'auto',       // ✅ FIXED: auto width (was '100%')
+    minWidth: '600px',   // ✅ ADDED: minimum width to show sliders + presets
+    maxWidth: '100%',    // ✅ Can't exceed container
     height: 'auto',
-    minHeight: '200px',  // Reduced from 250px
-    maxHeight: '40vh',  // Reduced from 50vh for more compact
+    minHeight: '240px',
+    maxHeight: '50vh',
     display: 'flex',
     flexDirection: 'column',
-    order: -1,  // Make it appear first in flex order
-    mb: 1.5,  // Reduced margin
+    order: -1,
+    mb: 4,
+    mt: 2,
     position: 'relative',
-    zIndex: 10,  // Ensure it's above other components
-    overflowY: 'auto',  // Make it scrollable
-    overflowX: 'hidden'
+    zIndex: 10,
+    overflowY: 'auto',
+    overflowX: 'hidden',
+    resize: 'both',      // ✅ CHANGED: allow both vertical AND horizontal resize
+    '&::-webkit-resizer': {
+      background: 'linear-gradient(135deg, transparent 50%, rgba(138, 43, 226, 0.5) 50%)',
+      border: '2px solid rgba(138, 43, 226, 0.3)',
+      borderRadius: '0 0 4px 0',
+      cursor: 'nwse-resize'  // ✅ CHANGED: diagonal resize cursor
+    }
   } as SxProps<Theme>,
 
   // Visualization paper

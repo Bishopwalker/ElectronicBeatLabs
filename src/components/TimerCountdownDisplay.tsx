@@ -2,13 +2,15 @@
 // Shows prominent countdown for active timer sessions
 
 import React, {useState,useEffect,useMemo} from 'react';
-import {Box, Typography, Paper, LinearProgress, Chip, IconButton, Tooltip} from '@mui/material';
+import {Box, Typography, Paper, LinearProgress, Chip, IconButton, Tooltip, Collapse} from '@mui/material';
 import TimerIcon from '@mui/icons-material/Timer';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import SkipPreviousIcon from '@mui/icons-material/SkipPrevious';
 import SkipNextIcon from '@mui/icons-material/SkipNext';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import FullscreenIcon from '@mui/icons-material/Fullscreen';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import type {TimerPreset, TimerStatus} from '../data/timer';
 import type {AppState} from "../types";
 import { FrequencyVisualizer } from './FrequencyVisualizer';
@@ -45,6 +47,8 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
                                                                      }) => {
     // State for fullscreen visualizer toggle
     const [isVisualizerFullscreen, setIsVisualizerFullscreen] = useState(false);
+    // 🔥 NEW: State for collapsing the visualizer
+    const [isVisualizerCollapsed, setIsVisualizerCollapsed] = useState(false);
 
     // Show countdown if timer is running OR if session is active
     const shouldShow = isVisible && timerStatus && (
@@ -108,7 +112,7 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
     const visualizerState = useMemo(() => ({
         ...appState,
         base_frequency: currentTransition?.frequency_hz || DEFAULT_BASE_FREQUENCY,
-        beat_frequency: (currentTransition?.right_ear_hz || 0) - (currentTransition?.left_ear_hz || 0) || DEFAULT_BEAT_FREQUENCY,
+        beat_frequency: (currentTransition?.right_ear_hz || DEFAULT_BASE_FREQUENCY) - (currentTransition?.left_ear_hz || DEFAULT_BEAT_FREQUENCY) || DEFAULT_BEAT_FREQUENCY,
         isPlaying: isAudioActuallyPlaying, // 🔥 FIXED: Use real audio state
         patterns8D: [],
         timer: timerStatus,
@@ -127,40 +131,43 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
             key={timeKey}
             elevation={3}
             sx={{
-                p: 1.5,
+                p: 2,  // ✅ REDUCED: from 3 to 2 - less padding eating space
+                paddingBlock: 2,  // ✅ REDUCED: from 4 to 2 for more room
                 background: 'linear-gradient(45deg, rgba(255, 107, 0, 0.1), rgba(138, 43, 226, 0.1))',
                 border: '1px solid',
                 borderColor: '#ff6b00',
                 borderRadius: 1,
-                position: 'relative',
-                overflow: 'hidden',
+                position: 'sticky',
+                overflow: 'visible',  // ✅ CHANGED: from 'auto' - don't hide content!
                 width: '100%',
+                mb: 3,
+                boxShadow: '0 4px 20px rgba(255, 107, 0, 0.3)',
                 '&::before': {
                     content: '""',
-                    position: 'absolute',
-                    top: 0,
+                     top: 0,
                     left: 0,
                     right: 0,
                     bottom: 0,
                     background: 'linear-gradient(45deg, rgba(255, 107, 0, 0.05), rgba(138, 43, 226, 0.05))',
-                    animation: 'pulse 3s ease-in-out infinite',
-                }
+                 }
             }}
         >
-            {/* 🔥 FIXED: Proper 50/50 Horizontal Layout */}
+            {/* 🔥 FIXED: Proper 50/50 Horizontal Layout - Full Height */}
             <Box sx={{
                 position: 'relative',
                 zIndex: 1,
                 display: 'flex',
-                gap: 2,
+                gap: 1,  // ✅ REDUCED: from 2 to 1 - less space between sections
                 alignItems: 'stretch',
                 width: '100%',
-                minHeight: '300px'
+                minHeight: '350px',  // ✅ INCREASED: from 200px for full visualizer
+                height: 'auto',      // ✅ allows natural expansion
             }}>
                 {/* LEFT SIDE: Timer Section - 50% Width */}
                 <Box sx={{
                     flex: '1 1 50%',
                     display: 'flex',
+                    height: 'fit-content',
                     flexDirection: 'column',
                     justifyContent: 'space-between'
                 }}>
@@ -326,15 +333,21 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
                     bgcolor: 'rgba(0, 0, 0, 0.3)',
                     borderRadius: 1,
                     border: '1px solid rgba(138, 43, 226, 0.3)',
-                    overflow: 'hidden'
+                    overflow: 'visible',  // ✅ CHANGED: from 'hidden' - don't cut off content!
+                    minHeight: isVisualizerCollapsed ? 'auto' : '350px',  // ✅ INCREASED: for full visibility
+                    height: 'auto',  // ✅ ADDED: allows natural height
+                    p: 0.5,  // ✅ REDUCED: minimal padding so visualizer fits
+                    m: 0     // ✅ REMOVED: no external margin cutting into space
                 }}>
                     {/* Visualizer Header */}
                     <Box sx={{
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
-                        p: 1,
-                        borderBottom: '1px solid rgba(138, 43, 226, 0.3)'
+                        p: 0.5,  // ✅ REDUCED: from 0.75 to 0.5 - less space taken
+                        borderBottom: isVisualizerCollapsed ? 'none' : '1px solid rgba(138, 43, 226, 0.3)',
+                        flexShrink: 0,
+                        minHeight: '32px'  // ✅ ADDED: fixed minimal header height
                     }}>
                         <Typography variant="caption" sx={{
                             fontSize: '0.8rem',
@@ -343,32 +356,61 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
                         }}>
                             📊 Live Frequency Visualization
                         </Typography>
-                        <IconButton
-                            size="small"
-                            onClick={() => setIsVisualizerFullscreen(true)}
-                            sx={{
-                                color: '#8a2be2',
-                                p: 0.25,
-                                '&:hover': { bgcolor: 'rgba(138, 43, 226, 0.2)' }
-                            }}
-                            title="Expand to fullscreen"
-                        >
-                            <FullscreenIcon sx={{ fontSize: '1.1rem' }} />
-                        </IconButton>
+                        <Box sx={{ display: 'flex', gap: 0.5 }}>
+                            <Tooltip title={isVisualizerCollapsed ? "Expand visualizer" : "Collapse visualizer"}>
+                                <IconButton
+                                    size="small"
+                                    onClick={() => setIsVisualizerCollapsed(!isVisualizerCollapsed)}
+                                    sx={{
+                                        color: '#8a2be2',
+                                        p: 0.25,
+                                        '&:hover': { bgcolor: 'rgba(138, 43, 226, 0.2)' }
+                                    }}
+                                >
+                                    {isVisualizerCollapsed ?
+                                        <ExpandMoreIcon sx={{ fontSize: '1.1rem' }} /> :
+                                        <ExpandLessIcon sx={{ fontSize: '1.1rem' }} />
+                                    }
+                                </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Expand to fullscreen">
+                                <IconButton
+                                    size="small"
+                                    onClick={() => setIsVisualizerFullscreen(true)}
+                                    sx={{
+                                        color: '#8a2be2',
+                                        p: 0.25,
+                                        '&:hover': { bgcolor: 'rgba(138, 43, 226, 0.2)' }
+                                    }}
+                                >
+                                    <FullscreenIcon sx={{ fontSize: '1.1rem' }} />
+                                </IconButton>
+                            </Tooltip>
+                        </Box>
                     </Box>
-                    
-                    {/* 🔥 FIXED: Visualizer takes full space */}
-                    <Box sx={{ flex: 1, minHeight: 0, display: 'flex' }}>
-                        <FrequencyVisualizer
-                            state={visualizerState}
-                            audioContext={audioContext}
-                            analyserNode={analyserNode}
-                            title=""
-                            showSpectrum={true}
-                            showFrequencies={true}
-                            showMetrics={false}
-                        />
-                    </Box>
+
+                    {/* 🔥 FIXED: Visualizer fills complete height of box */}
+                    <Collapse in={!isVisualizerCollapsed} timeout="auto" unmountOnExit>
+                        <Box sx={{
+                            flex: 1,
+                            minHeight: '300px',  // ✅ INCREASED: minimum height for full visibility
+                            height: '100%',      // ✅ ADDED: fills parent height
+                            display: 'flex',
+                            overflow: 'visible', // ✅ CHANGED: don't hide content!
+                            p: 0,               // ✅ REMOVED: no padding cutting into visualizer space
+                            m: 0                // ✅ REMOVED: no margin
+                        }}>
+                            <FrequencyVisualizer
+                                state={visualizerState}
+                                audioContext={audioContext}
+                                analyserNode={analyserNode}
+                                title=""
+                                showSpectrum={true}
+                                showFrequencies={true}
+                                showMetrics={false}
+                            />
+                        </Box>
+                    </Collapse>
                 </Box>
             </Box>
 

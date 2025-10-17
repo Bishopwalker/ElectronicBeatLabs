@@ -10,27 +10,44 @@ import type {
   PatternConfig,
   ElectromagneticField,
   TimerPreset,
-  TimerStatus,
-  LocalTimer,
   FrequencyTransition,
   TimerAction,
   CustomPresetForm,
-  AnyAudioEngine
+  AnyAudioEngine,
+    LocalTimer,
+    TimerStatus
 } from "../types";
 import { useWebSocketContext } from './useWebsocketContext';
+import { AudioState } from './useAudioState';
 import { DEFAULT_VOLUME } from '../constants/audio.constants';
+
+/**
+ * Timer-only state (not audio/playback state which lives in AudioState)
+ */
+interface TimerOnlyState {
+  startTime: number;
+  currentTransitionIndex: number;
+  transitions: FrequencyTransition[];
+  isActive: boolean;
+  isPaused: boolean;
+  forceLoop?: boolean;
+}
 
 /**
  * Props for useTimerLogic hook - extracted from AppState
  */
 interface UseTimerLogicProps {
   audioEngine?: AnyAudioEngine;
+  audioState: AudioState;  // 🔥 NEW: Use centralized AudioState instead of local state
+  updateAudioState: {
+    updateFrequencies: (left: number, right: number) => void;
+    setPlaying: (playing: boolean) => void;
+  };
   patterns8DControl?: {
     setActivePattern: (pattern: PatternConfig) => void;
     clearActivePattern: () => void;
   };
   onElectromagneticUpdate?: (electromagnetic: ElectromagneticField) => void;
-  onTimerStatusUpdate?: (status: TimerStatus | null) => void;
 }
 
 export const useTimerLogic = (props: UseTimerLogicProps) => {
@@ -101,8 +118,7 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
     if (onElectromagneticUpdate) {
       onElectromagneticUpdate(electromagnetic);
     }
-  }, [onElectromagneticUpdate]);
- 2 
+  }, [onElectromagneticUpdate]); 
   // Save selected preset to localStorage whenever it changes
   useEffect(() => {
     if (selectedPresetId) {
@@ -452,13 +468,19 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
         }
       } else if (action === 'pause') {
         setLocalTimer({...localTimer!, isPaused: true});
-        sendTimerUpdate({ action: 'pause' });
+        sendTimerUpdate({
+          action: 'pause',
+          isRunning: false,
+          totalTime: 0,
+          progress: 0
+        });
       } else if (action === 'resume') {
         setLocalTimer({...localTimer!, isPaused: false});
-        sendTimerUpdate({ action: 'resume' });
+        sendTimerUpdate(({...timerStatus!,isRunning:true,totalTime:timerStatus!.totalTime,progress:timerStatus!.progress,isPaused:false}));
       } else if (action === 'restart') {
         if (audioEngine) {
-          await audioEngine.stopBinauralBeat();
+          audioEngine.stopBinauralBeat();
+
         }
 
         // Clear visualizer pattern temporarily
