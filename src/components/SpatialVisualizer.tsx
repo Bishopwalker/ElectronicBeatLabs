@@ -45,8 +45,9 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
     const centerY = height / 2;
     const time = timeRef.current;
 
-    // Clear canvas
-    ctx.clearRect(0, 0, width, height);
+    // Clear canvas with black background so we can see SOMETHING
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.95)';
+    ctx.fillRect(0, 0, width, height);
 
     // Set up electromagnetic field visualization
     ctx.save();
@@ -88,7 +89,16 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
     props: typeof patternProperties,
     time: number
   ) => {
-    if (!props) return;
+    if (!props) {
+      console.warn('⚠️ renderToroidalField: No pattern properties!');
+      // Draw a simple default visualization so something shows
+      ctx.strokeStyle = '#00ff88';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(0, 0, 100, 0, Math.PI * 2);
+      ctx.stroke();
+      return;
+    }
 
     const radius = 100;
     const fieldStrength = Math.max(0, Math.min(1, isFinite(field.strength) ? field.strength : 0));
@@ -488,10 +498,16 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
       timeRef.current = timestamp;
 
       const canvas = canvasRef.current;
-      if (!canvas) return;
+      if (!canvas) {
+        console.error('❌ SpatialVisualizer animate: No canvas!');
+        return;
+      }
 
       const ctx = canvas.getContext('2d');
-      if (!ctx) return;
+      if (!ctx) {
+        console.error('❌ SpatialVisualizer animate: No context!');
+        return;
+      }
 
       renderPattern(ctx, canvas.width, canvas.height);
 
@@ -504,22 +520,47 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
 
   // Initialize canvas and start animation
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    console.log('🎨 SpatialVisualizer: useEffect triggered', {
+      hasCanvas: !!canvasRef.current,
+      size,
+      hasPattern: !!pattern,
+      hasElectromagnetic: !!electromagnetic,
+      patternName: pattern?.name,
+      emFrequency: electromagnetic?.frequency
+    });
 
+    const canvas = canvasRef.current;
+    if (!canvas) {
+      console.error('❌ SpatialVisualizer: No canvas ref!');
+      return;
+    }
+
+    // Set canvas size
     canvas.width = size;
     canvas.height = size;
+    console.log('✅ SpatialVisualizer: Canvas sized:', size, 'x', size);
 
+    // Check if we have valid data
+    if (!electromagnetic) {
+      console.warn('⚠️ SpatialVisualizer: No electromagnetic data!');
+    }
+    if (!pattern && (!patternProperties || patternProperties.path.length === 0)) {
+      console.warn('⚠️ SpatialVisualizer: No pattern data!');
+    }
+
+    // Start animation
     animationRef.current = window.setTimeout(() => {
+      console.log('▶️ SpatialVisualizer: Starting animation loop');
       animate(performance.now());
     }, 66);
 
     return () => {
       if (animationRef.current) {
+        console.log('⏹️ SpatialVisualizer: Stopping animation');
         clearTimeout(animationRef.current);
       }
     };
-  }, [animate, size]);
+  }, [animate, size, pattern, electromagnetic, patternProperties]);
 
   // Calculate display values
   const displayValues = useMemo(() => {

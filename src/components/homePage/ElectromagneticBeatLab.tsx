@@ -497,7 +497,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
             <SystemStatusChips
               appState={appState}
               audioEngine={activeAudioEngine}
-              patterns8D={appState.patterns8D} // ✅ FIXED: Use converted Pattern8D[] from appState
+              patterns8D={appState.patterns8D} // 
               onStateChange={updateAppState}
               onToggleEngine={handleEngineToggle}
             />
@@ -508,9 +508,9 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
       {/* Timer Countdown Display - Positioned above layout */}
       {timerStatus && (
         <Box sx={{
-          p: { xs: '10px', sm: '15px', md: '20px' },  // ✅ INCREASED: More padding all around
-          pt: 3,  // ✅ CHANGED: Added top padding (was 0) to separate from header
-          pb: 3   // ✅ ADDED: Bottom padding to separate from EQ
+          p: { xs: '10px', sm: '15px', md: '20px' },
+          pt: 3,
+          pb: 3
         }}>
           <TimerCountdownDisplay
             timerStatus={timerStatus}

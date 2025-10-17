@@ -265,6 +265,331 @@ export const WAVE_PATTERNS: PatternConfig[] = [
       intensity: 0.8,
       pattern: 'standing-wave'
     }
+  },
+
+  // 🔥 NEW: LISSAJOUS PATTERNS - Harmonic Synchronization
+  {
+    id: 'lissajous-harmony',
+    name: 'Lissajous Harmonic Sync',
+    type: 'lissajous',
+    description: 'Beautiful figure-8 Lissajous curves for perfect brain hemisphere synchronization.',
+    instructions: 'Watch the flowing curves synchronize your left and right brain hemispheres into perfect harmony.',
+    benefits: [
+      'Left-right brain synchronization',
+      'Harmonic balance',
+      'Cognitive enhancement',
+      'Mathematical beauty integration',
+      'Enhanced neural coherence'
+    ],
+    frequencies: {
+      carrier: 144,
+      beat: 10,
+      range: 'alpha'
+    },
+    duration: 20,
+    electromagnetic: {
+      fieldStrength: 0.85,
+      resonanceFreq: 10,
+      coherence: 0.95
+    },
+    visualization: {
+      color: '#00d4ff',
+      intensity: 0.85,
+      pattern: 'lissajous-curves'
+    }
+  },
+
+  // 🔥 NEW: MÖBIUS PATTERNS - Infinite Loop
+  {
+    id: 'mobius-infinity',
+    name: 'Möbius Infinite Loop',
+    type: 'mobius',
+    description: 'Single-sided Möbius strip pattern representing infinite consciousness and unity.',
+    instructions: 'Follow the infinite loop that has no inside or outside, experiencing non-dual awareness.',
+    benefits: [
+      'Non-dual consciousness',
+      'Unity awareness',
+      'Paradox integration',
+      'Infinite perspective',
+      'Boundary dissolution'
+    ],
+    frequencies: {
+      carrier: 144,
+      beat: 7.83,
+      range: 'theta'
+    },
+    duration: 30,
+    electromagnetic: {
+      fieldStrength: 0.9,
+      resonanceFreq: 7.83,
+      coherence: 0.97
+    },
+    visualization: {
+      color: '#ff00ff',
+      intensity: 0.9,
+      pattern: 'mobius-strip'
+    }
+  },
+
+  // 🔥 NEW: ROSE PATTERNS - Sacred Geometry
+  {
+    id: 'rose-sacred-geometry',
+    name: 'Sacred Rose Geometry',
+    type: 'rose',
+    description: 'Seven-petal rose pattern embodying sacred geometric principles and natural harmony.',
+    instructions: 'Meditate on the unfolding petals of sacred geometry, connecting with universal patterns.',
+    benefits: [
+      'Sacred geometry attunement',
+      'Natural harmony resonance',
+      'Beauty consciousness',
+      'Divine pattern recognition',
+      'Aesthetic healing'
+    ],
+    frequencies: {
+      carrier: 144,
+      beat: 13,
+      range: 'beta'
+    },
+    duration: 25,
+    electromagnetic: {
+      fieldStrength: 0.78,
+      resonanceFreq: 13,
+      coherence: 0.88
+    },
+    visualization: {
+      color: '#ff69b4',
+      intensity: 0.75,
+      pattern: 'rose-petals'
+    }
+  },
+
+  // 🔥 NEW: TREFOIL KNOT - Unity in Complexity
+  {
+    id: 'trefoil-unity',
+    name: 'Trefoil Unity Knot',
+    type: 'trefoil',
+    description: 'Mathematical knot pattern weaving complexity into unified wholeness.',
+    instructions: 'Observe how complex patterns weave into simple unity, reflecting life\'s interconnectedness.',
+    benefits: [
+      'Complexity integration',
+      'Unity in diversity',
+      'Problem-solving insight',
+      'Pattern recognition',
+      'Interconnection awareness'
+    ],
+    frequencies: {
+      carrier: 144,
+      beat: 15,
+      range: 'beta'
+    },
+    duration: 20,
+    electromagnetic: {
+      fieldStrength: 0.82,
+      resonanceFreq: 15,
+      coherence: 0.9
+    },
+    visualization: {
+      color: '#00ffaa',
+      intensity: 0.8,
+      pattern: 'trefoil-knot'
+    }
+  },
+
+  // 🔥 NEW: LORENZ ATTRACTOR - Chaotic Awakening
+  {
+    id: 'lorenz-chaos',
+    name: 'Lorenz Chaotic Awakening',
+    type: 'lorenz',
+    description: 'Strange attractor butterfly pattern for navigating chaos into higher order.',
+    instructions: 'Embrace the beautiful chaos of the butterfly attractor, finding order in apparent randomness.',
+    benefits: [
+      'Chaos navigation',
+      'Higher order emergence',
+      'Complex system understanding',
+      'Butterfly effect awareness',
+      'Creative unpredictability'
+    ],
+    frequencies: {
+      carrier: 144,
+      beat: 25,
+      range: 'beta'
+    },
+    duration: 15,
+    electromagnetic: {
+      fieldStrength: 0.92,
+      resonanceFreq: 25,
+      coherence: 0.85
+    },
+    visualization: {
+      color: '#ff4500',
+      intensity: 0.95,
+      pattern: 'lorenz-butterfly'
+    }
+  },
+
+  // 🔥 NEW: SPHERICAL HARMONICS - Quantum Consciousness
+  {
+    id: 'spherical-quantum',
+    name: 'Quantum Spherical Harmonics',
+    type: 'spherical',
+    description: 'Quantum orbital patterns activating higher dimensional consciousness.',
+    instructions: 'Enter quantum states of awareness through spherical harmonic resonance patterns.',
+    benefits: [
+      'Quantum consciousness',
+      'Higher dimensional access',
+      'Orbital energy activation',
+      'Wave-particle integration',
+      'Quantum coherence'
+    ],
+    frequencies: {
+      carrier: 144,
+      beat: 40,
+      range: 'gamma'
+    },
+    duration: 18,
+    electromagnetic: {
+      fieldStrength: 0.95,
+      resonanceFreq: 40,
+      coherence: 0.98
+    },
+    visualization: {
+      color: '#8b00ff',
+      intensity: 0.92,
+      pattern: 'spherical-harmonics'
+    },
+    adhd: {
+      protocol: 'Quantum Focus',
+      duration: 1080000,
+      intensity: 0.9
+    }
+  },
+
+  // 🔥 NEW: INFINITY SYMBOL - Eternal Flow
+  {
+    id: 'infinity-eternal',
+    name: 'Eternal Infinity Flow',
+    type: 'infinity',
+    description: 'Figure-8 infinity pattern for eternal flow and boundless energy circulation.',
+    instructions: 'Flow with the eternal figure-8, experiencing infinite energy circulation through your being.',
+    benefits: [
+      'Eternal flow state',
+      'Infinite energy access',
+      'Boundless consciousness',
+      'Energy circulation',
+      'Timeless awareness'
+    ],
+    frequencies: {
+      carrier: 144,
+      beat: 8,
+      range: 'alpha'
+    },
+    duration: 35,
+    electromagnetic: {
+      fieldStrength: 0.88,
+      resonanceFreq: 8,
+      coherence: 0.94
+    },
+    visualization: {
+      color: '#ffd700',
+      intensity: 0.87,
+      pattern: 'infinity-loop'
+    }
+  },
+
+  // 🔥 NEW: STAR POLYHEDRON - Cosmic Activation
+  {
+    id: 'star-cosmic',
+    name: 'Cosmic Star Activation',
+    type: 'star',
+    description: 'Twelve-pointed star pattern for cosmic energy activation and alignment.',
+    instructions: 'Align with cosmic frequencies through the twelve-pointed star of activation.',
+    benefits: [
+      'Cosmic activation',
+      'Star consciousness',
+      'Galactic alignment',
+      'Higher self connection',
+      'Multidimensional awareness'
+    ],
+    frequencies: {
+      carrier: 144,
+      beat: 11,
+      range: 'alpha'
+    },
+    duration: 28,
+    electromagnetic: {
+      fieldStrength: 0.86,
+      resonanceFreq: 11,
+      coherence: 0.91
+    },
+    visualization: {
+      color: '#00ffff',
+      intensity: 0.89,
+      pattern: 'star-polyhedron'
+    }
+  },
+
+  // 🔥 NEW: CONICAL HELIX - Ascension Spiral
+  {
+    id: 'conical-ascension',
+    name: 'Ascension Conical Helix',
+    type: 'conical',
+    description: 'Expanding spiral helix for consciousness ascension and energetic elevation.',
+    instructions: 'Spiral upward through expanding consciousness levels, ascending to higher states.',
+    benefits: [
+      'Consciousness ascension',
+      'Energetic elevation',
+      'Upward spiral growth',
+      'Level transcendence',
+      'Evolutionary acceleration'
+    ],
+    frequencies: {
+      carrier: 144,
+      beat: 16,
+      range: 'beta'
+    },
+    duration: 22,
+    electromagnetic: {
+      fieldStrength: 0.84,
+      resonanceFreq: 16,
+      coherence: 0.89
+    },
+    visualization: {
+      color: '#ff6ec7',
+      intensity: 0.83,
+      pattern: 'conical-helix'
+    }
+  },
+
+  // 🔥 NEW: MANDALA - Sacred Meditation
+  {
+    id: 'mandala-sacred',
+    name: 'Sacred Mandala Meditation',
+    type: 'mandala',
+    description: 'Layered mandala pattern for deep sacred meditation and spiritual centering.',
+    instructions: 'Center yourself in the sacred mandala, allowing each layer to guide you deeper within.',
+    benefits: [
+      'Sacred meditation',
+      'Spiritual centering',
+      'Inner peace',
+      'Chakra alignment',
+      'Divine connection'
+    ],
+    frequencies: {
+      carrier: 144,
+      beat: 5,
+      range: 'theta'
+    },
+    duration: 40,
+    electromagnetic: {
+      fieldStrength: 0.87,
+      resonanceFreq: 5,
+      coherence: 0.96
+    },
+    visualization: {
+      color: '#9932cc',
+      intensity: 0.85,
+      pattern: 'sacred-mandala'
+    }
   }
 ];
 
