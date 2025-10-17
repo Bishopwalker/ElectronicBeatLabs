@@ -11,6 +11,7 @@ import { DEFAULT_BASE_FREQUENCY, DEFAULT_BEAT_FREQUENCY, DEFAULT_VOLUME } from '
 
 // Centralized Audio Controls
 import { startBinauralAudio, stopBinauralAudio } from '../../utils/audioControls';
+import { convertPatternConfigToPattern8D, createDefaultPattern8D } from '../../utils/patternConverter';
 
 // Hooks and Data
 import { useHybridAudioEngine } from '../../hooks';
@@ -658,13 +659,15 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
             <CollapsibleSection id="visualizeID" title="Visualization" icon="🎨" defaultOpen={true} onClose={handleSectionClose}>
               <Box sx={{ position: 'relative', height: '100%', minHeight: '250px' }}>
                 <Paper elevation={3} sx={ElectromagneticLabStyles.visualizationPaper}>
-                  {appState.currentPattern && (
-                    <SpatialVisualizer
-                      pattern={appState.currentPattern}
-                      electromagnetic={appState.electromagnetic}
-                      size={300}
-                    />
-                  )}
+                  <SpatialVisualizer
+                    pattern={
+                      appState.currentPattern 
+                        ? convertPatternConfigToPattern8D(appState.currentPattern)
+                        : createDefaultPattern8D()
+                    }
+                    electromagnetic={appState.electromagnetic}
+                    size={300}
+                  />
                 </Paper>
               </Box>
             </CollapsibleSection>
