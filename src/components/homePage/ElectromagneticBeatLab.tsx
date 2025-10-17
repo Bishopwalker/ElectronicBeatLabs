@@ -425,7 +425,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
               audioEngine={activeAudioEngine}
               backendEngine={backendEngine}
               frontendEngine={frontendEngine}
-              patterns8D={WAVE_PATTERNS}
+              patterns8D={appState.patterns8D} // ✅ FIXED: Use converted Pattern8D[] from appState
               onStateChange={updateAppState}
               onPatternSelect={handlePatternSelectBound}
               onFrequencyChange={handleFrequencyChangeBound}
@@ -501,7 +501,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
             <SystemStatusChips
               appState={appState}
               audioEngine={activeAudioEngine}
-              patterns8D={WAVE_PATTERNS}
+              patterns8D={appState.patterns8D} // ✅ FIXED: Use converted Pattern8D[] from appState
               onStateChange={updateAppState}
               onToggleEngine={handleEngineToggle}
             />
@@ -683,7 +683,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                 <TimerTab
                   appState={appState}
                   audioEngine={hybridEngine}
-                  patterns8D={WAVE_PATTERNS}
+                  patterns8D={appState.patterns8D} // ✅ FIXED: Use converted Pattern8D[] from appState
                   patterns8DEngine={{
                     setActivePattern: (pattern) => {
                       console.log('🎨 Setting active pattern for visualizer:', pattern.name);

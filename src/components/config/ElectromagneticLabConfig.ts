@@ -3,6 +3,8 @@
 
 import type { AppState } from '../../types';
 import { DEFAULT_BASE_FREQUENCY, DEFAULT_BEAT_FREQUENCY, DEFAULT_VOLUME, DEFAULT_MAX_VOLUME } from '../../constants/audio.constants';
+import { WAVE_PATTERNS } from '../../data/patterns';
+import { convertAllPatternsToPattern8D } from '../../utils/patternGeometry';
 
 // Default app state configuration
 export const DEFAULT_APP_STATE: AppState = {
@@ -23,7 +25,7 @@ export const DEFAULT_APP_STATE: AppState = {
     state: 'INACTIVE',
     stability: 0
   },
-  patterns8D: [],
+  patterns8D: convertAllPatternsToPattern8D(WAVE_PATTERNS), // ✅ FIXED: Convert PatternConfig[] → Pattern8D[] with 3D paths
   systemStatus: {
     electromagnetic: {
       strength: 0,

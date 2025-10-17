@@ -9,6 +9,7 @@ import type {
   AudioEngine, PatternConfig, Pattern8D
 } from '../../types';
 import { WAVE_PATTERNS } from '../../data/patterns';
+import { convertPatternConfigToPattern8D } from '../../utils/patternGeometry';
 
 export interface ElectromagneticLabState {
   closedSections: string[];
@@ -93,18 +94,20 @@ export class ElectromagneticLabManager {
   handlePatternSelect(patternId: string, audioEngine: any, patterns8D: any) {
     const pattern = WAVE_PATTERNS.find(p => p.id === patternId);
     if (pattern) {
-      this.updateAppState({ 
+      this.updateAppState({
         currentPattern: pattern
       });
-      
+
       // Load pattern into audio engine if it supports it
       if (audioEngine.loadPattern) {
         audioEngine.loadPattern(pattern);
       }
-      
-      // Set active pattern for visualization (if patterns8D is our new interface)
+
+      // ✅ FIXED: Convert PatternConfig → Pattern8D before setting for visualization
       if (patterns8D && patterns8D.setActivePattern) {
-        patterns8D.setActivePattern(pattern);
+        const pattern8D = convertPatternConfigToPattern8D(pattern);
+        console.log('🎨 Converting pattern to Pattern8D for visualization:', pattern8D);
+        patterns8D.setActivePattern(pattern8D);
       }
     }
   }
@@ -192,9 +195,11 @@ export class ElectromagneticLabManager {
       }
     }
 
-    // Set pattern for visualizer (only if real pattern)
+    // ✅ FIXED: Convert PatternConfig → Pattern8D before setting for visualizer (only if real pattern)
     if (patterns8D && patterns8D.setActivePattern && this.state.appState.currentPattern) {
-      patterns8D.setActivePattern(this.state.appState.currentPattern);
+      const pattern8D = convertPatternConfigToPattern8D(this.state.appState.currentPattern);
+      console.log('🎨 Converting pattern to Pattern8D for visualization on play:', pattern8D);
+      patterns8D.setActivePattern(pattern8D);
     }
 
     this.updateAppState({ isPlaying: true });
