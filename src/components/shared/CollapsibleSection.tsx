@@ -32,13 +32,13 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
   
   return (
     <Card elevation={2} sx={{ 
-      mb: compact ? 0 : '10px', 
       bgcolor: 'rgba(0, 0, 0, 0.3)', 
       backdropFilter: 'blur(10px)',
-      height: '100%',
+      height: '100%',  // ✅ Fill parent container
       display: 'flex',
       flexDirection: 'column',
-      borderRadius: compact ? 1 : 2
+      borderRadius: compact ? 1 : 2,
+      overflow: 'hidden'  // ✅ Prevent outer overflow
     }}>
       <Box 
         sx={{ 
@@ -87,14 +87,35 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
           </IconButton>
         </Box>
       </Box>
-      <Collapse in={isOpen} sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <Collapse in={isOpen} sx={{ 
+        flex: 1,  // ✅ Take remaining space
+        display: 'flex', 
+        flexDirection: 'column',
+        overflow: 'hidden',  // ✅ Let CardContent handle scroll
+        minHeight: 0  // ✅ Allow flex shrinking
+      }}>
         <CardContent sx={{ 
           p: compact ? '5px !important' : '10px !important', 
-          flex: 1, 
+          flex: 1,
           display: 'flex', 
           flexDirection: 'column',
-          height: '100%',
-          overflow: 'auto'
+          minHeight: 0,  // ✅ Allow flex shrinking
+          overflow: 'auto',  // ✅ SCROLL HERE if content overflows
+          overflowX: 'hidden',  // ✅ NO horizontal scroll
+          // ✅ Custom scrollbar styling
+          '&::-webkit-scrollbar': {
+            width: '8px'
+          },
+          '&::-webkit-scrollbar-track': {
+            background: 'rgba(255, 255, 255, 0.05)'
+          },
+          '&::-webkit-scrollbar-thumb': {
+            background: 'rgba(138, 43, 226, 0.5)',
+            borderRadius: '4px',
+            '&:hover': {
+              background: 'rgba(138, 43, 226, 0.7)'
+            }
+          }
         }}>
           {children}
         </CardContent>

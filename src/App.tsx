@@ -203,7 +203,7 @@ const AppContent = () => {
         {/* CRITICAL: Timer Countdown Display - Rendered ABOVE tabs so it shows everywhere */}
         {timerStatus && (
           <Box sx={{
-            p: { xs: '5px', sm: '8px', md: '10px' },
+            p: { xs: '3px', sm: '5px', md: '8px' },  // ✅ REDUCED: was 5/8/10, now 3/5/8
             bgcolor: 'rgba(0,0,0,0.5)',
             borderBottom: '1px solid rgba(255, 107, 0, 0.2)'
           }}>

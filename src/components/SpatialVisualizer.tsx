@@ -17,14 +17,60 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
   electromagnetic,
   size = 400
 }) => {
+  console.log('🔍 SpatialVisualizer RENDER:', {
+    hasPattern: !!pattern,
+    patternName: pattern?.name,
+    hasElectromagnetic: !!electromagnetic,
+    emState: electromagnetic?.state,
+    emFrequency: electromagnetic?.frequency,
+    emStrength: electromagnetic?.strength,
+    size
+  });
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number | undefined>(undefined);
   const timeRef = useRef<number>(0);
   const [visualizationMode, setVisualizationMode] = useState<VisualizationMode>('toroidal');
 
+  // 🔥 CRITICAL: Ensure we always have valid electromagnetic data (MEMOIZED)
+  const safeElectromagnetic: ElectromagneticField = useMemo(() => {
+    return electromagnetic || {
+      strength: 0.5,
+      frequency: 4,
+      phase: 0,
+      coherence: 0.5,
+      resonance: 0.5,
+      state: 'ACTIVE',
+      stability: 0.5
+    };
+  }, [electromagnetic]);
+
   // 🎨 ENHANCED: Extract pattern properties for visualization
   const patternProperties = useMemo(() => {
-    if (!pattern) return null;
+    if (!pattern) {
+      console.warn('⚠️ SpatialVisualizer: No pattern provided, using defaults');
+      // Return default properties so we always have SOMETHING to render
+      return {
+        name: 'Default Pattern',
+        speed: 1,
+        direction: 'clockwise' as const,
+        intensity: 0.8,
+        color: '#00ff88',
+        emFrequency: 4,
+        emWavelength: 100,
+        emAmplitude: 1,
+        path: [
+          { x: 0, y: -100, z: 0 },
+          { x: 70.7, y: -70.7, z: 10 },
+          { x: 100, y: 0, z: 20 },
+          { x: 70.7, y: 70.7, z: 30 },
+          { x: 0, y: 100, z: 40 },
+          { x: -70.7, y: 70.7, z: 30 },
+          { x: -100, y: 0, z: 20 },
+          { x: -70.7, y: -70.7, z: 10 }
+        ],
+      };
+    }
 
     return {
       name: pattern.name || 'Unknown',
@@ -56,31 +102,31 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
     // Draw field lines based on visualization mode
     switch (visualizationMode) {
       case 'toroidal':
-        renderToroidalField(ctx, electromagnetic, patternProperties, time);
+        renderToroidalField(ctx, safeElectromagnetic, patternProperties, time);
         break;
       case 'vortex':
-        renderVortexField(ctx, electromagnetic, patternProperties, time);
+        renderVortexField(ctx, safeElectromagnetic, patternProperties, time);
         break;
       case 'spiral':
-        renderSpiralField(ctx, electromagnetic, patternProperties, time);
+        renderSpiralField(ctx, safeElectromagnetic, patternProperties, time);
         break;
       case 'wave':
-        renderWaveField(ctx, electromagnetic, patternProperties, time);
+        renderWaveField(ctx, safeElectromagnetic, patternProperties, time);
         break;
       case 'pattern8d':
-        renderPattern8D(ctx, electromagnetic, patternProperties, time);
+        renderPattern8D(ctx, safeElectromagnetic, patternProperties, time);
         break;
       case 'combined':
         // Render multiple layers
-        renderToroidalField(ctx, electromagnetic, patternProperties, time);
-        renderPattern8D(ctx, electromagnetic, patternProperties, time);
+        renderToroidalField(ctx, safeElectromagnetic, patternProperties, time);
+        renderPattern8D(ctx, safeElectromagnetic, patternProperties, time);
         break;
       default:
-        renderToroidalField(ctx, electromagnetic, patternProperties, time);
+        renderToroidalField(ctx, safeElectromagnetic, patternProperties, time);
     }
 
     ctx.restore();
-  }, [electromagnetic, patternProperties, visualizationMode]);
+  }, [safeElectromagnetic, patternProperties, visualizationMode]);
 
   // 🌀 ENHANCED: Toroidal field with pattern integration
   const renderToroidalField = (
@@ -492,7 +538,13 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
     return { h: h * 360, s: s * 100, l: l * 100 };
   }
 
-  // Animation loop
+  // Store renderPattern in a ref so animate doesn't need it as a dependency
+  const renderPatternRef = useRef(renderPattern);
+  useEffect(() => {
+    renderPatternRef.current = renderPattern;
+  }, [renderPattern]);
+
+  // Animation loop - stable, doesn't recreate
   const animate = useCallback(
     (timestamp: number) => {
       timeRef.current = timestamp;
@@ -509,13 +561,14 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
         return;
       }
 
-      renderPattern(ctx, canvas.width, canvas.height);
+      // Use the ref to get the current renderPattern function
+      renderPatternRef.current(ctx, canvas.width, canvas.height);
 
       animationRef.current = window.setTimeout(() => {
         animate(performance.now());
       }, 66); // ~15fps for eyes-closed usage
     },
-    [renderPattern]
+    [] // Empty deps - function never recreates!
   );
 
   // Initialize canvas and start animation
@@ -526,7 +579,8 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
       hasPattern: !!pattern,
       hasElectromagnetic: !!electromagnetic,
       patternName: pattern?.name,
-      emFrequency: electromagnetic?.frequency
+      emFrequency: safeElectromagnetic.frequency,
+      emState: safeElectromagnetic.state
     });
 
     const canvas = canvasRef.current;
@@ -542,10 +596,21 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
 
     // Check if we have valid data
     if (!electromagnetic) {
-      console.warn('⚠️ SpatialVisualizer: No electromagnetic data!');
+      console.warn('⚠️ SpatialVisualizer: No electromagnetic data - using defaults');
+    } else {
+      console.log('✅ SpatialVisualizer: Has electromagnetic data:', {
+        frequency: safeElectromagnetic.frequency,
+        strength: safeElectromagnetic.strength,
+        state: safeElectromagnetic.state
+      });
     }
-    if (!pattern && (!patternProperties || patternProperties.path.length === 0)) {
-      console.warn('⚠️ SpatialVisualizer: No pattern data!');
+    if (!pattern) {
+      console.warn('⚠️ SpatialVisualizer: No pattern data - using default pattern');
+    } else {
+      console.log('✅ SpatialVisualizer: Has pattern data:', {
+        name: pattern.name,
+        pathLength: pattern.path?.length || 0
+      });
     }
 
     // Start animation
@@ -560,17 +625,17 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
         clearTimeout(animationRef.current);
       }
     };
-  }, [animate, size, pattern, electromagnetic, patternProperties]);
+  }, [animate, size]); // animate is now stable (empty deps), so this is safe
 
   // Calculate display values
   const displayValues = useMemo(() => {
-    const frequency = electromagnetic.frequency || 4;
+    const frequency = safeElectromagnetic.frequency || 4;
     const patternName = patternProperties?.name || 'Unknown Pattern';
     const hue = (frequency / 20) * 240;
-    const isActive = electromagnetic.strength > 0.1;
+    const isActive = safeElectromagnetic.strength > 0.1;
 
-    return { frequency, patternName, hue, isActive, state: electromagnetic.state };
-  }, [electromagnetic.frequency, electromagnetic.strength, electromagnetic.state, patternProperties]);
+    return { frequency, patternName, hue, isActive, state: safeElectromagnetic.state };
+  }, [safeElectromagnetic.frequency, safeElectromagnetic.strength, safeElectromagnetic.state, patternProperties]);
 
   return (
     <Box

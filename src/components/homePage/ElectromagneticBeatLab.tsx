@@ -31,7 +31,7 @@ import ControlTabs from '../ControlTabs';
 import BinauralGeneratorMUI from '../BinauralGeneratorMUI';
 import QuickStart from '../QuickStart';
 import TimerTab from '../tabs/TimerTab';
-import DraggableFrequencyVisualizer from '../DraggableFrequencyVisualizer';
+
 import { formatTime } from '../../helpers/timer/timerUtils';
 import type {  TimerStatus} from '../../data/timer';
 
@@ -445,6 +445,9 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                 maxWidth: '700px',
                 boxShadow: '0 0 15px rgba(255, 107, 0, 0.3)'
               }}>
+                <Typography variant="h4" sx={ElectromagneticLabStyles.mainTitle}>
+                  Bishop's Electromagnetic Beat Lab
+                </Typography>
                 <Typography variant="h5" gutterBottom sx={{color: '#00ff88', fontSize: '1.2rem', fontWeight: 'bold'}}>
                   🎧 TIMER ACTIVE: {timerStatus.current_transition.description}
                 </Typography>
@@ -497,7 +500,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
             <SystemStatusChips
               appState={appState}
               audioEngine={activeAudioEngine}
-              patterns8D={appState.patterns8D} // 
+              patterns8D={appState.patterns8D} //
               onStateChange={updateAppState}
               onToggleEngine={handleEngineToggle}
             />

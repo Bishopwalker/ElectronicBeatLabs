@@ -8,7 +8,6 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import SkipPreviousIcon from '@mui/icons-material/SkipPrevious';
 import SkipNextIcon from '@mui/icons-material/SkipNext';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
-import FullscreenIcon from '@mui/icons-material/Fullscreen';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import type {TimerPreset, TimerStatus} from '../data/timer';
@@ -44,8 +43,6 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
                                                                          defaultPosition = { x: window.innerWidth - 520, y: 150 },
                                                                          defaultSize = { width: 500, height: 200 }
                                                                      }) => {
-    // State for fullscreen visualizer toggle
-    const [isVisualizerFullscreen, setIsVisualizerFullscreen] = useState(false);
     // 🔥 NEW: State for collapsing the visualizer
     const [isVisualizerCollapsed, setIsVisualizerCollapsed] = useState(false);
 
@@ -156,16 +153,16 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
             key={timeKey}
             elevation={3}
             sx={{
-                p: 2,  // ✅ REDUCED: from 3 to 2 - less padding eating space
-                paddingBlock: 2,  // ✅ REDUCED: from 4 to 2 for more room
+                p: 1,  // ✅ REDUCED: from 2 to 1 - much less padding!
+                paddingBlock: 1,  // ✅ REDUCED: from 2 to 1 - less vertical space
                 background: 'linear-gradient(45deg, rgba(255, 107, 0, 0.1), rgba(138, 43, 226, 0.1))',
                 border: '1px solid',
                 borderColor: '#ff6b00',
                 borderRadius: 1,
-                position: 'sticky',
-                overflow: 'visible',  // ✅ CHANGED: from 'auto' - don't hide content!
+                position: 'relative',  // ✅ CHANGED: from sticky to relative - no jumping!
+                overflow: 'hidden',  // ✅ CHANGED: from visible to hidden - prevents overflow issues
                 width: '100%',
-                mb: 3,
+                mb: 2,  // ✅ REDUCED: from 3 to 2 - less bottom margin
                 boxShadow: '0 4px 20px rgba(255, 107, 0, 0.3)',
                 '&::before': {
                     content: '""',
@@ -177,16 +174,17 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
                  }
             }}
         >
-            {/* 🔥 FIXED: Proper 50/50 Horizontal Layout - Full Height */}
+            {/* 🔥 FIXED: Compact 50/50 Horizontal Layout */}
             <Box sx={{
                 position: 'relative',
                 zIndex: 1,
                 display: 'flex',
-                gap: 1,  // ✅ REDUCED: from 2 to 1 - less space between sections
+                gap: 1,  // Tight gap between sections
                 alignItems: 'stretch',
                 width: '100%',
-                minHeight: '350px',  // ✅ INCREASED: from 200px for full visualizer
-                height: 'auto',      // ✅ allows natural expansion
+                minHeight: '280px',  // ✅ REDUCED: from 350px - much more compact!
+                maxHeight: '320px',  // ✅ ADDED: cap the maximum height
+                height: 'auto',
             }}>
                 {/* LEFT SIDE: Timer Section - 50% Width */}
                 <Box sx={{
@@ -197,7 +195,7 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
                     justifyContent: 'space-between'
                 }}>
                     {/* Header */}
-                    <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1}}>
+                    <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5}}>
                         <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5}}>
                             <TimerIcon sx={{color: '#ff6b00', fontSize: '1.2rem'}}/>
                             <Typography variant="body1" sx={{color: '#ff6b00', fontWeight: 'bold', fontSize: '0.9rem'}}>
@@ -213,7 +211,7 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
                             size="small"
                             sx={{
                                 fontWeight: 'bold',
-                                animation: 'pulse 2s infinite',
+                                // ✅ REMOVED: animation causing UI jumping!
                                 boxShadow: '0 0 8px rgba(0, 255, 0, 0.4)',
                                 height: '20px',
                                 fontSize: '0.7rem'
@@ -222,7 +220,7 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
                     </Box>
 
                     {/* Current Transition Info */}
-                    <Box sx={{mb: 1}}>
+                    <Box sx={{mb: 0.5}}>
                         <Typography variant="caption" color="text.secondary" sx={{fontSize: '0.75rem'}}>
                             Step {currentIndex + 1}/{totalTransitions}: {currentTransition?.description}
                         </Typography>
@@ -233,7 +231,7 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
                     </Box>
 
                     {/* Progress Bar */}
-                    <Box sx={{mb: 2}}>
+                    <Box sx={{mb: 1}}>
                         <LinearProgress
                             variant="determinate"
                             value={Math.min(100, Math.max(0, transitionProgress))}
@@ -250,7 +248,7 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
                     </Box>
 
                     {/* Time Display */}
-                    <Box sx={{display: 'flex', justifyContent: 'space-around', alignItems: 'center', mb: 2}}>
+                    <Box sx={{display: 'flex', justifyContent: 'space-around', alignItems: 'center', mb: 1}}>
                         <Box sx={{textAlign: 'center'}}>
                             <Typography variant="h4" sx={{
                                 fontFamily: 'monospace',
@@ -284,8 +282,8 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
                     {/* Next Transition Preview */}
                     {timerStatus.next_transition && (
                         <Box sx={{
-                            mb: 2,
-                            p: 1,
+                            mb: 1,  // ✅ REDUCED: from 2 to 1
+                            p: 0.75,  // ✅ REDUCED: from 1 to 0.75
                             background: 'rgba(138, 43, 226, 0.15)',
                             borderRadius: 1,
                             border: '1px solid rgba(138, 43, 226, 0.3)'
@@ -358,21 +356,22 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
                     bgcolor: 'rgba(0, 0, 0, 0.3)',
                     borderRadius: 1,
                     border: '1px solid rgba(138, 43, 226, 0.3)',
-                    overflow: 'visible',  // ✅ CHANGED: from 'hidden' - don't cut off content!
-                    minHeight: isVisualizerCollapsed ? 'auto' : '350px',  // ✅ INCREASED: for full visibility
-                    height: 'auto',  // ✅ ADDED: allows natural height
-                    p: 0.5,  // ✅ REDUCED: minimal padding so visualizer fits
-                    m: 0     // ✅ REMOVED: no external margin cutting into space
+                    overflow: 'hidden',  // ✅ CHANGED: prevent overflow
+                    minHeight: isVisualizerCollapsed ? 'auto' : '250px',  // ✅ REDUCED: from 350px
+                    maxHeight: '300px',  // ✅ ADDED: cap the height
+                    height: 'auto',
+                    p: 0.25,  // ✅ REDUCED: from 0.5 - minimal padding
+                    m: 0
                 }}>
                     {/* Visualizer Header */}
                     <Box sx={{
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
-                        p: 0.5,  // ✅ REDUCED: from 0.75 to 0.5 - less space taken
+                        p: 0.5,
                         borderBottom: isVisualizerCollapsed ? 'none' : '1px solid rgba(138, 43, 226, 0.3)',
                         flexShrink: 0,
-                        minHeight: '32px'  // ✅ ADDED: fixed minimal header height
+                        minHeight: '32px'
                     }}>
                         <Typography variant="caption" sx={{
                             fontSize: '0.8rem',
@@ -381,49 +380,36 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
                         }}>
                             📊 Live Frequency Visualization
                         </Typography>
-                        <Box sx={{ display: 'flex', gap: 0.5 }}>
-                            <Tooltip title={isVisualizerCollapsed ? "Expand visualizer" : "Collapse visualizer"}>
-                                <IconButton
-                                    size="small"
-                                    onClick={() => setIsVisualizerCollapsed(!isVisualizerCollapsed)}
-                                    sx={{
-                                        color: '#8a2be2',
-                                        p: 0.25,
-                                        '&:hover': { bgcolor: 'rgba(138, 43, 226, 0.2)' }
-                                    }}
-                                >
-                                    {isVisualizerCollapsed ?
-                                        <ExpandMoreIcon sx={{ fontSize: '1.1rem' }} /> :
-                                        <ExpandLessIcon sx={{ fontSize: '1.1rem' }} />
-                                    }
-                                </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Expand to fullscreen">
-                                <IconButton
-                                    size="small"
-                                    onClick={() => setIsVisualizerFullscreen(true)}
-                                    sx={{
-                                        color: '#8a2be2',
-                                        p: 0.25,
-                                        '&:hover': { bgcolor: 'rgba(138, 43, 226, 0.2)' }
-                                    }}
-                                >
-                                    <FullscreenIcon sx={{ fontSize: '1.1rem' }} />
-                                </IconButton>
-                            </Tooltip>
-                        </Box>
+                        {/* ✅ REMOVED: Fullscreen button - now handled by FrequencyVisualizer itself */}
+                        <Tooltip title={isVisualizerCollapsed ? "Expand visualizer" : "Collapse visualizer"}>
+                            <IconButton
+                                size="small"
+                                onClick={() => setIsVisualizerCollapsed(!isVisualizerCollapsed)}
+                                sx={{
+                                    color: '#8a2be2',
+                                    p: 0.25,
+                                    '&:hover': { bgcolor: 'rgba(138, 43, 226, 0.2)' }
+                                }}
+                            >
+                                {isVisualizerCollapsed ?
+                                    <ExpandMoreIcon sx={{ fontSize: '1.1rem' }} /> :
+                                    <ExpandLessIcon sx={{ fontSize: '1.1rem' }} />
+                                }
+                            </IconButton>
+                        </Tooltip>
                     </Box>
 
-                    {/* 🔥 FIXED: Visualizer fills complete height of box */}
+                    {/* 🔥 FIXED: Visualizer fills available space */}
                     <Collapse in={!isVisualizerCollapsed} timeout="auto" unmountOnExit>
                         <Box sx={{
-                            flex: "1 2 60%",
-                            minHeight: '300px',
+                            flex: "1 1 auto",
+                            minHeight: '220px',  // ✅ REDUCED: from 300px - more compact!
+                            maxHeight: '260px',  // ✅ ADDED: cap to fit container
                             height: '100%',
                             display: 'flex',
-                            overflow: 'visible',
+                            overflow: 'hidden',  // ✅ CHANGED: prevent overflow
                             p: 0,
-                            m: 0                // ✅ REMOVED: no margin
+                            m: 0
                         }}>
                             <FrequencyVisualizer
                                 state={visualizerState}
@@ -438,18 +424,6 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
                     </Collapse>
                 </Box>
             </Box>
-
-            {/* 🔥 TODO: Fullscreen Draggable Visualizer - Component doesn't exist yet */}
-            {/* {isVisualizerFullscreen && (
-                <DraggableFrequencyVisualizer
-                    state={visualizerState}
-                    audioContext={audioContext}
-                    analyserNode={analyserNode}
-                    onClose={() => setIsVisualizerFullscreen(false)}
-                    defaultPosition={{ x: window.innerWidth - 520, y: 100 }}
-                    defaultSize={{ width: 500, height: 400 }}
-                />
-            )} */}
         </Paper>
     );
 };

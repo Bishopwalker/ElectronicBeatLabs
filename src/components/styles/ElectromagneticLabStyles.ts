@@ -222,7 +222,7 @@ export const ElectromagneticLabStyles = {
     borderColor: isActive ? 'rgba(0, 255, 136, 0.5)' : 'rgba(255, 255, 255, 0.3)'
   }) as SxProps<Theme>,
 
-  // Main layout container
+  // 🔥 FIXED: No horizontal scroll, proper vertical only
   mainLayoutContainer: (closedSections: string[]) => ({
     flex: '1 1',
     p: {
@@ -230,54 +230,61 @@ export const ElectromagneticLabStyles = {
       sm: '8px',
       md: '10px'
     },
-    display: 'flex',
-    gap: {
-      xs: '5px',
-      sm: '8px',
-      md: '10px'
+    display: 'grid',  // ✅ Grid for equal heights
+    gridTemplateColumns: {
+      xs: '1fr',  // Mobile: single column
+      sm: '1fr',  // Small: single column
+      md: 'repeat(2, 1fr)',  // Medium: 2 equal columns
+      lg: 'repeat(3, 1fr)',  // Large: 3 equal columns
+      xl: 'repeat(4, 1fr)',  // XL: 4 equal columns
     },
-    minHeight: 'fit-content',
-    height: 'auto',
-    flexDirection: {
-      xs: 'column',
-      sm: 'row',
-      md: 'row',
-      lg: 'row'
+    gap: {
+      xs: '8px',
+      sm: '10px',
+      md: '12px'
     },
     width: '100%',
     maxWidth: '100%',
-    flexWrap: 'wrap',
-    overflowX: 'hidden',
-    alignContent: 'flex-start',
-    overflowY: 'scroll'
+    overflowX: 'hidden',  // ✅ NO horizontal scroll
+    overflowY: 'visible',
+    alignItems: 'stretch'  // ✅ Stretch to fill height
   }) as SxProps<Theme>,
 
-  // Panel flex styles
+  // 🔥 FIXED: Standard panel - all content visible, scroll INSIDE
   panelFlex: {
-    flex: '1 1 300px',
-    minWidth: '280px',
-    maxWidth: '100%',
-    height: 'fit-content',
-    maxHeight: '70vh',
-    minHeight: 'fit-content',
     display: 'flex',
     flexDirection: 'column',
-    overflowY: 'auto',
-    overflowX: 'hidden'
+    minHeight: '400px',  // ✅ Smaller min height
+    maxHeight: '600px',  // ✅ Max height cap
+    height: '100%',
+    overflow: 'hidden',  // ✅ Outer container never scrolls
+    '& > div': {  // CollapsibleSection
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden'
+    }
   } as SxProps<Theme>,
 
-  // Wide panel flex (for binaural and visualization)
+  // 🔥 FIXED: Wide panel - spans 2 columns, same height
   widePanelFlex: {
-    flex: '2 1 400px',  // ✅ FIXED: proper flex-basis for 2x growth ratio
-    minWidth: '320px',
-    maxWidth: '100%',
-    height: 'auto',
-    maxHeight: '70vh',
-    minHeight: 'fit-content',
     display: 'flex',
     flexDirection: 'column',
-    overflowY: 'auto',
-    overflowX: 'hidden'
+    gridColumn: {
+      xs: '1',           // Mobile: full width
+      sm: '1',           // Small: full width  
+      md: 'span 2',      // Medium+: span 2 columns
+    },
+    minHeight: '400px',  // ✅ Same as standard
+    maxHeight: '600px',  // ✅ Same as standard
+    height: '100%',
+    overflow: 'hidden',  // ✅ Outer container never scrolls
+    '& > div': {  // CollapsibleSection
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden'
+    }
   } as SxProps<Theme>,
 
   // Equalizer panel flex - ORIGINAL (vertical layout)
@@ -300,30 +307,21 @@ export const ElectromagneticLabStyles = {
     flexDirection: 'column'
   } as SxProps<Theme>,
 
-  // Equalizer panel flex HORIZONTAL - Flexes to available space
+  // 🔥 FIXED: Equalizer - full width, same height as others
   equalizerPanelFlexHorizontal: {
-    flex: '1 1 auto',    // ✅ FIXED: grow/shrink to available space (was '0 0 100%' forcing full width!)
-    width: 'auto',       // ✅ FIXED: auto width (was '100%')
-    minWidth: '600px',   // ✅ ADDED: minimum width to show sliders + presets
-    maxWidth: '100%',    // ✅ Can't exceed container
-    height: 'auto',
-    minHeight: '240px',
-    maxHeight: '50vh',
     display: 'flex',
     flexDirection: 'column',
-    order: -1,
-    mb: 4,
-    mt: 2,
-    position: 'relative',
-    zIndex: 10,
-    overflowY: 'auto',
-    overflowX: 'hidden',
-    resize: 'both',      // ✅ CHANGED: allow both vertical AND horizontal resize
-    '&::-webkit-resizer': {
-      background: 'linear-gradient(135deg, transparent 50%, rgba(138, 43, 226, 0.5) 50%)',
-      border: '2px solid rgba(138, 43, 226, 0.3)',
-      borderRadius: '0 0 4px 0',
-      cursor: 'nwse-resize'  // ✅ CHANGED: diagonal resize cursor
+    gridColumn: '1 / -1',  // ✅ SPAN: full width
+    minHeight: '400px',    // ✅ Same as other panels
+    maxHeight: '600px',    // ✅ Same as other panels  
+    height: '100%',
+    overflow: 'hidden',    // ✅ Outer never scrolls
+    mb: 2,
+    '& > div': {  // CollapsibleSection
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden'
     }
   } as SxProps<Theme>,
 

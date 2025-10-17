@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Box, Typography, Paper, Chip, ToggleButtonGroup, ToggleButton } from '@mui/material';
+import { Box, Typography, Paper, Chip, ToggleButtonGroup, ToggleButton, IconButton } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { useAudioAnalysis } from '../hooks/index.ts';
 import type { AppState} from '../types';
@@ -7,6 +7,8 @@ import WavesIcon from '@mui/icons-material/Waves';
 import BubbleChartIcon from '@mui/icons-material/BubbleChart';
 import RadarIcon from '@mui/icons-material/Radar';
 import GridOnIcon from '@mui/icons-material/GridOn';
+import FullscreenIcon from '@mui/icons-material/Fullscreen';
+import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
 
 interface FrequencyVisualizerProps {
   state: AppState;
@@ -81,11 +83,13 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const visualizerContainerRef = useRef<HTMLDivElement>(null); // 🔥 For fullscreen
   const fpsRef = useRef<number>(0);
   const [fps, setFps] = useState(0);
   const [canvasDimensions, setCanvasDimensions] = useState({ width: 800, height: 300 });
   const dimensionsRef = useRef(canvasDimensions);
   const [visualizationMode, setVisualizationMode] = useState<VisualizationMode>('combined');
+  const [isFullscreen, setIsFullscreen] = useState(false); // 🔥 Fullscreen state
 
   // 🔥 FIXED: Read from both audio.audioState AND top-level state for flexibility
   // Timer transitions pass frequencies at top level, audio engine has them nested
@@ -127,6 +131,39 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
     audioContext,
     analyserNode
   });
+
+  // 🔥 Fullscreen handler
+  const toggleFullscreen = async () => {
+    if (!visualizerContainerRef.current) return;
+
+    try {
+      if (!document.fullscreenElement) {
+        await visualizerContainerRef.current.requestFullscreen();
+        setIsFullscreen(true);
+        console.log('✅ Entered fullscreen mode');
+      } else {
+        await document.exitFullscreen();
+        setIsFullscreen(false);
+        console.log('✅ Exited fullscreen mode');
+      }
+    } catch (error) {
+      console.error('❌ Fullscreen toggle failed:', error);
+    }
+  };
+
+  // 🔥 Listen for fullscreen changes (ESC key, browser controls)
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      const isCurrentlyFullscreen = !!document.fullscreenElement;
+      setIsFullscreen(isCurrentlyFullscreen);
+      console.log('🔄 Fullscreen state changed:', isCurrentlyFullscreen);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
 
   // 🔥 FIXED: Update dimensionsRef when canvasDimensions changes
   useEffect(() => {
@@ -558,8 +595,22 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
   }, [isPlaying, leftFreq, rightFreq, beatFreq, activePattern, analyserNode, electromagnetic, showSpectrum, visualizationMode]);
 
   return (
-    <VisualizerContainer elevation={10}>
-      {/* Visualization Mode Selector */}
+    <VisualizerContainer 
+      elevation={10} 
+      ref={visualizerContainerRef}
+      sx={{
+        position: isFullscreen ? 'fixed' : 'relative',
+        top: isFullscreen ? 0 : 'auto',
+        left: isFullscreen ? 0 : 'auto',
+        right: isFullscreen ? 0 : 'auto',
+        bottom: isFullscreen ? 0 : 'auto',
+        width: isFullscreen ? '100vw' : '100%',
+        height: isFullscreen ? '100vh' : '100%',
+        zIndex: isFullscreen ? 9999 : 'auto',
+        margin: 0
+      }}
+    >
+      {/* Visualization Mode Selector + Fullscreen Button */}
       <Box sx={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
@@ -573,40 +624,60 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
           </Typography>
         )}
         
-        <ToggleButtonGroup
-          value={visualizationMode}
-          exclusive
-          onChange={(_, newMode) => newMode && setVisualizationMode(newMode)}
-          size="small"
-          sx={{
-            '& .MuiToggleButton-root': {
-              color: 'rgba(255, 255, 255, 0.6)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              padding: '4px 8px',
-              '&.Mui-selected': {
-                color: '#00ff88',
-                backgroundColor: 'rgba(0, 255, 136, 0.2)',
-                border: '1px solid #00ff88'
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+          <ToggleButtonGroup
+            value={visualizationMode}
+            exclusive
+            onChange={(_, newMode) => newMode && setVisualizationMode(newMode)}
+            size="small"
+            sx={{
+              '& .MuiToggleButton-root': {
+                color: 'rgba(255, 255, 255, 0.6)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                padding: '4px 8px',
+                '&.Mui-selected': {
+                  color: '#00ff88',
+                  backgroundColor: 'rgba(0, 255, 136, 0.2)',
+                  border: '1px solid #00ff88'
+                }
               }
-            }
-          }}
-        >
-          <ToggleButton value="waveform" title="Waveform">
-            <WavesIcon fontSize="small" />
-          </ToggleButton>
-          <ToggleButton value="spiral2d" title="2D Spiral">
-            <BubbleChartIcon fontSize="small" />
-          </ToggleButton>
-          <ToggleButton value="spiral3d" title="3D Helix">
-            <RadarIcon fontSize="small" />
-          </ToggleButton>
-          <ToggleButton value="radial" title="Radial Bars">
-            <RadarIcon fontSize="small" style={{ transform: 'rotate(45deg)' }} />
-          </ToggleButton>
-          <ToggleButton value="combined" title="Combined">
-            <GridOnIcon fontSize="small" />
-          </ToggleButton>
-        </ToggleButtonGroup>
+            }}
+          >
+            <ToggleButton value="waveform" title="Waveform">
+              <WavesIcon fontSize="small" />
+            </ToggleButton>
+            <ToggleButton value="spiral2d" title="2D Spiral">
+              <BubbleChartIcon fontSize="small" />
+            </ToggleButton>
+            <ToggleButton value="spiral3d" title="3D Helix">
+              <RadarIcon fontSize="small" />
+            </ToggleButton>
+            <ToggleButton value="radial" title="Radial Bars">
+              <RadarIcon fontSize="small" style={{ transform: 'rotate(45deg)' }} />
+            </ToggleButton>
+            <ToggleButton value="combined" title="Combined">
+              <GridOnIcon fontSize="small" />
+            </ToggleButton>
+          </ToggleButtonGroup>
+
+          {/* 🔥 Fullscreen Button */}
+          <IconButton
+            onClick={toggleFullscreen}
+            size="small"
+            sx={{
+              color: isFullscreen ? '#00ff88' : 'rgba(255, 255, 255, 0.6)',
+              bgcolor: isFullscreen ? 'rgba(0, 255, 136, 0.2)' : 'transparent',
+              border: '1px solid',
+              borderColor: isFullscreen ? '#00ff88' : 'rgba(255, 255, 255, 0.2)',
+              '&:hover': {
+                bgcolor: isFullscreen ? 'rgba(0, 255, 136, 0.3)' : 'rgba(255, 255, 255, 0.1)'
+              }
+            }}
+            title={isFullscreen ? 'Exit Fullscreen (ESC)' : 'Enter Fullscreen'}
+          >
+            {isFullscreen ? <FullscreenExitIcon fontSize="small" /> : <FullscreenIcon fontSize="small" />}
+          </IconButton>
+        </Box>
       </Box>
 
       {/* Canvas Visualization */}
