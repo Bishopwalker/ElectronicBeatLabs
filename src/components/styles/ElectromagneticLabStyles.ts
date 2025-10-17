@@ -236,29 +236,32 @@ export const ElectromagneticLabStyles = {
       sm: '8px',
       md: '10px'
     },
-    minHeight: 'auto',
+    minHeight: 'fit-content',
     height: 'auto',
     flexDirection: {
       xs: 'column',
-      sm: 'column',
+      sm: 'row',
       md: 'row',
       lg: 'row'
     },
+    width: '100%',
+    maxWidth: '100%',
     flexWrap: 'wrap',
+    overflowX: 'hidden',
     alignContent: 'flex-start',
-    overflow: 'visible'
+    overflowY: 'scroll'
   }) as SxProps<Theme>,
 
   // Panel flex styles
   panelFlex: {
-    flex: '1 1 300px',  // ✅ FIXED: proper flex-basis for predictable sizing
+    flex: '1 1 300px',
     minWidth: '280px',
     maxWidth: '100%',
-    height: 'auto',
-    maxHeight: '70vh',  // ✅ FIXED: reduced from 100vh to prevent overflow
+    height: 'fit-content',
+    maxHeight: '70vh',
     minHeight: 'fit-content',
     display: 'flex',
-    flexDirection: 'column',  // ✅ flexWrap removed - not needed for column layout
+    flexDirection: 'column',
     overflowY: 'auto',
     overflowX: 'hidden'
   } as SxProps<Theme>,

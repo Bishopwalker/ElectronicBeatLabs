@@ -100,6 +100,7 @@ export const useBackendAudioEngine = () => {
   // Store external mixer nodes (can be set dynamically)
   const externalOutputNodeRef = useRef<GainNode | null>(null);
   const externalAnalyserRef = useRef<AnalyserNode | null>(null);
+  const externalAudioContextRef = useRef<AudioContext | null>(null); // 🔥 NEW: Store external context
 
   // Backend communication hooks
   const websocket = useWebSocketContext();
@@ -109,8 +110,20 @@ export const useBackendAudioEngine = () => {
    // Initialize audio context
   const initializeAudio = useCallback(async (): Promise<AudioContext | null> => {
     try {
-
-      audioContext.current ??= new (window.AudioContext || (window as any).webkitAudioContext)();
+      // 🔥 CRITICAL FIX: Use external context if provided (AudioMixer integration)
+      if (externalAudioContextRef.current) {
+        // Reset existing context if it's different from external
+        if (audioContext.current && audioContext.current !== externalAudioContextRef.current) {
+          console.warn('⚠️ Backend Engine: Replacing existing AudioContext with external one');
+          audioContext.current = null;
+        }
+        audioContext.current = externalAudioContextRef.current;
+      } else {
+        // Standalone mode: create new context only if none exists
+        if (!audioContext.current) {
+          audioContext.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        }
+      }
 
        if (audioContext.current.state === 'suspended') {
         await audioContext.current.resume();
@@ -124,7 +137,7 @@ export const useBackendAudioEngine = () => {
       return audioContext.current;
 
     } catch (error) {
-      console.error('Failed to initialize audio context:', error);
+      console.error('❌ Backend Engine: Failed to initialize audio context:', error);
       return null;
     }
   }, []);
@@ -139,47 +152,34 @@ export const useBackendAudioEngine = () => {
         try {
           await audioContext.current.audioWorklet.addModule(`/backend-audio-processor.js?v=${Date.now()}`);
           workletLoaded.current = true;
-          console.log('✅ Backend Engine: AudioWorklet processor loaded successfully');
         } catch (error) {
           console.error('❌ Backend Engine: Failed to load AudioWorklet processor:', error);
           return;
         }
       }
 
-      // 🔥 CRITICAL FIX: Use external nodes if provided (AudioMixer integration)
+      // Use external nodes if provided (AudioMixer integration)
       const outputNode = externalOutputNodeRef.current;
       const analyser = externalAnalyserRef.current;
 
       if (outputNode) {
         // AudioMixer mode: Route directly to mixer's backend gain node
-        console.log('🎚️ Backend Engine: Using external mixer nodes (AudioMixer mode)');
-
-        // Don't create local gain node, mixer handles all gain control
-        // Don't create local analyser, mixer provides shared analyser
-        analyserNode.current = analyser; // Store reference for return value
-
-        console.log('✅ Backend Engine: External nodes configured for mixer routing');
+        analyserNode.current = analyser;
       } else {
         // Standalone mode: Create local gain and analyser nodes
-        console.log('🎵 Backend Engine: Standalone mode - creating local nodes');
-
-        // Create persistent gain node
         if (!gainNode.current) {
           gainNode.current = audioContext.current.createGain();
           gainNode.current.gain.value = audioState.config?.amplitude ?? DEFAULT_VOLUME;
           gainNode.current.connect(audioContext.current.destination);
         }
 
-        // Create persistent analyser node for visualizations
         if (!analyserNode.current) {
           analyserNode.current = audioContext.current.createAnalyser();
           analyserNode.current.fftSize = 2048;
           analyserNode.current.smoothingTimeConstant = 0.8;
-          // Connect gain node through analyser for visualization
           gainNode.current.disconnect();
           gainNode.current.connect(analyserNode.current);
           analyserNode.current.connect(audioContext.current.destination);
-          console.log('✅ Backend Engine: Local AnalyserNode created for visualization');
         }
       }
 
@@ -191,7 +191,7 @@ export const useBackendAudioEngine = () => {
             {
               numberOfInputs: 0,
               numberOfOutputs: 1,
-              outputChannelCount: [2], // Stereo output
+              outputChannelCount: [2],
               processorOptions: {
                 amplitude: audioState.config?.amplitude ?? DEFAULT_VOLUME
               }
@@ -202,66 +202,37 @@ export const useBackendAudioEngine = () => {
         audioWorkletNode.current.port.onmessage = (event: MessageEvent) => {
           const message = event.data;
           switch (message.type) {
-            case 'frameProcessed':
-              // Reduced logging - only log every 60 frames (1 second)
-              break;
-            case 'bufferStatus':
-              if (message.data.isPlaying==true){
-                console.log('📊 Buffer Status:', message.data);
-              }
-
-              break;
             case 'bufferExhausted':
-              console.warn('⚠️ Backend Engine: Audio buffer exhausted, need new frame');
+              console.warn('⚠️ Backend Engine: Audio buffer exhausted');
               break;
             case 'processingError':
-              console.error('❌ Backend Engine: AudioWorklet processing error:', message.error);
-              break;
-            default:
+              console.error('❌ Backend Engine: AudioWorklet error:', message.error);
               break;
           }
         };
 
-        // 🔥 CRITICAL FIX: Route AudioWorklet based on mode
+        // Route AudioWorklet based on mode
         if (outputNode) {
-          // AudioMixer mode: Connect directly to mixer's backend gain
           audioWorkletNode.current.connect(outputNode);
-          console.log('✅ Backend Engine: AudioWorklet routed through AudioMixer');
         } else {
-          // Standalone mode: Connect to local gain node
           audioWorkletNode.current.connect(gainNode.current!);
-          console.log('✅ Backend Engine: AudioWorklet connected to local gain node');
         }
       }
     } catch (error) {
       console.error('❌ Backend Engine: Failed to initialize AudioWorklet audio:', error);
     }
   }, [audioState]);
-/* console.log('🎧 Backend Engine: Processing audio frame with', frame.frame_size, 'samples',
-    //     'Left:', frame.frequencies.left, 'Hz Right:', frame.frequencies.right, 'Hz Beat:', frame.frequencies.beat, 'Hz');
-*/
   // Process backend audio frame (send to AudioWorklet)
-  // CRITICAL: NO DEPENDENCIES to avoid infinite loop when registering frame handler
   const processAudioFrame = useCallback((frame: BackendAudioFrame | ArrayBuffer) => {
-
-    if (!audioContext.current) {
-      // Silently skip - audio pipeline not ready yet
-      return;
-    }
-
-    if (!audioWorkletNode.current) {
-      // Silently skip - AudioWorklet not initialized yet, frames will be buffered by backend
-      return;
-    }
+    if (!audioContext.current || !audioWorkletNode.current) return;
 
     try {
-      // Handle binary frame (ArrayBuffer) - 50% faster, 50% smaller
+      // Handle binary frame (ArrayBuffer)
       if (frame instanceof ArrayBuffer) {
         audioWorkletNode.current.port.postMessage({
           type: 'audioFrame',
-          data: frame // Pass ArrayBuffer directly to AudioWorklet
+          data: frame
         });
-        //console.log('🔊 Backend Engine: Binary audio frame sent to AudioWorklet');
         return;
       }
 
@@ -276,31 +247,26 @@ export const useBackendAudioEngine = () => {
         }
       });
 
-      // Update volume parameter on AudioWorklet (legacy JSON frames only)
+      // Update volume parameter on AudioWorklet
       const volumeParam = audioWorkletNode.current.parameters.get('volume');
-      if (volumeParam && !(frame instanceof ArrayBuffer)) {
+      if (volumeParam) {
         volumeParam.setValueAtTime(
             audioState.config?.amplitude,
             audioContext.current.currentTime
         );
       }
 
-      console.log('🔊 Backend Engine: Audio frame sent to AudioWorklet, amplitude:', audioState.config?.amplitude);
-
-      // Update frequency state in config (legacy JSON frames only)
-      if (!(frame instanceof ArrayBuffer)) {
-        setAudioState(prev => ({
-          ...prev,
-          config: {
-            ...prev.config!,
-            base_frequency: frame.frequencies.left,
-            beat_frequency: frame.frequencies.beat,
-            amplitude: audioState.config?.amplitude,
-            duration: audioContext.current?.currentTime || Date.now(),
-          }
-        }));
-      }
-
+      // Update frequency state
+      setAudioState(prev => ({
+        ...prev,
+        config: {
+          ...prev.config!,
+          base_frequency: frame.frequencies.left,
+          beat_frequency: frame.frequencies.beat,
+          amplitude: audioState.config?.amplitude,
+          duration: audioContext.current?.currentTime || Date.now(),
+        }
+      }));
     } catch (error) {
       console.error('❌ Backend Engine: Failed to process audio frame:', error);
     }
@@ -329,66 +295,36 @@ export const useBackendAudioEngine = () => {
   // Watch for WebSocket connection state changes
   useEffect(() => {
     if (waitingForConnection && websocket.isConnected && connectionPromiseRef.current) {
-      console.log('🎉 Backend Engine: WebSocket connected! Resolving promise...');
       connectionPromiseRef.current(true);
       connectionPromiseRef.current = null;
       setWaitingForConnection(false);
-
     }
   }, [websocket.isConnected, waitingForConnection]);
 
   // Sync session ID from WebSocket when it becomes available
   useEffect(() => {
     if (websocket.sessionId && !sessionId) {
-      console.log('🔄 Backend Engine: Syncing session ID from WebSocket:', websocket.sessionId);
       setSessionId(websocket.sessionId);
     }
   }, [websocket.sessionId, sessionId]);
 
-  // CRITICAL FIX: Initialize AudioWorklet EARLY on WebSocket connection
+  // 🔥 REMOVED: Early audio initialization causing AudioContext mismatch
+  // Audio pipeline is now initialized ONLY when needed (startBackendSession/startBinauralBeat)
+  // This ensures external context from mixer is used instead of creating a new one
+
+  // Register frame handler to receive audio frames from WebSocket
   useEffect(() => {
-    const initAudioPipeline = async () => {
-      if (websocket.isConnected && !audioWorkletNode.current) {
-        console.log('🎵 Backend Engine: WebSocket connected, initializing audio pipeline early...');
-
-        // Initialize audio context first
-        const context = await initializeAudio();
-        if (context) {
-          // Initialize AudioWorklet pipeline BEFORE frames start arriving
-          await initializePersistentAudio();
-          console.log('✅ Backend Engine: Audio pipeline initialized and ready for frames');
-        }
-      }
-    };
-
-    initAudioPipeline();
-  }, [websocket.isConnected, initializeAudio, initializePersistentAudio]);
-
-  // CRITICAL FIX: Register frame handler to receive audio frames from WebSocket
-  // Register ONCE on mount, processAudioFrame is now stable (empty deps)
-  useEffect(() => {
-    console.log('🎵 Backend Engine: Registering frame handler for audio processing');
-
     websocket.registerFrameHandler((message: any) => {
-      // Process frame messages directly without triggering re-renders
       if (message.type === 'frame' || message.type === 'audio_frame') {
         const audioData = message.data;
-
-        // Handle binary frames (ArrayBuffer)
         if (audioData instanceof ArrayBuffer) {
           processAudioFrame(audioData);
-          return;
-        }
-
-        // Handle legacy JSON frames
-        if (audioData && typeof audioData === 'object' && 'left' in audioData && 'right' in audioData) {
+        } else if (audioData && typeof audioData === 'object' && 'left' in audioData && 'right' in audioData) {
           processAudioFrame(audioData as BackendAudioFrame);
         }
       }
     });
-
-    console.log('✅ Backend Engine: Frame handler registered successfully');
-  }, [websocket,processAudioFrame]); // processAudioFrame is stable now (empty deps)
+  }, [websocket, processAudioFrame]);
 
   // Handle WebSocket messages with debouncing for frame messages
   const lastProcessedMessageRef = useRef<number>(0);
@@ -407,99 +343,54 @@ export const useBackendAudioEngine = () => {
           lastProcessedMessageRef.current = now;
         }
 
-        console.log('📨 Backend Engine: Received WebSocket message type:', message.type);
-     //   console.log('🔍 Backend Engine: Full message object:', JSON.stringify(message, null, 2));
-
         switch (message.type) {
           case 'frame':
           case 'audio_frame': {
-            console.log('🎵 Backend Engine: Processing audio frame - UPDATED');
-            // audio_websocket.py sends: { type: 'frame', data: {left: [], right: [], ...} }
-            // Direct access to audio data (no nested 'audio' wrapper from audio_websocket.py)
             const audioData = message.data;
-            const fieldData = null; // audio_websocket.py doesn't send field data
 
             // Check for session errors
             if (audioData && typeof audioData === 'object' && audioData.error) {
-              console.error('❌ Backend Engine: Session error from backend:', audioData.error);
+              console.error('❌ Backend Engine: Session error:', audioData.error);
               if (audioData.error === 'Session not found') {
-                console.log('🔄 Backend Engine: Session lost, forcing cleanup and stop...');
-
-                // Clean up audio nodes first
+                // Clean up audio nodes
                 if (audioWorkletNode.current) {
                   audioWorkletNode.current.port.postMessage({ type: 'clearBuffer' });
                   audioWorkletNode.current.disconnect();
                   audioWorkletNode.current = null;
                 }
-
-                // Stop audio playback
-                setAudioState(prev => ({
-                  ...prev,
-                  isPlaying: false
-                }));
-
-                // Clear session state
+                setAudioState(prev => ({ ...prev, isPlaying: false }));
                 setSessionId(null);
                 setBackendConnected(false);
-
-                // Disconnect WebSocket
-                setTimeout(() => {
-                  websocket.disconnect();
-                }, 100);
-
-                console.log('🛑 Backend Engine: Session cleanup complete');
+                setTimeout(() => websocket.disconnect(), 100);
               }
               return;
             }
 
-            // Handle binary frames
-            if (audioData instanceof ArrayBuffer) {
-              processAudioFrame(audioData);
-            } else if (audioData && typeof audioData === 'object' && 'left' in audioData && 'right' in audioData) {
-              // Handle legacy JSON frames
-              processAudioFrame(audioData as BackendAudioFrame);
-            } else {
-              console.warn('⚠️ Backend Engine: Audio data not available');
-            }
-
-            if (fieldData && typeof fieldData === 'object' && 'field' in fieldData && 'grid_size' in fieldData) {
-              processFieldFrame(fieldData as BackendFieldFrame);
+            // Handle binary/JSON frames
+            if (audioData instanceof ArrayBuffer || (audioData && typeof audioData === 'object' && 'left' in audioData)) {
+              processAudioFrame(audioData as BackendAudioFrame | ArrayBuffer);
             }
             break;
           }
 
           case 'session_started': {
-            // Initialize audio context first
             const context = await initializeAudio();
-            if (!context) {
-              throw new Error('Failed to initialize audio context');
-            }
-
-            // Initialize AudioWorklet pipeline
+            if (!context) throw new Error('Failed to initialize audio context');
             await initializePersistentAudio();
-
-            console.log('✅ Backend Engine: Session started message received');
             setBackendConnected(true);
             break;
           }
 
           case 'session_stopped':
-            console.log('🛑 Backend Engine: Session stopped message received');
-            setAudioState(prevState=>({
+            setAudioState(prevState => ({
               ...prevState,
-              setBackendConnected:false,
-              isPlaying:false,
-              audioContext
-            }))
+              isPlaying: false
+            }));
             setBackendConnected(false);
             break;
 
           case 'error':
-            console.error('❌ Backend Engine: Error message received:', message.data);
-            break;
-
-          default:
-            console.log('❓ Backend Engine: Unknown message type:', message.type);
+            console.error('❌ Backend Engine: Error:', message.data);
             break;
         }
       }
@@ -1144,11 +1035,18 @@ export const useBackendAudioEngine = () => {
   /**
    * Set external mixer nodes for AudioMixer integration
    * Call this after creating the AudioMixer to route backend audio through it
+   * 🔥 CRITICAL FIX: Now also accepts external AudioContext to prevent context mismatch
    */
-  const setExternalNodes = useCallback((outputGainNode: GainNode | null, analyserNode: AnalyserNode | null) => {
-    console.log('🎚️ Backend Engine: Setting external mixer nodes:', { outputGainNode, analyserNode });
+  const setExternalNodes = useCallback((outputGainNode: GainNode | null, analyserNode: AnalyserNode | null, audioContext?: AudioContext | null) => {
+    console.log('🎚️ Backend Engine: Setting external mixer nodes:', { outputGainNode, analyserNode, audioContext });
     externalOutputNodeRef.current = outputGainNode;
     externalAnalyserRef.current = analyserNode;
+    
+    // 🔥 NEW: Store external AudioContext to prevent creating a different one
+    if (audioContext) {
+      console.log('🎧 Backend Engine: Storing EXTERNAL AudioContext for future use');
+      externalAudioContextRef.current = audioContext;
+    }
 
     // If AudioWorklet exists, warn that restart is needed
     if (audioWorkletNode.current) {

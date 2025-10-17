@@ -1,8 +1,12 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Box, Typography, Paper, Chip, LinearProgress, Grid } from '@mui/material';
+import { Box, Typography, Paper, Chip, ToggleButtonGroup, ToggleButton } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { useAudioAnalysis } from '../hooks/index.ts';
 import type { AppState} from '../types';
+import WavesIcon from '@mui/icons-material/Waves';
+import BubbleChartIcon from '@mui/icons-material/BubbleChart';
+import RadarIcon from '@mui/icons-material/Radar';
+import GridOnIcon from '@mui/icons-material/GridOn';
 
 interface FrequencyVisualizerProps {
   state: AppState;
@@ -16,29 +20,30 @@ interface FrequencyVisualizerProps {
   analyserNode?: AnalyserNode;
 }
 
+type VisualizationMode = 'waveform' | 'spiral2d' | 'spiral3d' | 'radial' | 'combined';
+
 // 🔥 FIXED: Made container flexible for embedding
 const VisualizerContainer = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(1), // 🔥 FIXED: Reduced from 2 to 1 for tighter fit
+  padding: theme.spacing(1),
   background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)',
   border: '1px solid rgba(255, 255, 255, 0.1)',
-  borderRadius: theme.spacing(1), // 🔥 FIXED: Reduced from 2 to 1
-  height: '100%', // 🔥 FIXED: Was '400px', now flexible
-  minHeight: '250px', // Minimum usable height
+  borderRadius: theme.spacing(1),
+  height: '100%',
+  minHeight: '250px',
   display: 'flex',
   flexDirection: 'column',
-  overflow: 'auto', // 🔥 FIXED: Was 'scroll', now auto
+  overflow: 'auto',
 }));
 
-// 🔥 FIXED: Made canvas container flexible
 const CanvasContainer = styled(Box)({
   position: 'relative',
   border: '1px solid rgba(255, 255, 255, 0.2)',
   borderRadius: '8px',
-  overflow: 'hidden', // 🔥 FIXED: Was 'scroll'
+  overflow: 'hidden',
   background: 'radial-gradient(circle at center, rgba(0, 200, 255, 0.1) 0%, transparent 70%)',
   width: '100%',
-  flex: 1, // 🔥 FIXED: Take remaining space
-  minHeight: '200px', // Minimum canvas height
+  flex: 1,
+  minHeight: '200px',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -52,41 +57,65 @@ const FrequencyDisplay = styled(Box)(({ theme }) => ({
   background: 'rgba(0, 0, 0, 0.3)',
   borderRadius: theme.spacing(1),
   border: '1px solid rgba(255, 255, 255, 0.1)',
-  flexShrink: 0, // 🔥 Don't shrink when space is tight
+  flexShrink: 0,
 }));
 
 export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
-                                                                          state,
-                                                                          title = 'Binaural Beat Frequency Visualizer',
-                                                                          showSpectrum = true,
-                                                                          showFrequencies = true,
-                                                                          showMetrics = true,
-                                                                          audioContext,
-                                                                          analyserNode,
-                                                                        }) => {
+  state,
+  title = 'Binaural Beat Frequency Visualizer',
+  showSpectrum = true,
+  showFrequencies = true,
+  showMetrics = true,
+  audioContext,
+  analyserNode,
+}) => {
+  // 🔥 CRITICAL FIX: Early return if state is invalid
+  if (!state || typeof state !== 'object') {
+    console.error('❌ FrequencyVisualizer: Invalid state provided', state);
+    return (
+      <Box sx={{ p: 2, color: 'error.main', textAlign: 'center' }}>
+        <Typography>Frequency Visualizer: Invalid state</Typography>
+      </Box>
+    );
+  }
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const fpsRef = useRef<number>(0); // 🔥 FIXED: Use ref instead of state to avoid re-renders
-  const [fps, setFps] = useState(0); // 🔥 FIXED: State for UI display only, updated from ref
+  const fpsRef = useRef<number>(0);
+  const [fps, setFps] = useState(0);
   const [canvasDimensions, setCanvasDimensions] = useState({ width: 800, height: 300 });
-  const dimensionsRef = useRef(canvasDimensions); // 🔥 FIXED: Ref for animation access
-  // Deconstruct from state
-  const {
-    base_frequency,
-    beat_frequency,
-    isPlaying,
-    patterns8D,
-    currentPattern,
-    timer,
-    electromagnetic
-  } = state;
+  const dimensionsRef = useRef(canvasDimensions);
+  const [visualizationMode, setVisualizationMode] = useState<VisualizationMode>('combined');
+
+  // 🔥 FIXED: Read from both audio.audioState AND top-level state for flexibility
+  // Timer transitions pass frequencies at top level, audio engine has them nested
+  const base_frequency = 
+    state.base_frequency ?? 
+    state.audio?.audioState?.base_frequency ?? 
+    140;
+  
+  const beat_frequency = 
+    state.beat_frequency ?? 
+    state.audio?.audioState?.beat_frequency ?? 
+    4;
+  
+  const isPlaying = 
+    state.isPlaying ?? 
+    state.audio?.audioState?.isPlaying ?? 
+    false;
+
+  const { 
+    patterns8D = [],
+    currentPattern = null,
+    electromagnetic = null
+  } = state || {};
 
   // Calculate frequencies
   const leftFreq = base_frequency;
   const rightFreq = base_frequency + beat_frequency;
   const beatFreq = beat_frequency;
 
-  // ✅ FIXED: Match active pattern by currentPattern ID instead of always using first pattern
+  // ✅ FIXED: Match active pattern by currentPattern ID
   const activePattern = currentPattern && patterns8D
     ? patterns8D.find(p => p.id === currentPattern.id) || null
     : null;
@@ -98,47 +127,24 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
     audioContext,
     analyserNode
   });
-  // Timer info display
-  // const getTimerInfo = () => {
-  //   if (!timer?.status) return null;
-  //
-  //   const { session, isRunning } = timer.status;
-  //   const currentStepIndex = session?.current_transition_index;
-  //   const transitions = timer.transitions;
-  //
-  //   if (!isRunning || currentStepIndex === undefined || !transitions) return null;
-  //
-  //   const currentStep = transitions[currentStepIndex];
-  //   if (!currentStep) return null;
-  //
-  //   return {
-  //     stepName: currentStep.description || `Step ${currentStepIndex + 1}`,
-  //     stepIndex: currentStepIndex + 1,
-  //     totalSteps: transitions.length,
-  //     targetFreq: currentStep.frequency_hz,
-  //     remainingTime: timer.status.time_remaining_current || 0
-  //   };
-  // };
-
-  //const timerInfo = getTimerInfo();
 
   // 🔥 FIXED: Update dimensionsRef when canvasDimensions changes
   useEffect(() => {
     dimensionsRef.current = canvasDimensions;
   }, [canvasDimensions]);
 
-  // 🔥 FIXED: Update FPS display from ref (separate from animation to avoid re-renders)
+  // 🔥 FIXED: Update FPS display from ref
   useEffect(() => {
     if (!isPlaying) return;
 
     const fpsUpdateInterval = setInterval(() => {
       setFps(fpsRef.current);
-    }, 1000); // Update UI every second
+    }, 1000);
 
     return () => clearInterval(fpsUpdateInterval);
   }, [isPlaying]);
 
-  // 🔥 FIXED: Throttled responsive canvas sizing (prevents resize loops)
+  // 🔥 FIXED: Throttled responsive canvas sizing
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -152,16 +158,14 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
         const width = Math.max(Math.floor(rect.width) || 800, 400);
         const height = Math.max(Math.floor(rect.height) || 300, 200);
 
-        // 🔥 CRITICAL: Only update if size actually changed significantly (>5px)
         if (Math.abs(width - lastWidth) > 5 || Math.abs(height - lastHeight) > 5) {
           lastWidth = width;
           lastHeight = height;
 
-          // 🔥 Throttle updates to prevent rapid-fire resize loops
           if (resizeTimeout) clearTimeout(resizeTimeout);
           resizeTimeout = setTimeout(() => {
             setCanvasDimensions({ width, height });
-          }, 150); // 150ms debounce
+          }, 150);
         }
       }
     };
@@ -178,14 +182,13 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
     };
   }, []);
 
-  // ENHANCED: Performance-optimized visualization with electromagnetic field and frequency analysis
+  // 🎨 ENHANCED: Multi-mode visualization with FFT-driven spiral and radial bars
   useEffect(() => {
     console.log('🎨 FrequencyVisualizer useEffect triggered:', {
       hasCanvas: !!canvasRef.current,
       isPlaying,
-      leftFreq,
-      rightFreq,
-      hasElectromagnetic: !!electromagnetic,
+      visualizationMode,
+      hasAnalyser: !!analyserNode,
       canvasWidth: canvasDimensions.width,
       canvasHeight: canvasDimensions.height
     });
@@ -201,7 +204,6 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
       console.log('❌ FrequencyVisualizer: No canvas context');
       return;
     }
-
 
     let animationId: number;
     let lastFrameTime = 0;
@@ -219,7 +221,7 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
       if (elapsed >= frameInterval) {
         lastFrameTime = timestamp - (elapsed % frameInterval);
 
-        // 🔥 FIXED: FPS calculation (use ref to avoid re-renders)
+        // FPS calculation
         frameCount++;
         fpsTime += elapsed;
         if (fpsTime >= 1000) {
@@ -234,93 +236,54 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
 
         const centerY = canvas.height / 2;
         const centerX = canvas.width / 2;
+        const time = timestamp * 0.001;
 
-        // Get frequency data from analyser if available
+        // Get real-time frequency data from analyser
         if (analyserNode) {
           analyserNode.getByteFrequencyData(frequencyData);
         }
 
-        // ENHANCED: Draw binaural beat waveform with electromagnetic field modulation
-        ctx.beginPath();
-        ctx.strokeStyle = activePattern?.color || '#00ff88';
-        ctx.lineWidth = 2;
-        ctx.shadowColor = activePattern?.color || '#00ff88';
-        ctx.shadowBlur = 10;
-
-        const samples = 200;
-        const time = timestamp * 0.001;
-
-        // Use electromagnetic field data for modulation
+        // Electromagnetic field modulation
         const fieldStrength = electromagnetic?.strength || 0;
         const fieldFrequency = electromagnetic?.frequency || beatFreq;
         const fieldCoherence = electromagnetic?.coherence || 0;
 
-        for (let i = 0; i < samples; i++) {
-          const x = (i / samples) * canvas.width;
-          const normalizedPos = i / samples;
-
-          // Show 2-3 complete cycles across the canvas for better visualization
-          const cycles = 3;
-          const visualT = normalizedPos * cycles;
-
-          // Left and right ear frequencies with scaled time
-          const leftWave = Math.sin(2 * Math.PI * visualT);
-          const rightWave = Math.sin(2 * Math.PI * visualT + (beatFreq / leftFreq) * 2 * Math.PI * cycles);
-
-          // Binaural beat interference pattern with electromagnetic modulation
-          const binauralBeat = (leftWave + rightWave) / 2;
-          const fieldModulation = Math.sin(2 * Math.PI * fieldFrequency * time) * fieldStrength;
-          const amplitude = 40 + (beatFreq * 2) + (fieldModulation * 30);
-
-          const y = centerY + (binauralBeat + fieldModulation * 0.3) * amplitude;
-
-          if (i === 0) {
-            ctx.moveTo(x, y);
-          } else {
-            ctx.lineTo(x, y);
-          }
+        // 🎨 RENDER BASED ON MODE
+        switch (visualizationMode) {
+          case 'waveform':
+            renderWaveform(ctx, canvas, centerX, centerY, time, frequencyData, fieldStrength, fieldFrequency);
+            break;
+          case 'spiral2d':
+            renderSpiral2D(ctx, canvas, centerX, centerY, time, frequencyData, fieldStrength, fieldCoherence);
+            break;
+          case 'spiral3d':
+            renderSpiral3D(ctx, canvas, centerX, centerY, time, frequencyData, fieldStrength, fieldCoherence);
+            break;
+          case 'radial':
+            renderRadialBars(ctx, canvas, centerX, centerY, time, frequencyData, fieldStrength);
+            break;
+          case 'combined':
+            // Draw radial bars as background
+            renderRadialBars(ctx, canvas, centerX, centerY, time, frequencyData, fieldStrength);
+            // Overlay spiral on top
+            renderSpiral2D(ctx, canvas, centerX, centerY, time, frequencyData, fieldStrength, fieldCoherence);
+            break;
         }
 
-        ctx.stroke();
-        ctx.shadowBlur = 0;
-
-        // ENHANCED: Draw frequency spectrum analysis at top
+        // Draw frequency spectrum analysis at top (if enabled)
         if (analyserNode && frequencyData.length > 0 && showSpectrum) {
           const barWidth = canvas.width / 64;
-          const maxBarHeight = canvas.height * 0.2;
+          const maxBarHeight = canvas.height * 0.15;
 
           for (let i = 0; i < 64; i++) {
             const barHeight = (frequencyData[i] / 255) * maxBarHeight;
             const x = i * barWidth;
             const y = 10;
 
-            // Color based on frequency and electromagnetic coherence
             const hue = (i / 64) * 240 + (fieldCoherence * 60);
             const intensity = 0.4 + (fieldStrength * 0.4);
             ctx.fillStyle = `hsla(${hue}, 80%, 60%, ${intensity})`;
             ctx.fillRect(x, y, barWidth - 2, barHeight);
-          }
-        }
-
-        // ENHANCED: Draw electromagnetic field visualization overlay
-        if (electromagnetic && fieldStrength > 0.1) {
-          const fieldRadius = 60 + (fieldStrength * 40);
-          const numRings = 5;
-
-          for (let ring = 0; ring < numRings; ring++) {
-            const progress = ring / numRings;
-            const radius = fieldRadius * (1 - progress);
-            const alpha = (1 - progress) * fieldStrength * 0.5;
-
-            const angle = time * fieldFrequency * 0.1 + (ring * Math.PI / numRings);
-            const offsetX = Math.cos(angle) * 10;
-            const offsetY = Math.sin(angle) * 10;
-
-            ctx.beginPath();
-            ctx.arc(centerX + offsetX, centerY + offsetY, radius, 0, 2 * Math.PI);
-            ctx.strokeStyle = `hsla(${180 + fieldCoherence * 60}, 80%, 60%, ${alpha})`;
-            ctx.lineWidth = 2;
-            ctx.stroke();
           }
         }
 
@@ -347,28 +310,304 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
             ctx.stroke();
           }
         }
-
-        // Don't draw timer info overlay in canvas (shows in UI instead)
       }
 
       animationId = requestAnimationFrame(draw);
     };
+
+    // 🎨 RENDER FUNCTIONS FOR EACH MODE
+
+    // Waveform visualization (original)
+    function renderWaveform(
+      ctx: CanvasRenderingContext2D,
+      canvas: HTMLCanvasElement,
+      centerX: number,
+      centerY: number,
+      time: number,
+      frequencyData: Uint8Array,
+      fieldStrength: number,
+      fieldFrequency: number
+    ) {
+      ctx.beginPath();
+      ctx.strokeStyle = activePattern?.color || '#00ff88';
+      ctx.lineWidth = 2;
+      ctx.shadowColor = activePattern?.color || '#00ff88';
+      ctx.shadowBlur = 10;
+
+      const samples = 200;
+      const cycles = 3;
+      const fieldModulation = Math.sin(2 * Math.PI * fieldFrequency * time) * fieldStrength;
+
+      for (let i = 0; i < samples; i++) {
+        const x = (i / samples) * canvas.width;
+        const normalizedPos = i / samples;
+        const visualT = normalizedPos * cycles;
+
+        const leftWave = Math.sin(2 * Math.PI * visualT);
+        const rightWave = Math.sin(2 * Math.PI * visualT + (beatFreq / leftFreq) * 2 * Math.PI * cycles);
+
+        const binauralBeat = (leftWave + rightWave) / 2;
+        const amplitude = 40 + (beatFreq * 2) + (fieldModulation * 30);
+
+        const y = centerY + (binauralBeat + fieldModulation * 0.3) * amplitude;
+
+        if (i === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+      }
+
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+
+    // 🌀 2D Spiral driven by FFT data
+    function renderSpiral2D(
+      ctx: CanvasRenderingContext2D,
+      canvas: HTMLCanvasElement,
+      centerX: number,
+      centerY: number,
+      time: number,
+      frequencyData: Uint8Array,
+      fieldStrength: number,
+      fieldCoherence: number
+    ) {
+      const numBins = Math.min(frequencyData.length, 128);
+      const rotationSpeed = 0.5;
+      const maxRadius = Math.min(canvas.width, canvas.height) * 0.4;
+
+      ctx.save();
+      ctx.translate(centerX, centerY);
+
+      // Draw multiple spiral arms
+      const numArms = 3;
+      for (let arm = 0; arm < numArms; arm++) {
+        const armOffset = (arm * Math.PI * 2) / numArms;
+
+        ctx.beginPath();
+        ctx.strokeStyle = `hsla(${(arm * 120 + time * 30) % 360}, 80%, 60%, 0.8)`;
+        ctx.lineWidth = 2 + fieldStrength * 2;
+        ctx.shadowColor = ctx.strokeStyle;
+        ctx.shadowBlur = 8 + fieldStrength * 6;
+
+        for (let i = 0; i < numBins; i++) {
+          const freqValue = frequencyData[i] / 255;
+          const t = i / numBins;
+          
+          // Spiral equation: radius grows with angle
+          const angle = t * Math.PI * 6 + time * rotationSpeed + armOffset;
+          const radius = (t * maxRadius) * (0.5 + freqValue * 0.5) * (1 + fieldCoherence * 0.3);
+
+          const x = Math.cos(angle) * radius;
+          const y = Math.sin(angle) * radius;
+
+          if (i === 0) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
+          }
+
+          // Draw energy points at peaks
+          if (freqValue > 0.6 && i % 8 === 0) {
+            ctx.save();
+            ctx.fillStyle = `hsla(${(arm * 120 + 60) % 360}, 90%, 70%, ${freqValue})`;
+            ctx.beginPath();
+            ctx.arc(x, y, 2 + freqValue * 3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+          }
+        }
+
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+      }
+
+      ctx.restore();
+    }
+
+    // 🌀 3D Spiral with perspective (Z-axis depth)
+    function renderSpiral3D(
+      ctx: CanvasRenderingContext2D,
+      canvas: HTMLCanvasElement,
+      centerX: number,
+      centerY: number,
+      time: number,
+      frequencyData: Uint8Array,
+      fieldStrength: number,
+      fieldCoherence: number
+    ) {
+      const numBins = Math.min(frequencyData.length, 128);
+      const rotationSpeed = 0.5;
+      const maxRadius = Math.min(canvas.width, canvas.height) * 0.35;
+      const zDepth = 200;
+
+      ctx.save();
+      ctx.translate(centerX, centerY);
+
+      // Draw helix with 3D perspective
+      const numHelixes = 2;
+      for (let helix = 0; helix < numHelixes; helix++) {
+        const helixOffset = (helix * Math.PI);
+
+        ctx.beginPath();
+
+        for (let i = 0; i < numBins; i++) {
+          const freqValue = frequencyData[i] / 255;
+          const t = i / numBins;
+
+          // 3D helix equations
+          const angle = t * Math.PI * 8 + time * rotationSpeed + helixOffset;
+          const radius = maxRadius * 0.6 * (0.5 + freqValue * 0.5);
+          const z = (t - 0.5) * zDepth; // Z from -100 to +100
+
+          // Perspective projection (simple)
+          const perspective = 300 / (300 + z);
+          const x = Math.cos(angle) * radius * perspective;
+          const y = Math.sin(angle) * radius * perspective + z * 0.3; // Add Z to Y for depth
+
+          // Color based on depth
+          const depthHue = (t * 240 + helix * 180 + time * 20) % 360;
+          const depthAlpha = 0.3 + (freqValue * 0.5) + (perspective - 0.5) * 0.4;
+          const lineWidth = 1 + freqValue * 3 * perspective;
+
+          ctx.strokeStyle = `hsla(${depthHue}, 80%, 60%, ${depthAlpha})`;
+          ctx.lineWidth = lineWidth;
+
+          if (i === 0) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
+          }
+        }
+
+        ctx.stroke();
+      }
+
+      ctx.restore();
+    }
+
+    // ☀️ Radial Sunburst Bars emanating from center
+    function renderRadialBars(
+      ctx: CanvasRenderingContext2D,
+      canvas: HTMLCanvasElement,
+      centerX: number,
+      centerY: number,
+      time: number,
+      frequencyData: Uint8Array,
+      fieldStrength: number
+    ) {
+      const numBars = Math.min(frequencyData.length / 2, 64);
+      const maxBarLength = Math.min(canvas.width, canvas.height) * 0.4;
+
+      ctx.save();
+      ctx.translate(centerX, centerY);
+
+      for (let i = 0; i < numBars; i++) {
+        const freqValue = frequencyData[i] / 255;
+        const angle = (i / numBars) * Math.PI * 2 - Math.PI / 2; // Start from top
+        const barLength = freqValue * maxBarLength * (1 + fieldStrength * 0.3);
+        const barWidth = (Math.PI * 2) / numBars * maxBarLength * 0.8;
+
+        // Gradient from center to edge
+        const gradient = ctx.createLinearGradient(0, 0, Math.cos(angle) * barLength, Math.sin(angle) * barLength);
+        const hue = (i / numBars) * 360 + time * 20;
+        gradient.addColorStop(0, `hsla(${hue}, 80%, 60%, 0.1)`);
+        gradient.addColorStop(0.5, `hsla(${hue}, 85%, 65%, ${freqValue * 0.6})`);
+        gradient.addColorStop(1, `hsla(${hue}, 90%, 70%, ${freqValue})`);
+
+        ctx.fillStyle = gradient;
+        ctx.shadowColor = `hsla(${hue}, 90%, 70%, ${freqValue * 0.5})`;
+        ctx.shadowBlur = 10 * freqValue;
+
+        // Draw bar as triangle
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        
+        const x1 = Math.cos(angle - barWidth / maxBarLength) * barLength;
+        const y1 = Math.sin(angle - barWidth / maxBarLength) * barLength;
+        const x2 = Math.cos(angle + barWidth / maxBarLength) * barLength;
+        const y2 = Math.sin(angle + barWidth / maxBarLength) * barLength;
+
+        ctx.lineTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.closePath();
+        ctx.fill();
+
+        // Draw energy burst at tips for strong frequencies
+        if (freqValue > 0.7) {
+          const tipX = Math.cos(angle) * barLength;
+          const tipY = Math.sin(angle) * barLength;
+
+          ctx.fillStyle = `hsla(${hue + 60}, 100%, 80%, ${freqValue})`;
+          ctx.beginPath();
+          ctx.arc(tipX, tipY, 3 + freqValue * 4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      ctx.shadowBlur = 0;
+      ctx.restore();
+    }
 
     animationId = requestAnimationFrame(draw);
 
     return () => {
       cancelAnimationFrame(animationId);
     };
-  }, [isPlaying, leftFreq, rightFreq, beatFreq, activePattern, analyserNode, electromagnetic, showSpectrum]);
-  // 🔥 CRITICAL: canvasDimensions removed from deps - animation uses current canvas.width/height directly!
+  }, [isPlaying, leftFreq, rightFreq, beatFreq, activePattern, analyserNode, electromagnetic, showSpectrum, visualizationMode]);
 
   return (
     <VisualizerContainer elevation={10}>
-      {title && (
-        <Typography variant="h6" gutterBottom sx={{ color: '#fff', textAlign: 'center', flexShrink: 0}}>
-          {title}
-        </Typography>
-      )}
+      {/* Visualization Mode Selector */}
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center',
+        mb: 1,
+        flexShrink: 0
+      }}>
+        {title && (
+          <Typography variant="h6" sx={{ color: '#fff', fontSize: '0.95rem', flexGrow: 1 }}>
+            {title}
+          </Typography>
+        )}
+        
+        <ToggleButtonGroup
+          value={visualizationMode}
+          exclusive
+          onChange={(_, newMode) => newMode && setVisualizationMode(newMode)}
+          size="small"
+          sx={{
+            '& .MuiToggleButton-root': {
+              color: 'rgba(255, 255, 255, 0.6)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              padding: '4px 8px',
+              '&.Mui-selected': {
+                color: '#00ff88',
+                backgroundColor: 'rgba(0, 255, 136, 0.2)',
+                border: '1px solid #00ff88'
+              }
+            }
+          }}
+        >
+          <ToggleButton value="waveform" title="Waveform">
+            <WavesIcon fontSize="small" />
+          </ToggleButton>
+          <ToggleButton value="spiral2d" title="2D Spiral">
+            <BubbleChartIcon fontSize="small" />
+          </ToggleButton>
+          <ToggleButton value="spiral3d" title="3D Helix">
+            <RadarIcon fontSize="small" />
+          </ToggleButton>
+          <ToggleButton value="radial" title="Radial Bars">
+            <RadarIcon fontSize="small" style={{ transform: 'rotate(45deg)' }} />
+          </ToggleButton>
+          <ToggleButton value="combined" title="Combined">
+            <GridOnIcon fontSize="small" />
+          </ToggleButton>
+        </ToggleButtonGroup>
+      </Box>
 
       {/* Canvas Visualization */}
       <CanvasContainer ref={containerRef}>
@@ -386,7 +625,7 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
 
       {/* Frequency Display */}
       {showFrequencies && (
-        <FrequencyDisplay sx={{ mt: 2 }}>
+        <FrequencyDisplay sx={{ mt: 1 }}>
           <Box>
             <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.7rem' }}>
               Left Ear
@@ -435,14 +674,23 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
               border: '1px solid #00bfff'
             }}
           />
+          <Chip
+            label={visualizationMode.toUpperCase()}
+            size="small"
+            sx={{
+              backgroundColor: 'rgba(138, 43, 226, 0.2)',
+              color: '#8a2be2',
+              border: '1px solid #8a2be2'
+            }}
+          />
           {activePattern && (
             <Chip
               label={`Pattern: ${activePattern.name}`}
               size="small"
               sx={{
-                backgroundColor: 'rgba(138, 43, 226, 0.2)',
-                color: '#8a2be2',
-                border: '1px solid #8a2be2'
+                backgroundColor: 'rgba(255, 20, 147, 0.2)',
+                color: '#ff1493',
+                border: '1px solid #ff1493'
               }}
             />
           )}

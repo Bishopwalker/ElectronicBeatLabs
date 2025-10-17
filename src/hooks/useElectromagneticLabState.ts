@@ -75,35 +75,31 @@ export const useElectromagneticLabState = (initialPattern?: string, autoStart: b
         ...prev,
         appState: {
           ...prev.appState,
-          electromagnetic: enhancedElectromagnetic,
-          isPlaying: currentAudioState.isPlaying,
-          volume: isNaN(currentAudioState.amplitude) ? prev.appState.volume : currentAudioState.amplitude,
-          base_frequency: currentAudioState.base_frequency,
-          beat_frequency: currentAudioState.beat_frequency
-
+          electromagnetic: enhancedElectromagnetic
+          // 🔥 REMOVED: isPlaying, volume, base_frequency, beat_frequency
+          // These now live in HybridAudioEngine.audioState - read from there!
         }
       }));
     }
   }, [manager]);
 
   // Force electromagnetic field update when pattern changes
-  const updateElectromagneticForPattern = useCallback(() => {
+  // 🔥 NOTE: isPlaying and volume now come from HybridEngine, passed by caller
+  const updateElectromagneticForPattern = useCallback((isPlaying: boolean, volume: number) => {
     if (state.appState.currentPattern) {
       const frequency = state.appState.currentPattern.frequencies.beat;
-      const isPlaying = state.appState.isPlaying;
 
       const immediateElectromagnetic = manager.createImmediateElectromagnetic(
         frequency,
         isPlaying,
-        state.appState.volume
+        volume
       );
 
-      setState((prev:AppState => ({
+      setState((prev: any) => ({
         ...prev,
         appState: {
           ...prev.appState,
-          electromagnetic: immediateElectromagnetic,
-          frequency: parseFloat(frequency)
+          electromagnetic: immediateElectromagnetic
         }
       }));
 
@@ -112,8 +108,6 @@ export const useElectromagneticLabState = (initialPattern?: string, autoStart: b
   }, [
     state.appState.currentPattern?.id,
     state.appState.currentPattern?.frequencies.beat,
-    state.appState.isPlaying,
-    state.appState.volume,
     manager
   ]);
 

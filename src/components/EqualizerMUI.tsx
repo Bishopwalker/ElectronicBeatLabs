@@ -21,72 +21,7 @@ import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
 import { useEqualizer, EQ_PRESETS } from '../hooks/useEqualizer';
 import type { EqualizerBand } from '../types';
 
-// Simple Frequency Visualizer Component
-const SimpleFrequencyVisualizer: React.FC<{ 
-  audioContext: AudioContext | null; 
-  analyserNode: AnalyserNode | null;
-  isPlaying?: boolean;
-  height?: number;
-}> = ({ audioContext, analyserNode, isPlaying, height = 100 }) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
- const animationRef = useRef<number>();
 
-  useEffect(() => {
-    if (!analyserNode || !canvasRef.current) return;
-
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const bufferLength = analyserNode.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
-
-    const draw = () => {
-      animationRef.current = requestAnimationFrame(draw);
-      analyserNode.getByteFrequencyData(dataArray);
-
-      // Clear canvas with fade effect
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      const barWidth = (canvas.width / bufferLength) * 2.5;
-      let x = 0;
-
-      for (let i = 0; i < bufferLength; i++) {
-        const barHeight = (dataArray[i] / 255) * canvas.height * 0.8;
-
-        // Create gradient colors
-        const r = barHeight + 25 * (i / bufferLength);
-        const g = 250 * (i / bufferLength);
-        const b = 250;
-
-        ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
-        ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
-
-        x += barWidth + 1;
-      }
-    };
-
-    draw();
-
-    return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-    };
-  }, [analyserNode]);analyserNode
-
-  return (
-    <Box sx={{ width: '100%', height: '100%', bgcolor: 'black', borderRadius: 1 }}>
-      <canvas 
-        ref={canvasRef}
-        // width={800}
-        // height={height * 2}
-        // style={{ width: '100%', height: '100%', borderRadius: '4px' }}
-      />
-    </Box>
-  );
-};
 
 interface EqualizerMUIProps {
   audioContext?: AudioContext | null;
@@ -517,14 +452,7 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
                   {visualizerFullscreen ? <FullscreenExitIcon fontSize="small" /> : <FullscreenIcon fontSize="small" />}
                 </IconButton>
               </Box>
-              <Box sx={{ flex: 1, minHeight: 0 }}>
-                <SimpleFrequencyVisualizer
-                  audioContext={audioContext}
-                  analyserNode={analyserNode}
-                  isPlaying={isPlaying}
-                  height={visualizerFullscreen ? (eqFullscreen ? 500 : 300) : (eqFullscreen ? 200 : 100)}
-                />
-              </Box>
+
             </Box>
           )}
         </Box>

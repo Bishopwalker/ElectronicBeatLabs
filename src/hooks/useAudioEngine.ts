@@ -573,11 +573,13 @@ export const useAudioEngine = () => {
   /**
    * Set external mixer nodes for AudioMixer integration
    * Call this after creating the AudioMixer to route frontend audio through it
+   * 🔥 CRITICAL FIX: Now accepts audioContext parameter (even though frontend doesn't use it)
    */
-  const setExternalNodes = useCallback((outputGainNode: GainNode | null, analyserNode: AnalyserNode | null) => {
-    console.log('🎚️ Frontend Engine: Setting external mixer nodes:', { outputGainNode, analyserNode });
+  const setExternalNodes = useCallback((outputGainNode: GainNode | null, analyserNode: AnalyserNode | null, audioContext?: AudioContext | null) => {
+    console.log('🎚️ Frontend Engine: Setting external mixer nodes:', { outputGainNode, analyserNode, audioContext });
     externalOutputNodeRef.current = outputGainNode;
     externalAnalyserRef.current = analyserNode;
+    // Frontend uses persistent audioContextRef, ignores external context parameter
 
     // If audio is currently playing, warn that restart is needed
     if (audioState.isPlaying) {

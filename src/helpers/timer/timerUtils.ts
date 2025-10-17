@@ -112,3 +112,76 @@ export const deletePresetFromStorage = (presetId: string) => {
 export const isCustomPreset = (presetId: string) => {
   return presetId.startsWith('custom-');
 };
+
+/**
+ * Build TimerStatus from timerState + audioState
+ * 🔥 CRITICAL: This is a COMPUTED helper, NOT stored state
+ * TimerStatus is built on-demand for UI display purposes
+ */
+export const buildTimerStatus = (
+  timerState: any | null,  // TimerOnlyState from useTimerLogic
+  audioState: any,          // AudioState from HybridEngine
+  sessionId?: string | null
+): any | null => {  // Returns TimerStatus or null
+  if (!timerState || !timerState.isActive) return null;
+
+  const now = Date.now();
+  const elapsedSeconds = Math.floor((now - timerState.startTime) / 1000);
+
+  let currentTransitionIndex = 0;
+  let elapsedInTransitionsSeconds = elapsedSeconds;
+
+  // Calculate current transition index
+  for (const transition of timerState.transitions) {
+    const transitionDurationSeconds = transition.duration_minutes * 60;
+    if (elapsedInTransitionsSeconds >= transitionDurationSeconds) {
+      elapsedInTransitionsSeconds -= transitionDurationSeconds;
+      currentTransitionIndex++;
+    } else {
+      break;
+    }
+  }
+
+  // If beyond last transition, return null
+  if (currentTransitionIndex >= timerState.transitions.length) {
+    return null;
+  }
+
+  const currentTransition = timerState.transitions[currentTransitionIndex];
+  const nextTransition = timerState.transitions[currentTransitionIndex + 1] || null;
+  const currentTransitionDurationSeconds = currentTransition.duration_minutes * 60;
+  const timeRemainingCurrentSeconds = currentTransitionDurationSeconds - elapsedInTransitionsSeconds;
+  const timeRemainingCurrentMinutes = timeRemainingCurrentSeconds / 60;
+
+  const totalTimeRemainingSeconds = timerState.transitions
+    .slice(currentTransitionIndex)
+    .reduce((sum: number, t: any, i: number) => {
+      if (i === 0) return sum + timeRemainingCurrentSeconds;
+      return sum + (t.duration_minutes * 60);
+    }, 0);
+  const totalTimeRemainingMinutes = totalTimeRemainingSeconds / 60;
+
+  const totalTime = timerState.transitions.reduce((sum: number, t: any) => sum + t.duration_minutes, 0);
+  const progress = totalTime > 0 ? (1 - (totalTimeRemainingMinutes / totalTime)) * 100 : 0;
+
+  return {
+    session: sessionId ? {
+      session_id: sessionId,
+      startTime: timerState.startTime,
+      currentPhase: currentTransitionIndex,
+      isPaused: timerState.isPaused,
+      is_active: timerState.isActive,
+      loopCount: 0
+    } : undefined,
+    current_transition: currentTransition,
+    next_transition: nextTransition,
+    time_remaining_current: timeRemainingCurrentMinutes,
+    time_remaining_total: totalTimeRemainingMinutes,
+    isRunning: timerState.isActive && !timerState.isPaused && audioState.isPlaying,
+    totalTime,
+    progress,
+    isPaused: timerState.isPaused,
+    transitionIndex: currentTransitionIndex,
+    totalTransitions: timerState.transitions.length
+  };
+};

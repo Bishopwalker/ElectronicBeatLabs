@@ -7,15 +7,12 @@ import { WAVE_PATTERNS } from '../../data/patterns';
 import { convertAllPatternsToPattern8D } from '../../utils/patternGeometry';
 
 // Default app state configuration
+// CLEAN: Audio state removed - lives in HybridAudioEngine.audioState
+// CLEAN: Timer state removed - lives in useTimerLogic.timerState
 export const DEFAULT_APP_STATE: AppState = {
   mode: 'AUTO',
   currentPattern: null,
-  base_frequency: DEFAULT_BASE_FREQUENCY,
-  beat_frequency: DEFAULT_BEAT_FREQUENCY,
-  isPlaying: false,
-  frequency: DEFAULT_BASE_FREQUENCY,
-  maxVolume: DEFAULT_MAX_VOLUME,
-  volume: DEFAULT_VOLUME,
+  // REMOVED: base_frequency, beat_frequency, isPlaying, volume → HybridEngine.audioState
   electromagnetic: {
     strength: 0,
     frequency: 0,
@@ -25,7 +22,7 @@ export const DEFAULT_APP_STATE: AppState = {
     state: 'INACTIVE',
     stability: 0
   },
-  patterns8D: convertAllPatternsToPattern8D(WAVE_PATTERNS), // ✅ FIXED: Convert PatternConfig[] → Pattern8D[] with 3D paths
+  patterns8D: convertAllPatternsToPattern8D(WAVE_PATTERNS), // FIXED: Convert PatternConfig[] → Pattern8D[] with 3D paths
   systemStatus: {
     electromagnetic: {
       strength: 0,

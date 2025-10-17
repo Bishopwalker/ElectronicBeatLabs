@@ -333,24 +333,13 @@ export interface CustomPresetForm {
 // ============================================
 
 export interface AppState {
-    // Pattern & Mode
+     // Pattern & Mode
     mode: PatternMode;
     currentPattern?: PatternConfig | null;
 
-    // Audio Engine
-    audioEngine?: AnyAudioEngine;
-
-    // Timer State
-    timer?: LocalTimer;
-    timerStatus?: TimerStatus | null;
-    selectedPresetId?: string;
-    customPresetTransitions?: {[key: string]: FrequencyTransition[]};
-
-    // Audio State
-    beat_frequency: number;
-    base_frequency: number;
-    isPlaying: boolean;
-    volume: number;
+    // 🔥 REMOVED: Audio state now lives in HybridAudioEngine.audioState
+    // 🔥 REMOVED: Timer state now lives in useTimerLogic.timerState
+    // Single source of truth for each domain!
 
     // Electromagnetic & Patterns
     electromagnetic: ElectromagneticField;
@@ -382,11 +371,10 @@ export interface AppState {
     // Misc
     audioContextState?: AudioContextState;
     lastUpdate?: number;
-    presets?: TimerPreset[];
 
-    // Callbacks for timer logic
+    // Callbacks for visualization updates
     onElectromagneticUpdate?: (electromagnetic: ElectromagneticField) => void;
-    onTimerStatusUpdate?: (status: TimerStatus | null) => void;
+    // 🔥 REMOVED: onTimerStatusUpdate - timer state accessed directly from useTimerLogic
 
     // 8D Pattern control
     patterns8DControl?: {

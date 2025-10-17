@@ -47,6 +47,7 @@ const PatternSelectorMUI: React.FC<PatternSelectorPropsExtended> = ({
     <Card sx={{
       height: '100%',
       display: 'flex',
+      overflowY:'auto',
       flexDirection: 'column',
       background: 'rgba(255, 107, 0, 0.05)',
       borderColor: 'rgba(255, 107, 0, 0.3)',
@@ -150,7 +151,7 @@ const PatternSelectorMUI: React.FC<PatternSelectorPropsExtended> = ({
                         borderRadius: '8px',
                         zIndex: -1,
                         opacity: 0.3,
-                        animation: 'pulse 2s infinite'
+                        animation: 'pulse 200s infinite'
                       }
                     })
                   }}

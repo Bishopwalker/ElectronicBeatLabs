@@ -13,9 +13,7 @@ import type {
   FrequencyTransition,
   TimerAction,
   CustomPresetForm,
-  AnyAudioEngine,
-    LocalTimer,
-    TimerStatus
+  AnyAudioEngine
 } from "../types";
 import { useWebSocketContext } from './useWebsocketContext';
 import { AudioState } from './useAudioState';
@@ -48,15 +46,18 @@ interface UseTimerLogicProps {
     clearActivePattern: () => void;
   };
   onElectromagneticUpdate?: (electromagnetic: ElectromagneticField) => void;
+  onTimerStatusUpdate?: (status: any) => void; // 🔥 FIXED: Re-added for parent component
 }
 
 export const useTimerLogic = (props: UseTimerLogicProps) => {
   // Get props
   const {
     audioEngine,
+    audioState,
+    updateAudioState,
     patterns8DControl,
     onElectromagneticUpdate,
-    onTimerStatusUpdate
+    onTimerStatusUpdate // 🔥 FIXED: Extract callback
   } = props;
 
   // Use the WebSocket context
@@ -72,17 +73,17 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
     const saved = localStorage.getItem('ebl_selected_preset');
     return saved || '';
   });
-  const [timerStatus, setTimerStatus] = useState<TimerStatus | null>(null);
+  // 🔥 REFACTORED: Use TimerOnlyState instead of LocalTimer + TimerStatus
+  const [timerState, setTimerState] = useState<TimerOnlyState | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hideSession, setHideSession] = useState(false);
-  const [localTimer, setLocalTimer] = useState<LocalTimer | null>(null);
   const [customPresetTransitions, setCustomPresetTransitions] = useState<{[key: string]: FrequencyTransition[]}>({});
 
   const currentTransitionIndexRef = useRef<number | null>(null);
 
   // Function to send timer updates via WebSocket
-  const sendTimerUpdate = useCallback((data: TimerStatus) => {
+  const sendTimerUpdate = useCallback((data: Record<string, any>) => {
     if (isConnected) {
       sendMessage({
         type: 'timer_update',
@@ -174,15 +175,21 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
   };
 
   const loadTimerStatus = useCallback(async () => {
-    if (!localTimer || !localTimer.isActive) return;
+    if (!timerState || !timerState.isActive) {
+      // 🔥 FIXED: Clear timer status when inactive
+      if (onTimerStatusUpdate) {
+        onTimerStatusUpdate(null);
+      }
+      return;
+    }
 
     const now = Date.now();
-    const elapsedSeconds = Math.floor((now - localTimer.startTime) / 1000);
+    const elapsedSeconds = Math.floor((now - timerState.startTime) / 1000);
 
     let currentTransitionIndex = 0;
     let elapsedInTransitionsSeconds = elapsedSeconds;
 
-    for (const element of localTimer.transitions) {
+    for (const element of timerState.transitions) {
       const transitionDurationSeconds = element.duration_minutes * 60;
       if (elapsedInTransitionsSeconds >= transitionDurationSeconds) {
         elapsedInTransitionsSeconds -= transitionDurationSeconds;
@@ -192,34 +199,34 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
       }
     }
 
-    if (currentTransitionIndex >= localTimer.transitions.length) {
+    if (currentTransitionIndex >= timerState.transitions.length) {
       // Check if loop is enabled for the current preset
       const currentPreset = presets.find(p => p.id === selectedPresetId);
-      if (currentPreset?.loop_enabled || (localTimer).forceLoop) {
+      if (currentPreset?.loop_enabled || timerState.forceLoop) {
         // Reset to beginning for loop
-        setLocalTimer({
-          ...localTimer,
+        setTimerState({
+          ...timerState,
           startTime: Date.now(),
           currentTransitionIndex: 0
         });
         currentTransitionIndexRef.current = null;
         return;
       } else {
-        // End the session
-        setLocalTimer(null);
-        setTimerStatus(null);
+        // End the session - stop audio via AudioState
+        setTimerState(null);
+        updateAudioState.setPlaying(false);
         currentTransitionIndexRef.current = null;
         return;
       }
     }
 
-    const currentTransition = localTimer.transitions[currentTransitionIndex];
-    const nextTransition = localTimer.transitions[currentTransitionIndex + 1] || null;
+    const currentTransition = timerState.transitions[currentTransitionIndex];
+    const nextTransition = timerState.transitions[currentTransitionIndex + 1] || null;
     const currentTransitionDurationSeconds = currentTransition.duration_minutes * 60;
     const timeRemainingCurrentSeconds = currentTransitionDurationSeconds - elapsedInTransitionsSeconds;
     const timeRemainingCurrentMinutes = timeRemainingCurrentSeconds / 60;
 
-    const totalTimeRemainingSeconds = localTimer.transitions
+    const totalTimeRemainingSeconds = timerState.transitions
         .slice(currentTransitionIndex)
         .reduce((sum, t, i) => {
           if (i === 0) return sum + timeRemainingCurrentSeconds;
@@ -227,77 +234,32 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
         }, 0);
     const totalTimeRemainingMinutes = totalTimeRemainingSeconds / 60;
 
-    const currentPreset = presets.find(p => p.id === selectedPresetId);
-
-
-
-    const status: TimerStatus = {
-      session: audioEngine?.sessionId ? {
-        presetId: currentPreset,
-        startTime: localTimer.startTime,
-        currentPhase: currentTransitionIndex,
-        isPaused: localTimer.isPaused,
-        loopCount: 0,
-        session_id: audioEngine.sessionId
-      } : undefined,
-      current_transition: currentTransition,
-      next_transition: nextTransition,
-      time_remaining_current: timeRemainingCurrentMinutes,
-      time_remaining_total: totalTimeRemainingMinutes,
-      isRunning: localTimer?.isActive && !localTimer?.isPaused,
-      totalTime: localTimer?.transitions.reduce((sum, t) => sum + t.duration_minutes, 0) || 0,
-      progress: (localTimer && totalTimeRemainingMinutes) ?
-          (1 - (totalTimeRemainingMinutes / localTimer.transitions.reduce((sum, t) => sum + t.duration_minutes, 0))) * 100 : 0
-    };
-
     console.log('⏰ Timer Status Updated:', {
-      isRunning: status.isRunning,
-      hasTransition: !!status.current_transition,
-      timeRemaining: status.time_remaining_current,
-      status
+      isRunning: timerState.isActive && !timerState.isPaused,
+      currentTransition,
+      nextTransition,
+      timeRemainingCurrent: timeRemainingCurrentMinutes,
+      timeRemainingTotal: totalTimeRemainingMinutes
     });
 
-    setTimerStatus(status);
-    console.log('📤 AudioEngine Pimping', audioEngine);
-    // Notify parent component of timer status changes
-    if (onTimerStatusUpdate) {
-      console.log('📤 Calling onTimerStatusUpdate with status:', status);
-      onTimerStatusUpdate(status);
-    } else {
-      console.warn('⚠️ No onTimerStatusUpdate callback provided!');
-    }
-
     if (audioEngine && currentTransition && currentTransitionIndexRef.current !== currentTransitionIndex) {
-      console.log(`🚨 TIMER TRANSITION ${currentTransitionIndex + 1}/${localTimer.transitions.length}: ${currentTransition.left_ear_hz}Hz / ${currentTransition.right_ear_hz}Hz`);
+      console.log(`🚨 TIMER TRANSITION ${currentTransitionIndex + 1}/${timerState.transitions.length}: ${currentTransition.left_ear_hz}Hz / ${currentTransition.right_ear_hz}Hz`);
       console.log(`🎯 ${currentTransition.description} - ${currentTransition.frequency_hz}Hz ${currentTransition.frequency_type} for ${currentTransition.duration_minutes} minutes`);
 
-      // Update frequencies based on engine type
-      // Backend engine uses updateSettings({ base_frequency, beat_frequency })
-      // Frontend engine uses updateFrequency(leftFreq, rightFreq)
-
-      // 🔥 FIXED: Calculate correct base_frequency (must be the LOWER of the two frequencies)
-      const baseFreq = Math.min(currentTransition.left_ear_hz, currentTransition.right_ear_hz);
-      const beatFreq = Math.abs(currentTransition.right_ear_hz - currentTransition.left_ear_hz);
-
-      if ((audioEngine as any).updateSettings) {
-        // Backend engine - use base/beat model
-        console.log('🎛️ Timer: Updating backend engine with base:', baseFreq, 'beat:', beatFreq);
-        (audioEngine as any).updateSettings({
-          base_frequency: baseFreq,  // 🔥 FIXED: Use calculated minimum frequency as carrier
-          beat_frequency: beatFreq   // 🔥 FIXED: Use calculated beat frequency
-        });
-      } else if (audioEngine.updateFrequency) {
-        // Frontend engine - use left/right model
-        console.log('🎛️ Timer: Updating frontend engine with left:', currentTransition.left_ear_hz, 'right:', currentTransition.right_ear_hz);
-        audioEngine.updateFrequency(currentTransition.left_ear_hz, currentTransition.right_ear_hz);
-      }
+      // 🔥 NEW: Update centralized AudioState instead of calling audioEngine directly
+      console.log('🎛️ Timer: Updating AudioState with left:', currentTransition.left_ear_hz, 'right:', currentTransition.right_ear_hz);
+      updateAudioState.updateFrequencies(currentTransition.left_ear_hz, currentTransition.right_ear_hz);
 
       // Send timer update via WebSocket if connected
       sendTimerUpdate({
-        currentTime: Date.now() - localTimer.startTime, isPaused: false, isRunning: false, progress: 0, totalTime: 0,
+        currentTime: Date.now() - timerState.startTime,
+        isPaused: timerState.isPaused,
+        isRunning: timerState.isActive && !timerState.isPaused,
+        progress: totalTimeRemainingMinutes ? (1 - (totalTimeRemainingMinutes / timerState.transitions.reduce((sum, t) => sum + t.duration_minutes, 0))) * 100 : 0,
+        totalTime: timerState.transitions.reduce((sum, t) => sum + t.duration_minutes, 0),
         current_transition: currentTransition,
         transitionIndex: currentTransitionIndex,
-        totalTransitions: localTimer.transitions.length,
+        totalTransitions: timerState.transitions.length,
         leftFreq: currentTransition.left_ear_hz,
         rightFreq: currentTransition.right_ear_hz,
         beat_frequency: currentTransition.frequency_hz
@@ -308,7 +270,23 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
 
       currentTransitionIndexRef.current = currentTransitionIndex;
     }
-  }, [localTimer, audioEngine, selectedPresetId, presets, updateElectromagneticState, onTimerStatusUpdate, sendTimerUpdate]);
+
+    // 🔥 FIXED: Call onTimerStatusUpdate with computed TimerStatus for parent component
+    if (onTimerStatusUpdate) {
+      onTimerStatusUpdate({
+        session: {
+          is_active: timerState.isActive,
+          is_paused: timerState.isPaused,
+          preset: presets.find(p => p.id === selectedPresetId) || null,
+          current_transition: currentTransition
+        },
+        current_transition: currentTransition,
+        next_transition: nextTransition,
+        time_remaining_current: timeRemainingCurrentMinutes,
+        time_remaining_total: totalTimeRemainingMinutes
+      });
+    }
+  }, [timerState, audioEngine, selectedPresetId, presets, updateElectromagneticState, sendTimerUpdate, updateAudioState, onTimerStatusUpdate]);
 
   const startTimer = async (forceLoop?: boolean) => {
     if (!selectedPresetId) return;
@@ -339,38 +317,37 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
         console.log('✅ Built-in transitions loaded:', mockTransitions.length);
       }
 
-      const timer: LocalTimer = {
+      const timer: TimerOnlyState = {
         startTime: Date.now(),
         currentTransitionIndex: 0,
         transitions: mockTransitions,
         isActive: true,
         isPaused: false,
         forceLoop: forceLoop
-      } as LocalTimer & { forceLoop?: boolean };
+      };
 
-      setLocalTimer(timer);
+      setTimerState(timer);
+      updateAudioState.setPlaying(true);
 
       if (audioEngine && mockTransitions.length > 0) {
         const firstTransition = mockTransitions[0];
 
-        // Convert timer frequencies to proper format for BOTH engines
-        // Backend engine expects: { base_frequency, beat_frequency }
-        // Frontend engine expects: { base_frequency, beat_frequency } (same now!)
+        // 🔥 NEW: Update AudioState with initial frequencies
+        console.log('🎛️ Timer: Updating AudioState with first transition:', firstTransition.left_ear_hz, 'Hz /', firstTransition.right_ear_hz, 'Hz');
+        updateAudioState.updateFrequencies(firstTransition.left_ear_hz, firstTransition.right_ear_hz);
 
-        // 🔥 FIXED: Calculate correct base_frequency (must be the LOWER of the two frequencies)
+        // Calculate base/beat for audio engine config
         const baseFreq = Math.min(firstTransition.left_ear_hz, firstTransition.right_ear_hz);
         const beatFreq = Math.abs(firstTransition.right_ear_hz - firstTransition.left_ear_hz);
 
         const config = {
-          base_frequency: baseFreq,   // 🔥 FIXED: Use calculated minimum frequency as carrier
-          beat_frequency: beatFreq,   // 🔥 FIXED: Use calculated beat frequency
+          base_frequency: baseFreq,
+          beat_frequency: beatFreq,
           amplitude: DEFAULT_VOLUME,
           waveform: 'sine' as const,
         };
 
-        console.log('🔥 Timer: Starting audio engine');
-        console.log('🔥 Timer: Config:', config);
-        console.log('🔥 Timer: Has backend session:', !!audioEngine?.sessionId);
+        console.log('🔥 Timer: Starting audio engine with config:', config);
 
         // CRITICAL: Initialize audio context first (requires user gesture)
         if ((audioEngine as any).initializeAudio) {
@@ -385,8 +362,7 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
           }
         }
 
-        // Start the audio engine (it will handle reusing existing sessions)
-        console.log('🚀 Timer: Starting audio engine with config:', config);
+        // Start the audio engine (it will read from AudioState)
         await audioEngine.startBinauralBeat(config);
 
         // Send initial timer state via WebSocket
@@ -426,7 +402,7 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
   };
 
   const controlTimer = async (action: TimerAction) => {
-    if (!localTimer && action !== 'restart') return;
+    if (!timerState && action !== 'restart') return;
 
     try {
       setLoading(true);
@@ -435,6 +411,9 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
         if (audioEngine) {
           await audioEngine.stopBinauralBeat();
         }
+
+        // 🔥 NEW: Stop audio via AudioState
+        updateAudioState.setPlaying(false);
 
         // Send stop action via WebSocket
         sendTimerUpdate({ action: 'stop' });
@@ -458,29 +437,29 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
           });
         }
 
-        setLocalTimer(null);
-        setTimerStatus(null);
+        setTimerState(null);
         currentTransitionIndexRef.current = null;
-
-        // Notify parent that timer stopped
-        if (onTimerStatusUpdate) {
-          onTimerStatusUpdate(null);
-        }
       } else if (action === 'pause') {
-        setLocalTimer({...localTimer!, isPaused: true});
+        setTimerState({...timerState!, isPaused: true});
+        updateAudioState.setPlaying(false);
         sendTimerUpdate({
           action: 'pause',
           isRunning: false,
-          totalTime: 0,
+          totalTime: timerState!.transitions.reduce((sum, t) => sum + t.duration_minutes, 0),
           progress: 0
         });
       } else if (action === 'resume') {
-        setLocalTimer({...localTimer!, isPaused: false});
-        sendTimerUpdate(({...timerStatus!,isRunning:true,totalTime:timerStatus!.totalTime,progress:timerStatus!.progress,isPaused:false}));
+        setTimerState({...timerState!, isPaused: false});
+        updateAudioState.setPlaying(true);
+        sendTimerUpdate({
+          action: 'resume',
+          isRunning: true,
+          totalTime: timerState!.transitions.reduce((sum, t) => sum + t.duration_minutes, 0),
+          progress: 0
+        });
       } else if (action === 'restart') {
         if (audioEngine) {
-          audioEngine.stopBinauralBeat();
-
+          await audioEngine.stopBinauralBeat();
         }
 
         // Clear visualizer pattern temporarily
@@ -488,14 +467,14 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
           patterns8DControl.clearActivePattern();
         }
 
-        setLocalTimer(null);
-        setTimerStatus(null);
+        setTimerState(null);
+        updateAudioState.setPlaying(false);
         currentTransitionIndexRef.current = null;
 
         setTimeout(() => {
           if (selectedPresetId) {
             const currentPreset = presets.find(p => p.id === selectedPresetId);
-            const wasLooping = localTimer && (localTimer).forceLoop;
+            const wasLooping = timerState && timerState.forceLoop;
             startTimer(wasLooping || currentPreset?.loop_enabled);
           }
         }, 100);
@@ -653,7 +632,7 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
   useEffect(() => {
     let interval: NodeJS.Timeout;
 
-    if (localTimer?.isActive && !localTimer?.isPaused) {
+    if (timerState?.isActive && !timerState?.isPaused) {
       // Update every second for countdown display
       interval = setInterval(() => {
         loadTimerStatus();
@@ -663,20 +642,20 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [localTimer?.isActive, localTimer?.isPaused, loadTimerStatus]);
+  }, [timerState?.isActive, timerState?.isPaused, loadTimerStatus]);
 
   // Navigation functions for timer transitions
   const jumpToTransition = async (direction: 'next' | 'previous') => {
-    if (!localTimer || !localTimer.transitions.length) return;
+    if (!timerState || !timerState.transitions.length) return;
 
     const now = Date.now();
-    const elapsedSeconds = Math.floor((now - localTimer.startTime) / 1000);
+    const elapsedSeconds = Math.floor((now - timerState.startTime) / 1000);
 
     let currentTransitionIndex = 0;
     let elapsedInTransitionsSeconds = elapsedSeconds;
 
     // Calculate current transition index
-    for (const element of localTimer.transitions) {
+    for (const element of timerState.transitions) {
       const transitionDurationSeconds = element.duration_minutes * 60;
       if (elapsedInTransitionsSeconds >= transitionDurationSeconds) {
         elapsedInTransitionsSeconds -= transitionDurationSeconds;
@@ -689,7 +668,7 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
     let targetIndex: number;
 
     if (direction === 'next') {
-      targetIndex = Math.min(currentTransitionIndex + 1, localTimer.transitions.length - 1);
+      targetIndex = Math.min(currentTransitionIndex + 1, timerState.transitions.length - 1);
     } else {
       targetIndex = Math.max(currentTransitionIndex - 1, 0);
     }
@@ -702,18 +681,18 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
     // Calculate elapsed time up to target transition
     let newElapsedSeconds = 0;
     for (let i = 0; i < targetIndex; i++) {
-      newElapsedSeconds += localTimer.transitions[i].duration_minutes * 60;
+      newElapsedSeconds += timerState.transitions[i].duration_minutes * 60;
     }
 
     // Update timer start time to reflect new position
     const newStartTime = Date.now() - (newElapsedSeconds * 1000);
 
-    setLocalTimer({
-      ...localTimer,
+    setTimerState({
+      ...timerState,
       startTime: newStartTime
     });
 
-    console.log(`⏩ Jumped to transition ${targetIndex + 1}/${localTimer.transitions.length}`);
+    console.log(`⏩ Jumped to transition ${targetIndex + 1}/${timerState.transitions.length}`);
 
     // Send update via WebSocket
     sendTimerUpdate({
@@ -726,16 +705,16 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
   };
 
   const restartCurrentTransition = () => {
-    if (!localTimer || !localTimer.transitions.length) return;
+    if (!timerState || !timerState.transitions.length) return;
 
     const now = Date.now();
-    const elapsedSeconds = Math.floor((now - localTimer.startTime) / 1000);
+    const elapsedSeconds = Math.floor((now - timerState.startTime) / 1000);
 
     let currentTransitionIndex = 0;
     let elapsedInTransitionsSeconds = elapsedSeconds;
 
     // Calculate current transition index
-    for (const element of localTimer.transitions) {
+    for (const element of timerState.transitions) {
       const transitionDurationSeconds = element.duration_minutes * 60;
       if (elapsedInTransitionsSeconds >= transitionDurationSeconds) {
         elapsedInTransitionsSeconds -= transitionDurationSeconds;
@@ -748,18 +727,18 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
     // Calculate elapsed time up to current transition (restart it)
     let newElapsedSeconds = 0;
     for (let i = 0; i < currentTransitionIndex; i++) {
-      newElapsedSeconds += localTimer.transitions[i].duration_minutes * 60;
+      newElapsedSeconds += timerState.transitions[i].duration_minutes * 60;
     }
 
     // Update timer start time to restart current transition
     const newStartTime = Date.now() - (newElapsedSeconds * 1000);
 
-    setLocalTimer({
-      ...localTimer,
+    setTimerState({
+      ...timerState,
       startTime: newStartTime
     });
 
-    console.log(`🔄 Restarted transition ${currentTransitionIndex + 1}/${localTimer.transitions.length}`);
+    console.log(`🔄 Restarted transition ${currentTransitionIndex + 1}/${timerState.transitions.length}`);
 
     // Send update via WebSocket
     sendTimerUpdate({
@@ -775,7 +754,10 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
     presets,
     selectedPresetId,
     setSelectedPresetId,
-    timerStatus,
+    // 🔥 NEW: Return timer-only state instead of full TimerStatus
+    timerState,  // { startTime, currentTransitionIndex, transitions, isActive, isPaused, forceLoop? }
+    // Computed helpers
+    isTimerRunning: timerState?.isActive && !timerState?.isPaused && audioState.isPlaying,
     loading,
     error,
     hideSession,

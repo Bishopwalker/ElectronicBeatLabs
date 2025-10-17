@@ -120,8 +120,8 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
       if (activeAudioEngine.audioState.config) {
         // Backend engine format
         return {
-          base: activeAudioEngine.audioState.config.base_frequency,
-          beat: activeAudioEngine.audioState.config.beat_frequency
+          base: activeAudioEngine.audioState.config.base_frequency || DEFAULT_BASE_FREQUENCY,
+          beat: activeAudioEngine.audioState.config.beat_frequency || DEFAULT_BEAT_FREQUENCY
         };
       } else {
         // Frontend engine format
@@ -142,10 +142,9 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
       updateAppState({
         electromagnetic: {
           ...appState.electromagnetic,
-          frequency: frequencies.beat
-        },
-        base_frequency: frequencies.base,
-        beat_frequency: frequencies.beat
+          frequency: frequencies?.beat || DEFAULT_BEAT_FREQUENCY
+        }
+        // 🔥 REMOVED: base_frequency, beat_frequency - these live in hybridEngine.audioState
       });
     }
   }, [
@@ -233,32 +232,32 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
   }, [handleVolumeChange, activeAudioEngine]);
 
   const handlePlayBound = useCallback(async () => {
-    // Use centralized audio control utility
+    // 🔥 FIXED: Read from hybridEngine.audioState instead of appState
+    const audioState = hybridEngine.audioState;
     const success = await startBinauralAudio(hybridEngine, {
-      base_frequency: appState.base_frequency,
-      beat_frequency: appState.beat_frequency,
-      amplitude: appState.volume,
+      base_frequency: audioState.config?.base_frequency || audioState.leftFreq || DEFAULT_BASE_FREQUENCY,
+      beat_frequency: audioState.config?.beat_frequency || audioState.beat_frequency || DEFAULT_BEAT_FREQUENCY,
+      amplitude: audioState.amplitude || DEFAULT_VOLUME,
       waveform: 'sine'
     });
 
-    // Update app state if successful
-    if (success) {
-      updateAppState({ isPlaying: true });
-    }
-  }, [hybridEngine, appState.base_frequency, appState.beat_frequency, appState.volume, updateAppState]);
+    // Audio state updated by hybrid engine automatically
+    console.log(success ? '✅ Audio started' : '❌ Audio start failed');
+  }, [hybridEngine]);
 
   const handleStop = useCallback(async () => {
+    console.log('🛑 App: Stop button clicked');
+    console.log('🛑 App: Hybrid audioState:', hybridEngine.audioState);
+
     // Use centralized audio control utility with timer control
     const success = await stopBinauralAudio(
       hybridEngine,
       timerStatus?.session?.is_active ? timerControlRef.current : undefined
     );
 
-    // Update app state if successful
-    if (success) {
-      updateAppState({ isPlaying: false });
-    }
-  }, [hybridEngine, updateAppState, timerStatus]);
+    // Audio state updated by hybrid engine automatically
+    console.log(success ? '✅ Audio stopped' : '❌ Audio stop failed');
+  }, [hybridEngine, timerStatus]);
 
   const handleToggleAdvancedControls = useCallback(() => {
     toggleAdvancedControls(backendEngine);
@@ -284,23 +283,19 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
               }
             }
             // Start frontend engine WITHOUT setting a pattern
+            // 🔥 FIXED: Read from hybridEngine.audioState instead of appState
+            const audioState = hybridEngine.audioState;
             await frontendEngine.startBinauralBeat({
-              base_frequency: appState.frequency || DEFAULT_BASE_FREQUENCY,
-              beat_frequency: appState.beat_frequency || DEFAULT_BEAT_FREQUENCY,
-              amplitude: appState.volume || DEFAULT_VOLUME,
+              base_frequency: audioState.leftFreq || DEFAULT_BASE_FREQUENCY,
+              beat_frequency: audioState.beat_frequency || DEFAULT_BEAT_FREQUENCY,
+              amplitude: audioState.amplitude || DEFAULT_VOLUME,
               waveform: 'sine'
             });
-            // Update app state to mark as playing but DON'T set currentPattern
-            updateAppState({
-              isPlaying: true
-            });
+            // Audio state updated by hybrid engine automatically - no updateAppState needed
           } else {
             console.log('⏹️ Stopping frontend binaural engine...');
            frontendEngine.stopBinauralBeat();
-            // Update app state
-            updateAppState({
-              isPlaying: false
-            });
+            // Audio state updated by hybrid engine automatically - no updateAppState needed
           }
           break;
 
@@ -319,13 +314,15 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
 
               // Auto-start backend session with default binaural config
               console.log('🎧 Starting backend binaural session...');
+              // 🔥 FIXED: Read from hybridEngine.audioState instead of appState
+              const audioState = hybridEngine.audioState;
               const defaultConfig = {
-                base_frequency: appState.base_frequency || DEFAULT_BASE_FREQUENCY,
-                beat_frequency: appState.beat_frequency || DEFAULT_BEAT_FREQUENCY,
-                amplitude: appState.volume || DEFAULT_VOLUME,
+                base_frequency: audioState.config?.base_frequency || audioState.leftFreq || DEFAULT_BASE_FREQUENCY,
+                beat_frequency: audioState.config?.beat_frequency || audioState.beat_frequency || DEFAULT_BEAT_FREQUENCY,
+                amplitude: audioState.amplitude || DEFAULT_VOLUME,
                 waveform: 'sine' as const,
                 spatial_enabled: appState.spatialAudio?.enabled || false,
-                frequency: appState?.frequency  || null
+                frequency: audioState.config?.base_frequency || audioState.leftFreq || null
               };
               await backendEngine.startBackendSession(defaultConfig);
             }
@@ -484,14 +481,13 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
           </Box>
         </Box>
 
-       
-200
+
         {/* Compact Status Overview - Show when Master Controls is closed */}
         {closedSections.includes('masterControls') && (
           <Box sx={ElectromagneticLabStyles.compactStatusOverview}>
             <MainControlsMUI
-              isPlaying={appState.isPlaying}
-              volume={appState.volume}
+              isPlaying={hybridEngine.audioState.isPlaying}
+              volume={hybridEngine.audioState.amplitude || DEFAULT_VOLUME}
               onPlay={handlePlayBound}
               onStop={handleStop}
               onVolumeChange={handleVolumeChangeBound}
@@ -538,7 +534,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
               <EqualizerMUI
                 audioContext={activeAudioEngine.audioContext || null}
                 analyserNode={activeAudioEngine.analyserNode || null}
-                isPlaying={appState.isPlaying}
+                isPlaying={hybridEngine.audioState.isPlaying}
                 onEqualizerChange={(inputNode, outputNode) => {
                   if (activeAudioEngine.setEqualizerNodes) {
                     activeAudioEngine.setEqualizerNodes(inputNode, outputNode);
@@ -565,8 +561,8 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                   // Handle both backend (config) and frontend (direct) formats
                   if (activeAudioEngine.audioState.config) {
                     // Backend engine with config
-                    const base_frequency = activeAudioEngine.audioState.config.base_frequency;
-                    const beat_frequency = activeAudioEngine.audioState.config.beat_frequency;
+                    const base_frequency = activeAudioEngine.audioState.config?.base_frequency;
+                    const beat_frequency = activeAudioEngine.audioState.config?.beat_frequency;
                     return {
                       left:(base_frequency),
                       right:(base_frequency + beat_frequency),
@@ -575,13 +571,13 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                   } else {
                     // Frontend engine with direct values
                     return {
-                      left: activeAudioEngine.audioState.leftFreq || DEFAULT_BASE_FREQUENCY,
-                      right: activeAudioEngine.audioState.rightFreq || (DEFAULT_BASE_FREQUENCY + DEFAULT_BEAT_FREQUENCY),
-                      beat: activeAudioEngine.audioState.beat_frequency || DEFAULT_BEAT_FREQUENCY
+                      left: activeAudioEngine.audioState?.leftFreq || DEFAULT_BASE_FREQUENCY,
+                      right: activeAudioEngine.audioState?.rightFreq || (DEFAULT_BASE_FREQUENCY + DEFAULT_BEAT_FREQUENCY),
+                      beat: activeAudioEngine.audioState?.beat_frequency || DEFAULT_BEAT_FREQUENCY
                     };
                   }
                 })()}
-                volume={appState.volume}
+                volume={hybridEngine.audioState.amplitude || DEFAULT_VOLUME}
                 audioEngine={backendEngine}
                 onToggleEngine={handleEngineToggle}
                 appState={appState}
@@ -644,8 +640,8 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                 />
                 <Box sx={{ mt: 1, maxHeight: '250px', overflowY: 'auto' }}>
                   <MainControlsMUI
-                    isPlaying={appState.isPlaying}
-                    volume={appState.volume}
+                    isPlaying={hybridEngine.audioState.isPlaying}
+                    volume={hybridEngine.audioState.amplitude || DEFAULT_VOLUME}
                     onPlay={handlePlayBound}
                     onStop={handleStop}
                     onVolumeChange={handleVolumeChangeBound}

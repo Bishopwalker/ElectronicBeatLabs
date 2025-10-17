@@ -14,8 +14,7 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import type {TimerPreset, TimerStatus} from '../data/timer';
 import type {AppState} from "../types";
 import { FrequencyVisualizer } from './FrequencyVisualizer';
-import DraggableFrequencyVisualizer from "./DraggableFrequencyVisualizer";
-import { DEFAULT_BASE_FREQUENCY, DEFAULT_BEAT_FREQUENCY } from '../constants/audio.constants';
+ import { DEFAULT_BASE_FREQUENCY, DEFAULT_BEAT_FREQUENCY } from '../constants/audio.constants';
 
 interface TimerCountdownDisplayProps {
     timerStatus: TimerStatus | null,
@@ -101,24 +100,50 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
     React.useEffect(() => {
         console.log('⏱️ Timer Display Audio State:', {
             isAudioActuallyPlaying,
-            appStateIsPlaying: appState?.isPlaying,
             hybridEngineState: hybridEngine?.audioState?.isPlaying,
             hasAudioContext: !!audioContext,
-            hasAnalyserNode: !!analyserNode
+            hasAnalyserNode: !!analyserNode,
+            currentFrequency: currentTransition?.frequency_hz
         });
-    }, [isAudioActuallyPlaying, appState?.isPlaying, audioContext, analyserNode, hybridEngine]);
+    }, [isAudioActuallyPlaying, audioContext, analyserNode, hybridEngine, currentTransition]);
 
-    // 🔥 FIXED: Use actual audio playing state from engine
+    // 🔥 CRITICAL FIX: Build visualizerState WITHOUT spreading appState
+    // AppState type doesn't have audio properties anymore - they're in audio engine
+    // Only pass the properties FrequencyVisualizer actually needs
     const visualizerState = useMemo(() => ({
-        ...appState,
+        audio: hybridEngine, // 🔥 FIXED: Use hybridEngine prop instead of non-existent audioEngine
+        mode: appState?.mode || 'AUTO',
+        currentPattern: appState?.currentPattern || null,
         base_frequency: currentTransition?.frequency_hz || DEFAULT_BASE_FREQUENCY,
         beat_frequency: (currentTransition?.right_ear_hz || DEFAULT_BASE_FREQUENCY) - (currentTransition?.left_ear_hz || DEFAULT_BEAT_FREQUENCY) || DEFAULT_BEAT_FREQUENCY,
-        isPlaying: isAudioActuallyPlaying, // 🔥 FIXED: Use real audio state
-        patterns8D: appState?.patterns8D || [], // ✅ FIXED: Use converted Pattern8D[] from appState
+        isPlaying: isAudioActuallyPlaying, // 🔥 FIXED: Use real audio state from hybrid engine
+        patterns8D: appState?.patterns8D || [],
         timer: timerStatus,
-        electromagnetic: appState?.electromagnetic
-    }), [
-        appState,
+        electromagnetic: appState?.electromagnetic,
+        systemStatus: appState?.systemStatus,
+        visualizations: appState?.visualizations,
+        spatialAudio: appState?.spatialAudio,
+        youtube: appState?.youtube,
+        frequency: appState?.frequency,
+        adhd: appState?.adhd,
+        frequencyRange: appState?.frequencyRange,
+        waveGuide: appState?.waveGuide,
+        activeTab: appState?.activeTab || 'main'
+    } as AppState), [
+        hybridEngine, // 🔥 FIXED: Add hybridEngine to dependencies
+        appState?.mode,
+        appState?.currentPattern,
+        appState?.patterns8D,
+        appState?.electromagnetic,
+        appState?.systemStatus,
+        appState?.visualizations,
+        appState?.spatialAudio,
+        appState?.youtube,
+        appState?.frequency,
+        appState?.adhd,
+        appState?.frequencyRange,
+        appState?.waveGuide,
+        appState?.activeTab,
         currentTransition?.frequency_hz,
         currentTransition?.right_ear_hz,
         currentTransition?.left_ear_hz,
@@ -414,8 +439,8 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
                 </Box>
             </Box>
 
-            {/* Fullscreen Draggable Visualizer Overlay */}
-            {isVisualizerFullscreen && (
+            {/* 🔥 TODO: Fullscreen Draggable Visualizer - Component doesn't exist yet */}
+            {/* {isVisualizerFullscreen && (
                 <DraggableFrequencyVisualizer
                     state={visualizerState}
                     audioContext={audioContext}
@@ -424,7 +449,7 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
                     defaultPosition={{ x: window.innerWidth - 520, y: 100 }}
                     defaultSize={{ width: 500, height: 400 }}
                 />
-            )}
+            )} */}
         </Paper>
     );
 };

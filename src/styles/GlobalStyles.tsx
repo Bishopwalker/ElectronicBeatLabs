@@ -51,7 +51,7 @@ export const GlobalStyles = createGlobalStyle`
         transparent
       );
     animation: electromagnetic-pulse 8s ease-in-out infinite;
-    pointer-events: none;
+    pointer-events: visiblePainted;
     z-index: -1;
   }
 

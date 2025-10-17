@@ -76,13 +76,16 @@ export const useHybridAudioEngine = () => {
         // Connect frontend engine to mixer's frontend gain
         frontendEngine.setExternalNodes(
           mixerRef.current.getFrontendGain(),
-          mixerRef.current.analyserNode
+          mixerRef.current.analyserNode,
+          frontendEngine.audioContext // 🔥 FIXED: Pass audioContext
         );
 
         // Connect backend engine to mixer's backend gain
+        // 🔥 CRITICAL FIX: Pass the SAME audioContext so backend doesn't create its own
         backendEngine.setExternalNodes(
           mixerRef.current.getBackendGain(),
-          mixerRef.current.analyserNode
+          mixerRef.current.analyserNode,
+          frontendEngine.audioContext // 🔥 FIXED: Use frontend's context!
         );
 
         console.log('✅ Hybrid Engine: Audio mixer initialized and connected to BOTH engines');
@@ -145,26 +148,17 @@ export const useHybridAudioEngine = () => {
       console.log('⚡ Hybrid Engine: Starting FRONTEND engine (instant)...');
       await frontendEngine.startBinauralBeat(config);
       
-      // 🔥 CRITICAL FIX: Route frontend audio through mixer
-      if (mixerRef.current && frontendEngine.audioContext) {
-        console.log('🔌 Hybrid Engine: Routing frontend audio through mixer...');
-        
-        // Get the merger node that frontend created (it's connected to its analyser)
-        // We need to disconnect it from its analyser and connect to mixer instead
-        // This is a bit hacky but necessary since frontend engine doesn't know about mixer
-        
-        // The frontend engine's audio chain is:
-        // oscillators → gains → merger → analyser → destination
-        
-        // We can't easily intercept this without modifying frontend engine
-        // So instead, we'll use the mixer's analyser which will work when backend connects
-        
-        // For now, keep frontend using its own analyser until backend connects
-        console.log('⚠️ Hybrid Engine: Frontend using its own analyser until backend connects');
+      // 🔥 FIXED: Properly update frontend engine state
+      if (frontendEngine.setAudioState) {
+        frontendEngine.setAudioState((prev: any) => ({
+          ...prev,
+          isPlaying: true
+        }));
+        console.log('✅ Frontend engine state updated: isPlaying = true');
       }
       
       setCurrentEngine('frontend');
-
+      
       // STEP 2: Connect backend in background (no await - non-blocking)
       console.log('🔌 Hybrid Engine: Connecting BACKEND engine (background)...');
 
@@ -181,34 +175,61 @@ export const useHybridAudioEngine = () => {
       }).catch(err => {
         console.warn('⚠️ Hybrid Engine: Backend session failed, continuing frontend-only:', err);
       });
-
+      
       console.log('✅ Hybrid Engine: Audio started (frontend playing, backend connecting)');
     } catch (error) {
       console.error('❌ Hybrid Engine: Failed to start audio:', error);
       throw error;
     }
-  }, [frontendEngine, backendEngine, initializeMixer]);
+  }, [frontendEngine.audioState, backendEngine, initializeMixer]);
 
   /**
    * Stop binaural beat (stops both engines)
    */
   const stopBinauralBeat = useCallback(async () => {
-    console.log('🛑 Hybrid Engine: Stopping both engines...');
+    console.log('🛑 Hybrid Engine: stopBinauralBeat called');
+    console.log('🛑 Frontend isPlaying:', frontendEngine.audioState.isPlaying);
+    console.log('🛑 Backend isPlaying:', backendEngine.audioState.isPlaying);
+
+    let stoppedSuccessfully = false;
 
     try {
       // Stop frontend
       if (frontendEngine.audioState.isPlaying) {
+        console.log('🛑 Stopping frontend engine...');
         frontendEngine.stopBinauralBeat();
+        
+        // 🔥 FIXED: Properly update frontend state after stopping
+        if (frontendEngine.setAudioState) {
+          frontendEngine.setAudioState((prev: any) => ({
+            ...prev,
+            isPlaying: false
+          }));
+        }
+        console.log('✅ Frontend engine stopped and state updated');
+        stoppedSuccessfully = true;
+      } else {
+        console.log('⏭️ Frontend engine not playing, skipping');
       }
 
       // Stop backend
       if (backendEngine.audioState.isPlaying) {
+        console.log('🛑 Stopping backend engine...');
         await backendEngine.stopBinauralBeat();
+        console.log('✅ Backend engine stopped');
+        stoppedSuccessfully = true;
+      } else {
+        console.log('⏭️ Backend engine not playing, skipping');
       }
-
-      console.log('✅ Hybrid Engine: Both engines stopped');
+      
+      if (!stoppedSuccessfully) {
+        console.warn('⚠️ No engines were playing, nothing to stop');
+      } else {
+        console.log('✅ Hybrid Engine: Both engines stopped successfully');
+      }
     } catch (error) {
       console.error('❌ Hybrid Engine: Failed to stop audio:', error);
+      throw error; // 🔥 IMPORTANT: Throw error so caller knows it failed
     }
   }, [frontendEngine, backendEngine]);
 
@@ -259,19 +280,26 @@ export const useHybridAudioEngine = () => {
 
   /**
    * Update volume (affects both engines via mixer)
+   * 🔥 FIXED: Only update mixer volume - engines are routed through mixer, so no duplicate setting
    */
   const updateVolume = useCallback((volume: number) => {
     const safeVolume = isNaN(volume) ? DEFAULT_VOLUME : Math.max(0, Math.min(2, volume));
 
-    // Update mixer master volume
+    console.log('🎚️ Hybrid Engine: Setting master volume to:', safeVolume);
+
+    // Update mixer master volume - this controls both engines since they're routed through it
     if (mixerRef.current) {
       mixerRef.current.setMasterVolume(safeVolume);
+      console.log('✅ Hybrid Engine: Mixer master volume updated (controls both engines)');
+    } else {
+      console.warn('⚠️ Hybrid Engine: Mixer not initialized, volume update skipped');
     }
 
-    // Update both engines' internal state
-    frontendEngine.updateVolume(safeVolume);
-    backendEngine.updateVolume(safeVolume);
-  }, [frontendEngine, backendEngine]);
+    // 🔥 REMOVED: Individual engine volume updates - caused duplicate volume setting
+    // Both engines are routed through mixer, so mixer volume is the single source of truth
+    // frontendEngine.updateVolume(safeVolume); // ❌ DUPLICATE
+    // backendEngine.updateVolume(safeVolume);  // ❌ DUPLICATE
+  }, []);
 
   /**
    * Update waveform (applies to frontend only)
@@ -410,9 +438,21 @@ export const useHybridAudioEngine = () => {
 
   // Determine which engine's state to show
   const isPlaying = frontendEngine.audioState.isPlaying || backendEngine.audioState.isPlaying;
+  
+  // 🔥 FIXED: Ensure electromagnetic has defaults (no nulls)
+  const defaultElectromagnetic = {
+    strength: 0,
+    frequency: DEFAULT_BEAT_FREQUENCY,
+    phase: 0,
+    coherence: 0,
+    resonance: 0,
+    state: 'INACTIVE' as const,
+    stability: 0
+  };
+  
   const electromagnetic = currentEngine === 'backend'
-    ? backendEngine.electromagnetic
-    : frontendEngine.electromagnetic;
+    ? { ...defaultElectromagnetic, ...backendEngine.electromagnetic }
+    : { ...defaultElectromagnetic, ...frontendEngine.electromagnetic };
 
   // 🔥 CRITICAL FIX: Return the CORRECT analyserNode based on what's actually playing
   // - If backend is active, use mixer's analyserNode (has backend audio data)
@@ -424,24 +464,33 @@ export const useHybridAudioEngine = () => {
 
   // 🔥 FIXED: Compute unified audio state showing ACTUAL synchronized values
   // Instead of showing only one engine's state, show the REAL state that's playing
-  const baseFreq = frontendEngine.audioState.leftFreq || backendEngine.audioState.config?.base_frequency || 140;
-  const beatFreq = frontendEngine.audioState.beat_frequency || backendEngine.audioState.config?.beat_frequency || 4;
+  // 🔥 CRITICAL: Ensure NO NULL VALUES - all fields have defaults
+  const baseFreq = frontendEngine.audioState.leftFreq || backendEngine.audioState.config?.base_frequency || DEFAULT_BASE_FREQUENCY;
+  const beatFreq = frontendEngine.audioState.beat_frequency || backendEngine.audioState.config?.beat_frequency || DEFAULT_BEAT_FREQUENCY;
   const leftFreq = baseFreq;
   const rightFreq = baseFreq + beatFreq;
+  const amplitude = frontendEngine.audioState.amplitude || backendEngine.audioState.config?.amplitude || DEFAULT_VOLUME;
+  const waveform = frontendEngine.audioState.waveform || 'sine';
   
   const audioState = {
-    isPlaying,
-    amplitude: frontendEngine.audioState.amplitude || backendEngine.audioState.config?.amplitude || DEFAULT_VOLUME,
-    leftFreq,
-    rightFreq,
-    beat_frequency: beatFreq,
-    waveform: frontendEngine.audioState.waveform,
+    isPlaying, // Boolean - never null
+    amplitude, // Number - always has default
+    leftFreq, // Number - always has default
+    rightFreq, // Number - always has default
+    beat_frequency: beatFreq, // Number - always has default
+    waveform, // String - always has default
     config: {
-      base_frequency: baseFreq,
-      beat_frequency: beatFreq,
-      amplitude: frontendEngine.audioState.amplitude || backendEngine.audioState.config?.amplitude || DEFAULT_VOLUME,
-      waveform: frontendEngine.audioState.waveform
-    }
+      base_frequency: baseFreq, // Number - always has default
+      beat_frequency: beatFreq, // Number - always has default
+      amplitude, // Number - always has default
+      waveform // String - always has default
+    },
+    // 🔥 NEW: Add context and nodes for compatibility
+    context: frontendEngine.audioContext || null,
+    gainL: frontendEngine.audioState.gainL || null,
+    gainR: frontendEngine.audioState.gainR || null,
+    oscillatorL: frontendEngine.audioState.oscillatorL || null,
+    oscillatorR: frontendEngine.audioState.oscillatorR || null
   };
 
   return {

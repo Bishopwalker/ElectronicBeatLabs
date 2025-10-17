@@ -169,7 +169,7 @@ export const PRESET_STATS = {
 // EXPORT ALL TYPES AND FUNCTIONS
 // ==================================================================
 export type { TimerPreset, FrequencyTransition };
-export {getPresetTransitions, TimerStatus};
+export {getPresetTransitions, TimerStatus, CustomPresetForm};
 
 export const TIMER_SYSTEM_INFO = {
   version: '1.0.0',
