@@ -12,6 +12,16 @@ export type WavePattern =
     | 'wave'
     | 'interference'
     | 'standing'
+    | 'lissajous'
+    | 'mobius'
+    | 'rose'
+    | 'trefoil'
+    | 'lorenz'
+    | 'spherical'
+    | 'infinity'
+    | 'star'
+    | 'conical'
+    | 'mandala'
     | 'custom';
 
 export type FrequencyRange = 'delta' | 'theta' | 'alpha' | 'beta' | 'gamma';

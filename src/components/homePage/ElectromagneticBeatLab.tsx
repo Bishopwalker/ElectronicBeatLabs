@@ -11,7 +11,6 @@ import { DEFAULT_BASE_FREQUENCY, DEFAULT_BEAT_FREQUENCY, DEFAULT_VOLUME } from '
 
 // Centralized Audio Controls
 import { startBinauralAudio, stopBinauralAudio } from '../../utils/audioControls';
-import { convertPatternConfigToPattern8D, createDefaultPattern8D } from '../../utils/patternConverter';
 
 // Hooks and Data
 import { useHybridAudioEngine } from '../../hooks';
@@ -661,9 +660,10 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                 <Paper elevation={3} sx={ElectromagneticLabStyles.visualizationPaper}>
                   <SpatialVisualizer
                     pattern={
+                      // 🔥 FIXED: Find matching Pattern8D from pre-generated patterns8D array
                       appState.currentPattern 
-                        ? convertPatternConfigToPattern8D(appState.currentPattern)
-                        : createDefaultPattern8D()
+                        ? appState.patterns8D.find(p => p.id === appState.currentPattern?.id) || appState.patterns8D[0]
+                        : appState.patterns8D[0] // Default to first pattern
                     }
                     electromagnetic={appState.electromagnetic}
                     size={300}

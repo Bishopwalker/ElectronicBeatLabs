@@ -212,7 +212,7 @@ export const convertPatternConfigToPattern8D = (
   config: PatternConfig
 ): Pattern8D => {
   let path: Position3D[] = [];
-  
+
   // Generate path based on pattern type
   switch (config.type) {
     case 'toroidal':
@@ -235,6 +235,36 @@ export const convertPatternConfigToPattern8D = (
       break;
     case 'standing':
       path = generateStandingWavePath(config);
+      break;
+    case 'lissajous':
+      path = generateLissajousPath(config);
+      break;
+    case 'mobius':
+      path = generateMobiusPath(config);
+      break;
+    case 'rose':
+      path = generateRosePath(config);
+      break;
+    case 'trefoil':
+      path = generateTrefoilPath(config);
+      break;
+    case 'lorenz':
+      path = generateLorenzPath(config);
+      break;
+    case 'spherical':
+      path = generateSphericalHarmonicsPath(config);
+      break;
+    case 'infinity':
+      path = generateInfinityPath(config);
+      break;
+    case 'star':
+      path = generateStarPolyhedronPath(config);
+      break;
+    case 'conical':
+      path = generateConicalHelixPath(config);
+      break;
+    case 'mandala':
+      path = generateMandalaPath(config);
       break;
     default:
       // Fallback: simple circle
@@ -342,6 +372,306 @@ const calculateSpeed = (beatFrequency: number): number => {
 const calculateWavelength = (frequency: number): number => {
   const speedOfSound = 343; // m/s
   return speedOfSound / frequency;
+};
+
+/**
+ * Generate Lissajous curve (3D parametric) path
+ * Creates beautiful figure-8 patterns with varying frequency ratios
+ */
+export const generateLissajousPath = (
+  patternConfig: PatternConfig,
+  pointCount: number = 120
+): Position3D[] => {
+  const path: Position3D[] = [];
+  const a = 3; // X frequency
+  const b = 4; // Y frequency
+  const c = 2; // Z frequency
+  const size = 120;
+
+  for (let i = 0; i < pointCount; i++) {
+    const t = (i / pointCount) * Math.PI * 2;
+
+    const x = size * Math.sin(a * t);
+    const y = size * Math.sin(b * t);
+    const z = size * 0.5 * Math.sin(c * t);
+
+    path.push({ x, y, z });
+  }
+
+  return path;
+};
+
+/**
+ * Generate Möbius strip path
+ * Creates a twisted surface with single-sided topology
+ */
+export const generateMobiusPath = (
+  patternConfig: PatternConfig,
+  pointCount: number = 150
+): Position3D[] => {
+  const path: Position3D[] = [];
+  const radius = 120;
+  const width = 40;
+
+  for (let i = 0; i < pointCount; i++) {
+    const t = (i / pointCount) * Math.PI * 2;
+    const s = 0; // Position along width (0 for center line)
+
+    // Möbius strip parametric equations
+    const x = (radius + s * Math.cos(t / 2)) * Math.cos(t);
+    const y = (radius + s * Math.cos(t / 2)) * Math.sin(t);
+    const z = s * Math.sin(t / 2) * width;
+
+    path.push({ x, y, z });
+  }
+
+  return path;
+};
+
+/**
+ * Generate Rose curve (rhodonea) path
+ * Creates beautiful petal patterns
+ */
+export const generateRosePath = (
+  patternConfig: PatternConfig,
+  pointCount: number = 200
+): Position3D[] => {
+  const path: Position3D[] = [];
+  const petals = 7; // Number of petals
+  const size = 140;
+
+  for (let i = 0; i < pointCount; i++) {
+    const theta = (i / pointCount) * Math.PI * 2;
+
+    // Rose curve: r = a * cos(k * θ)
+    const r = size * Math.cos(petals * theta);
+
+    const x = r * Math.cos(theta);
+    const y = r * Math.sin(theta);
+    const z = Math.sin(theta * petals) * 30; // Add z variation
+
+    path.push({ x, y, z });
+  }
+
+  return path;
+};
+
+/**
+ * Generate Trefoil knot path
+ * Creates a mathematical knot in 3D space
+ */
+export const generateTrefoilPath = (
+  patternConfig: PatternConfig,
+  pointCount: number = 150
+): Position3D[] => {
+  const path: Position3D[] = [];
+  const scale = 50;
+
+  for (let i = 0; i < pointCount; i++) {
+    const t = (i / pointCount) * Math.PI * 2;
+
+    // Trefoil knot parametric equations
+    const x = scale * (Math.sin(t) + 2 * Math.sin(2 * t));
+    const y = scale * (Math.cos(t) - 2 * Math.cos(2 * t));
+    const z = scale * (-Math.sin(3 * t));
+
+    path.push({ x, y, z });
+  }
+
+  return path;
+};
+
+/**
+ * Generate Lorenz attractor path (chaotic system)
+ * Creates a butterfly-shaped strange attractor
+ */
+export const generateLorenzPath = (
+  patternConfig: PatternConfig,
+  pointCount: number = 500
+): Position3D[] => {
+  const path: Position3D[] = [];
+
+  // Lorenz attractor parameters
+  const sigma = 10;
+  const rho = 28;
+  const beta = 8/3;
+  const dt = 0.01;
+
+  // Initial conditions
+  let x = 0.1;
+  let y = 0;
+  let z = 0;
+
+  const scale = 3;
+
+  for (let i = 0; i < pointCount; i++) {
+    // Lorenz equations
+    const dx = sigma * (y - x);
+    const dy = x * (rho - z) - y;
+    const dz = x * y - beta * z;
+
+    x += dx * dt;
+    y += dy * dt;
+    z += dz * dt;
+
+    path.push({
+      x: x * scale,
+      y: y * scale,
+      z: z * scale
+    });
+  }
+
+  return path;
+};
+
+/**
+ * Generate spherical harmonics path
+ * Creates quantum-like orbital patterns
+ */
+export const generateSphericalHarmonicsPath = (
+  patternConfig: PatternConfig,
+  pointCount: number = 200
+): Position3D[] => {
+  const path: Position3D[] = [];
+  const radius = 100;
+  const l = 3; // Orbital quantum number
+  const m = 2; // Magnetic quantum number
+
+  for (let i = 0; i < pointCount; i++) {
+    const t = i / pointCount;
+    const theta = t * Math.PI; // 0 to π
+    const phi = t * Math.PI * 4; // 0 to 4π (2 rotations)
+
+    // Simplified spherical harmonic modulation
+    const harmonic = Math.abs(Math.sin(l * theta) * Math.cos(m * phi));
+    const r = radius * (0.5 + harmonic);
+
+    const x = r * Math.sin(theta) * Math.cos(phi);
+    const y = r * Math.sin(theta) * Math.sin(phi);
+    const z = r * Math.cos(theta);
+
+    path.push({ x, y, z });
+  }
+
+  return path;
+};
+
+/**
+ * Generate infinity symbol (lemniscate) path
+ * Creates 3D figure-8 pattern
+ */
+export const generateInfinityPath = (
+  patternConfig: PatternConfig,
+  pointCount: number = 100
+): Position3D[] => {
+  const path: Position3D[] = [];
+  const size = 130;
+
+  for (let i = 0; i < pointCount; i++) {
+    const t = (i / pointCount) * Math.PI * 2;
+
+    // Lemniscate of Bernoulli in 3D
+    const scale = size / (1 + Math.sin(t) ** 2);
+    const x = scale * Math.cos(t);
+    const y = scale * Math.sin(t) * Math.cos(t);
+    const z = Math.sin(t * 2) * 30;
+
+    path.push({ x, y, z });
+  }
+
+  return path;
+};
+
+/**
+ * Generate star polyhedron path
+ * Creates geometric star with pointed vertices
+ */
+export const generateStarPolyhedronPath = (
+  patternConfig: PatternConfig,
+  pointCount: number = 60
+): Position3D[] => {
+  const path: Position3D[] = [];
+  const outerRadius = 130;
+  const innerRadius = 50;
+  const points = 12; // Star points
+
+  for (let i = 0; i < pointCount; i++) {
+    const t = (i / pointCount) * points;
+    const angle = t * Math.PI * 2 / points;
+
+    // Alternate between outer and inner radius
+    const radius = (i % 2 === 0) ? outerRadius : innerRadius;
+
+    const x = radius * Math.cos(angle);
+    const y = radius * Math.sin(angle);
+    const z = Math.sin(angle * 3) * 40;
+
+    path.push({ x, y, z });
+  }
+
+  return path;
+};
+
+/**
+ * Generate conical helix path
+ * Spiral that moves along a cone
+ */
+export const generateConicalHelixPath = (
+  patternConfig: PatternConfig,
+  pointCount: number = 120
+): Position3D[] => {
+  const path: Position3D[] = [];
+  const maxRadius = 140;
+  const height = 250;
+  const rotations = 5;
+
+  for (let i = 0; i < pointCount; i++) {
+    const t = i / pointCount;
+    const angle = t * Math.PI * 2 * rotations;
+
+    // Radius increases linearly (cone shape)
+    const radius = t * maxRadius;
+
+    const x = radius * Math.cos(angle);
+    const y = radius * Math.sin(angle);
+    const z = (t - 0.5) * height;
+
+    path.push({ x, y, z });
+  }
+
+  return path;
+};
+
+/**
+ * Generate mandala pattern path
+ * Sacred geometry circular pattern
+ */
+export const generateMandalaPath = (
+  patternConfig: PatternConfig,
+  pointCount: number = 180
+): Position3D[] => {
+  const path: Position3D[] = [];
+  const radius = 120;
+  const layers = 6;
+
+  for (let i = 0; i < pointCount; i++) {
+    const t = i / pointCount;
+    const angle = t * Math.PI * 2;
+
+    // Create layered mandala effect
+    let r = 0;
+    for (let layer = 1; layer <= layers; layer++) {
+      r += Math.abs(Math.sin(angle * layer)) * (radius / layers);
+    }
+
+    const x = r * Math.cos(angle);
+    const y = r * Math.sin(angle);
+    const z = Math.sin(angle * 8) * 25;
+
+    path.push({ x, y, z });
+  }
+
+  return path;
 };
 
 /**
