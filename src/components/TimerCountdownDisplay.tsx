@@ -114,7 +114,7 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
         base_frequency: currentTransition?.frequency_hz || DEFAULT_BASE_FREQUENCY,
         beat_frequency: (currentTransition?.right_ear_hz || DEFAULT_BASE_FREQUENCY) - (currentTransition?.left_ear_hz || DEFAULT_BEAT_FREQUENCY) || DEFAULT_BEAT_FREQUENCY,
         isPlaying: isAudioActuallyPlaying, // 🔥 FIXED: Use real audio state
-        patterns8D: [],
+        patterns8D: appState?.patterns8D || [], // ✅ FIXED: Use converted Pattern8D[] from appState
         timer: timerStatus,
         electromagnetic: appState?.electromagnetic
     }), [
@@ -392,12 +392,12 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
                     {/* 🔥 FIXED: Visualizer fills complete height of box */}
                     <Collapse in={!isVisualizerCollapsed} timeout="auto" unmountOnExit>
                         <Box sx={{
-                            flex: 1,
-                            minHeight: '300px',  // ✅ INCREASED: minimum height for full visibility
-                            height: '100%',      // ✅ ADDED: fills parent height
+                            flex: "1 2 60%",
+                            minHeight: '300px',
+                            height: '100%',
                             display: 'flex',
-                            overflow: 'visible', // ✅ CHANGED: don't hide content!
-                            p: 0,               // ✅ REMOVED: no padding cutting into visualizer space
+                            overflow: 'visible',
+                            p: 0,
                             m: 0                // ✅ REMOVED: no margin
                         }}>
                             <FrequencyVisualizer

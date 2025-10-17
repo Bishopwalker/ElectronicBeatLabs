@@ -76,6 +76,7 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
     beat_frequency,
     isPlaying,
     patterns8D,
+    currentPattern,
     timer,
     electromagnetic
   } = state;
@@ -85,8 +86,10 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
   const rightFreq = base_frequency + beat_frequency;
   const beatFreq = beat_frequency;
 
-  // Get active pattern (first pattern if available)
-  const activePattern = patterns8D?.[0] || null;
+  // ✅ FIXED: Match active pattern by currentPattern ID instead of always using first pattern
+  const activePattern = currentPattern && patterns8D
+    ? patterns8D.find(p => p.id === currentPattern.id) || null
+    : null;
 
   // Initialize audio analysis
   const { analysisData, stats, isAnalyzing } = useAudioAnalysis({
