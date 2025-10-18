@@ -1,8 +1,9 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Box, Typography, Paper, Chip, ToggleButtonGroup, ToggleButton, IconButton } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { useAudioAnalysis } from '../hooks/index.ts';
-import type { AppState} from '../types';
+import { useAudioAnalysis } from '../hooks/useAudioAnalysis';
+import type { AppState } from '../types';
+import { DEFAULT_BASE_FREQUENCY, DEFAULT_BEAT_FREQUENCY } from '../constants/audio.constants';
 import WavesIcon from '@mui/icons-material/Waves';
 import BubbleChartIcon from '@mui/icons-material/BubbleChart';
 import RadarIcon from '@mui/icons-material/Radar';
@@ -83,29 +84,31 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const visualizerContainerRef = useRef<HTMLDivElement>(null); // 🔥 For fullscreen
+  const visualizerContainerRef = useRef<HTMLDivElement>(null);
   const fpsRef = useRef<number>(0);
   const [fps, setFps] = useState(0);
   const [canvasDimensions, setCanvasDimensions] = useState({ width: 800, height: 300 });
   const dimensionsRef = useRef(canvasDimensions);
   const [visualizationMode, setVisualizationMode] = useState<VisualizationMode>('combined');
-  const [isFullscreen, setIsFullscreen] = useState(false); // 🔥 Fullscreen state
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // 🔥 FIXED: Read from both audio.audioState AND top-level state for flexibility
-  // Timer transitions pass frequencies at top level, audio engine has them nested
-  const base_frequency = 
-    state.base_frequency ?? 
-    state.audio?.audioState?.base_frequency ?? 
+  // 🔥 BULLETPROOF: Multiple fallback paths for frequency reading
+  const base_frequency =
+    state?.config?.base_frequency ?? 
+    (state as any)?.base_frequency ?? 
+    (state as any)?.frequency ?? 
+    DEFAULT_BASE_FREQUENCY ?? 
     140;
   
   const beat_frequency = 
-    state.beat_frequency ?? 
-    state.audio?.audioState?.beat_frequency ?? 
+    state?.config?.beat_frequency ?? 
+    (state as any)?.beat_frequency ?? 
+    DEFAULT_BEAT_FREQUENCY ?? 
     4;
   
-  const isPlaying = 
-    state.isPlaying ?? 
-    state.audio?.audioState?.isPlaying ?? 
+  const isPlaying =
+    state?.isPlaying ??
+    state?.audio?.audioState?.isPlaying ?? 
     false;
 
   const { 
@@ -119,12 +122,12 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
   const rightFreq = base_frequency + beat_frequency;
   const beatFreq = beat_frequency;
 
-  // ✅ FIXED: Match active pattern by currentPattern ID
+  // Match active pattern by currentPattern ID
   const activePattern = currentPattern && patterns8D
     ? patterns8D.find(p => p.id === currentPattern.id) || null
     : null;
 
-  // Initialize audio analysis
+  // 🔥 USES EXTERNAL audioContext and analyserNode - NO NEW CONTEXTS CREATED!
   const { analysisData, stats, isAnalyzing } = useAudioAnalysis({
     enabled: isPlaying,
     updateRate: 40,
@@ -132,7 +135,7 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
     analyserNode
   });
 
-  // 🔥 Fullscreen handler
+  // Fullscreen handler
   const toggleFullscreen = async () => {
     if (!visualizerContainerRef.current) return;
 
@@ -151,12 +154,11 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
     }
   };
 
-  // 🔥 Listen for fullscreen changes (ESC key, browser controls)
+  // Listen for fullscreen changes (ESC key, browser controls)
   useEffect(() => {
     const handleFullscreenChange = () => {
       const isCurrentlyFullscreen = !!document.fullscreenElement;
       setIsFullscreen(isCurrentlyFullscreen);
-      console.log('🔄 Fullscreen state changed:', isCurrentlyFullscreen);
     };
 
     document.addEventListener('fullscreenchange', handleFullscreenChange);
@@ -165,12 +167,12 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
     };
   }, []);
 
-  // 🔥 FIXED: Update dimensionsRef when canvasDimensions changes
+  // Update dimensionsRef when canvasDimensions changes
   useEffect(() => {
     dimensionsRef.current = canvasDimensions;
   }, [canvasDimensions]);
 
-  // 🔥 FIXED: Update FPS display from ref
+  // Update FPS display from ref
   useEffect(() => {
     if (!isPlaying) return;
 
@@ -181,7 +183,7 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
     return () => clearInterval(fpsUpdateInterval);
   }, [isPlaying]);
 
-  // 🔥 FIXED: Throttled responsive canvas sizing
+  // Throttled responsive canvas sizing
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -219,26 +221,15 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
     };
   }, []);
 
-  // 🎨 ENHANCED: Multi-mode visualization with FFT-driven spiral and radial bars
+  // Multi-mode visualization with FFT-driven spiral and radial bars
   useEffect(() => {
-    console.log('🎨 FrequencyVisualizer useEffect triggered:', {
-      hasCanvas: !!canvasRef.current,
-      isPlaying,
-      visualizationMode,
-      hasAnalyser: !!analyserNode,
-      canvasWidth: canvasDimensions.width,
-      canvasHeight: canvasDimensions.height
-    });
-
     if (!canvasRef.current || !isPlaying) {
-      console.log('❌ FrequencyVisualizer: Not rendering -', !canvasRef.current ? 'No canvas' : 'Not playing');
       return;
     }
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     if (!ctx) {
-      console.log('❌ FrequencyVisualizer: No canvas context');
       return;
     }
 
@@ -285,7 +276,7 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
         const fieldFrequency = electromagnetic?.frequency || beatFreq;
         const fieldCoherence = electromagnetic?.coherence || 0;
 
-        // 🎨 RENDER BASED ON MODE
+        // Render based on mode
         switch (visualizationMode) {
           case 'waveform':
             renderWaveform(ctx, canvas, centerX, centerY, time, frequencyData, fieldStrength, fieldFrequency);
@@ -300,9 +291,7 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
             renderRadialBars(ctx, canvas, centerX, centerY, time, frequencyData, fieldStrength);
             break;
           case 'combined':
-            // Draw radial bars as background
             renderRadialBars(ctx, canvas, centerX, centerY, time, frequencyData, fieldStrength);
-            // Overlay spiral on top
             renderSpiral2D(ctx, canvas, centerX, centerY, time, frequencyData, fieldStrength, fieldCoherence);
             break;
         }
@@ -352,9 +341,7 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
       animationId = requestAnimationFrame(draw);
     };
 
-    // 🎨 RENDER FUNCTIONS FOR EACH MODE
-
-    // Waveform visualization (original)
+    // Render functions for each mode
     function renderWaveform(
       ctx: CanvasRenderingContext2D,
       canvas: HTMLCanvasElement,
@@ -399,7 +386,6 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
       ctx.shadowBlur = 0;
     }
 
-    // 🌀 2D Spiral driven by FFT data
     function renderSpiral2D(
       ctx: CanvasRenderingContext2D,
       canvas: HTMLCanvasElement,
@@ -417,7 +403,6 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
       ctx.save();
       ctx.translate(centerX, centerY);
 
-      // Draw multiple spiral arms
       const numArms = 3;
       for (let arm = 0; arm < numArms; arm++) {
         const armOffset = (arm * Math.PI * 2) / numArms;
@@ -432,7 +417,6 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
           const freqValue = frequencyData[i] / 255;
           const t = i / numBins;
           
-          // Spiral equation: radius grows with angle
           const angle = t * Math.PI * 6 + time * rotationSpeed + armOffset;
           const radius = (t * maxRadius) * (0.5 + freqValue * 0.5) * (1 + fieldCoherence * 0.3);
 
@@ -445,7 +429,6 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
             ctx.lineTo(x, y);
           }
 
-          // Draw energy points at peaks
           if (freqValue > 0.6 && i % 8 === 0) {
             ctx.save();
             ctx.fillStyle = `hsla(${(arm * 120 + 60) % 360}, 90%, 70%, ${freqValue})`;
@@ -463,7 +446,6 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
       ctx.restore();
     }
 
-    // 🌀 3D Spiral with perspective (Z-axis depth)
     function renderSpiral3D(
       ctx: CanvasRenderingContext2D,
       canvas: HTMLCanvasElement,
@@ -482,7 +464,6 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
       ctx.save();
       ctx.translate(centerX, centerY);
 
-      // Draw helix with 3D perspective
       const numHelixes = 2;
       for (let helix = 0; helix < numHelixes; helix++) {
         const helixOffset = (helix * Math.PI);
@@ -493,17 +474,14 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
           const freqValue = frequencyData[i] / 255;
           const t = i / numBins;
 
-          // 3D helix equations
           const angle = t * Math.PI * 8 + time * rotationSpeed + helixOffset;
           const radius = maxRadius * 0.6 * (0.5 + freqValue * 0.5);
-          const z = (t - 0.5) * zDepth; // Z from -100 to +100
+          const z = (t - 0.5) * zDepth;
 
-          // Perspective projection (simple)
           const perspective = 300 / (300 + z);
           const x = Math.cos(angle) * radius * perspective;
-          const y = Math.sin(angle) * radius * perspective + z * 0.3; // Add Z to Y for depth
+          const y = Math.sin(angle) * radius * perspective + z * 0.3;
 
-          // Color based on depth
           const depthHue = (t * 240 + helix * 180 + time * 20) % 360;
           const depthAlpha = 0.3 + (freqValue * 0.5) + (perspective - 0.5) * 0.4;
           const lineWidth = 1 + freqValue * 3 * perspective;
@@ -524,7 +502,6 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
       ctx.restore();
     }
 
-    // ☀️ Radial Sunburst Bars emanating from center
     function renderRadialBars(
       ctx: CanvasRenderingContext2D,
       canvas: HTMLCanvasElement,
@@ -542,11 +519,10 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
 
       for (let i = 0; i < numBars; i++) {
         const freqValue = frequencyData[i] / 255;
-        const angle = (i / numBars) * Math.PI * 2 - Math.PI / 2; // Start from top
+        const angle = (i / numBars) * Math.PI * 2 - Math.PI / 2;
         const barLength = freqValue * maxBarLength * (1 + fieldStrength * 0.3);
         const barWidth = (Math.PI * 2) / numBars * maxBarLength * 0.8;
 
-        // Gradient from center to edge
         const gradient = ctx.createLinearGradient(0, 0, Math.cos(angle) * barLength, Math.sin(angle) * barLength);
         const hue = (i / numBars) * 360 + time * 20;
         gradient.addColorStop(0, `hsla(${hue}, 80%, 60%, 0.1)`);
@@ -557,7 +533,6 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
         ctx.shadowColor = `hsla(${hue}, 90%, 70%, ${freqValue * 0.5})`;
         ctx.shadowBlur = 10 * freqValue;
 
-        // Draw bar as triangle
         ctx.beginPath();
         ctx.moveTo(0, 0);
         
@@ -571,7 +546,6 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
         ctx.closePath();
         ctx.fill();
 
-        // Draw energy burst at tips for strong frequencies
         if (freqValue > 0.7) {
           const tipX = Math.cos(angle) * barLength;
           const tipY = Math.sin(angle) * barLength;
@@ -660,7 +634,6 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
             </ToggleButton>
           </ToggleButtonGroup>
 
-          {/* 🔥 Fullscreen Button */}
           <IconButton
             onClick={toggleFullscreen}
             size="small"

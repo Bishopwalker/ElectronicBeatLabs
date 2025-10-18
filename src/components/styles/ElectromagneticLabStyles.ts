@@ -94,12 +94,16 @@ export const ElectromagneticLabStyles = {
     borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
   } as SxProps<Theme>,
 
-  // Tab content area
+  // Tab content area - FIXED: No default scroll, height constrained
   tabContent: {
     flex: 1,
-    overflowY: 'auto',
+    overflowY: 'hidden',  // Default: no scroll (overridden per tab)
     p: 2,
-    backgroundColor: 'rgba(30, 60, 90, 0.1)'
+    backgroundColor: 'rgba(30, 60, 90, 0.1)',
+    display: 'flex',
+    flexDirection: 'column',
+    maxHeight: 'calc(100vh - 180px)',  // Constrain to viewport minus header/tabs
+    height: '100%'
   } as SxProps<Theme>,
 
   // Header paper
@@ -232,12 +236,13 @@ export const ElectromagneticLabStyles = {
     },
     display: 'grid',  // ✅ Grid for equal heights
     gridTemplateColumns: {
-      xs: '1fr',  // Mobile: single column
-      sm: '1fr',  // Small: single column
-      md: 'repeat(2, 1fr)',  // Medium: 2 equal columns
-      lg: 'repeat(3, 1fr)',  // Large: 3 equal columns
-      xl: 'repeat(4, 1fr)',  // XL: 4 equal columns
+      xs: '1fr',                // Mobile: 1 column
+      sm: '1fr',                // Small: 1 column
+      md: 'repeat(2, 1fr)',     // Medium/Tablet: 2 columns
+      lg: 'repeat(3, 1fr)',     // Large: 3 columns
+      xl: 'repeat(4, 1fr)',     // XL: 4 columns
     },
+    gridAutoRows: 'minmax(400px, auto)',  // ✅ Base row height
     gap: {
       xs: '8px',
       sm: '10px',
@@ -250,7 +255,7 @@ export const ElectromagneticLabStyles = {
     alignItems: 'stretch'  // ✅ Stretch to fill height
   }) as SxProps<Theme>,
 
-  // 🔥 FIXED: Standard panel - all content visible, scroll INSIDE
+  // 🔥 FIXED: Standard panel - all content visible,no scroll INSIDE
   panelFlex: {
     display: 'flex',
     flexDirection: 'column',
@@ -272,8 +277,9 @@ export const ElectromagneticLabStyles = {
     flexDirection: 'column',
     gridColumn: {
       xs: '1',           // Mobile: full width
-      sm: '1',           // Small: full width  
-      md: 'span 2',      // Medium+: span 2 columns
+      sm: '1',           // Small: full width
+      md: 'span 2',
+      lg: 'span 3'        // Medium+: span 2 columns
     },
     minHeight: '400px',  // ✅ Same as standard
     maxHeight: '600px',  // ✅ Same as standard
@@ -287,21 +293,61 @@ export const ElectromagneticLabStyles = {
     }
   } as SxProps<Theme>,
 
+  // 🔥 NEW: Double height panel for Pattern Selector - DOUBLE the height with scroll
+  doubleHeightPanelFlex: {
+    display: 'flex',
+    flexDirection: 'column',
+    gridRow: 'span 2',  // ✅ Spans 2 rows (double height)
+    minHeight: '600px',  // ✅ Double the standard height
+    maxHeight: 'none',   // ✅ No max height limit
+    height: '100%',
+    overflowY: 'auto',
+    '& > div': {  // CollapsibleSection
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'auto'  // ✅ Allow scrolling inside
+    }
+  } as SxProps<Theme>,
+
+  // 🔥 NEW: Half panel - 50% width for Visualization & Timer side-by-side
+  halfPanelFlex: {
+    display: 'flex',
+    flexDirection: 'column',
+    gridColumn: {
+      xs: '1',           // Mobile: full width
+      sm: '1',           // Small: full width
+      md: 'span 1',      // Medium: 1 column (50% of 2)
+      lg: 'span 1.5',    // Large: 1.5 columns (50% of 3)
+      xl: 'span 2'       // XL: 2 columns (50% of 4)
+    },
+    minHeight: '400px',
+    maxHeight: '600px',
+    height: '100%',
+    overflow: 'hidden',
+    '& > div': {
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden'
+    }
+  } as SxProps<Theme>,
+
   // Equalizer panel flex - ORIGINAL (vertical layout)
   equalizerPanelFlex: {
     flex: '2 1 auto',
     minWidth: {
-      xs: '100vw',
-      sm: '400px',
-      md: '100vw',
-      lg: '100vw'
+      xs: '25vw',
+      sm: '50VW',
+      md: '40vw',
+      lg: '30%'
     },
     maxWidth: {
       xs: '100%',
-      md: '800px',
-      lg: '900px'
+      md: '300px',
+      lg: '400px'
     },
-    height: '50vh',
+    height: '30vh',
     minHeight: 'fit-content',
     display: 'flex',
     flexDirection: 'column'
@@ -310,11 +356,12 @@ export const ElectromagneticLabStyles = {
   // 🔥 FIXED: Equalizer - full width, same height as others
   equalizerPanelFlexHorizontal: {
     display: 'flex',
+    flex: '2 1',
     flexDirection: 'column',
-    gridColumn: '1 / -1',  // ✅ SPAN: full width
+    gridColumn: '3 / -1',  // ✅ SPAN: full width
     minHeight: '400px',    // ✅ Same as other panels
     maxHeight: '600px',    // ✅ Same as other panels  
-    height: '100%',
+    height: '90%',
     overflow: 'hidden',    // ✅ Outer never scrolls
     mb: 2,
     '& > div': {  // CollapsibleSection

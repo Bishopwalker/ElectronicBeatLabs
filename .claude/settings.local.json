@@ -113,6 +113,9 @@
     "deny": [],
     "ask": []
   },
+  "enabledMcpjsonServers": [
+    "MCP_DOCKER"
+  ],
   "hooks": {
     "UserPromptSubmit": [
       {
@@ -124,5 +127,6 @@
         ]
       }
     ]
-  }
+  },
+  "enableAllProjectMcpServers": true
 }

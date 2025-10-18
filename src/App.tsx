@@ -53,24 +53,8 @@ const AppContent = () => {
   // Get hybrid audio engine from context
   const hybridEngine = useAudioEngineContext();
   
-  // 🔥 CRITICAL FIX: Handle hot reload gracefully (context may be null during remount)
-  if (!hybridEngine) {
-    console.log('⏳ Waiting for AudioEngineProvider to initialize (hot reload)...');
-    return (
-      <Box sx={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        minHeight: '100vh',
-        color: 'white'
-      }}>
-        <Typography>Initializing audio engine...</Typography>
-      </Box>
-    );
-  }
-
-  // CRITICAL: Extract the actual app state for TimerCountdownDisplay
-  // This ensures the visualizer has the current frequency data
+  // 🔥 CRITICAL FIX: ALL HOOKS MUST BE BEFORE ANY CONDITIONAL RETURNS!
+  // This prevents hook order violations (React Rules of Hooks)
   const [appState, setAppState] = React.useState({
     frequency: DEFAULT_BASE_FREQUENCY,
     beat_frequency: DEFAULT_BEAT_FREQUENCY,

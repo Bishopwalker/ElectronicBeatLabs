@@ -31,8 +31,6 @@ import { AudioMixer } from '../utils/AudioMixer';
 import type { BinauralBeatConfig, PatternConfig } from '../types';
 import { 
   DEFAULT_VOLUME,
-  DEFAULT_LEFT_FREQUENCY,
-  DEFAULT_RIGHT_FREQUENCY,
   DEFAULT_BEAT_FREQUENCY,
   DEFAULT_BASE_FREQUENCY
 } from '../constants/audio.constants';
@@ -175,7 +173,9 @@ export const useHybridAudioEngine = () => {
       }).catch(err => {
         console.warn('⚠️ Hybrid Engine: Backend session failed, continuing frontend-only:', err);
       });
-      
+      if (backendEngine.audioState){
+        backendEngine.audioState.isPlaying = true;
+      }
       console.log('✅ Hybrid Engine: Audio started (frontend playing, backend connecting)');
     } catch (error) {
       console.error('❌ Hybrid Engine: Failed to start audio:', error);
@@ -195,7 +195,7 @@ export const useHybridAudioEngine = () => {
 
     try {
       // Stop frontend
-      if (frontendEngine.audioState.isPlaying) {
+      if (frontendEngine.audioState) {
         console.log('🛑 Stopping frontend engine...');
         frontendEngine.stopBinauralBeat();
         
@@ -213,9 +213,10 @@ export const useHybridAudioEngine = () => {
       }
 
       // Stop backend
-      if (backendEngine.audioState.isPlaying) {
+      if (backendEngine.audioState) {
         console.log('🛑 Stopping backend engine...');
         await backendEngine.stopBinauralBeat();
+        backendEngine.audioState.isPlaying = false;
         console.log('✅ Backend engine stopped');
         stoppedSuccessfully = true;
       } else {
@@ -273,7 +274,7 @@ export const useHybridAudioEngine = () => {
     // Update FRONTEND engine (convert to leftFreq/rightFreq format)
     if (settings.base_frequency !== undefined && settings.beat_frequency !== undefined) {
       const leftFreq = settings.base_frequency;
-      const rightFreq = settings.base_frequency + settings.beat_frequency;
+      const rightFreq =  settings.beat_frequency;
       frontendEngine.updateFrequency(leftFreq, rightFreq);
     }
   }, [frontendEngine, backendEngine]);

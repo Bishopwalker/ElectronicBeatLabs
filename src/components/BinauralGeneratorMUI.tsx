@@ -19,6 +19,7 @@ import HeadphonesIcon from '@mui/icons-material/Headphones';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import {calculateRightFreq} from "../types/clean.types.ts";
 import { useBinauralVisualization } from '../hooks/useBinauralVisualization';
+import  {DEFAULT_BASE_FREQUENCY,DEFAULT_BEAT_FREQUENCY} from '../constants/audio.constants.ts';
 
 interface BinauralGeneratorProps {
   base_frequency: number;
@@ -118,8 +119,8 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
   // Beat frequency comes from props, display frequencies calculated above
 
   const handleReset = () => {
-    const defaultBaseFreq = 140;
-    const defaultBeatFreq = 4;
+    const defaultBaseFreq =  DEFAULT_BASE_FREQUENCY;
+    const defaultBeatFreq = DEFAULT_BEAT_FREQUENCY;
     const newLeftFreq = defaultBaseFreq;
     const newRightFreq = defaultBaseFreq+defaultBeatFreq;
     setLeftInput(newLeftFreq);
@@ -131,9 +132,9 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
   // @ts-ignore
   return (
     <Card sx={{ 
-      maxHeight: 300,
-      overflow: 'auto',
-      background: 'rgba(0, 191, 255, 0.05)',
+      minHeight: 'fit-content',
+      overflowX: 'hidden',
+       background: 'rgba(0, 191, 255, 0.05)',
       borderColor: 'rgba(0, 191, 255, 0.3)',
       '&::-webkit-scrollbar': {
         width: '8px',
@@ -148,7 +149,7 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
       },
     }}>
       <CardContent sx={{ p: 0.75 }}>
-        <Stack   direction="row" alignItems="center" justifyContent="center" spacing={0.5} mb={0.5}>
+        <Stack direction="row" alignItems="center" justifyContent="center" spacing={0.5} mb={0.5}>
           <HeadphonesIcon color="info" />
           <Typography variant="subtitle1" align="center" color="info">
             Binaural Beat Generator
@@ -158,7 +159,7 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
         {/* Current Preset Display */}
         {currentPreset && currentPreset.name && (
           <Paper
-            elevation={0}
+            elevation={3}
             sx={{
               p: 0.75,
               mb: 1,

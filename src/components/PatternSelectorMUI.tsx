@@ -140,9 +140,8 @@ const PatternSelectorMUI: React.FC<PatternSelectorPropsExtended> = ({
                     // Glow effect for active patterns
                     ...(isActive && {
                       boxShadow: '0 0 8px rgba(0, 191, 255, 0.4)',
-                      '&::before': {
+                      '&::after': {
                         content: '""',
-                        position: 'absolute',
                         top: -2,
                         left: -2,
                         right: -2,
@@ -151,7 +150,7 @@ const PatternSelectorMUI: React.FC<PatternSelectorPropsExtended> = ({
                         borderRadius: '8px',
                         zIndex: -1,
                         opacity: 0.3,
-                        animation: 'pulse 200s infinite'
+                        animation: 'pulse 2s infinite'
                       }
                     })
                   }}

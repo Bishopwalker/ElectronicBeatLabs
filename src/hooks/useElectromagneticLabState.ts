@@ -86,7 +86,8 @@ export const useElectromagneticLabState = (initialPattern?: string, autoStart: b
   // Force electromagnetic field update when pattern changes
   // 🔥 NOTE: isPlaying and volume now come from HybridEngine, passed by caller
   const updateElectromagneticForPattern = useCallback((isPlaying: boolean, volume: number) => {
-    if (state.appState.currentPattern) {
+    // 🔥 BULLETPROOF: Check pattern AND frequencies exist before accessing .beat
+    if (state.appState.currentPattern?.frequencies?.beat) {
       const frequency = state.appState.currentPattern.frequencies.beat;
 
       const immediateElectromagnetic = manager.createImmediateElectromagnetic(
@@ -104,10 +105,12 @@ export const useElectromagneticLabState = (initialPattern?: string, autoStart: b
       }));
 
       console.log('🎨 Visualizer updated for pattern:', state.appState.currentPattern.name, 'Frequency:', frequency);
+    } else {
+      console.warn('⚠️ Cannot update electromagnetic for pattern - pattern or frequencies missing');
     }
   }, [
     state.appState.currentPattern?.id,
-    state.appState.currentPattern?.frequencies.beat,
+    state.appState.currentPattern?.frequencies?.beat,
     manager
   ]);
 

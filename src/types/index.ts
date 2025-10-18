@@ -1,5 +1,6 @@
 // Electromagnetic Beat Lab - Type Definitions
 import type {BackendAudioEngineState, BinauralBeatConfig, FrontendAudioEngineState,SpatialAudioConfig,ActiveAudioStatus} from './audio.types';
+import type {AudioConfig} from './clean.types';
 export * from './audio.types'
 
 export type PatternMode = 'AUTO' | 'MANUAL' | 'OFF' | 'CUSTOM' | 'SYNC' | 'FLOW';
@@ -89,7 +90,7 @@ export interface AudioEngine {
     audioState: BackendAudioEngineState;
     electromagnetic: ElectromagneticField;
     startBinauralBeat: (config: BinauralBeatConfig) => Promise<void>;
-    stopBinauralBeat: () => void;
+    stopBinauralBeat: (config: BinauralBeatConfig) => Promise<void>;
     updateFrequency: (left: number, right: number) => void;
     updateVolume: (volume: number) => void;
     updateWaveform: (waveForm: WaveForm) => void;
@@ -350,7 +351,7 @@ export interface AppState {
     // 🔥 REMOVED: Audio state now lives in HybridAudioEngine.audioState
     // 🔥 REMOVED: Timer state now lives in useTimerLogic.timerState
     // Single source of truth for each domain!
-
+    config: AudioConfig
     // Electromagnetic & Patterns
     electromagnetic: ElectromagneticField;
     patterns8D: Pattern8D[];

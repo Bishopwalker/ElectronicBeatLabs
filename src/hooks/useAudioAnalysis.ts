@@ -60,6 +60,7 @@ export const useAudioAnalysis = (config: Partial<AudioAnalysisConfig> = {}) => {
   const animationFrameId = useRef<number | null>(null);
   const lastFrameTime = useRef<number>(0);
   const frameCount = useRef<number>(0);
+  const totalUpdatesRef = useRef<number>(0); // 🔥 FIXED: Use ref to prevent infinite loop
 
   // Analyze audio spectrum
   const analyzeAudio = useCallback(() => {
@@ -118,8 +119,10 @@ export const useAudioAnalysis = (config: Partial<AudioAnalysisConfig> = {}) => {
         snr > 25 ? 'good' :
         snr > 10 ? 'fair' : 'poor';
 
+      totalUpdatesRef.current += frameCount.current; // 🔥 FIXED: Update ref instead of state dependency
+
       setStats({
-        totalUpdates: stats.totalUpdates + frameCount.current,
+        totalUpdates: totalUpdatesRef.current,
         averageFps: fps,
         lastUpdateTime: now,
         dataQuality: quality
@@ -130,7 +133,7 @@ export const useAudioAnalysis = (config: Partial<AudioAnalysisConfig> = {}) => {
     }
 
     return newData;
-  }, [defaultConfig.enabled, stats.totalUpdates]);
+  }, [defaultConfig.enabled]); // 🔥 FIXED: Removed stats.totalUpdates from dependencies
 
   // Animation loop for analysis
   useEffect(() => {

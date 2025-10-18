@@ -125,10 +125,13 @@ export class ElectromagneticLabManager {
   handleFrequencyChange(frequency: number, audioEngine: any) {
     this.updateAppState({ frequency });
     
-    if (this.state.appState.currentPattern) {
+    // 🔥 BULLETPROOF: Check pattern AND frequencies exist
+    if (this.state.appState.currentPattern?.frequencies?.carrier) {
       const leftFreq = this.state.appState.currentPattern.frequencies.carrier;
       const rightFreq = leftFreq + frequency;
       audioEngine.updateFrequency(leftFreq, rightFreq);
+    } else {
+      console.warn('⚠️ Cannot update frequency - pattern or frequencies missing');
     }
   }
 
@@ -145,13 +148,15 @@ export class ElectromagneticLabManager {
   handlePlay(audioEngine: any, backendEngine: any, patterns8D: any) {
     console.log('🎛️ HandlePlay called - Current Pattern:', this.state.appState.currentPattern?.name, 'Is Playing:', this.state.appState.isPlaying);
 
-    // Get pattern or use default frequencies
-    const pattern = this.state.appState.currentPattern || {
-      frequencies: {
-        carrier: this.state.appState.frequency,
-        beat: this.state.appState.beat_frequency
-      }
-    };
+    // 🔥 BULLETPROOF: Get pattern with full null checking and defaults
+    const pattern = this.state.appState.currentPattern?.frequencies ? 
+      this.state.appState.currentPattern : 
+      {
+        frequencies: {
+          carrier: this.state.appState.frequency || 140,
+          beat: this.state.appState.beat_frequency || 4
+        }
+      };
 
     // Always proceed with play - let the audio engine handle the actual audio state
     // Choose engine based on spatial audio settings
@@ -164,9 +169,10 @@ export class ElectromagneticLabManager {
       }
       if (backendEngine.startBinauralBeat) {
         // Both engines now use consistent BinauralBeatConfig format
+        // 🔥 BULLETPROOF: Extra safety on frequency access
         const config = {
-          base_frequency: pattern.frequencies.carrier,
-          beat_frequency: pattern.frequencies.beat,
+          base_frequency: pattern.frequencies?.carrier || 140,
+          beat_frequency: pattern.frequencies?.beat || 4,
           amplitude: this.state.appState.volume || 0.3,
           waveform: 'sine' as const,
           spatial: {
@@ -185,9 +191,10 @@ export class ElectromagneticLabManager {
       }
       if (audioEngine.startBinauralBeat) {
         // Both engines now use consistent BinauralBeatConfig format
+        // 🔥 BULLETPROOF: Extra safety on frequency access
         const config = {
-          base_frequency: pattern.frequencies.carrier,
-          beat_frequency: pattern.frequencies.beat,
+          base_frequency: pattern.frequencies?.carrier || 140,
+          beat_frequency: pattern.frequencies?.beat || 4,
           amplitude: this.state.appState.volume || 0.3,
           waveform: 'sine' as const
         };
