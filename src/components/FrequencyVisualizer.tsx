@@ -396,7 +396,7 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
       fieldStrength: number,
       fieldCoherence: number
     ) {
-      const numBins = Math.min(frequencyData.length, 128);
+      const numBins = Math.min(frequencyData.length, 256);
       const rotationSpeed = 0.5;
       const maxRadius = Math.min(canvas.width, canvas.height) * 0.4;
 
@@ -456,7 +456,7 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
       fieldStrength: number,
       fieldCoherence: number
     ) {
-      const numBins = Math.min(frequencyData.length, 128);
+      const numBins = Math.min(frequencyData.length, 255);
       const rotationSpeed = 0.5;
       const maxRadius = Math.min(canvas.width, canvas.height) * 0.35;
       const zDepth = 200;
@@ -512,7 +512,7 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
       fieldStrength: number
     ) {
       // 🔥 MORE BARS for full butterfly effect!
-      const numBars = Math.min(frequencyData.length / 2, 128); // Was 64, now 128!
+      const numBars = Math.min(frequencyData.length / 2, 255); // Was 64, now 128!
       const maxBarLength = Math.min(canvas.width, canvas.height) * 0.45; // Slightly longer
 
       ctx.save();
@@ -595,9 +595,24 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
         flexShrink: 0
       }}>
         {title && (
-          <Typography variant="h6" sx={{ color: '#fff', fontSize: '0.95rem', flexGrow: 1 }}>
-            {title}
-          </Typography>
+          <Box sx={{ flexGrow: 1 }}>
+            <Typography variant="h6" sx={{ color: '#fff', fontSize: '0.95rem', lineHeight: 1.2 }}>
+              {title}
+            </Typography>
+            <Typography variant="caption" sx={{ 
+              color: '#00ff88', 
+              fontWeight: 'bold',
+              fontSize: '0.75rem',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px'
+            }}>
+              Mode: {visualizationMode === 'waveform' ? 'Waveform' : 
+                     visualizationMode === 'spiral2d' ? '2D Spiral' :
+                     visualizationMode === 'spiral3d' ? '3D Helix' :
+                     visualizationMode === 'radial' ? 'Radial Bars (Butterfly)' :
+                     'Combined'}
+            </Typography>
+          </Box>
         )}
         
         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
