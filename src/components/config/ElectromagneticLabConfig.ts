@@ -115,5 +115,5 @@ export const SECTION_DATA = {
   'frequencyVisualizer': { title: 'Frequency Visualizer', icon: '📊' }
 };
 
-// Default closed sections (Master Controls closed to show compact view)
-export const DEFAULT_CLOSED_SECTIONS = ['masterControls'];
+// Default closed sections (Master Controls and FrequencyVisualizer closed initially)
+export const DEFAULT_CLOSED_SECTIONS = ['masterControls', 'frequencyVisualizer'];

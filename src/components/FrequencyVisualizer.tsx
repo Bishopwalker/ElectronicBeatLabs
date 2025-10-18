@@ -89,7 +89,7 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
   const [fps, setFps] = useState(0);
   const [canvasDimensions, setCanvasDimensions] = useState({ width: 800, height: 300 });
   const dimensionsRef = useRef(canvasDimensions);
-  const [visualizationMode, setVisualizationMode] = useState<VisualizationMode>('combined');
+  const [visualizationMode, setVisualizationMode] = useState<VisualizationMode>('radial'); // 🔥 DEFAULT: Radial butterfly pattern
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   // 🔥 BULLETPROOF: Multiple fallback paths for frequency reading
@@ -511,8 +511,9 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
       frequencyData: Uint8Array,
       fieldStrength: number
     ) {
-      const numBars = Math.min(frequencyData.length / 2, 64);
-      const maxBarLength = Math.min(canvas.width, canvas.height) * 0.4;
+      // 🔥 MORE BARS for full butterfly effect!
+      const numBars = Math.min(frequencyData.length / 2, 128); // Was 64, now 128!
+      const maxBarLength = Math.min(canvas.width, canvas.height) * 0.45; // Slightly longer
 
       ctx.save();
       ctx.translate(centerX, centerY);
@@ -521,17 +522,17 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
         const freqValue = frequencyData[i] / 255;
         const angle = (i / numBars) * Math.PI * 2 - Math.PI / 2;
         const barLength = freqValue * maxBarLength * (1 + fieldStrength * 0.3);
-        const barWidth = (Math.PI * 2) / numBars * maxBarLength * 0.8;
+        const barWidth = (Math.PI * 2) / numBars * maxBarLength * 1.2; // 🔥 THICKER bars!
 
         const gradient = ctx.createLinearGradient(0, 0, Math.cos(angle) * barLength, Math.sin(angle) * barLength);
         const hue = (i / numBars) * 360 + time * 20;
         gradient.addColorStop(0, `hsla(${hue}, 80%, 60%, 0.1)`);
         gradient.addColorStop(0.5, `hsla(${hue}, 85%, 65%, ${freqValue * 0.6})`);
-        gradient.addColorStop(1, `hsla(${hue}, 90%, 70%, ${freqValue})`);
+        gradient.addColorStop(1, `hsla(${hue}, 90%, 70%, ${freqValue})`); // 🔥 Full color at tips!
 
         ctx.fillStyle = gradient;
-        ctx.shadowColor = `hsla(${hue}, 90%, 70%, ${freqValue * 0.5})`;
-        ctx.shadowBlur = 10 * freqValue;
+        ctx.shadowColor = `hsla(${hue}, 90%, 70%, ${freqValue * 0.8})`; // 🔥 BRIGHTER glow!
+        ctx.shadowBlur = 15 * freqValue; // 🔥 BIGGER glow!
 
         ctx.beginPath();
         ctx.moveTo(0, 0);
@@ -546,13 +547,14 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
         ctx.closePath();
         ctx.fill();
 
-        if (freqValue > 0.7) {
+        // 🔥 BIGGER glowing tips!
+        if (freqValue > 0.5) { // Lower threshold so more tips glow
           const tipX = Math.cos(angle) * barLength;
           const tipY = Math.sin(angle) * barLength;
 
-          ctx.fillStyle = `hsla(${hue + 60}, 100%, 80%, ${freqValue})`;
+          ctx.fillStyle = `hsla(${hue + 60}, 100%, 85%, ${freqValue})`; // 🔥 BRIGHTER!
           ctx.beginPath();
-          ctx.arc(tipX, tipY, 3 + freqValue * 4, 0, Math.PI * 2);
+          ctx.arc(tipX, tipY, 4 + freqValue * 6, 0, Math.PI * 2); // 🔥 BIGGER!
           ctx.fill();
         }
       }

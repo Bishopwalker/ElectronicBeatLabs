@@ -41,6 +41,7 @@ import TabContentRenderer from '../shared/TabContentRenderer';
 import SystemStatusChips from '../shared/SystemStatusChips';
 import TimerCountdownDisplay from '../TimerCountdownDisplay';
 import EqualizerMUI from '../EqualizerMUI';
+import { FrequencyVisualizer } from '../FrequencyVisualizer';
 
 const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
   initialPattern,
@@ -193,6 +194,30 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
       hasAutoEnabledRef.current = false;
     }
   }, [backendEngine.backendConnected, backendEngine.sessionId, updateAppState]);
+
+  // Auto-open FrequencyVisualizer when pattern selected or audio playing (but NOT when timer active)
+  useEffect(() => {
+    const isTimerActive = timerStatus?.session?.is_active || false;
+    const hasPattern = appState.currentPattern !== null;
+    const isAudioPlaying = hybridEngine?.audioState?.isPlaying || false;
+    const isVisualizerClosed = closedSections.includes('frequencyVisualizer');
+    
+    // Show visualizer if: (pattern selected OR audio playing) AND timer NOT active
+    const shouldShowVisualizer = (hasPattern || isAudioPlaying) && !isTimerActive;
+    
+    if (shouldShowVisualizer && isVisualizerClosed) {
+      console.log('📊 Auto-opening FrequencyVisualizer - pattern/audio active, timer inactive');
+      handleSectionRestore('frequencyVisualizer');
+    } else if (!shouldShowVisualizer && !isVisualizerClosed) {
+      console.log('📊 Auto-closing FrequencyVisualizer - no pattern/audio or timer active');
+      handleSectionClose('frequencyVisualizer');
+    }
+  }, [
+    appState.currentPattern,
+    hybridEngine?.audioState?.isPlaying,
+    timerStatus?.session?.is_active,
+    closedSections
+  ]);
 
   // Simple one-time backend connection attempt on startup
   useEffect(() => {
@@ -573,7 +598,39 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
 
       {/* Dynamic Flex Layout */}
       <Box sx={ElectromagneticLabStyles.mainLayoutContainer(closedSections)}>
-        {/* Equalizer - Placed FIRST for visibility */}
+        {/* Frequency Visualizer - Auto-opens when pattern selected or audio playing (hidden when timer active) */}
+        {!closedSections.includes('frequencyVisualizer') && (
+          <Box sx={ElectromagneticLabStyles.widePanelFlex}>
+            <CollapsibleSection id="frequencyVisualizer" title="Frequency Visualizer" icon="📊" defaultOpen={false} onClose={handleSectionClose}>
+              <FrequencyVisualizer
+                state={{
+                  ...appState,
+                  config: {
+                    base_frequency: (() => {
+                      const audioState = hybridEngine?.audioState || {};
+                      const config = audioState.config || {};
+                      return config.base_frequency || audioState.leftFreq || DEFAULT_BASE_FREQUENCY;
+                    })(),
+                    beat_frequency: (() => {
+                      const audioState = hybridEngine?.audioState || {};
+                      const config = audioState.config || {};
+                      return config.beat_frequency || audioState.beat_frequency || DEFAULT_BEAT_FREQUENCY;
+                    })()
+                  },
+                  isPlaying: hybridEngine?.audioState?.isPlaying || false
+                }}
+                title="Real-time Frequency Analysis"
+                audioContext={activeAudioEngine.audioContext}
+                analyserNode={activeAudioEngine.analyserNode}
+                showSpectrum={true}
+                showFrequencies={true}
+                showMetrics={true}
+              />
+            </CollapsibleSection>
+          </Box>
+        )}
+
+        {/* Equalizer - Placed AFTER FrequencyVisualizer */}
         {!closedSections.includes('equalizer') && (
            <Box sx={ElectromagneticLabStyles.equalizerPanelFlexHorizontal}>
             <CollapsibleSection id="equalizer" title="Equalizer" icon="🎚️" defaultOpen={true} onClose={handleSectionClose}>
