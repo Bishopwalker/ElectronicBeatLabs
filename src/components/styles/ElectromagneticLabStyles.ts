@@ -271,15 +271,16 @@ export const ElectromagneticLabStyles = {
     }
   } as SxProps<Theme>,
 
-  // 🔥 FIXED: Wide panel - spans 2 columns, same height
+  // 🔥 FIXED: Wide panel - spans 2 columns on all screens
   widePanelFlex: {
     display: 'flex',
     flexDirection: 'column',
     gridColumn: {
       xs: '1',           // Mobile: full width
       sm: '1',           // Small: full width
-      md: 'span 2',
-      lg: 'span 3'        // Medium+: span 2 columns
+      md: 'span 2',      // Medium: 2 columns (100% of 2-col grid)
+      lg: 'span 2',      // Large: 2 columns (66% of 3-col grid)
+      xl: 'span 2'       // XL: 2 columns (50% of 4-col grid)
     },
     minHeight: '400px',  // ✅ Same as standard
     maxHeight: '600px',  // ✅ Same as standard
@@ -293,15 +294,15 @@ export const ElectromagneticLabStyles = {
     }
   } as SxProps<Theme>,
 
-  // 🔥 NEW: Double height panel for Pattern Selector - DOUBLE the height with scroll
+  // 🔥 NEW: Double height panel - DOUBLE the height with scroll
   doubleHeightPanelFlex: {
     display: 'flex',
     flexDirection: 'column',
     gridRow: 'span 2',  // ✅ Spans 2 rows (double height)
-    minHeight: '600px',  // ✅ Double the standard height
+    minHeight: '820px',  // ✅ Double the standard height (400*2 + 20 gap)
     maxHeight: 'none',   // ✅ No max height limit
     height: '100%',
-    overflowY: 'auto',
+    overflow: 'hidden',  // ✅ Outer never scrolls
     '& > div': {  // CollapsibleSection
       height: '100%',
       display: 'flex',
@@ -353,17 +354,22 @@ export const ElectromagneticLabStyles = {
     flexDirection: 'column'
   } as SxProps<Theme>,
 
-  // 🔥 FIXED: Equalizer - full width, same height as others
+  // 🔥 FIXED: Equalizer - normal width, NOT full-width
   equalizerPanelFlexHorizontal: {
     display: 'flex',
-    flex: '2 1',
+    flex: '1 1',
     flexDirection: 'column',
-    gridColumn: '3 / -1',  // ✅ SPAN: full width
+    gridColumn: {
+      xs: '1',           // Mobile: full width
+      sm: '1',           // Small: full width
+      md: 'span 2',      // Medium: 2 columns (full width)
+      lg: 'span 2',      // Large: 2 columns
+      xl: 'span 2'       // XL: 2 columns (50% width)
+    },
     minHeight: '400px',    // ✅ Same as other panels
     maxHeight: '600px',    // ✅ Same as other panels  
-    height: '90%',
+    height: '100%',
     overflow: 'hidden',    // ✅ Outer never scrolls
-    mb: 2,
     '& > div': {  // CollapsibleSection
       height: '100%',
       display: 'flex',

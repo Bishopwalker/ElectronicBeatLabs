@@ -697,7 +697,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
 
         {/* Patterns - DOUBLE HEIGHT with scroll */}
         {!closedSections.includes('patternID') && (
-          <Box sx={ElectromagneticLabStyles.panelFlex}>
+          <Box sx={ElectromagneticLabStyles.doubleHeightPanelFlex}>
             <CollapsibleSection id="patternID" title="Patterns" icon="🌀" defaultOpen={true} onClose={handleSectionClose}>
               <PatternSelectorMUI
                 patterns={WAVE_PATTERNS}
@@ -711,14 +711,9 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
           </Box>
         )}
 
-        {/* Binaural Beat Generator */}
+        {/* Binaural Beat Generator - DOUBLE HEIGHT */}
         {!closedSections.includes('binauralBeats') && (
-          <Box sx={{
-            ...ElectromagneticLabStyles.widePanelFlex,
-            minHeight: '600px',  // Taller to fit all components
-            maxHeight: 'none',   // No max height restriction
-            height: 'auto'
-          }}>
+          <Box sx={ElectromagneticLabStyles.doubleHeightPanelFlex}>
             <CollapsibleSection id="binauralBeats" title="Binaural Beat Generator" icon="🎧" defaultOpen={true} onClose={handleSectionClose}>
               <Box sx={{ height: 'auto', overflow: 'visible' }}>
                 <BinauralGeneratorMUI
