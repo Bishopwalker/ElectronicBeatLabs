@@ -4,7 +4,7 @@
 import type { SxProps, Theme } from '@mui/material/styles';
 
 export const ElectromagneticLabStyles = {
-  // Main container styles - GRID LAYOUT
+  // Main container styles - GRID: Header ~15vh, Content ~85vh
   mainContainer: {
     width: '100vw',
     height: '100vh',
@@ -103,7 +103,7 @@ export const ElectromagneticLabStyles = {
     height: '100%'
   } as SxProps<Theme>,
 
-  // Header paper - STICKY at top
+  // Header paper
   headerPaper: {
     position: 'sticky',
     top: 0,
@@ -208,7 +208,7 @@ export const ElectromagneticLabStyles = {
     borderColor: isActive ? 'rgba(0, 255, 136, 0.5)' : 'rgba(255, 255, 255, 0.3)'
   }) as SxProps<Theme>,
 
-  // MAIN LAYOUT GRID - FILLS REMAINING SPACE
+  // MAIN LAYOUT GRID - Desktop: 2 rows fit in viewport, Mobile: scroll
   mainLayoutContainer: (closedSections: string[]) => ({
     p: 1,
     display: 'grid',
@@ -219,12 +219,17 @@ export const ElectromagneticLabStyles = {
       lg: 'repeat(4, 1fr)',
       xl: 'repeat(4, 1fr)',
     },
-    gridAutoRows: 'minmax(250px, auto)',
+    gridTemplateRows: {
+      xs: 'auto',
+      md: 'repeat(2, 1fr)'
+    },
     gap: 1,
     width: '100%',
     height: '100%',
-    overflowY: 'auto',
-    overflowX: 'hidden'
+    overflow: {
+      xs: 'auto',
+      md: 'hidden'
+    }
   }) as SxProps<Theme>,
 
   // Standard panel

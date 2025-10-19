@@ -5,7 +5,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: Dockerfile.backend.render
+      dockerfile: Dockerfile.backend
     container_name: ebl-backend
     restart: unless-stopped
     ports:
@@ -61,7 +61,7 @@ services:
   frontend:
     build:
       context: .
-      dockerfile: Dockerfile.frontend.render
+      dockerfile: Dockerfile.frontend
       args:
         VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
         VITE_WS_URL: ${VITE_WS_URL:-ws://localhost:5173}
