@@ -9,7 +9,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 
 # Clean install with exact versions from lock file
-RUN npm ci
+RUN npm install
 
 # Copy source files
 COPY src/ ./src/

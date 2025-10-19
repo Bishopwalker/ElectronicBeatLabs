@@ -12,7 +12,7 @@ COPY package.json ./
 COPY package-lock.json ./
 
 # Install all dependencies (including devDependencies for build)
-RUN npm ci
+RUN npm install
 # Copy source code
 COPY src/ ./src/
 COPY public/ ./public/
