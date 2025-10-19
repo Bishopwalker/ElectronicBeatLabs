@@ -14,12 +14,24 @@ import {
   Chip,
   Tooltip,
   IconButton,
-  Dialog
+  Dialog,
+  Select,
+  MenuItem,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  ToggleButton,
+  ToggleButtonGroup,
+  FormControl,
+  InputLabel
 } from '@mui/material';
 import FullscreenIcon from '@mui/icons-material/Fullscreen';
 import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import TuneIcon from '@mui/icons-material/Tune';
+import ThreeDRotationIcon from '@mui/icons-material/ThreeDRotation';
 import { useEqualizer, EQ_PRESETS } from '../hooks/useEqualizer';
-import type { EqualizerBand } from '../types';
+import type { EqualizerBand, ModulatorType, SpatialEffectMode } from '../types';
 
 
 
@@ -52,6 +64,12 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
     loadPreset,
     resetEqualizer,
     toggleEqualizer,
+    // Enhanced features
+    updateWaveform,
+    updateModulator,
+    updateSpatialEffect,
+    updateBandVector,
+    updateBandAmplifier,
     inputNode,
     outputNode
   } = useEqualizer(audioContext);
@@ -125,14 +143,13 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
 
   // Render vertical slider for each band
   const renderBandSlider = useCallback((band: EqualizerBand) => {
-    const sliderHeight = eqFullscreen ? 400 : 220;
+    const sliderHeight = eqFullscreen ? 400 : 150; // 🔥 REDUCED: from 220 to 150 for compact layout
     const thumbSize = eqFullscreen ? 16 : 10;
     
     return (
       <Box
         key={band.id}
-        sx={
-          {height: '400',
+        sx={{
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -276,7 +293,7 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
       )}
 
       {/* Header with controls */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: eqFullscreen ? 1 : 0.5, flexShrink: 0 }}> {/* 🔥 REDUCED: mb from 1 to 0.5 */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <FormControlLabel
             control={
@@ -355,7 +372,7 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
       {/* Main content - Sliders and Visualizer */}
       <Box sx={{ 
         display: 'flex', 
-        gap: eqFullscreen ? 3 : 1, 
+        gap: eqFullscreen ? 3 : 0.5,
         alignItems: 'stretch',
         flex: 1,
         minHeight: 0
@@ -405,20 +422,161 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
         }}>
           
           {/* Presets grid - ✅ COMPACT 2-COLUMN LAYOUT */}
-          <Box sx={{ 
-            display: 'grid', 
-            gridTemplateColumns: eqFullscreen ? 'repeat(2, 1fr)' : 'repeat(2, 1fr)',  // ✅ CHANGED: from 4 columns to 2
-            gap: eqFullscreen ? 0.75 : 0.4,                                          // ✅ REDUCED: from 1/0.5 to 0.75/0.4
-            maxWidth: eqFullscreen ? '250px' : '180px'                               // ✅ ADDED: limit width to use less space
+          <Box sx={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, 1fr)',
+            gap: eqFullscreen ? 0.75 : 0.4,
+            maxWidth: eqFullscreen ? '250px' : '180px'
           }}>
             {presetButtons}
           </Box>
+
+          {/* ============================================ */}
+          {/* ENHANCED FEATURES - New Controls */}
+          {/* ============================================ */}
+
+          {/* 3D Spatial Effect Selector */}
+          <Box sx={{ mt: 1 }}>
+            <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.65rem', mb: 0.5, display: 'block' }}>
+              <ThreeDRotationIcon sx={{ fontSize: '0.8rem', mr: 0.5, verticalAlign: 'middle' }} />
+              Spatial Effect
+            </Typography>
+            <FormControl fullWidth size="small">
+              <Select
+                value={equalizerState.spatialEffect}
+                onChange={(e) => updateSpatialEffect(e.target.value as SpatialEffectMode)}
+                sx={{
+                  fontSize: '0.65rem',
+                  color: 'white',
+                  '.MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0, 191, 255, 0.3)' },
+                  '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#00bfff' },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#00bfff' },
+                  '.MuiSelect-icon': { color: 'rgba(255, 255, 255, 0.7)' }
+                }}
+              >
+                <MenuItem value="none" sx={{ fontSize: '0.65rem' }}>None</MenuItem>
+                <MenuItem value="toroidal" sx={{ fontSize: '0.65rem' }}>Toroidal Field</MenuItem>
+                <MenuItem value="vortex" sx={{ fontSize: '0.65rem' }}>Vortex</MenuItem>
+                <MenuItem value="spiral" sx={{ fontSize: '0.65rem' }}>Spiral</MenuItem>
+                <MenuItem value="wave" sx={{ fontSize: '0.65rem' }}>Wave Field</MenuItem>
+                <MenuItem value="pattern8D" sx={{ fontSize: '0.65rem' }}>Pattern 8D</MenuItem>
+                <MenuItem value="combined" sx={{ fontSize: '0.65rem' }}>Combined</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
+
+          {/* Modulator Controls - Collapsible */}
+          <Accordion
+            sx={{
+              mt: 1,
+              bgcolor: 'rgba(0, 0, 0, 0.4)',
+              '&:before': { display: 'none' }
+            }}
+          >
+            <AccordionSummary
+              expandIcon={<ExpandMoreIcon sx={{ color: 'white', fontSize: '1rem' }} />}
+              sx={{
+                minHeight: '32px',
+                '& .MuiAccordionSummary-content': { margin: '4px 0' }
+              }}
+            >
+              <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.65rem' }}>
+                <TuneIcon sx={{ fontSize: '0.8rem', mr: 0.5, verticalAlign: 'middle' }} />
+                Modulator
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails sx={{ p: 1 }}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={equalizerState.modulator.enabled}
+                    onChange={(e) => updateModulator({ enabled: e.target.checked })}
+                    size="small"
+                    sx={{
+                      '& .MuiSwitch-switchBase.Mui-checked': { color: '#00ff88' },
+                      '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { bgcolor: '#00ff88' }
+                    }}
+                  />
+                }
+                label={<Typography variant="caption" sx={{ fontSize: '0.6rem' }}>Enable</Typography>}
+              />
+
+              <Box sx={{ mt: 1 }}>
+                <Typography variant="caption" sx={{ fontSize: '0.55rem', color: 'rgba(255, 255, 255, 0.5)' }}>
+                  Type
+                </Typography>
+                <ToggleButtonGroup
+                  value={equalizerState.modulator.type}
+                  exclusive
+                  onChange={(_e, value) => value && updateModulator({ type: value as ModulatorType })}
+                  size="small"
+                  fullWidth
+                  sx={{
+                    mt: 0.5,
+                    '& .MuiToggleButton-root': {
+                      fontSize: '0.55rem',
+                      py: 0.2,
+                      px: 0.3,
+                      color: 'rgba(255, 255, 255, 0.7)',
+                      borderColor: 'rgba(0, 191, 255, 0.3)',
+                      '&.Mui-selected': {
+                        bgcolor: '#00bfff',
+                        color: 'white'
+                      }
+                    }
+                  }}
+                >
+                  <ToggleButton value="lfo">LFO</ToggleButton>
+                  <ToggleButton value="tremolo">Tremolo</ToggleButton>
+                  <ToggleButton value="vibrato">Vibrato</ToggleButton>
+                </ToggleButtonGroup>
+              </Box>
+
+              <Box sx={{ mt: 1 }}>
+                <Typography variant="caption" sx={{ fontSize: '0.55rem', color: 'rgba(255, 255, 255, 0.5)' }}>
+                  Rate: {equalizerState.modulator.rate.toFixed(1)} Hz
+                </Typography>
+                <Slider
+                  value={equalizerState.modulator.rate}
+                  onChange={(_e, value) => updateModulator({ rate: value as number })}
+                  min={0.1}
+                  max={20}
+                  step={0.1}
+                  disabled={!equalizerState.modulator.enabled}
+                  size="small"
+                  sx={{
+                    color: '#00bfff',
+                    '& .MuiSlider-thumb': { width: 12, height: 12 }
+                  }}
+                />
+              </Box>
+
+              <Box sx={{ mt: 1 }}>
+                <Typography variant="caption" sx={{ fontSize: '0.55rem', color: 'rgba(255, 255, 255, 0.5)' }}>
+                  Depth: {(equalizerState.modulator.depth * 100).toFixed(0)}%
+                </Typography>
+                <Slider
+                  value={equalizerState.modulator.depth}
+                  onChange={(_e, value) => updateModulator({ depth: value as number })}
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  disabled={!equalizerState.modulator.enabled}
+                  size="small"
+                  sx={{
+                    color: '#00bfff',
+                    '& .MuiSlider-thumb': { width: 12, height: 12 }
+                  }}
+                />
+              </Box>
+            </AccordionDetails>
+          </Accordion>
 
           {/* Frequency Visualizer */}
           {audioContext && analyserNode && (
             <Box sx={{
               flex: 1,
-              minHeight: visualizerFullscreen ? (eqFullscreen ? '500px' : '300px') : (eqFullscreen ? '200px' : '80px'),
+              minHeight: visualizerFullscreen ? (eqFullscreen ? '500px' : '300px') : (eqFullscreen ? '200px' : '60px'), // 🔥 REDUCED: from 80px to 60px for compact layout
               maxHeight: visualizerFullscreen ? '90vh' : 'auto',
               bgcolor: 'rgba(0, 0, 0, 0.5)',
               borderRadius: 1,
@@ -516,12 +674,15 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
     <Paper
       elevation={3}
       sx={{
-        p: 1,
+        p: eqFullscreen ? 1 : 0.5,  // 🔥 REDUCED: padding from 1 to 0.5 in compact mode
         bgcolor: 'rgba(0, 0, 0, 0.6)',
         backdropFilter: 'blur(10px)',
         borderRadius: 2,
         border: '1px solid rgba(255, 255, 255, 0.1)',
-        position: 'relative'
+        position: 'relative',
+        height: '100%',  // 🔥 NEW: fill container
+        display: 'flex',  // 🔥 NEW: flex layout
+        flexDirection: 'column'  // 🔥 NEW: column layout
       }}
     >
       {eqContent}

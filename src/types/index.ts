@@ -449,6 +449,9 @@ export interface SpatialVisualizerProps {
     pattern: Pattern8D;
     electromagnetic: ElectromagneticField;
     size?: number;
+    audioContext?: AudioContext;
+    analyserNode?: AnalyserNode;
+    isPlaying?: boolean;
 }
 
 export interface FrequencyDisplayProps {
@@ -584,4 +587,78 @@ export interface EqualizerState {
   enabled: boolean;
   bands: EqualizerBand[];
   preset: string;
+}
+
+// ============================================
+// ENHANCED EQUALIZER TYPES - Extended Features
+// ============================================
+
+/**
+ * Modulation types for EQ effects
+ */
+export type ModulatorType = 'lfo' | 'tremolo' | 'vibrato' | 'ringMod' | 'none';
+
+/**
+ * LFO Waveforms for modulation
+ */
+export type LFOWaveform = 'sine' | 'square' | 'triangle' | 'sawtooth';
+
+/**
+ * Modulator configuration for dynamic EQ effects
+ */
+export interface ModulatorConfig {
+  enabled: boolean;
+  type: ModulatorType;
+  rate: number; // Hz (0.1 - 20 Hz)
+  depth: number; // 0-1 (modulation intensity)
+  waveform: LFOWaveform;
+  sync: boolean; // Sync to beat frequency
+}
+
+/**
+ * 3D Spatial positioning for individual frequency bands
+ */
+export interface FrequencyVector {
+  enabled: boolean;
+  position: Position3D; // X/Y/Z coordinates (-1 to 1)
+  pan: number; // Stereo pan (-1 to 1, left to right)
+  phase: number; // Phase offset (0-360 degrees)
+  spread: number; // Stereo width (0-1)
+}
+
+/**
+ * Per-band amplification and processing
+ */
+export interface AmplifierBandConfig {
+  enabled: boolean;
+  gain: number; // Additional gain (0-2, linear)
+  saturation: number; // Harmonic saturation (0-1)
+  width: number; // Stereo width control (0-2)
+  compress: boolean; // Enable compression
+  threshold: number; // Compression threshold (-60 to 0 dB)
+  ratio: number; // Compression ratio (1-20)
+}
+
+/**
+ * 3D Spatial effect modes (from SpatialVisualizer)
+ */
+export type SpatialEffectMode = 'toroidal' | 'vortex' | 'spiral' | 'wave' | 'pattern8D' | 'combined' | 'none';
+
+/**
+ * Enhanced equalizer band with additional processing
+ */
+export interface EnhancedEqualizerBand extends EqualizerBand {
+  vector?: FrequencyVector;
+  amplifier?: AmplifierBandConfig;
+}
+
+/**
+ * Enhanced equalizer state with advanced features
+ */
+export interface EnhancedEqualizerState extends EqualizerState {
+  waveform: WaveForm; // Oscillator waveform
+  modulator: ModulatorConfig; // Modulation settings
+  spatialEffect: SpatialEffectMode; // 3D spatial effect
+  spatialIntensity: number; // Spatial effect intensity (0-1)
+  bands: EnhancedEqualizerBand[]; // Enhanced bands
 }

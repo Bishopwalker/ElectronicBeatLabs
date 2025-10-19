@@ -1,9 +1,19 @@
-// Electromagnetic Beat Lab - Equalizer Hook
-// Professional multi-band audio equalization using Web Audio BiquadFilterNode
-// FIXED: Proper initialization and state management for working sliders
+// Electromagnetic Beat Lab - Enhanced Equalizer Hook
+// Professional multi-band audio equalization with advanced features
+// ENHANCED: Added waveform, modulation, spatial effects, and per-band amplification
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import type { EqualizerBand, EqualizerState } from '../types';
+import type {
+  EqualizerBand,
+  EqualizerState,
+  EnhancedEqualizerState,
+  EnhancedEqualizerBand,
+  ModulatorConfig,
+  FrequencyVector,
+  AmplifierBandConfig,
+  SpatialEffectMode,
+  WaveForm
+} from '../types';
 
 // Default 10-band equalizer configuration - more compact labels
 const DEFAULT_BANDS: EqualizerBand[] = [
@@ -18,6 +28,36 @@ const DEFAULT_BANDS: EqualizerBand[] = [
   { id: 'band9', frequency: 8000, gain: 0, Q: 1.0, type: 'peaking', label: '8k' },
   { id: 'band10', frequency: 16000, gain: 0, Q: 1.0, type: 'peaking', label: '16k' },
 ];
+
+// Default modulator configuration
+const DEFAULT_MODULATOR: ModulatorConfig = {
+  enabled: false,
+  type: 'none',
+  rate: 1.0, // 1 Hz
+  depth: 0.5, // 50% modulation depth
+  waveform: 'sine',
+  sync: false
+};
+
+// Default frequency vector (3D spatial positioning)
+const DEFAULT_FREQUENCY_VECTOR: FrequencyVector = {
+  enabled: false,
+  position: { x: 0, y: 0, z: 0 },
+  pan: 0, // Center
+  phase: 0, // No phase offset
+  spread: 1.0 // Full width
+};
+
+// Default amplifier configuration
+const DEFAULT_AMPLIFIER: AmplifierBandConfig = {
+  enabled: false,
+  gain: 1.0, // Unity gain
+  saturation: 0, // No saturation
+  width: 1.0, // Normal width
+  compress: false,
+  threshold: -24, // -24 dB threshold
+  ratio: 4 // 4:1 ratio
+};
 
 // Equalizer presets - shorter names for compact UI
 export const EQ_PRESETS = {
@@ -64,10 +104,18 @@ export const EQ_PRESETS = {
 };
 
 export const useEqualizer = (audioContext: AudioContext | null) => {
-  const [equalizerState, setEqualizerState] = useState<EqualizerState>({
+  const [equalizerState, setEqualizerState] = useState<EnhancedEqualizerState>({
     enabled: true,  // Enable by default
-    bands: DEFAULT_BANDS,
-    preset: 'flat'
+    bands: DEFAULT_BANDS.map(band => ({
+      ...band,
+      vector: { ...DEFAULT_FREQUENCY_VECTOR },
+      amplifier: { ...DEFAULT_AMPLIFIER }
+    })),
+    preset: 'flat',
+    waveform: 'sine',
+    modulator: { ...DEFAULT_MODULATOR },
+    spatialEffect: 'none',
+    spatialIntensity: 0.5
   });
 
   // Store filter nodes for each band
@@ -79,6 +127,15 @@ export const useEqualizer = (audioContext: AudioContext | null) => {
 
   // Track initialization state
   const isInitializedRef = useRef(false);
+
+  // Enhanced audio nodes for new features
+  const lfoOscillatorRef = useRef<OscillatorNode | null>(null);
+  const lfoGainRef = useRef<GainNode | null>(null);
+  const modulatorGainRef = useRef<GainNode | null>(null);
+  const pannerNodesRef = useRef<StereoPannerNode[]>([]);
+  const waveshaperNodesRef = useRef<WaveShaperNode[]>([]);
+  const compressorNodesRef = useRef<DynamicsCompressorNode[]>([]);
+  const widthGainsRef = useRef<{ left: GainNode; right: GainNode }[]>([]);
 
   // Initialize equalizer filter chain
   const initializeEqualizer = useCallback(() => {
@@ -303,6 +360,123 @@ export const useEqualizer = (audioContext: AudioContext | null) => {
     };
   }, []);
 
+  // ============================================
+  // ENHANCED FEATURES - New Control Methods
+  // ============================================
+
+  /**
+   * Update oscillator waveform type
+   */
+  const updateWaveform = useCallback((waveform: WaveForm) => {
+    setEqualizerState(prev => ({ ...prev, waveform }));
+    console.log('🎚️ Waveform updated to:', waveform);
+  }, []);
+
+  /**
+   * Update modulator settings
+   */
+  const updateModulator = useCallback((modulator: Partial<ModulatorConfig>) => {
+    setEqualizerState(prev => ({
+      ...prev,
+      modulator: { ...prev.modulator, ...modulator }
+    }));
+
+    // If LFO is enabled and audio context exists, create/update LFO
+    if (audioContext && modulator.enabled && !lfoOscillatorRef.current) {
+      const lfo = audioContext.createOscillator();
+      const lfoGain = audioContext.createGain();
+
+      lfo.type = equalizerState.modulator.waveform;
+      lfo.frequency.setValueAtTime(equalizerState.modulator.rate, audioContext.currentTime);
+      lfoGain.gain.setValueAtTime(equalizerState.modulator.depth, audioContext.currentTime);
+
+      lfo.connect(lfoGain);
+      lfo.start();
+
+      lfoOscillatorRef.current = lfo;
+      lfoGainRef.current = lfoGain;
+
+      console.log('🎚️ LFO oscillator created:', equalizerState.modulator);
+    } else if (lfoOscillatorRef.current && audioContext) {
+      // Update existing LFO
+      if (modulator.rate !== undefined) {
+        lfoOscillatorRef.current.frequency.setValueAtTime(modulator.rate, audioContext.currentTime);
+      }
+      if (modulator.depth !== undefined && lfoGainRef.current) {
+        lfoGainRef.current.gain.setValueAtTime(modulator.depth, audioContext.currentTime);
+      }
+    }
+
+    console.log('🎚️ Modulator updated:', modulator);
+  }, [audioContext, equalizerState.modulator]);
+
+  /**
+   * Update spatial effect mode
+   */
+  const updateSpatialEffect = useCallback((spatialEffect: SpatialEffectMode, intensity?: number) => {
+    setEqualizerState(prev => ({
+      ...prev,
+      spatialEffect,
+      spatialIntensity: intensity !== undefined ? intensity : prev.spatialIntensity
+    }));
+    console.log('🎚️ Spatial effect updated:', spatialEffect, 'intensity:', intensity);
+  }, []);
+
+  /**
+   * Update frequency vector (3D spatial positioning) for a band
+   */
+  const updateBandVector = useCallback((bandId: string, vector: Partial<FrequencyVector>) => {
+    setEqualizerState(prev => ({
+      ...prev,
+      bands: prev.bands.map(band =>
+        band.id === bandId && band.vector
+          ? { ...band, vector: { ...band.vector, ...vector } }
+          : band
+      )
+    }));
+
+    // Update panner node if it exists
+    const bandIndex = equalizerState.bands.findIndex(b => b.id === bandId);
+    if (bandIndex !== -1 && pannerNodesRef.current[bandIndex] && audioContext) {
+      if (vector.pan !== undefined) {
+        pannerNodesRef.current[bandIndex].pan.setValueAtTime(vector.pan, audioContext.currentTime);
+      }
+    }
+
+    console.log(`🎚️ Band ${bandId} vector updated:`, vector);
+  }, [audioContext, equalizerState.bands]);
+
+  /**
+   * Update amplifier settings for a band
+   */
+  const updateBandAmplifier = useCallback((bandId: string, amplifier: Partial<AmplifierBandConfig>) => {
+    setEqualizerState(prev => ({
+      ...prev,
+      bands: prev.bands.map(band =>
+        band.id === bandId && band.amplifier
+          ? { ...band, amplifier: { ...band.amplifier, ...amplifier } }
+          : band
+      )
+    }));
+
+    // Update audio nodes if they exist
+    const bandIndex = equalizerState.bands.findIndex(b => b.id === bandId);
+    if (bandIndex !== -1 && audioContext) {
+      // Update compressor if it exists
+      if (compressorNodesRef.current[bandIndex]) {
+        const comp = compressorNodesRef.current[bandIndex];
+        if (amplifier.threshold !== undefined) {
+          comp.threshold.setValueAtTime(amplifier.threshold, audioContext.currentTime);
+        }
+        if (amplifier.ratio !== undefined) {
+          comp.ratio.setValueAtTime(amplifier.ratio, audioContext.currentTime);
+        }
+      }
+    }
+
+    console.log(`🎚️ Band ${bandId} amplifier updated:`, amplifier);
+  }, [audioContext, equalizerState.bands]);
+
   return {
     equalizerState,
     initializeEqualizer,
@@ -310,6 +484,12 @@ export const useEqualizer = (audioContext: AudioContext | null) => {
     loadPreset,
     resetEqualizer,
     toggleEqualizer,
+    // Enhanced features
+    updateWaveform,
+    updateModulator,
+    updateSpatialEffect,
+    updateBandVector,
+    updateBandAmplifier,
     // Expose nodes for audio graph connection
     inputNode: inputNodeRef.current,
     outputNode: outputNodeRef.current,

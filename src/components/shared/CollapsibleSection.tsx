@@ -11,6 +11,7 @@ interface CollapsibleSectionProps {
   children: React.ReactNode;
   defaultOpen?: boolean;
   onClose?: (id: string) => void;
+  onFullscreen?: (id: string) => void;
   compact?: boolean;
 }
 
@@ -84,6 +85,7 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
   children, 
   defaultOpen = false,
   onClose,
+  onFullscreen,
   compact = false
 }) => {
   // 🔥 FIXED: Sections always open, no collapse state (confusing UX removed)
@@ -101,7 +103,8 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
     <Card elevation={2} sx={{ 
       bgcolor: colors.bg,  // 🎨 Component-specific background
       backdropFilter: 'blur(10px)',
-      height: '100%',
+      height: '100%',  // Fill grid cell
+      width: '100%',   // Fill grid cell
       display: 'flex',
       flexDirection: 'column',
       borderRadius: compact ? 1 : 2,
@@ -137,6 +140,27 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
           {icon} {title}
         </Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: compact ? 0.5 : 1 }}>
+          {/* Fullscreen button - only show if handler provided */}
+          {onFullscreen && (
+            <IconButton 
+              size="small" 
+              onClick={(e) => {
+                e.stopPropagation();
+                onFullscreen(id);
+              }} 
+              sx={{ 
+                color: '#00bfff', 
+                padding: compact ? '2px' : '8px',
+                '&:hover': {
+                  bgcolor: 'rgba(0, 191, 255, 0.2)',
+                  color: '#00d4ff'
+                }
+              }}
+              title="Fullscreen"
+            >
+              ⛶
+            </IconButton>
+          )}
           <IconButton 
             size="small" 
             onClick={(e) => {

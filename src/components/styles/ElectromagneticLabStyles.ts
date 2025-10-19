@@ -4,16 +4,13 @@
 import type { SxProps, Theme } from '@mui/material/styles';
 
 export const ElectromagneticLabStyles = {
-  // Main container styles
+  // Main container styles - GRID LAYOUT
   mainContainer: {
     width: '100vw',
-    minHeight: '100vh',
-    height: 'auto',
-    overflowX: 'hidden',
-    overflowY: 'auto',
-    display: 'flex',
-    flexWrap: 'wrap',
-    flexDirection: 'column',
+    height: '100vh',
+    overflow: 'hidden',
+    display: 'grid',
+    gridTemplateRows: 'auto 1fr',
     position: 'relative',
   } as SxProps<Theme>,
 
@@ -94,19 +91,19 @@ export const ElectromagneticLabStyles = {
     borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
   } as SxProps<Theme>,
 
-  // Tab content area - FIXED: No default scroll, height constrained
+  // Tab content area
   tabContent: {
     flex: 1,
-    overflowY: 'hidden',  // Default: no scroll (overridden per tab)
+    overflowY: 'hidden',
     p: 2,
     backgroundColor: 'rgba(30, 60, 90, 0.1)',
     display: 'flex',
     flexDirection: 'column',
-    maxHeight: 'calc(100vh - 180px)',  // Constrain to viewport minus header/tabs
+    maxHeight: 'calc(100vh - 180px)',
     height: '100%'
   } as SxProps<Theme>,
 
-  // Header paper
+  // Header paper - STICKY at top
   headerPaper: {
     position: 'sticky',
     top: 0,
@@ -118,8 +115,9 @@ export const ElectromagneticLabStyles = {
     flexDirection: 'column',
     gap: 1,
     backdropFilter: 'blur(10px)',
-    bgcolor: 'rgba(0, 0, 0, 0.2)',
-    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+    bgcolor: 'rgba(0, 0, 0, 0.95)',
+    borderBottom: '2px solid rgba(255, 255, 255, 0.2)',
+    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.3)',
     flexShrink: 0
   } as SxProps<Theme>,
 
@@ -129,6 +127,7 @@ export const ElectromagneticLabStyles = {
     justifyContent: 'space-between',
     alignItems: 'center',
     minHeight: 40,
+    position: 'sticky',
     flexDirection: {
       xs: 'column',
       sm: 'column',
@@ -140,38 +139,17 @@ export const ElectromagneticLabStyles = {
     }
   } as SxProps<Theme>,
 
-  // Main title - 1/3 smaller and centered
+  // Main title
   mainTitle: {
     fontWeight: 700,
     m: 0,
     fontSize: {
-      xs: '1rem',      // was 1.5rem → ~33% smaller
-      sm: '1.3rem',    // was 2rem → ~33% smaller
-      md: '1.7rem',    // was 2.5rem → ~33% smaller
-      lg: '2rem'       // was 3rem → ~33% smaller
+      xs: '1rem',
+      sm: '1.3rem',
+      md: '1.7rem',
+      lg: '2rem'
     },
-    textAlign: 'center'  // Always centered
-  } as SxProps<Theme>,
-
-  // Header Frequency Visualizer - positioned top right under theme buttons
-  headerFrequencyVisualizer: {
-    position: 'absolute',
-    top: 100,  // Moved down from 60 to avoid overlapping system status
-    right: 16,
-    width: {
-      xs: 'calc(100vw - 32px)',
-      sm: '400px',
-      md: '450px',
-      lg: '500px'
-    },
-    maxWidth: '35%',
-    zIndex: 99,
-    bgcolor: 'rgba(0, 0, 0, 0.8)',
-    backdropFilter: 'blur(10px)',
-    borderRadius: 2,
-    border: '1px solid rgba(255, 255, 255, 0.2)',
-    p: 1,
-    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)'
+    textAlign: 'center'
   } as SxProps<Theme>,
 
   // Compact status overview
@@ -188,20 +166,24 @@ export const ElectromagneticLabStyles = {
       sm: 1.5,
       md: 2
     },
-    py: 1,
-    background: 'rgba(138, 43, 226, 0.1)',
+    py: 1.5,
+    background: 'rgba(138, 43, 226, 0.3)',
+    backdropFilter: 'blur(10px)',
     borderRadius: 2,
-    border: '1px solid rgba(138, 43, 226, 0.3)',
+    border: '2px solid rgba(138, 43, 226, 0.6)',
+    boxShadow: '0 4px 12px rgba(138, 43, 226, 0.4)',
     flexWrap: 'wrap',
     flexDirection: {
       xs: 'column',
       sm: 'row'
-    }
+    },
+    mt: 1
   } as SxProps<Theme>,
 
   // System status chips container
   systemStatusChips: {
     display: 'flex',
+    position:'sticky',
     alignItems: 'center',
     gap: {
       xs: 0.5,
@@ -226,104 +208,29 @@ export const ElectromagneticLabStyles = {
     borderColor: isActive ? 'rgba(0, 255, 136, 0.5)' : 'rgba(255, 255, 255, 0.3)'
   }) as SxProps<Theme>,
 
-  // 🔥 FIXED: No horizontal scroll, proper vertical only
+  // MAIN LAYOUT GRID - FILLS REMAINING SPACE
   mainLayoutContainer: (closedSections: string[]) => ({
-    flex: '1 1',
-    p: {
-      xs: '5px',
-      sm: '8px',
-      md: '10px'
-    },
-    display: 'grid',  // ✅ Grid for equal heights
+    p: 1,
+    display: 'grid',
     gridTemplateColumns: {
-      xs: '1fr',                // Mobile: 1 column
-      sm: '1fr',                // Small: 1 column
-      md: 'repeat(2, 1fr)',     // Medium/Tablet: 2 columns
-      lg: 'repeat(3, 1fr)',     // Large: 3 columns
-      xl: 'repeat(4, 1fr)',     // XL: 4 columns
+      xs: '1fr',
+      sm: 'repeat(2, 1fr)',
+      md: 'repeat(3, 1fr)',
+      lg: 'repeat(4, 1fr)',
+      xl: 'repeat(4, 1fr)',
     },
-    gridAutoRows: 'minmax(400px, auto)',  // ✅ Base row height
-    gap: {
-      xs: '8px',
-      sm: '10px',
-      md: '12px'
-    },
+    gridAutoRows: 'minmax(250px, auto)',
+    gap: 1,
     width: '100%',
-    maxWidth: '100%',
-    overflowX: 'hidden',  // ✅ NO horizontal scroll
-    overflowY: 'visible',
-    alignItems: 'stretch'  // ✅ Stretch to fill height
+    height: '100%',
+    overflowY: 'auto',
+    overflowX: 'hidden'
   }) as SxProps<Theme>,
 
-  // 🔥 FIXED: Standard panel - all content visible,no scroll INSIDE
+  // Standard panel
   panelFlex: {
     display: 'flex',
     flexDirection: 'column',
-    minHeight: '400px',  // ✅ Smaller min height
-    maxHeight: '600px',  // ✅ Max height cap
-    height: '100%',
-    overflow: 'hidden',  // ✅ Outer container never scrolls
-    '& > div': {  // CollapsibleSection
-      height: '100%',
-      display: 'flex',
-      flexDirection: 'column',
-      overflow: 'hidden'
-    }
-  } as SxProps<Theme>,
-
-  // 🔥 FIXED: Wide panel - spans 2 columns on all screens
-  widePanelFlex: {
-    display: 'flex',
-    flexDirection: 'column',
-    gridColumn: {
-      xs: '1',           // Mobile: full width
-      sm: '1',           // Small: full width
-      md: 'span 2',      // Medium: 2 columns (100% of 2-col grid)
-      lg: 'span 2',      // Large: 2 columns (66% of 3-col grid)
-      xl: 'span 2'       // XL: 2 columns (50% of 4-col grid)
-    },
-    minHeight: '400px',  // ✅ Same as standard
-    maxHeight: '600px',  // ✅ Same as standard
-    height: '100%',
-    overflow: 'hidden',  // ✅ Outer container never scrolls
-    '& > div': {  // CollapsibleSection
-      height: '100%',
-      display: 'flex',
-      flexDirection: 'column',
-      overflow: 'hidden'
-    }
-  } as SxProps<Theme>,
-
-  // 🔥 NEW: Double height panel - DOUBLE the height with scroll
-  doubleHeightPanelFlex: {
-    display: 'flex',
-    flexDirection: 'column',
-    gridRow: 'span 2',  // ✅ Spans 2 rows (double height)
-    minHeight: '820px',  // ✅ Double the standard height (400*2 + 20 gap)
-    maxHeight: 'none',   // ✅ No max height limit
-    height: '100%',
-    overflow: 'hidden',  // ✅ Outer never scrolls
-    '& > div': {  // CollapsibleSection
-      height: '100%',
-      display: 'flex',
-      flexDirection: 'column',
-      overflow: 'auto'  // ✅ Allow scrolling inside
-    }
-  } as SxProps<Theme>,
-
-  // 🔥 NEW: Half panel - 50% width for Visualization & Timer side-by-side
-  halfPanelFlex: {
-    display: 'flex',
-    flexDirection: 'column',
-    gridColumn: {
-      xs: '1',           // Mobile: full width
-      sm: '1',           // Small: full width
-      md: 'span 1',      // Medium: 1 column (50% of 2)
-      lg: 'span 1.5',    // Large: 1.5 columns (50% of 3)
-      xl: 'span 2'       // XL: 2 columns (50% of 4)
-    },
-    minHeight: '400px',
-    maxHeight: '600px',
     height: '100%',
     overflow: 'hidden',
     '& > div': {
@@ -334,43 +241,78 @@ export const ElectromagneticLabStyles = {
     }
   } as SxProps<Theme>,
 
-  // Equalizer panel flex - ORIGINAL (vertical layout)
+  // Wide panel
+  widePanelFlex: {
+    display: 'flex',
+    flexDirection: 'column',
+    gridColumn: {
+      xs: '1',
+      sm: '1',
+      md: 'span 2',
+      lg: 'span 2',
+      xl: 'span 2'
+    },
+    height: '100%',
+    overflow: 'hidden',
+    '& > div': {
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden'
+    }
+  } as SxProps<Theme>,
+
+  // Double height panel
+  doubleHeightPanelFlex: {
+    display: 'flex',
+    flexDirection: 'column',
+    gridRow: 'span 2',
+    height: '100%',
+    overflow: 'hidden',
+    '& > div': {
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      overflowY: 'auto'
+    }
+  } as SxProps<Theme>,
+
+  // Half panel
+  halfPanelFlex: {
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100%',
+    overflow: 'hidden',
+    '& > div': {
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden'
+    }
+  } as SxProps<Theme>,
+
+  // Equalizer panel
   equalizerPanelFlex: {
-    flex: '2 1 auto',
-    minWidth: {
-      xs: '25vw',
-      sm: '50VW',
-      md: '40vw',
-      lg: '30%'
-    },
-    maxWidth: {
-      xs: '100%',
-      md: '300px',
-      lg: '400px'
-    },
-    height: '30vh',
-    minHeight: 'fit-content',
+    flex: '1 1',
+    height: '100%',
     display: 'flex',
     flexDirection: 'column'
   } as SxProps<Theme>,
 
-  // 🔥 FIXED: Equalizer - normal width, NOT full-width
+  // Equalizer horizontal
   equalizerPanelFlexHorizontal: {
     display: 'flex',
-    flex: '1 1',
     flexDirection: 'column',
     gridColumn: {
-      xs: '1',           // Mobile: full width
-      sm: '1',           // Small: full width
-      md: 'span 2',      // Medium: 2 columns (full width)
-      lg: 'span 2',      // Large: 2 columns
-      xl: 'span 2'       // XL: 2 columns (50% width)
+      xs: '1',
+      sm: '1',
+      md: 'span 2',
+      lg: 'span 2',
+      xl: 'span 2'
     },
-    minHeight: '400px',    // ✅ Same as other panels
-    maxHeight: '600px',    // ✅ Same as other panels  
     height: '100%',
-    overflow: 'hidden',    // ✅ Outer never scrolls
-    '& > div': {  // CollapsibleSection
+    overflow: 'hidden',
+    '& > div': {
       height: '100%',
       display: 'flex',
       flexDirection: 'column',

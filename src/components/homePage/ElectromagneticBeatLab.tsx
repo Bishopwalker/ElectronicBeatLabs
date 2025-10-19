@@ -2,8 +2,8 @@
 // Advanced binaural beats generator with electromagnetic field visualization
 // Now properly separated into modular components under 500 lines
 
-import React, { useCallback, useEffect, useState, useRef } from 'react';
-import { Box, Chip, IconButton, Paper, Typography } from '@mui/material';
+import React, { useCallback, useEffect, useState, useRef, useMemo } from 'react';
+import { Box, Chip, Grid, IconButton, Paper, Typography } from '@mui/material';
 import type { ElectromagneticBeatLabProps } from '../../types';
 
 // Constants
@@ -110,6 +110,42 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
     audioState: backendEngine.audioState
   });
 
+  // 🔥 NEW: Initialize audio context on first user interaction
+  const [audioInitialized, setAudioInitialized] = useState(false);
+  
+  useEffect(() => {
+    const initAudioOnInteraction = async () => {
+      if (!audioInitialized && !hybridEngine.audioContext) {
+        console.log('👆 User interaction detected, initializing audio...');
+        try {
+          await hybridEngine.initializeAudio();
+          setAudioInitialized(true);
+          console.log('✅ Audio initialized on user interaction');
+        } catch (error) {
+          console.log('⚠️ Audio initialization failed, will retry:', error);
+        }
+      }
+    };
+
+    // Listen for first user interaction
+    const handleInteraction = () => {
+      initAudioOnInteraction();
+      // Remove listeners after first interaction
+      document.removeEventListener('click', handleInteraction);
+      document.removeEventListener('keydown', handleInteraction);
+    };
+
+    if (!audioInitialized) {
+      document.addEventListener('click', handleInteraction, { once: true });
+      document.addEventListener('keydown', handleInteraction, { once: true });
+    }
+
+    return () => {
+      document.removeEventListener('click', handleInteraction);
+      document.removeEventListener('keydown', handleInteraction);
+    };
+  }, [audioInitialized, hybridEngine]);
+
   // NOTE: Electromagnetic state updates removed from useEffect to prevent infinite loops
   // Updates are now handled by the sync effect below which has proper value-based dependencies
 
@@ -195,29 +231,8 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
     }
   }, [backendEngine.backendConnected, backendEngine.sessionId, updateAppState]);
 
-  // Auto-open FrequencyVisualizer when pattern selected or audio playing (but NOT when timer active)
-  useEffect(() => {
-    const isTimerActive = timerStatus?.session?.is_active || false;
-    const hasPattern = appState.currentPattern !== null;
-    const isAudioPlaying = hybridEngine?.audioState?.isPlaying || false;
-    const isVisualizerClosed = closedSections.includes('frequencyVisualizer');
-    
-    // Show visualizer if: (pattern selected OR audio playing) AND timer NOT active
-    const shouldShowVisualizer = (hasPattern || isAudioPlaying) && !isTimerActive;
-    
-    if (shouldShowVisualizer && isVisualizerClosed) {
-      console.log('📊 Auto-opening FrequencyVisualizer - pattern/audio active, timer inactive');
-      handleSectionRestore('frequencyVisualizer');
-    } else if (!shouldShowVisualizer && !isVisualizerClosed) {
-      console.log('📊 Auto-closing FrequencyVisualizer - no pattern/audio or timer active');
-      handleSectionClose('frequencyVisualizer');
-    }
-  }, [
-    appState.currentPattern,
-    hybridEngine?.audioState?.isPlaying,
-    timerStatus?.session?.is_active,
-    closedSections
-  ]);
+  // NOTE: FrequencyVisualizer auto-open/close REMOVED - stays in Advanced Controls tab for more space
+  // User can manually open/close it as needed
 
   // Simple one-time backend connection attempt on startup
   useEffect(() => {
@@ -259,11 +274,11 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
 
   const handlePlayBound = useCallback(async () => {
     // 🔥 BULLETPROOF: Read from hybridEngine.audioState with full null checking
-    const audioState = hybridEngine?.audioState || {};
-    const config = audioState.config || {};
+    const audioState = hybridEngine?.audioState;
+    const config = audioState?.config;
     
-    const baseFreq = config.base_frequency || audioState.leftFreq || DEFAULT_BASE_FREQUENCY;
-    const beatFreq = config.beat_frequency || audioState.beat_frequency || DEFAULT_BEAT_FREQUENCY;
+    const baseFreq = config.base_frequency || audioState?.leftFreq || DEFAULT_BASE_FREQUENCY;
+    const beatFreq = config.beat_frequency || audioState?.beat_frequency || DEFAULT_BEAT_FREQUENCY;
     const amplitude = audioState.amplitude || DEFAULT_VOLUME;
     
     console.log('🎵 Play with bulletproof config:', { baseFreq, beatFreq, amplitude });
@@ -433,6 +448,62 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
     return SECTION_DATA[id as keyof typeof SECTION_DATA] || { title: 'Unknown', icon: '❓' };
   };
 
+  // 🔥 FIXED: Create proper state for FrequencyVisualizer with audio engine reference
+  // This ensures visualizer works with normal patterns and beats, not just timer presets
+  const frequencyVisualizerState = useMemo(() => {
+    // Get frequency values from hybrid engine (the ACTUAL playing frequencies)
+    const baseFreq = hybridEngine.audioState.config?.base_frequency || DEFAULT_BASE_FREQUENCY;
+    const beatFreq = hybridEngine.audioState.config?.beat_frequency || DEFAULT_BEAT_FREQUENCY;
+    const isPlaying = hybridEngine.audioState.isPlaying;
+
+    return {
+      // 🔥 Audio engine reference - FrequencyVisualizer accesses state.audio.audioState.isPlaying
+      audio: hybridEngine,
+
+      // 🔥 Direct audio properties for FrequencyVisualizer fallback paths
+      isPlaying,
+      base_frequency: baseFreq,
+      beat_frequency: beatFreq,
+
+      // 🔥 Config object for compatibility
+      config: {
+        base_frequency: baseFreq,
+        beat_frequency: beatFreq,
+      },
+
+      // 🔥 AppState properties (spread safely)
+      mode: appState.mode,
+      currentPattern: appState.currentPattern,
+      patterns8D: appState.patterns8D,
+      electromagnetic: appState.electromagnetic,
+      systemStatus: appState.systemStatus,
+      visualizations: appState.visualizations,
+      spatialAudio: appState.spatialAudio,
+      youtube: appState.youtube,
+      frequency: appState.frequency,
+      adhd: appState.adhd,
+      frequencyRange: appState.frequencyRange,
+      waveGuide: appState.waveGuide,
+      activeTab: appState.activeTab
+    };
+  }, [
+    hybridEngine.audioState.isPlaying,
+    hybridEngine.audioState.config,
+    appState.mode,
+    appState.currentPattern,
+    appState.patterns8D,
+    appState.electromagnetic,
+    appState.systemStatus,
+    appState.visualizations,
+    appState.spatialAudio,
+    appState.youtube,
+    appState.frequency,
+    appState.adhd,
+    appState.frequencyRange,
+    appState.waveGuide,
+    appState.activeTab
+  ]);
+
   return (
     <Box sx={ElectromagneticLabStyles.mainContainer}>
       {/* Background Star Field */}
@@ -596,43 +667,25 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
         </Box>
       )}
 
-      {/* Dynamic Flex Layout */}
-      <Box sx={ElectromagneticLabStyles.mainLayoutContainer(closedSections)}>
-        {/* Frequency Visualizer - Auto-opens when pattern selected or audio playing (hidden when timer active) */}
-        {!closedSections.includes('frequencyVisualizer') && (
-          <Box sx={ElectromagneticLabStyles.widePanelFlex}>
-            <CollapsibleSection id="frequencyVisualizer" title="Frequency Visualizer" icon="📊" defaultOpen={false} onClose={handleSectionClose}>
-              <FrequencyVisualizer
-                state={{
-                  ...appState,
-                  config: {
-                    base_frequency: (() => {
-                      const audioState = hybridEngine?.audioState || {};
-                      const config = audioState.config || {};
-                      return config.base_frequency || audioState.leftFreq || DEFAULT_BASE_FREQUENCY;
-                    })(),
-                    beat_frequency: (() => {
-                      const audioState = hybridEngine?.audioState || {};
-                      const config = audioState.config || {};
-                      return config.beat_frequency || audioState.beat_frequency || DEFAULT_BEAT_FREQUENCY;
-                    })()
-                  },
-                  isPlaying: hybridEngine?.audioState?.isPlaying || false
-                }}
-                title="Real-time Frequency Analysis"
-                audioContext={activeAudioEngine.audioContext}
-                analyserNode={activeAudioEngine.analyserNode}
-                showSpectrum={true}
-                showFrequencies={true}
-                showMetrics={true}
-              />
-            </CollapsibleSection>
-          </Box>
-        )}
-
-        {/* Equalizer - Placed AFTER FrequencyVisualizer */}
+      {/* Dynamic Grid Layout - Tight, fills all space */}
+      <Grid container spacing={{ xs: 1, sm: 1.5, md: 2, lg: 2 }} sx={{
+        p: { xs: '4px', sm: '6px', md: '8px', lg: '10px' },
+        width: '100%',
+        maxWidth: '100vw',
+        overflowX: 'hidden',
+        overflowY: 'auto',
+        m: 0,
+        // Tighter grid - no minimum heights, just content-based
+        '& > .MuiGrid-item': {
+          display: 'flex',
+          flexDirection: 'column'
+        }
+      }}>
+        {/* ROW 1: Equalizer, Master Controls, Patterns */}
+        
+        {/* Equalizer - SAME HEIGHT */}
         {!closedSections.includes('equalizer') && (
-           <Box sx={ElectromagneticLabStyles.equalizerPanelFlexHorizontal}>
+          <Grid item xs={12} sm={6} md={4} lg={4} xl={3} sx={{ display: 'flex' }}>
             <CollapsibleSection id="equalizer" title="Equalizer" icon="🎚️" defaultOpen={true} onClose={handleSectionClose}>
               <EqualizerMUI
                 audioContext={activeAudioEngine.audioContext || null}
@@ -645,12 +698,12 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                 }}
               />
             </CollapsibleSection>
-          </Box>
-        )}
+ </Grid>
+ )}
 
-        {/* Master Controls */}
+        {/* Master Controls - SAME HEIGHT */}
         {!closedSections.includes('masterControls') && (
-          <Box sx={ElectromagneticLabStyles.panelFlex}>
+          <Grid item xs={12} sm={6} md={4} lg={4} xl={3} sx={{ display: 'flex' }}>
             <CollapsibleSection id="masterControls" title="Master Controls" icon="🎛️" defaultOpen={true} onClose={handleSectionClose}>
               <QuickStart
                 activeStatus={{
@@ -692,12 +745,14 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                 appState={appState}
               />
             </CollapsibleSection>
-          </Box>
-        )}
+ </Grid>
+ )}
 
-        {/* Patterns - DOUBLE HEIGHT with scroll */}
+        {/* ROW 2: Binaural Beat Generator, Timer Sessions, Spatial Visualizer */}
+        
+        {/* Patterns - SAME HEIGHT, Internal Scroll */}
         {!closedSections.includes('patternID') && (
-          <Box sx={ElectromagneticLabStyles.doubleHeightPanelFlex}>
+          <Grid item xs={12} sm={6} md={4} lg={4} xl={3} sx={{ display: 'flex' }}>
             <CollapsibleSection id="patternID" title="Patterns" icon="🌀" defaultOpen={true} onClose={handleSectionClose}>
               <PatternSelectorMUI
                 patterns={WAVE_PATTERNS}
@@ -708,14 +763,14 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                 activePattern={appState.currentPattern?.id || null}
               />
             </CollapsibleSection>
-          </Box>
-        )}
+ </Grid>
+ )}
 
-        {/* Binaural Beat Generator - DOUBLE HEIGHT */}
+        {/* Binaural Beat Generator - SAME HEIGHT, Internal Scroll */}
         {!closedSections.includes('binauralBeats') && (
-          <Box sx={ElectromagneticLabStyles.doubleHeightPanelFlex}>
+          <Grid item xs={12} sm={6} md={4} lg={4} xl={3} sx={{ display: 'flex' }}>
             <CollapsibleSection id="binauralBeats" title="Binaural Beat Generator" icon="🎧" defaultOpen={true} onClose={handleSectionClose}>
-              <Box sx={{ height: 'auto', overflow: 'visible' }}>
+              <Box sx={{ height: '100%', overflowY: 'auto', overflowX: 'hidden' }}>
                 <BinauralGeneratorMUI
                   base_frequency={(() => {
                     // 🔥 BULLETPROOF: Read frequencies with full null checking
@@ -729,6 +784,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                     const config = audioState.config || {};
                     return config.beat_frequency || audioState.beat_frequency || DEFAULT_BEAT_FREQUENCY;
                   })()}
+                  waveform={activeAudioEngine?.audioState?.waveform || 'sine'}
                   onFrequencyChange={(base_frequency, beat_frequency) => {
                     console.log('🎛️ Parent received frequency change - base_frequency:', base_frequency, 'beat_frequency:', beat_frequency);
 
@@ -747,6 +803,12 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                       activeAudioEngine.updateFrequency(leftFreq, rightFreq);
                     }
                   }}
+                  onWaveformChange={(waveform) => {
+                    console.log('🎵 Waveform changed to:', waveform);
+                    if (activeAudioEngine.updateWaveform) {
+                      activeAudioEngine.updateWaveform(waveform);
+                    }
+                  }}
                   currentPreset={currentPreset}
                 />
                 <Box sx={{ mt: 1, maxHeight: '250px', overflowY: 'auto' }}>
@@ -760,14 +822,24 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                 </Box>
               </Box>
             </CollapsibleSection>
-          </Box>
-        )}
+ </Grid>
+ )}
 
-        {/* Visualization - 50% width (side-by-side with Timer) */}
+        {/* Spatial Visualizer - Same width as Frequency Visualizer */}
         {!closedSections.includes('visualizeID') && (
-          <Box sx={ElectromagneticLabStyles.widePanelFlex}>
-            <CollapsibleSection id="visualizeID" title="Visualization" icon="🎨" defaultOpen={true} onClose={handleSectionClose}>
-              <Box sx={{ position: 'relative', height: '100%', minHeight: '250px' }}>
+          <Grid item xs={12} sm={12} md={8} lg={6} xl={6} sx={{ display: 'flex' }}>
+            <CollapsibleSection 
+              id="visualizeID" 
+              title="Visualization" 
+              icon="🎨" 
+              defaultOpen={false} 
+              onClose={handleSectionClose}
+              onFullscreen={(id) => {
+                console.log('📺 Fullscreen requested for:', id);
+                // TODO: Implement fullscreen logic
+              }}
+            >
+              <Box sx={{ position: 'relative', height: '100%' }}>
                 <Paper elevation={3} sx={ElectromagneticLabStyles.visualizationPaper}>
                   <SpatialVisualizer
                     pattern={
@@ -778,16 +850,19 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                     }
                     electromagnetic={appState.electromagnetic}
                     size={300}
+                    audioContext={activeAudioEngine.audioContext}
+                    analyserNode={activeAudioEngine.analyserNode}
+                    isPlaying={hybridEngine.audioState.isPlaying}
                   />
                 </Paper>
               </Box>
             </CollapsibleSection>
-          </Box>
-        )}
+ </Grid>
+ )}
 
-        {/* Timer & Sessions - 50% width (side-by-side with Visualization) */}
+        {/* Timer & Sessions - Wider for better usability */}
         {!closedSections.includes('timerPanel') && (
-          <Box sx={ElectromagneticLabStyles.widePanelFlex}>
+          <Grid item xs={12} sm={6} md={4} lg={3} xl={3} sx={{ display: 'flex' }}>
             <CollapsibleSection id="timerPanel" title="Timer & Sessions" icon="⏰" defaultOpen={true} onClose={handleSectionClose}>
               <Box sx={{ height: 'auto', minHeight: '300px', maxHeight: '70vh', overflowY: 'auto', overflowX: 'hidden' }}>
                 <TimerTab
@@ -811,11 +886,28 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                 />
               </Box>
             </CollapsibleSection>
-          </Box>
-        )}
-      </Box>
+ </Grid>
+ )}
 
-      {/* Dark Screen Overlay */}
+        {/* Frequency Visualizer - SAME HEIGHT */}
+        {!closedSections.includes('frequencyVisualizer') && (
+          <Grid item xs={12} sm={12} md={8} lg={6} xl={6} sx={{ display: 'flex' }}>
+            <CollapsibleSection id="frequencyVisualizer" title="Frequency Visualizer" icon="📊" defaultOpen={false} onClose={handleSectionClose}>
+              <FrequencyVisualizer
+                state={frequencyVisualizerState}
+                audioContext={activeAudioEngine.audioContext}
+                analyserNode={activeAudioEngine.analyserNode}
+                title="Binaural Beat Frequency Visualizer"
+                showSpectrum={true}
+                showFrequencies={true}
+                showMetrics={true}
+              />
+            </CollapsibleSection>
+ </Grid>
+ )}
+ </Grid>
+
+ {/* Dark Screen Overlay */}
       {darkScreen && (
         <Box sx={ElectromagneticLabStyles.darkScreenOverlay} onClick={toggleDarkScreen}>
           <Typography 

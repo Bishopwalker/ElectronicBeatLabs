@@ -234,13 +234,7 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
         }, 0);
     const totalTimeRemainingMinutes = totalTimeRemainingSeconds / 60;
 
-    console.log('⏰ Timer Status Updated:', {
-      isRunning: timerState.isActive && !timerState.isPaused,
-      currentTransition,
-      nextTransition,
-      timeRemainingCurrent: timeRemainingCurrentMinutes,
-      timeRemainingTotal: totalTimeRemainingMinutes
-    });
+
 
     if (audioEngine && currentTransition && currentTransitionIndexRef.current !== currentTransitionIndex) {
       console.log(`🚨 TIMER TRANSITION ${currentTransitionIndex + 1}/${timerState.transitions.length}: ${currentTransition.left_ear_hz}Hz / ${currentTransition.right_ear_hz}Hz`);

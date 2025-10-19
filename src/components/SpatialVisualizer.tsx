@@ -1,5 +1,5 @@
-// Electromagnetic Beat Lab - Enhanced Spatial Visualizer Component
-// 3D visualization of electromagnetic field patterns with deep pattern integration
+// Electromagnetic Beat Lab - Audio-Reactive Spatial Visualizer Component
+// 3D visualization of electromagnetic field patterns WITH REAL AUDIO DATA
 
 import React, { useEffect, useRef, useCallback, useMemo, useState } from 'react';
 import { Box, Typography, ToggleButtonGroup, ToggleButton, Chip } from '@mui/material';
@@ -15,17 +15,28 @@ type VisualizationMode = 'toroidal' | 'vortex' | 'spiral' | 'wave' | 'pattern8d'
 const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
   pattern,
   electromagnetic,
-  size = 400
+  size = 400,
+  audioContext,
+  analyserNode,
+  isPlaying = false
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number | undefined>(undefined);
   const timeRef = useRef<number>(0);
   const [visualizationMode, setVisualizationMode] = useState<VisualizationMode>('toroidal');
+  
+  // 🔥 AUDIO DATA BUFFER
+  const frequencyDataRef = useRef<Uint8Array>(new Uint8Array(256));
+  const audioEnergyRef = useRef<{
+    bass: number;
+    mid: number;
+    treble: number;
+    overall: number;
+  }>({ bass: 0, mid: 0, treble: 0, overall: 0 });
 
-  // 🔥 CRITICAL: Ensure we always have valid electromagnetic data (MEMOIZED)
   const safeElectromagnetic: ElectromagneticField = useMemo(() => {
     return electromagnetic || {
-      strength: 0.8, // 🔥 INCREASED default for visibility
+      strength: 0.8,
       frequency: 4,
       phase: 0,
       coherence: 0.7,
@@ -35,14 +46,13 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
     };
   }, [electromagnetic]);
 
-  // 🎨 ENHANCED: Extract pattern properties for visualization
   const patternProperties = useMemo(() => {
     if (!pattern) {
       return {
         name: 'Default Pattern',
         speed: 1,
         direction: 'clockwise' as const,
-        intensity: 1.0, // 🔥 FULL intensity by default
+        intensity: 1.0,
         color: '#00ff88',
         emFrequency: 4,
         emWavelength: 100,
@@ -73,64 +83,103 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
     };
   }, [pattern]);
 
+  // 🔥 READ AUDIO DATA
+  const updateAudioData = useCallback(() => {
+    if (!analyserNode || !isPlaying) {
+      // Reset to defaults when not playing
+      audioEnergyRef.current = { bass: 0.3, mid: 0.3, treble: 0.3, overall: 0.3 };
+      return;
+    }
+
+    analyserNode.getByteFrequencyData(frequencyDataRef.current);
+    const data = frequencyDataRef.current;
+    
+    // Split frequency data into bands
+    const bassEnd = Math.floor(data.length * 0.1); // 0-10%
+    const midEnd = Math.floor(data.length * 0.4);  // 10-40%
+    // treble is rest: 40-100%
+
+    // Calculate average energy per band
+    let bassSum = 0, midSum = 0, trebleSum = 0;
+    
+    for (let i = 0; i < bassEnd; i++) {
+      bassSum += data[i];
+    }
+    for (let i = bassEnd; i < midEnd; i++) {
+      midSum += data[i];
+    }
+    for (let i = midEnd; i < data.length; i++) {
+      trebleSum += data[i];
+    }
+
+    const bassAvg = bassSum / bassEnd / 255;
+    const midAvg = midSum / (midEnd - bassEnd) / 255;
+    const trebleAvg = trebleSum / (data.length - midEnd) / 255;
+    const overallAvg = (bassAvg + midAvg + trebleAvg) / 3;
+
+    // 🔥 MINIMUM values so patterns are ALWAYS visible
+    audioEnergyRef.current = {
+      bass: Math.max(0.2, bassAvg),
+      mid: Math.max(0.2, midAvg),
+      treble: Math.max(0.2, trebleAvg),
+      overall: Math.max(0.3, overallAvg)
+    };
+  }, [analyserNode, isPlaying]);
+
   // Render electromagnetic field pattern based on mode
   const renderPattern = useCallback((ctx: CanvasRenderingContext2D, width: number, height: number) => {
     const centerX = width / 2;
     const centerY = height / 2;
     const time = timeRef.current;
 
-    // Clear canvas with black background
+    // Update audio data
+    updateAudioData();
+    const audio = audioEnergyRef.current;
+
+    // Clear canvas
     ctx.fillStyle = 'rgba(0, 0, 0, 0.95)';
     ctx.fillRect(0, 0, width, height);
 
     ctx.save();
     ctx.translate(centerX, centerY);
 
-    console.log('🎨 Rendering mode:', visualizationMode); // 🔥 DEBUG
-
-    // Draw field lines based on visualization mode
+    // Draw based on mode
     switch (visualizationMode) {
       case 'toroidal':
-        renderToroidalField(ctx, safeElectromagnetic, patternProperties, time);
+        renderToroidalField(ctx, safeElectromagnetic, patternProperties, time, audio);
         break;
       case 'vortex':
-        renderVortexField(ctx, safeElectromagnetic, patternProperties, time);
+        renderVortexField(ctx, safeElectromagnetic, patternProperties, time, audio);
         break;
       case 'spiral':
-        renderSpiralField(ctx, safeElectromagnetic, patternProperties, time);
+        renderSpiralField(ctx, safeElectromagnetic, patternProperties, time, audio);
         break;
       case 'wave':
-        renderWaveField(ctx, safeElectromagnetic, patternProperties, time);
+        renderWaveField(ctx, safeElectromagnetic, patternProperties, time, audio);
         break;
       case 'pattern8d':
-        renderPattern8D(ctx, safeElectromagnetic, patternProperties, time);
+        renderPattern8D(ctx, safeElectromagnetic, patternProperties, time, audio);
         break;
       case 'combined':
-        renderToroidalField(ctx, safeElectromagnetic, patternProperties, time);
-        renderPattern8D(ctx, safeElectromagnetic, patternProperties, time);
+        renderToroidalField(ctx, safeElectromagnetic, patternProperties, time, audio);
+        renderPattern8D(ctx, safeElectromagnetic, patternProperties, time, audio);
         break;
-      default:
-        renderToroidalField(ctx, safeElectromagnetic, patternProperties, time);
     }
 
     ctx.restore();
-  }, [safeElectromagnetic, patternProperties, visualizationMode]);
+  }, [safeElectromagnetic, patternProperties, visualizationMode, updateAudioData]);
 
-  // 🌀 BULLETPROOF: Toroidal field - HIGHLY VISIBLE
+  // 🌀 AUDIO-REACTIVE: Toroidal field - rings pulse with BASS
   const renderToroidalField = (
     ctx: CanvasRenderingContext2D,
     field: ElectromagneticField,
     props: typeof patternProperties,
-    time: number
+    time: number,
+    audio: typeof audioEnergyRef.current
   ) => {
-    console.log('🔥 renderToroidalField called'); // DEBUG
-    
     const radius = 120;
-    const fieldStrength = Math.max(0.5, Math.min(1, field.strength || 0.8)); // 🔥 MIN 0.5
-    const fieldFreq = Math.max(1, field.frequency || 4);
-    const resonance = Math.max(0.5, field.resonance || 0.7);
-
-    const numRings = 16; // 🔥 FIXED number for visibility
+    const fieldStrength = Math.max(0.5, field.strength || 0.8);
+    const numRings = 16;
 
     for (let i = 0; i < numRings; i++) {
       const animSpeed = 0.001 * props.speed;
@@ -140,61 +189,61 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
       const x = Math.cos(angle) * radius;
       const y = Math.sin(angle) * radius * 0.5;
 
-      // 🔥 MINIMUM alpha of 0.6 for visibility!
-      const alpha = 0.6 + fieldStrength * 0.4;
+      // 🔥 BASS PULSE: Ring size pulsates with bass
+      const bassPulse = 1 + (audio.bass * 0.5);
+      const ringSize = (30 + Math.sin(time * 0.002 + i) * 8) * bassPulse;
+
+      const alpha = 0.6 + (audio.overall * 0.4);
 
       const baseColor = hexToHSL(props.color);
-      const hue = (baseColor.h + i * 20) % 360;
+      const hue = (baseColor.h + i * 20 + audio.treble * 60) % 360;
 
-      const gradient = ctx.createRadialGradient(x, y, 0, x, y, 50);
+      const gradient = ctx.createRadialGradient(x, y, 0, x, y, ringSize);
       gradient.addColorStop(0, `hsla(${hue}, 90%, 70%, ${alpha})`);
       gradient.addColorStop(0.5, `hsla(${hue}, 85%, 60%, ${alpha * 0.7})`);
       gradient.addColorStop(1, `hsla(${hue}, 80%, 50%, 0)`);
 
       ctx.fillStyle = gradient;
       ctx.beginPath();
-      const ringSize = 30 + Math.sin(time * 0.002 + i) * 8;
       ctx.arc(x, y, ringSize, 0, Math.PI * 2);
       ctx.fill();
 
-      // 🔥 BRIGHT center sparkle
-      ctx.fillStyle = `hsla(${hue + 40}, 100%, 80%, ${alpha * 0.9})`;
+      // 🔥 BRIGHT center sparkle - reacts to TREBLE
+      const sparkleSize = 3 + (audio.treble * 4);
+      ctx.fillStyle = `hsla(${hue + 40}, 100%, 80%, ${0.7 + audio.treble * 0.3})`;
       ctx.beginPath();
-      ctx.arc(x, y, 4, 0, Math.PI * 2);
+      ctx.arc(x, y, sparkleSize, 0, Math.PI * 2);
       ctx.fill();
     }
-
-    console.log('✅ renderToroidalField complete'); // DEBUG
   };
 
-  // 🌪️ BULLETPROOF: Vortex field - HIGHLY VISIBLE
+  // 🌪️ AUDIO-REACTIVE: Vortex - rotation speed and particle size from TREBLE
   const renderVortexField = (
     ctx: CanvasRenderingContext2D,
     field: ElectromagneticField,
     props: typeof patternProperties,
-    time: number
+    time: number,
+    audio: typeof audioEnergyRef.current
   ) => {
-    console.log('🔥 renderVortexField called'); // DEBUG
-
-    const fieldStrength = Math.max(0.7, field.strength || 0.8); // 🔥 MIN 0.7
-    const fieldFreq = Math.max(1, field.frequency || 4);
-
     const baseColor = hexToHSL(props.color);
 
-    // 🔥 SIMPLIFIED: Fixed number of particles for visibility
     for (let r = 20; r < 160; r += 12) {
       const points = Math.floor(r / 6) + 8;
 
       for (let i = 0; i < points; i++) {
-        const rotSpeed = 0.002 * props.speed;
+        // 🔥 TREBLE SPEED: Faster rotation with more treble
+        const rotSpeed = 0.002 * props.speed * (1 + audio.treble);
         const directionMultiplier = props.direction === 'counterclockwise' ? -1 : 1;
         const angle = (i / points) * Math.PI * 2 + time * rotSpeed * directionMultiplier + r * 0.03;
         
         const x = Math.cos(angle) * r;
         const y = Math.sin(angle) * r;
 
-        const alpha = 0.7 + fieldStrength * 0.3; // 🔥 MIN 0.7 alpha
-        const hue = (baseColor.h + (r / 160) * 120 + time * 0.02) % 360;
+        const alpha = 0.7 + (audio.overall * 0.3);
+        const hue = (baseColor.h + (r / 160) * 120 + time * 0.02 + audio.mid * 40) % 360;
+
+        // 🔥 MID FREQ PULSE: Particle size responds to mid frequencies
+        const particleSize = (8 + audio.mid * 6) * props.intensity;
 
         const gradient = ctx.createRadialGradient(x, y, 0, x, y, 12);
         gradient.addColorStop(0, `hsla(${hue}, 90%, 75%, ${alpha})`);
@@ -203,37 +252,35 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
 
         ctx.fillStyle = gradient;
         ctx.beginPath();
-        ctx.arc(x, y, 8 + fieldStrength * 4, 0, Math.PI * 2);
+        ctx.arc(x, y, particleSize, 0, Math.PI * 2);
         ctx.fill();
       }
     }
-
-    console.log('✅ renderVortexField complete'); // DEBUG
   };
 
-  // 🌀 BULLETPROOF: Spiral field - HIGHLY VISIBLE
+  // 🌀 AUDIO-REACTIVE: Spiral - line thickness from OVERALL volume
   const renderSpiralField = (
     ctx: CanvasRenderingContext2D,
     field: ElectromagneticField,
     props: typeof patternProperties,
-    time: number
+    time: number,
+    audio: typeof audioEnergyRef.current
   ) => {
-    console.log('🔥 renderSpiralField called'); // DEBUG
-
-    const fieldStrength = Math.max(0.7, field.strength || 0.8);
-    const alpha = 0.8 + fieldStrength * 0.2; // 🔥 MIN 0.8 alpha
-
     const spiralCount = 3;
     const baseColor = hexToHSL(props.color);
 
     for (let spiral = 0; spiral < spiralCount; spiral++) {
       const spiralOffset = (spiral * Math.PI * 2) / spiralCount;
-      const hue = (baseColor.h + spiral * 60) % 360;
+      const hue = (baseColor.h + spiral * 60 + audio.bass * 30) % 360;
+
+      // 🔥 VOLUME THICKNESS: Thicker lines with louder audio
+      const lineWidth = (4 + audio.overall * 5) * props.intensity;
+      const alpha = 0.8 + (audio.overall * 0.2);
 
       ctx.strokeStyle = `hsla(${hue}, 90%, 70%, ${alpha})`;
-      ctx.lineWidth = 4 + fieldStrength * 3; // 🔥 THICKER lines
+      ctx.lineWidth = lineWidth;
       ctx.shadowColor = `hsla(${hue}, 95%, 75%, ${alpha})`;
-      ctx.shadowBlur = 15; // 🔥 STRONG glow
+      ctx.shadowBlur = 10 + (audio.treble * 10); // 🔥 TREBLE GLOW
 
       ctx.beginPath();
 
@@ -255,22 +302,16 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
       ctx.stroke();
       ctx.shadowBlur = 0;
     }
-
-    console.log('✅ renderSpiralField complete'); // DEBUG
   };
 
-  // 🌊 BULLETPROOF: Wave interference - HIGHLY VISIBLE
+  // 🌊 AUDIO-REACTIVE: Wave - amplitude from BASS, frequency from TREBLE
   const renderWaveField = (
     ctx: CanvasRenderingContext2D,
     field: ElectromagneticField,
     props: typeof patternProperties,
-    time: number
+    time: number,
+    audio: typeof audioEnergyRef.current
   ) => {
-    console.log('🔥 renderWaveField called'); // DEBUG
-
-    const fieldStrength = Math.max(0.7, field.strength || 0.8);
-    const fieldFreq = Math.max(1, field.frequency || 4);
-    
     const wavelength = props.emWavelength || 100;
     const numWaves = 8;
     const baseColor = hexToHSL(props.color);
@@ -281,52 +322,49 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
       const waveOriginY = Math.sin(angle) * 40;
 
       for (let r = 10; r < 150; r += wavelength / 12) {
-        const phase = (time * 0.001 * fieldFreq * props.speed - r * 0.015) * Math.PI * 2;
-        const offset = Math.sin(phase) * 15;
+        // 🔥 BASS AMPLITUDE: Wave strength responds to bass
+        const phase = (time * 0.001 * props.speed * (1 + audio.treble) - r * 0.015) * Math.PI * 2;
+        const amplitude = (15 + audio.bass * 20) * props.intensity;
+        const offset = Math.sin(phase) * amplitude;
         const actualRadius = r + offset;
         
         if (actualRadius < 5) continue;
 
-        const alpha = (1 - actualRadius / 160) * 0.6 + 0.4; // 🔥 MIN 0.4 alpha
-        const hue = (baseColor.h + r * 0.4 + i * 45) % 360;
+        const alpha = (1 - actualRadius / 160) * 0.6 + (audio.overall * 0.4);
+        const hue = (baseColor.h + r * 0.4 + i * 45 + audio.mid * 30) % 360;
 
         ctx.strokeStyle = `hsla(${hue}, 90%, 70%, ${alpha})`;
-        ctx.lineWidth = 3 + fieldStrength * 2; // 🔥 THICKER
+        ctx.lineWidth = 2 + (audio.overall * 3);
 
         ctx.beginPath();
         ctx.arc(waveOriginX, waveOriginY, actualRadius, 0, Math.PI * 2);
         ctx.stroke();
       }
     }
-
-    console.log('✅ renderWaveField complete'); // DEBUG
   };
 
-  // 🎯 Pattern8D path visualization
+  // 🎯 AUDIO-REACTIVE: Pattern8D - speed and glow from audio energy
   const renderPattern8D = (
     ctx: CanvasRenderingContext2D,
     field: ElectromagneticField,
     props: typeof patternProperties,
-    time: number
+    time: number,
+    audio: typeof audioEnergyRef.current
   ) => {
-    console.log('🔥 renderPattern8D called'); // DEBUG
-    
-    if (!props.path || props.path.length === 0) {
-      console.warn('⚠️ No path data for pattern8d');
-      return;
-    }
+    if (!props.path || props.path.length === 0) return;
 
-    const pathProgress = (time * 0.0005 * props.speed) % 1;
+    // 🔥 AUDIO SPEED: Faster movement with more audio energy
+    const pathProgress = (time * 0.0005 * props.speed * (1 + audio.overall)) % 1;
     const currentIndex = Math.floor(pathProgress * props.path.length);
 
     const baseColor = hexToHSL(props.color);
-    const hue = baseColor.h;
+    const hue = baseColor.h + (audio.bass * 60);
 
-    // Draw full path
+    // Draw path
     ctx.strokeStyle = `hsla(${hue}, 80%, 60%, 0.6)`;
     ctx.lineWidth = 3;
     ctx.shadowColor = props.color;
-    ctx.shadowBlur = 10;
+    ctx.shadowBlur = 10 + (audio.overall * 10); // 🔥 GLOW with audio
 
     ctx.beginPath();
     props.path.forEach((point, index) => {
@@ -342,20 +380,23 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
     ctx.stroke();
     ctx.shadowBlur = 0;
 
-    // Draw current position
+    // Current position
     const currentPoint = props.path[currentIndex];
     if (currentPoint) {
       const x = currentPoint.x * 0.8;
       const y = currentPoint.y * 0.8;
 
-      const gradient = ctx.createRadialGradient(x, y, 0, x, y, 25);
+      // 🔥 SIZE PULSE: Glow size responds to audio
+      const glowSize = 25 + (audio.overall * 15);
+
+      const gradient = ctx.createRadialGradient(x, y, 0, x, y, glowSize);
       gradient.addColorStop(0, `hsla(${hue}, 95%, 75%, 0.9)`);
-      gradient.addColorStop(0.4, `hsla(${hue + 30}, 90%, 70%, 0.6)`);
+      gradient.addColorStop(0.4, `hsla(${hue + 30}, 90%, 70%, ${0.6 + audio.treble * 0.4})`);
       gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
 
       ctx.fillStyle = gradient;
       ctx.beginPath();
-      ctx.arc(x, y, 25, 0, Math.PI * 2);
+      ctx.arc(x, y, glowSize, 0, Math.PI * 2);
       ctx.fill();
 
       ctx.fillStyle = props.color;
@@ -369,11 +410,9 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
       ctx.arc(x, y, 14, 0, Math.PI * 2);
       ctx.stroke();
     }
-
-    console.log('✅ renderPattern8D complete'); // DEBUG
   };
 
-  // 🎨 Helper: Convert hex color to HSL
+  // Helper: Convert hex to HSL
   function hexToHSL(hex: string): { h: number; s: number; l: number } {
     hex = hex.replace('#', '');
     const r = parseInt(hex.substring(0, 2), 16) / 255;
@@ -425,7 +464,7 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
 
       animationRef.current = window.setTimeout(() => {
         animate(performance.now());
-      }, 66);
+      }, 33); // ~30fps for smooth audio reactivity
     },
     []
   );
@@ -439,7 +478,7 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
 
     animationRef.current = window.setTimeout(() => {
       animate(performance.now());
-    }, 66);
+    }, 33);
 
     return () => {
       if (animationRef.current) {
@@ -452,10 +491,10 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
     const frequency = safeElectromagnetic.frequency || 4;
     const patternName = patternProperties?.name || 'Unknown Pattern';
     const hue = (frequency / 20) * 240;
-    const isActive = safeElectromagnetic.strength > 0.1;
+    const isActive = isPlaying && safeElectromagnetic.strength > 0.1;
 
     return { frequency, patternName, hue, isActive, state: safeElectromagnetic.state };
-  }, [safeElectromagnetic.frequency, safeElectromagnetic.strength, safeElectromagnetic.state, patternProperties]);
+  }, [safeElectromagnetic, patternProperties, isPlaying]);
 
   return (
     <Box sx={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
@@ -473,14 +512,14 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
         gap: 0.5,
       }}>
         <Typography variant="caption" sx={{ 
-          color: '#00bfff', 
+          color: isPlaying ? '#00ff88' : '#00bfff', 
           fontWeight: 'bold',
           fontSize: '0.75rem',
           textTransform: 'uppercase',
           letterSpacing: '0.5px',
           mb: 0.5
         }}>
-          3D Mode: {visualizationMode === 'toroidal' ? 'Toroidal Field' :
+          {isPlaying ? '🎵 AUDIO-REACTIVE' : '3D Mode'}: {visualizationMode === 'toroidal' ? 'Toroidal Field' :
                     visualizationMode === 'vortex' ? 'Vortex Field' :
                     visualizationMode === 'spiral' ? 'Spiral Field' :
                     visualizationMode === 'wave' ? 'Wave Interference' :
@@ -504,19 +543,19 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
             },
           }}
         >
-          <ToggleButton value="toroidal" title="Toroidal Field">
+          <ToggleButton value="toroidal" title="Toroidal Field (Bass Reactive)">
             <BlurOnIcon fontSize="small" />
           </ToggleButton>
-          <ToggleButton value="vortex" title="Vortex Field">
+          <ToggleButton value="vortex" title="Vortex Field (Treble Reactive)">
             <TornadoIcon fontSize="small" />
           </ToggleButton>
-          <ToggleButton value="spiral" title="Spiral Field">
+          <ToggleButton value="spiral" title="Spiral Field (Volume Reactive)">
             <WavesIcon fontSize="small" />
           </ToggleButton>
-          <ToggleButton value="wave" title="Wave Interference">
+          <ToggleButton value="wave" title="Wave Interference (Bass/Treble)">
             <GridOnIcon fontSize="small" />
           </ToggleButton>
-          <ToggleButton value="pattern8d" title="8D Pattern Path">
+          <ToggleButton value="pattern8d" title="8D Pattern Path (Energy Reactive)">
             <BubbleChartIcon fontSize="small" />
           </ToggleButton>
           <ToggleButton value="combined" title="Combined">
@@ -529,21 +568,21 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
       {displayValues.isActive && (
         <Box sx={{ position: 'absolute', top: 10, right: 10, zIndex: 10 }}>
           <Chip
-            label={displayValues.state}
+            label={isPlaying ? '🎵 LIVE AUDIO' : displayValues.state}
             size="small"
             sx={{
-              backgroundColor:
+              backgroundColor: isPlaying ? 'rgba(0, 255, 136, 0.3)' :
                 displayValues.state === 'CRITICAL' ? 'rgba(255, 20, 147, 0.3)' :
                 displayValues.state === 'RESONANT' ? 'rgba(255, 107, 0, 0.3)' :
                 displayValues.state === 'ACTIVE' ? 'rgba(0, 255, 136, 0.3)' :
                 'rgba(138, 43, 226, 0.3)',
-              color:
+              color: isPlaying ? '#00ff88' :
                 displayValues.state === 'CRITICAL' ? '#ff1493' :
                 displayValues.state === 'RESONANT' ? '#ff6b00' :
                 displayValues.state === 'ACTIVE' ? '#00ff88' :
                 '#8a2be2',
               fontWeight: 'bold',
-              border: `1px solid ${
+              border: `1px solid ${isPlaying ? '#00ff88' :
                 displayValues.state === 'CRITICAL' ? '#ff1493' :
                 displayValues.state === 'RESONANT' ? '#ff6b00' :
                 displayValues.state === 'ACTIVE' ? '#00ff88' :
@@ -607,12 +646,12 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
             position: 'absolute',
             bottom: '4px',
             right: '8px',
-            color: 'rgba(0, 255, 136, 0.9)',
+            color: isPlaying ? 'rgba(0, 255, 136, 0.9)' : 'rgba(0, 191, 255, 0.9)',
             fontWeight: 'bold',
             fontSize: '11px',
             textShadow: '1px 1px 2px rgba(0, 0, 0, 0.8)',
           }}>
-            🎵 {visualizationMode.toUpperCase()}
+            {isPlaying ? '🎵 LIVE' : '🎵'} {visualizationMode.toUpperCase()}
           </Typography>
         )}
       </Box>

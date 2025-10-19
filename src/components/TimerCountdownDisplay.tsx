@@ -102,32 +102,57 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
             hasAnalyserNode: !!analyserNode,
             currentFrequency: currentTransition?.frequency_hz
         });
-    }, [isAudioActuallyPlaying, audioContext, analyserNode, hybridEngine, currentTransition]);
+    }, []);
 
-    // 🔥 CRITICAL FIX: Build visualizerState WITHOUT spreading appState
-    // AppState type doesn't have audio properties anymore - they're in audio engine
-    // Only pass the properties FrequencyVisualizer actually needs
-    const visualizerState = useMemo(() => ({
-        audio: hybridEngine, // 🔥 FIXED: Use hybridEngine prop instead of non-existent audioEngine
-        mode: appState?.mode || 'AUTO',
-        currentPattern: appState?.currentPattern || null,
-        base_frequency: currentTransition?.frequency_hz || DEFAULT_BASE_FREQUENCY,
-        beat_frequency: (currentTransition?.right_ear_hz || DEFAULT_BASE_FREQUENCY) - (currentTransition?.left_ear_hz || DEFAULT_BEAT_FREQUENCY) || DEFAULT_BEAT_FREQUENCY,
-        isPlaying: isAudioActuallyPlaying, // 🔥 FIXED: Use real audio state from hybrid engine
-        patterns8D: appState?.patterns8D || [],
-        timer: timerStatus,
-        electromagnetic: appState?.electromagnetic,
-        systemStatus: appState?.systemStatus,
-        visualizations: appState?.visualizations,
-        spatialAudio: appState?.spatialAudio,
-        youtube: appState?.youtube,
-        frequency: appState?.frequency,
-        adhd: appState?.adhd,
-        frequencyRange: appState?.frequencyRange,
-        waveGuide: appState?.waveGuide,
-        activeTab: appState?.activeTab || 'main'
-    } as AppState), [
-        hybridEngine, // 🔥 FIXED: Add hybridEngine to dependencies
+    // 🔥 CRITICAL FIX: Build visualizerState with proper structure for FrequencyVisualizer
+    // AppState doesn't have 'audio' property anymore, so we create a hybrid state object
+    // that includes both AppState properties AND the audio engine reference
+    const visualizerState = useMemo(() => {
+        // Calculate frequencies from timer transition or use defaults
+        const baseFreq = currentTransition?.frequency_hz || DEFAULT_BASE_FREQUENCY;
+        const beatFreq = Math.abs(
+            (currentTransition?.right_ear_hz || DEFAULT_BASE_FREQUENCY) -
+            (currentTransition?.left_ear_hz || DEFAULT_BEAT_FREQUENCY)
+        ) || DEFAULT_BEAT_FREQUENCY;
+
+        return {
+            // 🔥 Audio engine reference - FrequencyVisualizer accesses state.audio.audioState.isPlaying
+            audio: hybridEngine,
+
+            // 🔥 Direct audio properties for FrequencyVisualizer fallback paths
+            isPlaying: isAudioActuallyPlaying,
+            base_frequency: baseFreq,
+            beat_frequency: beatFreq,
+
+            // 🔥 Config object for compatibility
+            config: {
+                base_frequency: baseFreq,
+                beat_frequency: beatFreq,
+            },
+
+            // 🔥 AppState properties (spread safely)
+            mode: appState?.mode || 'AUTO',
+            currentPattern: appState?.currentPattern || null,
+            patterns8D: appState?.patterns8D || [],
+            timer: timerStatus,
+            electromagnetic: appState?.electromagnetic,
+            systemStatus: appState?.systemStatus,
+            visualizations: appState?.visualizations,
+            spatialAudio: appState?.spatialAudio,
+            youtube: appState?.youtube,
+            frequency: appState?.frequency,
+            adhd: appState?.adhd,
+            frequencyRange: appState?.frequencyRange,
+            waveGuide: appState?.waveGuide,
+            activeTab: appState?.activeTab || 'main'
+        };
+    }, [
+        hybridEngine,
+        isAudioActuallyPlaying,
+        currentTransition?.frequency_hz,
+        currentTransition?.right_ear_hz,
+        currentTransition?.left_ear_hz,
+        timerStatus,
         appState?.mode,
         appState?.currentPattern,
         appState?.patterns8D,
@@ -140,12 +165,7 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
         appState?.adhd,
         appState?.frequencyRange,
         appState?.waveGuide,
-        appState?.activeTab,
-        currentTransition?.frequency_hz,
-        currentTransition?.right_ear_hz,
-        currentTransition?.left_ear_hz,
-        timerStatus,
-        isAudioActuallyPlaying // 🔥 Critical dependency
+        appState?.activeTab
     ]);
 
     return (

@@ -11,8 +11,18 @@ import GridOnIcon from '@mui/icons-material/GridOn';
 import FullscreenIcon from '@mui/icons-material/Fullscreen';
 import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
 
+// 🔥 FIXED: Extended state type to include audio engine reference
+// AppState doesn't have 'audio' property, but we need it for accessing hybrid engine
 interface FrequencyVisualizerProps {
-  state: AppState;
+  state: AppState & {
+    audio?: any; // Hybrid audio engine reference
+    base_frequency?: number;
+    beat_frequency?: number;
+    config?: {
+      base_frequency?: number;
+      beat_frequency?: number;
+    };
+  };
   title?: string;
   showSpectrum?: boolean;
   showFrequencies?: boolean;
@@ -25,17 +35,20 @@ interface FrequencyVisualizerProps {
 
 type VisualizationMode = 'waveform' | 'spiral2d' | 'spiral3d' | 'radial' | 'combined';
 
-// 🔥 FIXED: Made container flexible for embedding
+// 🔥 FIXED: Made container flexible for embedding in TimerCountdownDisplay
+// minHeight: 200px - Small enough to fit in timer display (maxHeight: 300px)
+// height: 100% - Fills parent container completely
+// overflow: hidden - Prevents scroll issues when embedded in constrained spaces
 const VisualizerContainer = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(1),
   background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)',
   border: '1px solid rgba(255, 255, 255, 0.1)',
   borderRadius: theme.spacing(1),
   height: '100%',
-  minHeight: '250px',
+  minHeight: '200px',
   display: 'flex',
   flexDirection: 'column',
-  overflow: 'auto',
+  overflow: 'hidden',
 }));
 
 const CanvasContainer = styled(Box)({
@@ -79,6 +92,34 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
       <Box sx={{ p: 2, color: 'error.main', textAlign: 'center' }}>
         <Typography>Frequency Visualizer: Invalid state</Typography>
       </Box>
+    );
+  }
+
+  // 🔥 NEW: Show initialization message if no analyser node
+  if (!analyserNode) {
+    return (
+      <VisualizerContainer elevation={10}>
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          height: '100%',
+          minHeight: '300px',
+          textAlign: 'center',
+          gap: 2
+        }}>
+          <Typography variant="h6" sx={{ color: '#ff6b00', mb: 1 }}>
+            🎵 Frequency Visualizer Ready
+          </Typography>
+          <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)', maxWidth: '400px' }}>
+            Click the <strong style={{ color: '#00ff88' }}>Play</strong> button to start audio and see real-time frequency visualization
+          </Typography>
+          <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.5)' }}>
+            The visualizer will show waveforms, spirals, and butterfly patterns synced to your binaural beats
+          </Typography>
+        </Box>
+      </VisualizerContainer>
     );
   }
 
@@ -130,7 +171,7 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
   // 🔥 USES EXTERNAL audioContext and analyserNode - NO NEW CONTEXTS CREATED!
   const { analysisData, stats, isAnalyzing } = useAudioAnalysis({
     enabled: isPlaying,
-    updateRate: 40,
+    updateRate: 60,
     audioContext,
     analyserNode
   });
@@ -511,6 +552,8 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
       frequencyData: Uint8Array,
       fieldStrength: number
     ) {
+      //console.log('🦋 renderRadialBars called - Butterfly mode!'); // DEBUG
+      
       // 🔥 MORE BARS for full butterfly effect!
       const numBars = Math.min(frequencyData.length / 2, 255); // Was 64, now 128!
       const maxBarLength = Math.min(canvas.width, canvas.height) * 0.45; // Slightly longer
@@ -519,20 +562,21 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
       ctx.translate(centerX, centerY);
 
       for (let i = 0; i < numBars; i++) {
-        const freqValue = frequencyData[i] / 255;
+        const freqValue = Math.max(0.2, frequencyData[i] / 255); // 🔥 MINIMUM 0.2 so bars are ALWAYS visible!
         const angle = (i / numBars) * Math.PI * 2 - Math.PI / 2;
-        const barLength = freqValue * maxBarLength * (1 + fieldStrength * 0.3);
+        const minBarLength = maxBarLength * 0.15; // 🔥 15% minimum bar length
+        const barLength = minBarLength + (freqValue * maxBarLength * 0.85) * (1 + fieldStrength * 0.3);
         const barWidth = (Math.PI * 2) / numBars * maxBarLength * 1.2; // 🔥 THICKER bars!
 
         const gradient = ctx.createLinearGradient(0, 0, Math.cos(angle) * barLength, Math.sin(angle) * barLength);
         const hue = (i / numBars) * 360 + time * 20;
-        gradient.addColorStop(0, `hsla(${hue}, 80%, 60%, 0.1)`);
-        gradient.addColorStop(0.5, `hsla(${hue}, 85%, 65%, ${freqValue * 0.6})`);
-        gradient.addColorStop(1, `hsla(${hue}, 90%, 70%, ${freqValue})`); // 🔥 Full color at tips!
+        gradient.addColorStop(0, `hsla(${hue}, 95%, 65%, 0.4)`); // 🔥 BRIGHTER at center
+        gradient.addColorStop(0.5, `hsla(${hue}, 100%, 70%, ${0.6 + freqValue * 0.4})`); // 🔥 MORE SATURATED
+        gradient.addColorStop(1, `hsla(${hue}, 100%, 75%, ${0.8 + freqValue * 0.2})`); // 🔥 SUPER bright at tips!
 
         ctx.fillStyle = gradient;
-        ctx.shadowColor = `hsla(${hue}, 90%, 70%, ${freqValue * 0.8})`; // 🔥 BRIGHTER glow!
-        ctx.shadowBlur = 15 * freqValue; // 🔥 BIGGER glow!
+        ctx.shadowColor = `hsla(${hue}, 100%, 75%, ${0.7 + freqValue * 0.3})`; // 🔥 STRONGER glow!
+        ctx.shadowBlur = 12 + (18 * freqValue); // 🔥 BIGGER glow boost
 
         ctx.beginPath();
         ctx.moveTo(0, 0);
@@ -547,20 +591,19 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
         ctx.closePath();
         ctx.fill();
 
-        // 🔥 BIGGER glowing tips!
-        if (freqValue > 0.5) { // Lower threshold so more tips glow
-          const tipX = Math.cos(angle) * barLength;
-          const tipY = Math.sin(angle) * barLength;
+        // 🔥 GLOWING tips on EVERY bar - BIGGER & BRIGHTER!
+        const tipX = Math.cos(angle) * barLength;
+        const tipY = Math.sin(angle) * barLength;
 
-          ctx.fillStyle = `hsla(${hue + 60}, 100%, 85%, ${freqValue})`; // 🔥 BRIGHTER!
-          ctx.beginPath();
-          ctx.arc(tipX, tipY, 4 + freqValue * 6, 0, Math.PI * 2); // 🔥 BIGGER!
-          ctx.fill();
-        }
+        ctx.fillStyle = `hsla(${hue + 60}, 100%, 90%, ${0.8 + freqValue * 0.2})`; // 🔥 SUPER BRIGHT!
+        ctx.beginPath();
+        ctx.arc(tipX, tipY, 4 + freqValue * 6, 0, Math.PI * 2); // 🔥 4-10px tips!
+        ctx.fill();
       }
 
       ctx.shadowBlur = 0;
       ctx.restore();
+      
     }
 
     animationId = requestAnimationFrame(draw);
@@ -755,6 +798,85 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
               }}
             />
           )}
+        </Box>
+      )}
+
+      {/* 🔥 Pattern Additional Info Section */}
+      {activePattern && (
+        <Box sx={{
+          mt: 1,
+          p: 1.5,
+          background: 'rgba(255, 20, 147, 0.1)',
+          border: '1px solid rgba(255, 20, 147, 0.3)',
+          borderRadius: 1,
+          flexShrink: 0
+        }}>
+          <Typography variant="subtitle2" sx={{
+            color: '#ff1493',
+            fontWeight: 'bold',
+            mb: 1,
+            fontSize: '0.85rem',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px'
+          }}>
+            📊 Pattern Details
+          </Typography>
+
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, fontSize: '0.75rem' }}>
+            <Box>
+              <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)', display: 'block' }}>
+                Direction
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#fff', fontWeight: 'bold', fontSize: '0.8rem' }}>
+                {activePattern.direction.toUpperCase()}
+              </Typography>
+            </Box>
+
+            <Box>
+              <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)', display: 'block' }}>
+                Speed
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#00ff88', fontWeight: 'bold', fontSize: '0.8rem' }}>
+                {activePattern.speed.toFixed(2)}x
+              </Typography>
+            </Box>
+
+            <Box>
+              <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)', display: 'block' }}>
+                Intensity
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#ff6b00', fontWeight: 'bold', fontSize: '0.8rem' }}>
+                {(activePattern.intensity * 100).toFixed(0)}%
+              </Typography>
+            </Box>
+
+            <Box>
+              <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)', display: 'block' }}>
+                EM Frequency
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#00bfff', fontWeight: 'bold', fontSize: '0.8rem' }}>
+                {activePattern.electromagnetic.frequency.toFixed(2)} Hz
+              </Typography>
+            </Box>
+
+            <Box>
+              <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)', display: 'block' }}>
+                Wavelength
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#8a2be2', fontWeight: 'bold', fontSize: '0.8rem' }}>
+                {activePattern.electromagnetic.wavelength.toFixed(2)} m
+              </Typography>
+            </Box>
+
+            <Box>
+              <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)', display: 'block' }}>
+                Amplitude
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#ff1493', fontWeight: 'bold', fontSize: '0.8rem' }}>
+                {activePattern.electromagnetic.amplitude.toFixed(2)}
+              </Typography>
+            </Box>
+          </Box>
         </Box>
       )}
     </VisualizerContainer>

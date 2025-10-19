@@ -142,8 +142,10 @@ const MainControlsMUI: React.FC<ExtendedMainControlsProps> = ({
   // Full layout for expanded view
   return (
     <Card sx={{ 
-      minHeight: '300px',
-      overflow: 'scroll',
+      minHeight: 'fit-content',
+height: '100%',
+        maxHeight: '100vh',
+      borderRadius: 4,
       background: 'rgba(138, 43, 226, 0.05)',
       borderColor: 'rgba(138, 43, 226, 0.3)',
       '&::-webkit-scrollbar': {
@@ -158,7 +160,7 @@ const MainControlsMUI: React.FC<ExtendedMainControlsProps> = ({
         borderRadius: '4px',
       },
     }}>
-      <CardContent sx={{ p: 1.5 }}>
+      <CardContent height={'100vh'} sx={{ p: .5 }}>
         <Typography variant="h4" align="center" color="secondary" gutterBottom>
           Master Controls
         </Typography>

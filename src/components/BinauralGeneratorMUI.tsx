@@ -14,17 +14,23 @@ import {
   IconButton,
   LinearProgress,
   Grid,
+  ToggleButton,
+  ToggleButtonGroup,
 } from '@mui/material';
 import HeadphonesIcon from '@mui/icons-material/Headphones';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import GraphicEqIcon from '@mui/icons-material/GraphicEq';
 import {calculateRightFreq} from "../types/clean.types.ts";
 import { useBinauralVisualization } from '../hooks/useBinauralVisualization';
 import  {DEFAULT_BASE_FREQUENCY,DEFAULT_BEAT_FREQUENCY} from '../constants/audio.constants.ts';
+import type { WaveForm } from '../types';
 
 interface BinauralGeneratorProps {
   base_frequency: number;
   beat_frequency: number;
+  waveform?: WaveForm;
   onFrequencyChange: (base_frequency: number, beat_frequency: number) => void;
+  onWaveformChange?: (waveform: WaveForm) => void;
   currentPreset?: {
     name?: string;
     description?: string;
@@ -36,7 +42,9 @@ interface BinauralGeneratorProps {
 const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
   base_frequency,
   beat_frequency,
+  waveform = 'sine',
   onFrequencyChange,
+  onWaveformChange,
   currentPreset
 }) => {
   // Calculate display frequencies from base + beat
@@ -133,6 +141,7 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
   return (
     <Card sx={{ 
       minHeight: 'fit-content',
+      maxHeight: '400PX',
       overflowX: 'hidden',
        background: 'rgba(0, 191, 255, 0.05)',
       borderColor: 'rgba(0, 191, 255, 0.3)',
@@ -219,7 +228,45 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
             )}
           </Paper>
         )}
-        
+
+        {/* Waveform Selector - Controls oscillator waveform type */}
+        {onWaveformChange && (
+          <Box sx={{ mb: 0.75 }}>
+            <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.65rem', mb: 0.5, display: 'block', textAlign: 'center' }}>
+              <GraphicEqIcon sx={{ fontSize: '0.8rem', mr: 0.5, verticalAlign: 'middle' }} />
+              Oscillator Waveform
+            </Typography>
+            <ToggleButtonGroup
+              value={waveform}
+              exclusive
+              onChange={(_e, value) => value && onWaveformChange(value as WaveForm)}
+              size="small"
+              fullWidth
+              sx={{
+                '& .MuiToggleButton-root': {
+                  fontSize: '0.6rem',
+                  py: 0.3,
+                  px: 0.5,
+                  color: 'rgba(255, 255, 255, 0.7)',
+                  borderColor: 'rgba(0, 191, 255, 0.3)',
+                  '&.Mui-selected': {
+                    bgcolor: '#00bfff',
+                    color: 'white',
+                    '&:hover': {
+                      bgcolor: '#0099cc'
+                    }
+                  }
+                }
+              }}
+            >
+              <ToggleButton value="sine">Sine</ToggleButton>
+              <ToggleButton value="square">Square</ToggleButton>
+              <ToggleButton value="triangle">Triangle</ToggleButton>
+              <ToggleButton value="sawtooth">Saw</ToggleButton>
+            </ToggleButtonGroup>
+          </Box>
+        )}
+
         <Stack spacing={0.75}>
           <Stack direction="row" spacing={0.5}>
             <Box flex={1}>

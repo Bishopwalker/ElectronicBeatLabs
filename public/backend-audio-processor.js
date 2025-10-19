@@ -28,11 +28,11 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
     this.framesPerSecond = 60;
 
     // ULTRA-STABLE buffer thresholds for 48kHz/800 samples per frame - MAXIMUM RELIABILITY
-    // 🔥 FIXED: Increased thresholds to prevent beeping from buffer underruns
-    this.minBufferSize = this.frameSamples * 16; // ~16 frames minimum (267ms) - ultra-stable startup
-    this.targetBufferSize = this.frameSamples * 20; // ~20 frames target (333ms) - generous buffer for smooth playback
-    this.maxBufferSize = this.frameSamples * 90; // ~90 frames max (1500ms) - large max buffering
-    this.restartThreshold = this.frameSamples * 8; // ~8 frames (133ms) - safe restart threshold with hysteresis
+    // 🔥 FIXED: Massively increased thresholds to eliminate buffer underruns and beeping
+    this.minBufferSize = this.frameSamples * 40; // ~40 frames minimum (667ms) - large startup buffer
+    this.targetBufferSize = this.frameSamples * 60; // ~60 frames target (1000ms) - 1 second buffer for stability
+    this.maxBufferSize = this.frameSamples * 180; // ~180 frames max (3000ms) - 3 second max buffering
+    this.restartThreshold = this.frameSamples * 20; // ~20 frames (333ms) - safe restart threshold with hysteresis
 
     // Playback state management
     this.isPlaying = false;
@@ -393,11 +393,11 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
       }
     }
 
-    // 🔥 FIXED: Restart playback when buffer recovers AND has been stable for ~100ms (prevent rapid cycling)
+    // 🔥 FIXED: Restart playback when buffer recovers AND has been stable for ~500ms (prevent rapid cycling)
     if (!this.isPlaying && this.isPrimed && !this.fadingOut && availableSamples >= this.targetBufferSize) {
       this.underrunRecoveryFrames++;
-      // Require buffer to stay full for at least 60 frames (~1 second at 128 samples/frame) before restarting
-      if (this.underrunRecoveryFrames > 60) {
+      // Require buffer to stay full for at least 30 frames (~500ms at 128 samples/frame) before restarting
+      if (this.underrunRecoveryFrames > 30) {
         this.isPlaying = true;
         this.fadingIn = true;
         this.currentFade = 0;

@@ -414,15 +414,26 @@ export const useHybridAudioEngine = () => {
       if (!frontendEngine.audioContext) {
         console.log('🎵 Hybrid Engine: Proactively initializing audio context on mount...');
         try {
-          await initializeAudio();
+          // Create a simple user interaction to trigger audio context
+          // This ensures analyser node exists for visualizers
+          const context = await frontendEngine.initializeAudio();
+          if (context) {
+            console.log('✅ Hybrid Engine: Audio context initialized proactively');
+            // Initialize mixer immediately after context is ready
+            await initializeMixer();
+          }
         } catch (error) {
-          console.log('⚠️ Hybrid Engine: Auto-initialization requires user gesture');
+          console.log('⚠️ Hybrid Engine: Auto-initialization requires user gesture, will retry on first interaction');
         }
+      } else if (!mixerRef.current) {
+        // Context exists but mixer doesn't - initialize mixer
+        console.log('🎵 Hybrid Engine: Audio context exists, initializing mixer...');
+        await initializeMixer();
       }
     };
 
     autoInitialize();
-  }, []); // Run once on mount
+  }, [frontendEngine, initializeMixer]); // 🔥 FIXED: Run when frontendEngine or initializeMixer changes
 
   /**
    * Cleanup on unmount
