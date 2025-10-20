@@ -685,7 +685,10 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
         
         {/* Equalizer - SAME HEIGHT */}
         {!closedSections.includes('equalizer') && (
-          <Grid item xs={12} sm={6} md={4} lg={4} xl={3} sx={{ display: 'flex' }}>
+          <Grid item xs={12} sm={6} md={4} lg={4} xl={3} sx={{ 
+            display: 'flex',
+            maxHeight: { xs: '400px', sm: '380px', md: '350px', lg: '350px' }
+          }}>
             <CollapsibleSection id="equalizer" title="Equalizer" icon="🎚️" defaultOpen={true} onClose={handleSectionClose}>
               <EqualizerMUI
                 audioContext={activeAudioEngine.audioContext || null}
@@ -703,7 +706,10 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
 
         {/* Master Controls - SAME HEIGHT */}
         {!closedSections.includes('masterControls') && (
-          <Grid item xs={12} sm={6} md={4} lg={4} xl={3} sx={{ display: 'flex' }}>
+          <Grid item xs={12} sm={6} md={4} lg={4} xl={3} sx={{ 
+            display: 'flex',
+            maxHeight: { xs: '400px', sm: '380px', md: '350px', lg: '350px' }
+          }}>
             <CollapsibleSection id="masterControls" title="Master Controls" icon="🎛️" defaultOpen={true} onClose={handleSectionClose}>
               <QuickStart
                 activeStatus={{
@@ -732,7 +738,10 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
         
         {/* Patterns - SAME HEIGHT, Internal Scroll */}
         {!closedSections.includes('patternID') && (
-          <Grid item xs={12} sm={6} md={4} lg={4} xl={3} sx={{ display: 'flex' }}>
+          <Grid item xs={12} sm={6} md={4} lg={4} xl={3} sx={{ 
+            display: 'flex',
+            maxHeight: { xs: '400px', sm: '380px', md: '350px', lg: '350px' }
+          }}>
             <CollapsibleSection id="patternID" title="Patterns" icon="🌀" defaultOpen={true} onClose={handleSectionClose}>
               <PatternSelectorMUI
                 patterns={WAVE_PATTERNS}
@@ -748,7 +757,10 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
 
         {/* Binaural Beat Generator - SAME HEIGHT, Internal Scroll */}
         {!closedSections.includes('binauralBeats') && (
-          <Grid item xs={12} sm={6} md={4} lg={4} xl={3} sx={{ display: 'flex' }}>
+          <Grid item xs={12} sm={6} md={4} lg={4} xl={3} sx={{ 
+            display: 'flex',
+            maxHeight: { xs: '500px', sm: '450px', md: '400px', lg: '400px' }
+          }}>
             <CollapsibleSection id="binauralBeats" title="Binaural Beat Generator" icon="🎧" defaultOpen={true} onClose={handleSectionClose}>
               <Box sx={{ height: '100%', overflowY: 'auto', overflowX: 'hidden' }}>
                 <BinauralGeneratorMUI
@@ -797,7 +809,10 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
 
         {/* Spatial Visualizer - Same width as Frequency Visualizer */}
         {!closedSections.includes('visualizeID') && (
-          <Grid item xs={12} sm={12} md={8} lg={6} xl={6} sx={{ display: 'flex' }}>
+          <Grid item xs={12} sm={12} md={8} lg={6} xl={6} sx={{ 
+            display: 'flex',
+            maxHeight: { xs: '500px', sm: '500px', md: '450px', lg: '500px' }
+          }}>
             <CollapsibleSection 
               id="visualizeID" 
               title="Visualization" 
@@ -832,7 +847,10 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
 
         {/* Timer & Sessions - Wider for better usability */}
         {!closedSections.includes('timerPanel') && (
-          <Grid item xs={12} sm={6} md={4} lg={3} xl={3} sx={{ display: 'flex' }}>
+          <Grid item xs={12} sm={6} md={4} lg={3} xl={3} sx={{ 
+            display: 'flex',
+            maxHeight: { xs: '500px', sm: '450px', md: '450px', lg: '450px' }
+          }}>
             <CollapsibleSection id="timerPanel" title="Timer & Sessions" icon="⏰" defaultOpen={true} onClose={handleSectionClose}>
               <Box sx={{ height: 'auto', minHeight: '300px', maxHeight: '70vh', overflowY: 'auto', overflowX: 'hidden' }}>
                 <TimerTab
@@ -861,7 +879,10 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
 
         {/* Frequency Visualizer - SAME HEIGHT */}
         {!closedSections.includes('frequencyVisualizer') && (
-          <Grid item xs={12} sm={12} md={8} lg={6} xl={6} sx={{ display: 'flex' }}>
+          <Grid item xs={12} sm={12} md={8} lg={6} xl={6} sx={{ 
+            display: 'flex',
+            maxHeight: { xs: '500px', sm: '500px', md: '450px', lg: '500px' }
+          }}>
             <CollapsibleSection id="frequencyVisualizer" title="Frequency Visualizer" icon="📊" defaultOpen={false} onClose={handleSectionClose}>
               <FrequencyVisualizer
                 state={frequencyVisualizerState}

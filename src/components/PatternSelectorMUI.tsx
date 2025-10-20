@@ -45,8 +45,8 @@ const PatternSelectorMUI: React.FC<PatternSelectorPropsExtended> = ({
 
   return (
     <Card sx={{
-      height: '30%',
-      maxHeight: '30%',
+      height: '100%',
+      maxHeight: '100%',
       display: 'flex',
       overflowY:'auto',
       flexDirection: 'column',

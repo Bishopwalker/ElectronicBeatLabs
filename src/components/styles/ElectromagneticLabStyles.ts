@@ -4,12 +4,11 @@
 import type { SxProps, Theme } from '@mui/material/styles';
 
 export const ElectromagneticLabStyles = {
-  // Main container styles - GRID: Header ~15vh, Content ~85vh
+  // Main container styles - GRID: Header 15vh, Content 85vh
   mainContainer: {
     width: '100vw',
     height: '100vh',
-    overflowx: 'hidden',
-    overflowY: 'auto',
+     overflow: 'hidden',
     display: 'grid',
 
   } as SxProps<Theme>,
@@ -217,39 +216,34 @@ export const ElectromagneticLabStyles = {
     borderColor: isActive ? 'rgba(0, 255, 136, 0.5)' : 'rgba(255, 255, 255, 0.3)'
   }) as SxProps<Theme>,
 
-  // MAIN LAYOUT GRID - Desktop: 2 rows fit in viewport, Mobile: scroll
+  // MAIN LAYOUT GRID - 3 columns, 2 rows (each 42.5vh), fills 85vh
   mainLayoutContainer: (closedSections: string[]) => ({
     p: 1,
     display: 'grid',
-    gridTemplateColumns: {
-      xs: '1fr',
-      sm: 'repeat(2, 1fr)',
-      md: 'repeat(3, 1fr)',
-      lg: 'repeat(4, 1fr)',
-      xl: 'repeat(4, 1fr)',
-    },
-    gridTemplateRows: {
-      xs: 'auto',
-      md: 'repeat(2, 37.5vh)'
-    },
+
     gap: 1,
     width: '100%',
-    height: '75vh',
-    overflow: {
-      xs: 'auto',
-      md: 'hidden'
+    height: '100%',
+    overflow: 'hidden',
+    '& > div': {
+      transition: 'all 0.2s ease-in-out',
+      opacity: closedSections.includes('all') ? 0 : 1,
+      transform: closedSections.includes('all') ? 'scale(0.9)' : 'scale(1)',
+      '&:hover': {
+        opacity: 1,
+        transform: 'scale(1)',
+      }
     }
   }) as SxProps<Theme>,
 
   // Standard panel
   panelFlex: {
-    display: 'flex',
+    display: 'grid',
     flexDirection: 'column',
-    height: '100%',
     overflow: 'hidden',
     '& > div': {
       height: '100%',
-      display: 'flex',
+      display: 'grid',
       flexDirection: 'column',
       overflow: 'hidden'
     }
@@ -259,18 +253,11 @@ export const ElectromagneticLabStyles = {
   widePanelFlex: {
     display: 'grid',
     flexDirection: 'column',
-    gridColumn: {
-      xs: '1',
-      sm: '1',
-      md: 'span 2',
-      lg: 'span 2',
-      xl: 'span 2'
-    },
-    height: '100%',
+    gridColumn: 'span 2',
     overflow: 'hidden',
     '& > div': {
       height: '100%',
-      display: 'flex',
+      display: 'grid',
       flexDirection: 'column',
       overflow: 'hidden'
     }
@@ -278,14 +265,13 @@ export const ElectromagneticLabStyles = {
 
   // Double height panel
   doubleHeightPanelFlex: {
-    display: 'flex',
+    display: 'grid',
     flexDirection: 'column',
     gridRow: 'span 2',
-    height: '100%',
     overflow: 'hidden',
     '& > div': {
       height: '100%',
-      display: 'flex',
+      display: 'grid',
       flexDirection: 'column',
       overflowY: 'auto'
     }
@@ -293,13 +279,12 @@ export const ElectromagneticLabStyles = {
 
   // Half panel
   halfPanelFlex: {
-    display: 'flex',
+    display: 'grid',
     flexDirection: 'column',
-    height: '100%',
     overflow: 'hidden',
     '& > div': {
       height: '100%',
-      display: 'flex',
+      display: 'grid',
       flexDirection: 'column',
       overflow: 'hidden'
     }
@@ -307,30 +292,29 @@ export const ElectromagneticLabStyles = {
 
   // Equalizer panel
   equalizerPanelFlex: {
-    flex: '1 1',
-    height: '100%',
-    display: 'flex',
-    flexDirection: 'column'
+    display: 'grid',
+     overflowX: 'hidden',
+    overflowY:'auto'
   } as SxProps<Theme>,
 
   // Equalizer horizontal
   equalizerPanelFlexHorizontal: {
-    display: 'flex',
-    flexDirection: 'column',
-    gridColumn: {
-      xs: '1',
-      sm: '1',
-      md: 'span 2',
-      lg: 'span 2',
-      xl: 'span 2'
+    display: 'grid',
+      overflowX: 'hidden',
+      overflowY:'auto',
+    gridColumn:{
+      height: '100%',
+      display: 'grid',
+      flexDirection: 'column',
+      overflowX: 'hidden',
+      overflowY:'auto'
     },
-    height: '100%',
-    overflow: 'hidden',
     '& > div': {
       height: '100%',
-      display: 'flex',
+      display: 'grid',
       flexDirection: 'column',
-      overflow: 'hidden'
+      overflowX: 'hidden',
+      overflowY:'auto'
     }
   } as SxProps<Theme>,
 

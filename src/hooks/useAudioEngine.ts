@@ -213,11 +213,9 @@ export const useAudioEngine = () => {
   const startBinauralBeat = useCallback(async (config: BinauralBeatConfig) => {
     console.log('🎵 Frontend Engine: startBinauralBeat called with config:', config);
     
-    // 🔥 CRITICAL FIX: Check stop lock to prevent auto-restart after stop
-    if (stopLockRef.current) {
-      console.warn('⚠️ Frontend Engine: BLOCKED start - stop lock active (prevents auto-restart)');
-      return;
-    }
+    // 🔥 FIXED: Clear stop lock FIRST to allow restart
+    stopLockRef.current = false;
+    console.log('🔓 Frontend Engine: Stop lock CLEARED (allowing audio start)');
     
     try {
       // Stop any existing audio first
@@ -244,10 +242,6 @@ export const useAudioEngine = () => {
         return;
       }
       console.log('✅ Frontend Engine: Audio context ready, state:', context.state);
-      
-      // 🔥 CRITICAL FIX: Clear stop lock when explicitly starting audio
-      stopLockRef.current = false;
-      console.log('🔓 Frontend Engine: Stop lock CLEARED (user explicitly started audio)');
 
       // Ensure context is running
       if (context.state === 'suspended') {
