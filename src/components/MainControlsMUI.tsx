@@ -144,7 +144,7 @@ const MainControlsMUI: React.FC<ExtendedMainControlsProps> = ({
     <Card sx={{ 
       minHeight: 'fit-content',
 height: '100%',
-        maxHeight: '100vh',
+        maxHeight: '40vh',
       borderRadius: 4,
       background: 'rgba(138, 43, 226, 0.05)',
       borderColor: 'rgba(138, 43, 226, 0.3)',
@@ -160,7 +160,7 @@ height: '100%',
         borderRadius: '4px',
       },
     }}>
-      <CardContent height={'100vh'} sx={{ p: .5 }}>
+      <CardContent height={'30vh'} sx={{ p: .5 }}>
         <Typography variant="h4" align="center" color="secondary" gutterBottom>
           Master Controls
         </Typography>

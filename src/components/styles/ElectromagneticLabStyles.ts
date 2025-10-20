@@ -8,12 +8,12 @@ export const ElectromagneticLabStyles = {
   mainContainer: {
     width: '100vw',
     height: '100vh',
-    overflow: 'hidden',
+    overflowx: 'hidden',
+    overflowY: 'auto',
     display: 'grid',
-    gridTemplateRows: 'auto 1fr',
-    position: 'relative',
-  } as SxProps<Theme>,
 
+  } as SxProps<Theme>,
+    
   // Dark screen toggle button
   darkScreenButton: (darkScreen: boolean) => ({
     position: 'fixed',
@@ -128,6 +128,15 @@ export const ElectromagneticLabStyles = {
     alignItems: 'center',
     minHeight: 40,
     position: 'sticky',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
+    bgcolor: 'rgba(0, 0, 0, 0.95)',
+    backdropFilter: 'blur(10px)',
+    borderBottom: '2px solid rgba(255, 255, 255, 0.2)',
+    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.3)',
+    flexShrink: 0,
     flexDirection: {
       xs: 'column',
       sm: 'column',
@@ -170,7 +179,7 @@ export const ElectromagneticLabStyles = {
     background: 'rgba(138, 43, 226, 0.3)',
     backdropFilter: 'blur(10px)',
     borderRadius: 2,
-    border: '2px solid rgba(138, 43, 226, 0.6)',
+    border: '8px solid rgba(138, 43, 226, 0.6)',
     boxShadow: '0 4px 12px rgba(138, 43, 226, 0.4)',
     flexWrap: 'wrap',
     flexDirection: {
@@ -221,11 +230,11 @@ export const ElectromagneticLabStyles = {
     },
     gridTemplateRows: {
       xs: 'auto',
-      md: 'repeat(2, 1fr)'
+      md: 'repeat(2, 37.5vh)'
     },
     gap: 1,
     width: '100%',
-    height: '100%',
+    height: '75vh',
     overflow: {
       xs: 'auto',
       md: 'hidden'
@@ -248,7 +257,7 @@ export const ElectromagneticLabStyles = {
 
   // Wide panel
   widePanelFlex: {
-    display: 'flex',
+    display: 'grid',
     flexDirection: 'column',
     gridColumn: {
       xs: '1',

@@ -1,6 +1,4 @@
 services:
-  # PostgreSQL Database
-
   # Backend API (FastAPI)
   backend:
     build:
@@ -22,7 +20,7 @@ services:
       JWT_SECRET: ${JWT_SECRET:-your-jwt-secret-change-in-production}
 
       # CORS - FIXED to allow proper origins
-      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost,http://localhost:80,http://localhost:5173}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost,http://localhost:80,http://localhost:5173,/.*}
       
       # WebSocket Configuration
       WS_HEARTBEAT_INTERVAL: 30
@@ -36,12 +34,12 @@ services:
 
     volumes:
       # Mount backend source files only (exclude .venv)
-      - ./backend/main.py:/app/backend/main.py
-      - ./backend/core:/app/backend/core
-      - ./backend/api:/app/backend/api
-      - ./backend/schemas:/app/backend/schemas
-      - ./backend/utils:/app/backend/utils
-      - ./backend/requirements.txt:/app/backend/requirements.txt
+      - ./backend/main.py:/app/main.py
+      - ./backend/core:/app/core
+      - ./backend/api:/app/api
+      - ./backend/schemas:/app/schemas
+      - ./backend/utils:/app/utils
+      - ./backend/requirements.txt:/app/requirements.txt
 
       # Persist data
       - ./logs:/app/logs

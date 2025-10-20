@@ -253,7 +253,7 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
 
   const eqContent = (
     <Box sx={{
-      height: '100%',
+      height: '50%',
       display: 'flex',
       flexDirection: 'column',
       width: '98%',  // ✅ INCREASED: from 95% for even better visibility
@@ -373,9 +373,9 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
       <Box sx={{ 
         display: 'flex', 
         gap: eqFullscreen ? 3 : 0.5,
-        alignItems: 'stretch',
-        flex: 1,
-        minHeight: 0
+         flex: 1,
+        minHeight: 0,
+          maxHeight:400
       }}>
         
         {/* Frequency sliders */}

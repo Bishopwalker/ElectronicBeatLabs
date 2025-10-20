@@ -24,7 +24,7 @@
  * ```
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useAudioEngine } from './useAudioEngine';
 import { useBackendAudioEngine } from './useBackendAudioEngine';
 import { AudioMixer } from '../utils/AudioMixer';
@@ -474,36 +474,52 @@ export const useHybridAudioEngine = () => {
     ? mixerRef.current.analyserNode  // Backend → use mixer analyser
     : frontendEngine.analyserNode;    // Frontend → use frontend analyser
 
-  // 🔥 FIXED: Compute unified audio state showing ACTUAL synchronized values
-  // Instead of showing only one engine's state, show the REAL state that's playing
-  // 🔥 CRITICAL: Ensure NO NULL VALUES - all fields have defaults
-  const baseFreq = frontendEngine.audioState.leftFreq || backendEngine.audioState.config?.base_frequency || DEFAULT_BASE_FREQUENCY;
-  const beatFreq = frontendEngine.audioState.beat_frequency || backendEngine.audioState.config?.beat_frequency || DEFAULT_BEAT_FREQUENCY;
-  const leftFreq = baseFreq;
-  const rightFreq = baseFreq + beatFreq;
-  const amplitude = frontendEngine.audioState.amplitude || backendEngine.audioState.config?.amplitude || DEFAULT_VOLUME;
-  const waveform = frontendEngine.audioState.waveform || 'sine';
-  
-  const audioState = {
-    isPlaying, // Boolean - never null
-    amplitude, // Number - always has default
-    leftFreq, // Number - always has default
-    rightFreq, // Number - always has default
-    beat_frequency: beatFreq, // Number - always has default
-    waveform, // String - always has default
-    config: {
-      base_frequency: baseFreq, // Number - always has default
-      beat_frequency: beatFreq, // Number - always has default
+  // 🔥 PERFORMANCE FIX: Memoize audioState to prevent wasteful recalculation on every render
+  // Only recalculates when dependencies actually change
+  const audioState = useMemo(() => {
+    const baseFreq = frontendEngine.audioState.leftFreq || backendEngine.audioState.config?.base_frequency || DEFAULT_BASE_FREQUENCY;
+    const beatFreq = frontendEngine.audioState.beat_frequency || backendEngine.audioState.config?.beat_frequency || DEFAULT_BEAT_FREQUENCY;
+    const leftFreq = baseFreq;
+    const rightFreq = baseFreq + beatFreq;
+    const amplitude = frontendEngine.audioState.amplitude || backendEngine.audioState.config?.amplitude || DEFAULT_VOLUME;
+    const waveform = frontendEngine.audioState.waveform || 'sine';
+    
+    return {
+      isPlaying, // Boolean - never null
       amplitude, // Number - always has default
-      waveform // String - always has default
-    },
-    // 🔥 NEW: Add context and nodes for compatibility
-    context: frontendEngine.audioContext || null,
-    gainL: frontendEngine.audioState.gainL || null,
-    gainR: frontendEngine.audioState.gainR || null,
-    oscillatorL: frontendEngine.audioState.oscillatorL || null,
-    oscillatorR: frontendEngine.audioState.oscillatorR || null
-  };
+      leftFreq, // Number - always has default
+      rightFreq, // Number - always has default
+      beat_frequency: beatFreq, // Number - always has default
+      waveform, // String - always has default
+      config: {
+        base_frequency: baseFreq, // Number - always has default
+        beat_frequency: beatFreq, // Number - always has default
+        amplitude, // Number - always has default
+        waveform // String - always has default
+      },
+      // 🔥 NEW: Add context and nodes for compatibility
+      context: frontendEngine.audioContext || null,
+      gainL: frontendEngine.audioState.gainL || null,
+      gainR: frontendEngine.audioState.gainR || null,
+      oscillatorL: frontendEngine.audioState.oscillatorL || null,
+      oscillatorR: frontendEngine.audioState.oscillatorR || null
+    };
+  }, [
+    // Only recalculate when these dependencies change
+    isPlaying,
+    frontendEngine.audioState.leftFreq,
+    frontendEngine.audioState.beat_frequency,
+    frontendEngine.audioState.amplitude,
+    frontendEngine.audioState.waveform,
+    frontendEngine.audioContext,
+    frontendEngine.audioState.gainL,
+    frontendEngine.audioState.gainR,
+    frontendEngine.audioState.oscillatorL,
+    frontendEngine.audioState.oscillatorR,
+    backendEngine.audioState.config?.base_frequency,
+    backendEngine.audioState.config?.beat_frequency,
+    backendEngine.audioState.config?.amplitude
+  ]);
 
   return {
     // Unified state

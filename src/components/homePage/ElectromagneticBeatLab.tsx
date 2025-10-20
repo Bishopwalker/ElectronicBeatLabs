@@ -145,7 +145,27 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
       document.removeEventListener('keydown', handleInteraction);
     };
   }, [audioInitialized, hybridEngine]);
-
+  // 🔥 PERFORMANCE FIX: Memoize audio config to prevent wasteful recalculation
+  // This replaces the scattered constant creation throughout the component
+  const audioConfig = useMemo(() => {
+    const audioState = hybridEngine?.audioState;
+    const config = audioState?.config;
+    
+    return {
+      baseFreq: config?.base_frequency || audioState?.leftFreq || DEFAULT_BASE_FREQUENCY,
+      beatFreq: config?.beat_frequency || audioState?.beat_frequency || DEFAULT_BEAT_FREQUENCY,
+      amplitude: audioState?.amplitude || config?.amplitude || DEFAULT_VOLUME,
+      spatialEnabled: appState?.spatialAudio?.enabled || false
+    };
+  }, [
+    hybridEngine?.audioState?.config?.base_frequency,
+    hybridEngine?.audioState?.config?.beat_frequency,
+    hybridEngine?.audioState?.config?.amplitude,
+    hybridEngine?.audioState?.leftFreq,
+    hybridEngine?.audioState?.beat_frequency,
+    hybridEngine?.audioState?.amplitude,
+    appState?.spatialAudio?.enabled
+  ]);
   // NOTE: Electromagnetic state updates removed from useEffect to prevent infinite loops
   // Updates are now handled by the sync effect below which has proper value-based dependencies
 
@@ -273,26 +293,19 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
   }, [handleVolumeChange, activeAudioEngine]);
 
   const handlePlayBound = useCallback(async () => {
-    // 🔥 BULLETPROOF: Read from hybridEngine.audioState with full null checking
-    const audioState = hybridEngine?.audioState;
-    const config = audioState?.config;
-    
-    const baseFreq = config.base_frequency || audioState?.leftFreq || DEFAULT_BASE_FREQUENCY;
-    const beatFreq = config.beat_frequency || audioState?.beat_frequency || DEFAULT_BEAT_FREQUENCY;
-    const amplitude = audioState.amplitude || DEFAULT_VOLUME;
-    
-    console.log('🎵 Play with bulletproof config:', { baseFreq, beatFreq, amplitude });
+    // 🔥 FIXED: Use memoized audioConfig instead of recreating
+    console.log('🎵 Play with bulletproof config:', audioConfig);
     
     const success = await startBinauralAudio(hybridEngine, {
-      base_frequency: baseFreq,
-      beat_frequency: beatFreq,
-      amplitude: amplitude,
+      base_frequency: audioConfig.baseFreq,
+      beat_frequency: audioConfig.beatFreq,
+      amplitude: audioConfig.amplitude,
       waveform: 'sine'
     });
 
     // Audio state updated by hybrid engine automatically
     console.log(success ? '✅ Audio started' : '❌ Audio start failed');
-  }, [hybridEngine]);
+  }, [hybridEngine, audioConfig]);
 
   const handleStop = useCallback(async () => {
     console.log('🛑 App: Stop button clicked');
@@ -351,18 +364,13 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
               }
             }
             // Start frontend engine WITHOUT setting a pattern
-            // 🔥 BULLETPROOF: Read from hybridEngine.audioState with full null checking
-            const audioState = hybridEngine?.audioState || {};
-            const baseFreq = audioState.leftFreq || DEFAULT_BASE_FREQUENCY;
-            const beatFreq = audioState.beat_frequency || DEFAULT_BEAT_FREQUENCY;
-            const amplitude = audioState.amplitude || DEFAULT_VOLUME;
-            
-            console.log('🎵 Frontend start with bulletproof config:', { baseFreq, beatFreq, amplitude });
+            // 🔥 FIXED: Use memoized audioConfig
+            console.log('🎵 Frontend start with bulletproof config:', audioConfig);
             
             await frontendEngine.startBinauralBeat({
-              base_frequency: baseFreq,
-              beat_frequency: beatFreq,
-              amplitude: amplitude,
+              base_frequency: audioConfig.baseFreq,
+              beat_frequency: audioConfig.beatFreq,
+              amplitude: audioConfig.amplitude,
               waveform: 'sine'
             });
             // Audio state updated by hybrid engine automatically - no updateAppState needed
@@ -388,24 +396,16 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
 
               // Auto-start backend session with default binaural config
               console.log('🎧 Starting backend binaural session...');
-              // 🔥 BULLETPROOF: Read from hybridEngine.audioState with full null checking
-              const audioState = hybridEngine?.audioState || {};
-              const config = audioState.config || {};
-              
-              const baseFreq = config.base_frequency || audioState.leftFreq || DEFAULT_BASE_FREQUENCY;
-              const beatFreq = config.beat_frequency || audioState.beat_frequency || DEFAULT_BEAT_FREQUENCY;
-              const amplitude = audioState.amplitude || DEFAULT_VOLUME;
-              const spatialEnabled = appState?.spatialAudio?.enabled || false;
-              
-              console.log('🎵 Backend start with bulletproof config:', { baseFreq, beatFreq, amplitude, spatialEnabled });
+              // 🔥 FIXED: Use memoized audioConfig
+              console.log('🎵 Backend start with bulletproof config:', audioConfig);
               
               const defaultConfig = {
-                base_frequency: baseFreq,
-                beat_frequency: beatFreq,
-                amplitude: amplitude,
+                base_frequency: audioConfig.baseFreq,
+                beat_frequency: audioConfig.beatFreq,
+                amplitude: audioConfig.amplitude,
                 waveform: 'sine' as const,
-                spatial_enabled: spatialEnabled,
-                frequency: baseFreq
+                spatial_enabled: audioConfig.spatialEnabled,
+                frequency: audioConfig.baseFreq
               };
               await backendEngine.startBackendSession(defaultConfig);
             }
@@ -441,7 +441,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
     } catch (error) {
       console.error(`❌ Error toggling ${engineType} engine:`, error);
     }
-  }, [frontendEngine, backendEngine, appState, updateAppState]);
+  }, [frontendEngine, backendEngine, appState, updateAppState, audioConfig]);
 
   // Get section data for restore functionality
   const getSectionData = (id: string) => {
@@ -713,32 +713,12 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                   patterns: !!appState.currentPattern,
                   testTones: false
                 }}
-                frequencies={(() => {
-                  // 🔥 BULLETPROOF: Handle both backend (config) and frontend (direct) formats with full null checking
-                  const audioState = activeAudioEngine?.audioState || {};
-                  const config = audioState.config || {};
-                  
-                  if (config.base_frequency && config.beat_frequency) {
-                    // Backend engine with config
-                    const baseFreq = config.base_frequency || DEFAULT_BASE_FREQUENCY;
-                    const beatFreq = config.beat_frequency || DEFAULT_BEAT_FREQUENCY;
-                    return {
-                      left: baseFreq,
-                      right: baseFreq + beatFreq,
-                      beat: beatFreq
-                    };
-                  } else {
-                    // Frontend engine with direct values
-                    const leftFreq = audioState.leftFreq || DEFAULT_BASE_FREQUENCY;
-                    const rightFreq = audioState.rightFreq || (DEFAULT_BASE_FREQUENCY + DEFAULT_BEAT_FREQUENCY);
-                    const beatFreq = audioState.beat_frequency || DEFAULT_BEAT_FREQUENCY;
-                    return {
-                      left: leftFreq,
-                      right: rightFreq,
-                      beat: beatFreq
-                    };
-                  }
-                })()}
+                frequencies={{
+                  // 🔥 FIXED: Use memoized audioConfig
+                  left: audioConfig.baseFreq,
+                  right: audioConfig.baseFreq + audioConfig.beatFreq,
+                  beat: audioConfig.beatFreq
+                }}
                 volume={hybridEngine.audioState.amplitude || DEFAULT_VOLUME}
                 audioEngine={backendEngine}
                 onToggleEngine={handleEngineToggle}
@@ -772,18 +752,8 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
             <CollapsibleSection id="binauralBeats" title="Binaural Beat Generator" icon="🎧" defaultOpen={true} onClose={handleSectionClose}>
               <Box sx={{ height: '100%', overflowY: 'auto', overflowX: 'hidden' }}>
                 <BinauralGeneratorMUI
-                  base_frequency={(() => {
-                    // 🔥 BULLETPROOF: Read frequencies with full null checking
-                    const audioState = activeAudioEngine?.audioState || {};
-                    const config = audioState.config || {};
-                    return config.base_frequency || audioState.leftFreq || DEFAULT_BASE_FREQUENCY;
-                  })()}
-                  beat_frequency={(() => {
-                    // 🔥 BULLETPROOF: Read frequencies with full null checking
-                    const audioState = activeAudioEngine?.audioState || {};
-                    const config = audioState.config || {};
-                    return config.beat_frequency || audioState.beat_frequency || DEFAULT_BEAT_FREQUENCY;
-                  })()}
+                  base_frequency={audioConfig.baseFreq}
+                  beat_frequency={audioConfig.beatFreq}
                   waveform={activeAudioEngine?.audioState?.waveform || 'sine'}
                   onFrequencyChange={(base_frequency, beat_frequency) => {
                     console.log('🎛️ Parent received frequency change - base_frequency:', base_frequency, 'beat_frequency:', beat_frequency);
