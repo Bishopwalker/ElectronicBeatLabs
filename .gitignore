@@ -43,4 +43,7 @@ coverage/
 *.lcov
 
 # Temporary files
-nul
+nul__pycache__/
+*.pyc
+*.pyo
+.venv.old/
