@@ -46,7 +46,7 @@ COPY --from=builder /root/.local /home/ebl/.local
 COPY --from=builder /usr/lib/x86_64-linux-gnu/libportaudio* /usr/lib/x86_64-linux-gnu/
 
 # Copy backend application
-COPY --chown=ebl:ebl backend/ ./backend/
+COPY --chown=ebl:ebl backend/ ./
 
 # Create necessary directories
 RUN mkdir -p /app/logs /app/data /app/uploads \
@@ -69,4 +69,4 @@ LABEL maintainer="bishop8-group" \
  description="EBL Backend - FastAPI + Python 3.11 with PyAudio"
 
 # Use single worker for WebSocket compatibility
-CMD ["python", "-m", "uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1", "--ws-ping-interval", "20", "--ws-ping-timeout", "20"]
+CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1", "--ws-ping-interval", "20", "--ws-ping-timeout", "20"]
