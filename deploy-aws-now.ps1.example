@@ -1,0 +1,14 @@
+# AWS Deployment Script
+# Copy this to deploy-aws-now.ps1 and fill in your actual credentials
+
+$env:AWS_ACCESS_KEY_ID = "YOUR_AWS_ACCESS_KEY_HERE"
+$env:AWS_SECRET_ACCESS_KEY = "YOUR_AWS_SECRET_KEY_HERE"
+$env:AWS_REGION = "us-east-1"
+
+Write-Host "🚀 Starting AWS Deployment..." -ForegroundColor Cyan
+Write-Host "Account: YOUR_ACCOUNT_ID" -ForegroundColor Blue
+Write-Host "Region: us-east-1" -ForegroundColor Blue
+Write-Host ""
+
+# Run the deployment script
+.\aws-deploy-quick.ps1

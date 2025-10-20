@@ -1,0 +1,34 @@
+# Quick ECS Deployment Script
+# Copy this to deploy-ecs-quick.ps1 and fill in your actual credentials
+
+$env:AWS_ACCESS_KEY_ID = "YOUR_AWS_ACCESS_KEY_HERE"
+$env:AWS_SECRET_ACCESS_KEY = "YOUR_AWS_SECRET_KEY_HERE"
+$env:AWS_REGION = "us-east-1"
+$AWS_ACCOUNT_ID = "YOUR_AWS_ACCOUNT_ID"
+
+Write-Host "🚀 Quick ECS Deployment" -ForegroundColor Cyan
+Write-Host "======================" -ForegroundColor Cyan
+
+# Step 1: Create ECR repos
+Write-Host "`n1. Creating ECR repositories..." -ForegroundColor Yellow
+aws ecr create-repository --repository-name ebl-backend --region us-east-1 2>$null
+aws ecr create-repository --repository-name ebl-frontend --region us-east-1 2>$null
+
+# Step 2: Login to ECR
+Write-Host "2. Logging into ECR..." -ForegroundColor Yellow
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin "$AWS_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com"
+
+# Step 3: Tag and push backend
+Write-Host "3. Pushing backend image..." -ForegroundColor Yellow
+docker tag ebl-backend:latest "$AWS_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/ebl-backend:latest"
+docker push "$AWS_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/ebl-backend:latest"
+
+# Step 4: Tag and push frontend
+Write-Host "4. Pushing frontend image..." -ForegroundColor Yellow
+docker tag ebl-frontend:latest "$AWS_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/ebl-frontend:latest"
+docker push "$AWS_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/ebl-frontend:latest"
+
+Write-Host "`n✅ Images pushed to ECR!" -ForegroundColor Green
+Write-Host "`nNext: Deploy to ECS using AWS Console or CLI" -ForegroundColor Cyan
+Write-Host "Backend image: $AWS_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/ebl-backend:latest" -ForegroundColor Blue
+Write-Host "Frontend image: $AWS_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/ebl-frontend:latest" -ForegroundColor Blue
