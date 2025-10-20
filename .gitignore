@@ -33,7 +33,10 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
-
+.Python
+*.so
+.venv/
+.venv.old/
 # Test coverage
 coverage/
 .coverage
