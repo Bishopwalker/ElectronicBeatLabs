@@ -1,12 +1,9 @@
-"""
-8D Spatial Audio Effects
-Implements spatial audio processing based on research from SongPeel and AudioAlter
-"""
+
 
 import numpy as np
 from scipy import signal
 from typing import Dict, Tuple, Optional
-import asyncio
+
 
 class SpatialAudioProcessor:
     def __init__(self, sample_rate: int = 48000):

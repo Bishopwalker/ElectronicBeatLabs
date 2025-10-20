@@ -15,7 +15,6 @@ from fastapi.responses import JSONResponse, Response
 from core.audio_engine import AudioEngine
 from core.field_simulator import FieldSimulator
 # Import simplified database and auth
-from database.database import init_db
 from modules.binaural import BinauralBeatGenerator
 from modules.spatial_audio import SpatialAudioProcessor
 from protocols.adhd_protocols import ADHDProtocols
@@ -53,9 +52,6 @@ async def startup_event():
     """
     logger.info("Starting up Electromagnetic Beat Lab backend...")
 
-    # Initialize database tables - DISABLED (not currently needed)
-    # init_db()
-    # logger.info("Database initialized successfully")
 
     # Initialize RAG system for code intelligence
     logger.info("Initializing RAG (Retrieval-Augmented Generation) system...")
