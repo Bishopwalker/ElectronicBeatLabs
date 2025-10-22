@@ -302,9 +302,9 @@ export const useHybridAudioEngine = () => {
     // Update mixer master volume - this controls both engines since they're routed through it
     if (mixerRef.current) {
       mixerRef.current.setMasterVolume(safeVolume);
-      console.log('✅ Hybrid Engine: Mixer master volume updated (controls both engines)');
+      console.log('Hybrid Engine: Mixer master volume updated (controls both engines)');
     } else {
-      console.warn('⚠️ Hybrid Engine: Mixer not initialized, volume update skipped');
+      console.warn('️ Hybrid Engine: Mixer not initialized, volume update skipped');
     }
 
     // 🔥 REMOVED: Individual engine volume updates - caused duplicate volume setting
@@ -338,7 +338,7 @@ export const useHybridAudioEngine = () => {
     const config: BinauralBeatConfig = {
       base_frequency: pattern.frequencies.carrier,
       beat_frequency: pattern.frequencies.beat,
-      amplitude: 0.5,
+      amplitude: DEFAULT_VOLUME,
       waveform: 'sine'
     };
 
