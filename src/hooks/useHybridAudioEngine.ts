@@ -105,27 +105,38 @@ export const useHybridAudioEngine = () => {
 
   /**
    * Monitor backend connection and auto-crossfade
+   * 🔥 CRITICAL FIX: Crossfade if audio playing OR backend has active session
    */
   useEffect(() => {
     const backendNowConnected = backendEngine.backendConnected && backendEngine.sessionId;
     const backendWasConnected = previousBackendConnected.current;
+    const isAudioPlaying = frontendEngine.audioState.isPlaying || backendEngine.audioState.isPlaying;
+    const hasActiveSession = !!backendEngine.sessionId; // Backend has session = will play soon
 
-    // Backend just connected - crossfade to it
+    // Backend just connected - crossfade if audio playing OR has active session
     if (backendNowConnected && !backendWasConnected && mixerRef.current) {
-      console.log('🔄 Hybrid Engine: Backend connected, crossfading from frontend to backend...');
-      mixerRef.current.crossfadeToBackend(2.0);
-      setCurrentEngine('backend');
+      if (isAudioPlaying || hasActiveSession) {
+        console.log('🔄 Hybrid Engine: Backend connected with active session, crossfading from frontend to backend...');
+        mixerRef.current.crossfadeToBackend(2.0);
+        setCurrentEngine('backend');
+      } else {
+        console.log('⏸️ Hybrid Engine: Backend connected but no active session - skipping crossfade');
+      }
     }
 
-    // Backend just disconnected - instant failover
+    // Backend just disconnected - instant failover ONLY IF AUDIO IS PLAYING
     if (!backendNowConnected && backendWasConnected && mixerRef.current) {
-      console.log('🚨 Hybrid Engine: Backend disconnected, instant failover to frontend!');
-      mixerRef.current.failoverToFrontend();
-      setCurrentEngine('frontend');
+      if (isAudioPlaying) {
+        console.log('🚨 Hybrid Engine: Backend disconnected AND audio playing, instant failover to frontend!');
+        mixerRef.current.failoverToFrontend();
+        setCurrentEngine('frontend');
+      } else {
+        console.log('⏸️ Hybrid Engine: Backend disconnected but audio NOT playing - skipping failover');
+      }
     }
 
-    previousBackendConnected.current as unknown as String ;
-  }, [backendEngine.backendConnected, backendEngine.sessionId]);
+    previousBackendConnected.current = backendNowConnected;
+  }, [backendEngine.backendConnected, backendEngine.sessionId, frontendEngine.audioState.isPlaying, backendEngine.audioState.isPlaying]);
 
   /**
    * Start binaural beat with hybrid approach

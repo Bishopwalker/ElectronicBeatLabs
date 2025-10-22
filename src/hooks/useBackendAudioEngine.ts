@@ -479,6 +479,7 @@ export const useBackendAudioEngine = () => {
   }, [backendConnected, sessionId, websocket]);
 
   // Stop backend session
+  // 🔥 CRITICAL FIX: Properly disconnect backend to prevent auto-restart
   const stopBackendSession = useCallback(async () => {
     console.log('🛑 stopBackendSession: Starting - sessionId:', sessionId);
     if (sessionId) {
@@ -493,11 +494,10 @@ export const useBackendAudioEngine = () => {
         type: 'stop_session'
       });
 
-      // Don't disconnect WebSocket - keep it alive for future operations
-      // DON'T clear sessionId - this causes Advanced Controls to switch to frontend engine!
-      console.log('🔄 stopBackendSession: Keeping session state so Advanced Controls stay connected to backend');
-      // setSessionId(null);  // REMOVED - this breaks Advanced Controls
-      setBackendConnected(true); // KEEP backend connected for Advanced Controls
+      // 🔥 FIXED: Clear session state to prevent crossfade trigger
+      console.log('🗑️ stopBackendSession: Clearing session state to prevent auto-restart');
+      setSessionId(null);
+      setBackendConnected(false); // 🔥 FIXED: Actually disconnect to prevent crossfade!
     }
 
     // STOP the AudioWorklet processor and clear buffer
@@ -508,9 +508,9 @@ export const useBackendAudioEngine = () => {
     }
 
     // Mute the gain node to ensure no humming
-    if (gainNode.current) {
+    if (gainNode.current && audioContext.current) {
       console.log('🔇 stopBackendSession: Muting gain node to eliminate humming');
-      gainNode.current.gain.setValueAtTime(0, audioContext.current!.currentTime);
+      gainNode.current.gain.setValueAtTime(0, audioContext.current.currentTime);
     }
 
     setAudioState(prev => ({
@@ -527,7 +527,7 @@ export const useBackendAudioEngine = () => {
       state: 'INACTIVE',
       stability: 0
     });
-  }, [websocket.sessionId]);
+  }, [sessionId, websocket]);
 
   // Start backend session - FIXED NaN CHECKS
   const startBackendSession = useCallback(async (config?: BinauralBeatConfig & {
