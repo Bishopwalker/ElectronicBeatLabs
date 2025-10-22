@@ -173,14 +173,15 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
             key={timeKey}
             elevation={3}
             sx={{
+                display: 'grid',
                 p: 1,  // ✅ REDUCED: from 2 to 1 - much less padding!
                 paddingBlock: 1,  // ✅ REDUCED: from 2 to 1 - less vertical space
                 background: 'linear-gradient(45deg, rgba(255, 107, 0, 0.1), rgba(138, 43, 226, 0.1))',
                 border: '1px solid',
                 borderColor: '#ff6b00',
                 borderRadius: 1,
-                position: 'relative',  // ✅ CHANGED: from sticky to relative - no jumping!
-                overflow: 'hidden',  // ✅ CHANGED: from visible to hidden - prevents overflow issues
+                overflowX: 'hidden',  // ✅ CHANGED: from visible to hidden - prevents overflow issuesF
+                overflowY: 'scroll',
                 width: '100%',
                 mb: 2,  // ✅ REDUCED: from 3 to 2 - less bottom margin
                 boxShadow: '0 4px 20px rgba(255, 107, 0, 0.3)',
@@ -366,82 +367,6 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
                                 </span>
                         </Tooltip>
                     </Box>
-                </Box>
-
-                {/* RIGHT SIDE: Frequency Visualizer - 50% Width */}
-                <Box sx={{
-                    flex: '1 1 50%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    bgcolor: 'rgba(0, 0, 0, 0.3)',
-                    borderRadius: 1,
-                    border: '1px solid rgba(138, 43, 226, 0.3)',
-                    overflow: 'hidden',  // ✅ CHANGED: prevent overflow
-                    minHeight: isVisualizerCollapsed ? 'auto' : '250px',  // ✅ REDUCED: from 350px
-                    maxHeight: '300px',  // ✅ ADDED: cap the height
-                    height: 'auto',
-                    p: 0.25,  // ✅ REDUCED: from 0.5 - minimal padding
-                    m: 0
-                }}>
-                    {/* Visualizer Header */}
-                    <Box sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        p: 0.5,
-                        borderBottom: isVisualizerCollapsed ? 'none' : '1px solid rgba(138, 43, 226, 0.3)',
-                        flexShrink: 0,
-                        minHeight: '32px'
-                    }}>
-                        <Typography variant="caption" sx={{
-                            fontSize: '0.8rem',
-                            color: '#8a2be2',
-                            fontWeight: 'bold'
-                        }}>
-                            📊 Live Frequency Visualization
-                        </Typography>
-                        {/* ✅ REMOVED: Fullscreen button - now handled by FrequencyVisualizer itself */}
-                        <Tooltip title={isVisualizerCollapsed ? "Expand visualizer" : "Collapse visualizer"}>
-                            <IconButton
-                                size="small"
-                                onClick={() => setIsVisualizerCollapsed(!isVisualizerCollapsed)}
-                                sx={{
-                                    color: '#8a2be2',
-                                    p: 0.25,
-                                    '&:hover': { bgcolor: 'rgba(138, 43, 226, 0.2)' }
-                                }}
-                            >
-                                {isVisualizerCollapsed ?
-                                    <ExpandMoreIcon sx={{ fontSize: '1.1rem' }} /> :
-                                    <ExpandLessIcon sx={{ fontSize: '1.1rem' }} />
-                                }
-                            </IconButton>
-                        </Tooltip>
-                    </Box>
-
-                    {/* 🔥 FIXED: Visualizer fills available space */}
-                    <Collapse in={!isVisualizerCollapsed} timeout="auto" unmountOnExit>
-                        <Box sx={{
-                            flex: "1 1 auto",
-                            minHeight: '220px',  // ✅ REDUCED: from 300px - more compact!
-                            maxHeight: '260px',  // ✅ ADDED: cap to fit container
-                            height: '100%',
-                            display: 'flex',
-                            overflow: 'hidden',  // ✅ CHANGED: prevent overflow
-                            p: 0,
-                            m: 0
-                        }}>
-                            <FrequencyVisualizer
-                                state={visualizerState}
-                                audioContext={audioContext}
-                                analyserNode={analyserNode}
-                                title=""
-                                showSpectrum={true}
-                                showFrequencies={true}
-                                showMetrics={false}
-                            />
-                        </Box>
-                    </Collapse>
                 </Box>
             </Box>
         </Paper>

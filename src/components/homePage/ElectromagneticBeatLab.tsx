@@ -13,7 +13,7 @@ import { DEFAULT_BASE_FREQUENCY, DEFAULT_BEAT_FREQUENCY, DEFAULT_VOLUME } from '
 import { startBinauralAudio, stopBinauralAudio } from '../../utils/audioControls';
 
 // Hooks and Data
-import { useHybridAudioEngine } from '../../hooks';
+import { useHybridAudioEngine, useBinauralVisualization } from '../../hooks';
 import { useElectromagneticLabState } from '../../hooks/useElectromagneticLabState';
 import { useCurrentPresetTracker } from '../../hooks/useCurrentPresetTracker';
 import { WAVE_PATTERNS } from '../../data/patterns';
@@ -223,17 +223,20 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
     console.log('🔄 Backend connection state changed:', backendEngine.backendConnected);
   }, [backendEngine.backendConnected, backendEngine.sessionId]);
 
-  // Auto-enable spatial audio ONCE when backend connects
+  // Auto-enable spatial audio ONCE when backend connects AND audio is playing
+  // 🔥 CRITICAL FIX: Only auto-enable when audio is actually playing!
   const hasAutoEnabledRef = useRef(false);
   useEffect(() => {
-    // Only run this once when backend first connects
-    if (backendEngine.backendConnected && backendEngine.sessionId && !hasAutoEnabledRef.current) {
-      console.log('✅ Backend connected! Auto-enabling required audio systems...');
+    const isAudioPlaying = hybridEngine.audioState.isPlaying;
+    
+    // Only run this once when backend first connects AND audio is playing
+    if (backendEngine.backendConnected && backendEngine.sessionId && !hasAutoEnabledRef.current && isAudioPlaying) {
+      console.log('✅ Backend connected AND audio playing! Auto-enabling required audio systems...');
       hasAutoEnabledRef.current = true;
 
-      // Auto-enable spatial audio when backend connects
+      // Auto-enable spatial audio when backend connects during playback
       if (!appState.spatialAudio?.enabled) {
-        console.log('🎧 Auto-enabling spatial audio for backend connection...');
+        console.log('🎧 Auto-enabling spatial audio for active backend connection...');
         updateAppState({
           spatialAudio: {
             ...appState.spatialAudio,
@@ -243,16 +246,48 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
       }
 
       console.log('🎯 All required audio systems enabled for backend operation');
+    } else if (backendEngine.backendConnected && backendEngine.sessionId && !isAudioPlaying) {
+      console.log('⏸️ Backend connected but audio NOT playing - skipping auto-enable');
     }
 
-    // Reset the flag when backend disconnects
-    if (!backendEngine.backendConnected) {
+    // Reset the flag when backend disconnects or audio stops
+    if (!backendEngine.backendConnected || !isAudioPlaying) {
       hasAutoEnabledRef.current = false;
     }
-  }, [backendEngine.backendConnected, backendEngine.sessionId, updateAppState]);
+  }, [backendEngine.backendConnected, backendEngine.sessionId, hybridEngine.audioState.isPlaying, appState.spatialAudio?.enabled, updateAppState]);
 
   // NOTE: FrequencyVisualizer auto-open/close REMOVED - stays in Advanced Controls tab for more space
   // User can manually open/close it as needed
+
+  // Binaural visualization hook for frequency and electromagnetic analysis
+  const { visualizationData, stats, isPlaying } = useBinauralVisualization({
+    updateRate: 50,
+    enabled: true,
+    showSpectrum: true,
+    showPeaks: true,
+    showAmplitudes: true
+  });
+
+  // Calculate electromagnetic field strength from beat frequency
+  const calculateElectromagneticStrength = (beatFreq: number): number => {
+    // Reason: Map beat frequency to electromagnetic field strength (0-1 range)
+    // Delta (0.5-4Hz): High strength for deep relaxation
+    // Theta (4-8Hz): Medium-high strength for creativity
+    // Alpha (8-13Hz): Medium strength for relaxed focus
+    // Beta (13-30Hz): Lower strength for active focus
+    if (beatFreq <= 4) return 0.333; // Delta - Low field
+    if (beatFreq <= 8) return 0.444; // Theta - medium field
+    if (beatFreq <= 13) return 0.666; // Alpha - medium field
+    if (beatFreq <= 30) return 0.777; // Beta - moderate field
+    return 0.999; // Delta - very strong field very strong field
+  };
+
+  const electromagneticStrength = calculateElectromagneticStrength(audioConfig.beatFreq);
+  const electromagneticState = audioConfig.beatFreq > 0 ?
+      (audioConfig.beatFreq <= 4 ? 'DEEP RESONANCE' :
+          audioConfig.beatFreq <= 8 ? 'CREATIVE FLOW' :
+              audioConfig.beatFreq <= 13 ? 'FOCUSED CALM' :
+                  audioConfig.beatFreq <= 30 ? 'ACTIVE FOCUS' : 'HIGH ALERT') : 'INACTIVE';
 
   // Simple one-time backend connection attempt on startup
   useEffect(() => {
@@ -583,7 +618,69 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                 p: 2,
                 maxWidth: '700px',
                 boxShadow: '0 0 15px rgba(255, 107, 0, 0.3)'
-              }}>
+              }}>{/* Frequency Analyzer */}
+                {visualizationData && (
+                    <Paper
+                        elevation={0}
+                        sx={{
+                          p: 0.75,
+                          background: 'rgba(255, 107, 0, 0.05)',
+                          border: '1px solid rgba(255, 107, 0, 0.3)',
+                        }}
+                    >
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                        📊 Real-time Frequency Analysis
+                      </Typography>
+                      <Grid container spacing={1}>
+                        <Grid size={4}>
+                          <Typography variant="caption" sx={{ fontSize: '0.6rem', color: 'text.secondary' }}>
+                            SNR
+                          </Typography>
+                          <Typography variant="body2" sx={{ fontSize: '0.75rem', color: '#ff6b00', fontWeight: 600 }}>
+                            {visualizationData.signalQuality.snr.toFixed(1)} dB
+                          </Typography>
+                        </Grid>
+                        <Grid size={4}>
+                          <Typography variant="caption" sx={{ fontSize: '0.6rem', color: 'text.secondary' }}>
+                            Clarity
+                          </Typography>
+                          <Typography variant="body2" sx={{ fontSize: '0.75rem', color: '#ff6b00', fontWeight: 600 }}>
+                            {(visualizationData.signalQuality.clarity * 100).toFixed(0)}%
+                          </Typography>
+                        </Grid>
+                        <Grid size={4}>
+                          <Typography variant="caption" sx={{ fontSize: '0.6rem', color: 'text.secondary' }}>
+                            Quality
+                          </Typography>
+                          <Chip
+                              label={stats.dataQuality.toUpperCase()}
+                              size="small"
+                              sx={{
+                                fontSize: '0.55rem',
+                                height: '16px',
+                                backgroundColor:
+                                    stats.dataQuality === 'excellent' ? 'rgba(76, 175, 80, 0.2)' :
+                                        stats.dataQuality === 'good' ? 'rgba(255, 193, 7, 0.2)' :
+                                            stats.dataQuality === 'fair' ? 'rgba(255, 152, 0, 0.2)' :
+                                                'rgba(244, 67, 54, 0.2)',
+                                color:
+                                    stats.dataQuality === 'excellent' ? '#4caf50' :
+                                        stats.dataQuality === 'good' ? '#ffc107' :
+                                            stats.dataQuality === 'fair' ? '#ff9800' :
+                                                '#f44336',
+                              }}
+                          />
+                        </Grid>
+                      </Grid>
+                      {visualizationData.peakFrequencies.length > 0 && (
+                          <Box sx={{ mt: 0.5 }}>
+                            <Typography variant="caption" sx={{ fontSize: '0.6rem', color: 'text.secondary' }}>
+                              Detected Peaks: {visualizationData.peakFrequencies.slice(0, 2).map(p => `${p.frequency.toFixed(1)}Hz`).join(', ')}
+                            </Typography>
+                          </Box>
+                      )}
+                    </Paper>
+                )}
                 <Typography variant="h4" sx={ElectromagneticLabStyles.mainTitle}>
                   Bishop's Electromagnetic Beat Lab
                 </Typography>
@@ -669,7 +766,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
 
       {/* Dynamic Grid Layout - Tight, fills all space */}
       <Grid container spacing={{ xs: 1, sm: 1.5, md: 2, lg: 2 }} sx={{
-        p: { xs: '4px', sm: '6px', md: '8px', lg: '10px' },
+        p: { xs: '4px', sm: '6px', md: '6px', lg: '6px' },
         width: '100%',
         maxWidth: '100vw',
         overflowX: 'hidden',
@@ -682,12 +779,126 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
         }
       }}>
         {/* ROW 1: Equalizer, Master Controls, Patterns */}
-        
+        {/* Patterns - SAME HEIGHT, Internal Scroll */}
+        {!closedSections.includes('patternID') && (
+            <Grid  item xs={12} sm={6} md={4} lg={4} xl={3} sx={{
+              display: 'flex',
+              maxHeight: { xs: '400px', sm: '380px', md: '550px', lg: '775px' },
+              minHeight: { xs: '400px', sm: '380px', md: '550px', lg: '650px' }
+            }}>
+              <CollapsibleSection id="patternID" title="Patterns" icon="🌀" defaultOpen={true} onClose={handleSectionClose}>
+                <PatternSelectorMUI
+                    patterns={WAVE_PATTERNS}
+                    selected={appState.currentPattern?.id || null}
+                    mode={appState.mode}
+                    onSelect={handlePatternSelectBound}
+                    onModeChange={handleModeChangeBound}
+                    activePattern={appState.currentPattern?.id || null}
+                />
+              </CollapsibleSection>
+            </Grid>
+        )}
+        {/* Frequency Visualizer - SAME HEIGHT */}
+        {!closedSections.includes('frequencyVisualizer') && (
+            <Grid item xs={12} sm={12} md={8} lg={6} xl={6} sx={{
+              display: 'flex',
+              overflowY: 'auto',
+              maxHeight: { xs: '500px', sm: '450px', md: 'fit-content', lg: 'fit-content' }
+            }}>
+              <CollapsibleSection id="frequencyVisualizer" title="Frequency Visualizer" icon="📊" defaultOpen={true} onClose={handleSectionClose}>
+                <FrequencyVisualizer
+                    state={frequencyVisualizerState}
+                    audioContext={activeAudioEngine.audioContext}
+                    analyserNode={activeAudioEngine.analyserNode}
+                    title="Binaural Beat Frequency Visualizer"
+                    showSpectrum={true}
+                    showFrequencies={true}
+                    showMetrics={true}
+                />
+              </CollapsibleSection>
+            </Grid>
+        )}
+
+        {/* Binaural Beat Generator - SAME HEIGHT, Internal Scroll */}
+        {!closedSections.includes('binauralBeats') && (
+            <Grid item xs={12} sm={6} md={4} lg={4} xl={3} sx={{
+              display: 'flex',
+              maxHeight: { xs: '500px', sm: '450px', md: 'fit-content', lg: 'fit-content' }
+            }}>
+              <CollapsibleSection id="binauralBeats" title="Binaural Beat Generator" icon="🎧" defaultOpen={true} onClose={handleSectionClose}>
+                <Box sx={{ height: '100%', overflowY: 'auto', overflowX: 'hidden' }}>
+                  <BinauralGeneratorMUI
+                      base_frequency={audioConfig.baseFreq}
+                      beat_frequency={audioConfig.beatFreq}
+                      waveform={activeAudioEngine?.audioState?.waveform || 'sine'}
+                      onFrequencyChange={(base_frequency, beat_frequency) => {
+                        console.log('🎛️ Parent received frequency change - base_frequency:', base_frequency, 'beat_frequency:', beat_frequency);
+
+                        // Handle both backend and frontend engines
+                        if (activeAudioEngine.updateSettings) {
+                          // Backend engine - use new pattern
+                          activeAudioEngine.updateSettings({
+                            base_frequency: base_frequency,
+                            beat_frequency: beat_frequency
+                          });
+                        } else if (activeAudioEngine.updateFrequency) {
+                          // Frontend engine - convert to old pattern
+                          const leftFreq = base_frequency; // left = base
+                          const rightFreq = base_frequency + beat_frequency; // right = base + beat
+                          console.log('🎛️ Converting to frontend format - left:', leftFreq, 'right:', rightFreq);
+                          activeAudioEngine.updateFrequency(leftFreq, rightFreq);
+                        }
+                      }}
+                      onWaveformChange={(waveform) => {
+                        console.log('🎵 Waveform changed to:', waveform);
+                        if (activeAudioEngine.updateWaveform) {
+                          activeAudioEngine.updateWaveform(waveform);
+                        }
+                      }}
+                      currentPreset={currentPreset}
+                  />
+
+                </Box>
+              </CollapsibleSection>
+            </Grid>
+        )}
+        {/* Timer & Sessions - Wider for better usability */}
+        {!closedSections.includes('timerPanel') && (
+            <Grid item xs={12} sm={6} md={4} lg={3} xl={3} sx={{
+              display: 'flex',
+              maxHeight: { xs: '500px', sm: '450px', md: '550px', lg: '550px' }
+            }}>
+              <CollapsibleSection id="timerPanel" title="Timer & Sessions" icon="⏰" defaultOpen={true} onClose={handleSectionClose}>
+                <Box sx={{ height: 'fit-content', minHeight: '100%', maxHeight: '500px', overflowY: 'auto', width: '500px', overflowX: 'hidden' }}>
+                  <TimerTab
+                      appState={appState}
+                      audioEngine={hybridEngine}
+                      patterns8D={appState.patterns8D} // ✅ FIXED: Use converted Pattern8D[] from appState
+                      patterns8DEngine={{
+                        setActivePattern: (pattern) => {
+                          console.log('🎨 Setting active pattern for visualizer:', pattern.name);
+                          updateAppState({ currentPattern: pattern });
+                        },
+                        clearActivePattern: () => {
+                          console.log('🎨 Clearing active pattern from visualizer');
+                          updateAppState({ currentPattern: null });
+                        }
+                      }}
+                      onStateChange={updateAppState}
+                      onTimerStatusUpdate={setTimerStatus}
+                      onTransitionNavigation={timerNavigationRef.current}
+                      onTimerControl={timerControlRef.current}
+                  />
+                </Box>
+              </CollapsibleSection>
+            </Grid>
+        )}
         {/* Equalizer - SAME HEIGHT */}
         {!closedSections.includes('equalizer') && (
           <Grid item xs={12} sm={6} md={4} lg={4} xl={3} sx={{ 
             display: 'flex',
-            maxHeight: { xs: '400px', sm: '380px', md: '350px', lg: '350px' }
+            flex: '1 1 2',
+
           }}>
             <CollapsibleSection id="equalizer" title="Equalizer" icon="🎚️" defaultOpen={true} onClose={handleSectionClose}>
               <EqualizerMUI
@@ -735,83 +946,14 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
  )}
 
         {/* ROW 2: Binaural Beat Generator, Timer Sessions, Spatial Visualizer */}
-        
-        {/* Patterns - SAME HEIGHT, Internal Scroll */}
-        {!closedSections.includes('patternID') && (
-          <Grid item xs={12} sm={6} md={4} lg={4} xl={3} sx={{ 
-            display: 'flex',
-            maxHeight: { xs: '400px', sm: '380px', md: '350px', lg: '350px' }
-          }}>
-            <CollapsibleSection id="patternID" title="Patterns" icon="🌀" defaultOpen={true} onClose={handleSectionClose}>
-              <PatternSelectorMUI
-                patterns={WAVE_PATTERNS}
-                selected={appState.currentPattern?.id || null}
-                mode={appState.mode}
-                onSelect={handlePatternSelectBound}
-                onModeChange={handleModeChangeBound}
-                activePattern={appState.currentPattern?.id || null}
-              />
-            </CollapsibleSection>
- </Grid>
- )}
 
-        {/* Binaural Beat Generator - SAME HEIGHT, Internal Scroll */}
-        {!closedSections.includes('binauralBeats') && (
-          <Grid item xs={12} sm={6} md={4} lg={4} xl={3} sx={{ 
-            display: 'flex',
-            maxHeight: { xs: '500px', sm: '450px', md: '400px', lg: '400px' }
-          }}>
-            <CollapsibleSection id="binauralBeats" title="Binaural Beat Generator" icon="🎧" defaultOpen={true} onClose={handleSectionClose}>
-              <Box sx={{ height: '100%', overflowY: 'auto', overflowX: 'hidden' }}>
-                <BinauralGeneratorMUI
-                  base_frequency={audioConfig.baseFreq}
-                  beat_frequency={audioConfig.beatFreq}
-                  waveform={activeAudioEngine?.audioState?.waveform || 'sine'}
-                  onFrequencyChange={(base_frequency, beat_frequency) => {
-                    console.log('🎛️ Parent received frequency change - base_frequency:', base_frequency, 'beat_frequency:', beat_frequency);
-
-                    // Handle both backend and frontend engines
-                    if (activeAudioEngine.updateSettings) {
-                      // Backend engine - use new pattern
-                      activeAudioEngine.updateSettings({
-                        base_frequency: base_frequency,
-                        beat_frequency: beat_frequency
-                      });
-                    } else if (activeAudioEngine.updateFrequency) {
-                      // Frontend engine - convert to old pattern
-                      const leftFreq = base_frequency; // left = base
-                      const rightFreq = base_frequency + beat_frequency; // right = base + beat
-                      console.log('🎛️ Converting to frontend format - left:', leftFreq, 'right:', rightFreq);
-                      activeAudioEngine.updateFrequency(leftFreq, rightFreq);
-                    }
-                  }}
-                  onWaveformChange={(waveform) => {
-                    console.log('🎵 Waveform changed to:', waveform);
-                    if (activeAudioEngine.updateWaveform) {
-                      activeAudioEngine.updateWaveform(waveform);
-                    }
-                  }}
-                  currentPreset={currentPreset}
-                />
-                <Box sx={{ mt: 1, maxHeight: '250px', overflowY: 'auto' }}>
-                  <MainControlsMUI
-                    isPlaying={hybridEngine.audioState.isPlaying}
-                    volume={hybridEngine.audioState.amplitude || DEFAULT_VOLUME}
-                    onPlay={handlePlayBound}
-                    onStop={handleStop}
-                    onVolumeChange={handleVolumeChangeBound}
-                  />
-                </Box>
-              </Box>
-            </CollapsibleSection>
- </Grid>
- )}
 
         {/* Spatial Visualizer - Same width as Frequency Visualizer */}
         {!closedSections.includes('visualizeID') && (
           <Grid item xs={12} sm={12} md={8} lg={6} xl={6} sx={{ 
             display: 'flex',
-            maxHeight: { xs: '500px', sm: '500px', md: '450px', lg: '500px' }
+            minWidth: { xs: '25%', sm: '25%', md: '25%', lg: '25%' },
+            maxHeight: { xs: '500px', sm: '500px', md: '450px', lg: '550px' }
           }}>
             <CollapsibleSection 
               id="visualizeID" 
@@ -845,57 +987,9 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
  </Grid>
  )}
 
-        {/* Timer & Sessions - Wider for better usability */}
-        {!closedSections.includes('timerPanel') && (
-          <Grid item xs={12} sm={6} md={4} lg={3} xl={3} sx={{ 
-            display: 'flex',
-            maxHeight: { xs: '500px', sm: '450px', md: '450px', lg: '450px' }
-          }}>
-            <CollapsibleSection id="timerPanel" title="Timer & Sessions" icon="⏰" defaultOpen={true} onClose={handleSectionClose}>
-              <Box sx={{ height: 'auto', minHeight: '300px', maxHeight: '70vh', overflowY: 'auto', overflowX: 'hidden' }}>
-                <TimerTab
-                  appState={appState}
-                  audioEngine={hybridEngine}
-                  patterns8D={appState.patterns8D} // ✅ FIXED: Use converted Pattern8D[] from appState
-                  patterns8DEngine={{
-                    setActivePattern: (pattern) => {
-                      console.log('🎨 Setting active pattern for visualizer:', pattern.name);
-                      updateAppState({ currentPattern: pattern });
-                    },
-                    clearActivePattern: () => {
-                      console.log('🎨 Clearing active pattern from visualizer');
-                      updateAppState({ currentPattern: null });
-                    }
-                  }}
-                  onStateChange={updateAppState}
-                  onTimerStatusUpdate={setTimerStatus}
-                  onTransitionNavigation={timerNavigationRef.current}
-                  onTimerControl={timerControlRef.current}
-                />
-              </Box>
-            </CollapsibleSection>
- </Grid>
- )}
 
-        {/* Frequency Visualizer - SAME HEIGHT */}
-        {!closedSections.includes('frequencyVisualizer') && (
-          <Grid item xs={12} sm={12} md={8} lg={6} xl={6} sx={{ 
-            display: 'flex',
-            maxHeight: { xs: '500px', sm: '500px', md: '450px', lg: '500px' }
-          }}>
-            <CollapsibleSection id="frequencyVisualizer" title="Frequency Visualizer" icon="📊" defaultOpen={false} onClose={handleSectionClose}>
-              <FrequencyVisualizer
-                state={frequencyVisualizerState}
-                audioContext={activeAudioEngine.audioContext}
-                analyserNode={activeAudioEngine.analyserNode}
-                title="Binaural Beat Frequency Visualizer"
-                showSpectrum={true}
-                showFrequencies={true}
-                showMetrics={true}
-              />
-            </CollapsibleSection>
- </Grid>
- )}
+
+
  </Grid>
 
  {/* Dark Screen Overlay */}
