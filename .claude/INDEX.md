@@ -5,6 +5,16 @@
 
 This index provides the optimal reading order and navigation paths for AI assistants working on the Electromagnetic Beat Lab (EBL) project.
 
+## 🚨 URGENT - CHECK FOR SESSION CONTEXT FIRST
+
+**BEFORE reading anything else, check for urgent session context:**
+- `URGENT_READ_FIRST.md` - Critical info from previous session (if exists)
+- `SESSION_*.md` - Detailed session context files (if any exist)
+
+**If these files exist, READ THEM FIRST before proceeding!**
+
+---
+
 ## 🚀 Quick Start (Essential Reading)
 
 ### 1. **Automated Context Initialization** 
@@ -15,6 +25,7 @@ This index provides the optimal reading order and navigation paths for AI assist
 
 ### 2. **Manual Context Reading Order**
 ```
+0. URGENT_READ_FIRST.md - Check this FIRST (if exists)
 1. INDEX.md (this file) ← YOU ARE HERE
 2. CLAUDE.md - Development rules & standards
 3. INITIAL.md - Project specifications & protocols
@@ -44,7 +55,16 @@ INFRASTRUCTURE.md → .gitlab-ci.yml → deployment files
 CLAUDE.md → VALIDATION.md → ../backend/pytest.ini → test files
 ```
 
+#### 🔄 **Continuing Previous Session**
+```
+URGENT_READ_FIRST.md → SESSION_*.md → TASK.md → proceed with work
+```
+
 ## 📁 Context Hierarchy (Authority Order)
+
+### **CRITICAL** (Check First - Session Continuity)
+- `.claude/URGENT_READ_FIRST.md` - Critical context from previous session
+- `.claude/SESSION_*.md` - Detailed session context and troubleshooting
 
 ### **PRIMARY** (Always Authoritative)
 - `.claude/CLAUDE.md` - Development standards, testing requirements, Git workflow
@@ -61,6 +81,8 @@ CLAUDE.md → VALIDATION.md → ../backend/pytest.ini → test files
 - `KEYCLOAK_SETUP.md` - Authentication system setup
 - `PIPELINE.md` - CI/CD pipeline documentation
 - `RAG_CONTEXT.md` - Retrieval patterns and code location guides
+- `DOCKER_MCP_SETUP.md` - Docker MCP server configuration
+- `SETUP_COMPLETE.md` - Setup completion checklist
 
 ### **AUTOMATION** (Commands & Templates)
 - `commands/*.md` - Automation scripts and workflows
@@ -92,6 +114,13 @@ CLAUDE.md → VALIDATION.md → ../backend/pytest.ini → test files
 3. `.gitlab-ci-deploy.yml` - Deployment jobs
 4. `../docker-compose.yml` - Local development setup
 
+### **MCP Server Configuration & Troubleshooting**
+1. `URGENT_READ_FIRST.md` - Latest session status (if exists)
+2. `SESSION_*.md` - Detailed troubleshooting context
+3. `DOCKER_MCP_SETUP.md` - Complete Docker MCP guide
+4. `SETUP_COMPLETE.md` - Setup verification checklist
+5. `../claude-code-mcp-config.json` - Claude Code MCP template
+
 ## 🔍 Quick Reference Lookup
 
 ### **Find Code Patterns**
@@ -107,6 +136,7 @@ CLAUDE.md → VALIDATION.md → ../backend/pytest.ini → test files
 - **WebSocket Problems**: Reference `../backend/websocket_manager.py`
 - **Audio Issues**: Check `../src/hooks/useAudioEngine.ts` and audio protocols in `INITIAL.md`
 - **Build Failures**: Review `.gitlab-ci.yml` and `INFRASTRUCTURE.md`
+- **MCP Server Issues**: Check `URGENT_READ_FIRST.md` and session context files
 
 ### **External Documentation Links**
 - **Web Audio API**: https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API
@@ -122,8 +152,16 @@ CLAUDE.md → VALIDATION.md → ../backend/pytest.ini → test files
 - Root directory may contain backup or symlinked versions
 - When in doubt, use the `.claude/` version
 
+### **Session Continuity**
+- **ALWAYS check for URGENT_READ_FIRST.md** when starting a new session
+- **Read SESSION_*.md files** for context from previous troubleshooting
+- **Update session context files** when making significant infrastructure changes
+- **User may be waiting for actions** mentioned in session context (e.g., restart required)
+
 ### **Context Validation**
 Before starting work, ensure:
+- [ ] Check for URGENT_READ_FIRST.md
+- [ ] Read any SESSION_*.md context files
 - [ ] Latest code pulled from repository
 - [ ] Development environment running (`npm run dev:all`)
 - [ ] All tests passing locally
@@ -131,10 +169,12 @@ Before starting work, ensure:
 
 ### **Emergency Context Recovery**
 If you lose context or get confused:
-1. **Re-read this INDEX.md file**
-2. **Check `../TASK.md` for current work status**
-3. **Review `CLAUDE.md` for development standards**
-4. **Ask for clarification rather than making assumptions**
+1. **Check URGENT_READ_FIRST.md** for immediate context
+2. **Re-read this INDEX.md file**
+3. **Check `../TASK.md` for current work status**
+4. **Review `CLAUDE.md` for development standards**
+5. **Read SESSION_*.md for recent troubleshooting**
+6. **Ask for clarification rather than making assumptions**
 
 ---
 
@@ -143,6 +183,7 @@ If you lose context or get confused:
 - ✅ Navigation paths established  
 - ✅ Task tracking system active
 - ✅ Validation processes defined
+- ✅ Session continuity system implemented
 
-**Last Updated:** 2025-08-01
-**Context Version:** 2.0
+**Last Updated:** 2025-10-21
+**Context Version:** 2.1
