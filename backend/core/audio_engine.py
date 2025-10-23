@@ -94,7 +94,23 @@ class AudioEngine:
         # PERFORMANCE: Cache settings values (avoid repeated dict lookups)
         base_frequency = max(5, min(20000, settings["base_frequency"]))
         beat_frequency = max(0.01, min(100, settings["beat_frequency"]))
-        amplitude = max(0.0, min(3.0, settings.get("amplitude", "0.3")))
+
+        # 🔧 PHASE 2 FIX: Separate amplitude (wave generation) from volume (loudness control)
+        # amplitude is ALWAYS 1.0 for clean wave generation (prevents PCM clipping)
+        # volume is applied AFTER wave generation for loudness control
+        amplitude = 1.0  # FIXED: Always generate clean waves at unity amplitude
+        volume = max(0.0, min(2.0, settings.get("volume", 0.5)))  # Volume control (default 50%)
+
+        # DEBUG LOGGING: Track volume and wave generation (Phase 1)
+        if not hasattr(session, 'frame_count'):
+            session['frame_count'] = 0
+        if session['frame_count'] % 300 == 0:  # Every 5 seconds at 60 FPS
+            print(f"[BACKEND DEBUG] Session {session_id[:8]}:")
+            print(f"   amplitude={amplitude:.3f} (FIXED at 1.0 - clean wave generation)")
+            print(f"   volume={volume:.3f} (loudness control, default 0.5)")
+            print(f"   base_freq={base_frequency:.1f}Hz, beat_freq={beat_frequency:.2f}Hz")
+            print(f"   frame_count={session['frame_count']}")
+        session['frame_count'] += 1
 
         # Calculate left and right frequencies for binaural beats
         freq_left = base_frequency
@@ -111,9 +127,10 @@ class AudioEngine:
         # PERFORMANCE: Use float32 instead of float64 (2x faster, sufficient precision)
         t = np.arange(frame_size, dtype=np.float32) / self.sample_rate
 
-        # Generate sine waves with phase continuity (critical for binaural beats)
-        left_wave = amplitude * np.sin(two_pi * freq_left * t + phase_left, dtype=np.float32)
-        right_wave = amplitude * np.sin(two_pi * freq_right * t + phase_right, dtype=np.float32)
+        # 🔧 PHASE 2 FIX: Generate clean sine waves at amplitude=1.0 (prevents clipping)
+        # Volume will be applied AFTER envelope and spatial processing
+        left_wave = np.sin(two_pi * freq_left * t + phase_left, dtype=np.float32)
+        right_wave = np.sin(two_pi * freq_right * t + phase_right, dtype=np.float32)
 
         # Update phases for next frame (maintain phase continuity)
         phase_increment_left = two_pi * freq_left * frame_size / self.sample_rate
@@ -141,6 +158,25 @@ class AudioEngine:
                 left_wave, right_wave, session_id
             )
 
+        # 🔧 PHASE 2 FIX: Apply volume AFTER envelope and spatial processing
+        # This ensures clean wave generation (no clipping) with proper loudness control
+        left_wave = left_wave * volume
+        right_wave = right_wave * volume
+
+        # DEBUG LOGGING: Check for wave clipping BEFORE PCM conversion
+        if session['frame_count'] % 300 == 1:  # Log right after amplitude log
+            wave_min_left = float(np.min(left_wave))
+            wave_max_left = float(np.max(left_wave))
+            wave_min_right = float(np.min(right_wave))
+            wave_max_right = float(np.max(right_wave))
+            print(f"[WAVE DEBUG] Before PCM:")
+            print(f"   left_wave range: [{wave_min_left:.4f}, {wave_max_left:.4f}]")
+            print(f"   right_wave range: [{wave_min_right:.4f}, {wave_max_right:.4f}]")
+            if abs(wave_min_left) > 1.0 or abs(wave_max_left) > 1.0:
+                print(f"   WARNING: LEFT WAVE WILL CLIP! (amplitude too high)")
+            if abs(wave_min_right) > 1.0 or abs(wave_max_right) > 1.0:
+                print(f"   WARNING: RIGHT WAVE WILL CLIP! (amplitude too high)")
+
         # PERFORMANCE: Direct conversion to PCM (removed intermediate anti-aliasing)
         # Anti-aliasing only needed for very high frequencies (>19.2kHz at 48kHz sample rate)
         if freq_right > self.sample_rate / 2.5:  # Nyquist safety margin
@@ -150,8 +186,20 @@ class AudioEngine:
             right_wave = signal.filtfilt(b, a, right_wave)
 
         # Convert to PCM format (moved after anti-aliasing check)
-        left_pcm = (left_wave * 32767).astype(np.int16)
-        right_pcm = (right_wave * 32767).astype(np.int16)
+        left_pcm_raw = left_wave * 32767
+        right_pcm_raw = right_wave * 32767
+        left_pcm = left_pcm_raw.astype(np.int16)
+        right_pcm = right_pcm_raw.astype(np.int16)
+
+        # DEBUG LOGGING: Detect PCM clipping
+        if session['frame_count'] % 300 == 1:
+            clipped_left = np.sum(np.abs(left_pcm_raw) > 32767)
+            clipped_right = np.sum(np.abs(right_pcm_raw) > 32767)
+            if clipped_left > 0 or clipped_right > 0:
+                print(f"WARNING: [PCM CLIPPING DETECTED!]")
+                print(f"   Left samples clipped: {clipped_left}/{frame_size}")
+                print(f"   Right samples clipped: {clipped_right}/{frame_size}")
+                print(f"   CAUSE: amplitude={amplitude} is too high (should be <=1.0)")
 
         # Binary mode: Return compact binary format for WebSocket transmission
         if binary_mode:
@@ -220,25 +268,32 @@ class AudioEngine:
     def validate_frequencies(self, settings: dict) -> dict:
         """Validate and sanitize frequency settings"""
         validated = settings.copy()
-        
+
         # Validate base frequency (human audible range)
         base_frequency = settings.get("base_frequency", 144)
         validated["base_frequency"] = max(20, min(20000, base_frequency))
-        
+
         # Validate beat frequency (therapeutic range)
         beat_frequency = settings.get("beat_frequency", 4)
         validated["beat_frequency"] = max(0.1, min(100, beat_frequency))
-        
-        # Validate amplitude (allow higher volumes for louder output)
-        amplitude = settings.get("amplitude", 1.2)
-        validated["amplitude"] = max(0.0, min(2.0, amplitude))
-        
+
+        # 🔧 PHASE 2 FIX: Use "volume" parameter instead of "amplitude"
+        # Volume controls loudness (default 0.5 = 50%)
+        # Amplitude is always 1.0 internally for clean wave generation
+        volume = settings.get("volume", 0.5)
+        validated["volume"] = max(0.0, min(2.0, volume))  # Allow up to 200% for boost mode
+
+        # BACKWARD COMPATIBILITY: If old "amplitude" param is provided, treat it as "volume"
+        if "amplitude" in settings and "volume" not in settings:
+            validated["volume"] = max(0.0, min(2.0, settings["amplitude"]))
+            print(f"WARNING: [DEPRECATED] 'amplitude' parameter is deprecated, use 'volume' instead")
+
         # Ensure frequencies don't exceed Nyquist limit
         max_freq = validated["base_frequency"] + validated["beat_frequency"]
         if max_freq > self.sample_rate / 2:
             # Reduce base frequency to stay within limits
             validated["base_frequency"] = (self.sample_rate / 2) - validated["beat_frequency"] - 100
-        
+
         return validated
     
     def get_session_metrics(self, session_id: str) -> dict:
@@ -268,12 +323,16 @@ class AudioEngine:
         }
     
     def create_adhd_protocol(self, protocol_type: str) -> dict:
-        """Create ADHD treatment protocol configurations"""
+        """Create ADHD treatment protocol configurations
+
+        🔧 PHASE 2 UPDATE: All protocols now use 'volume' parameter (default 0.5)
+        This ensures clean audio generation with no clipping or distortion
+        """
         protocols = {
             "focus": {
                 "base_frequency": 144,
                 "beat_frequency": 14,  # SMR range
-                "amplitude": 1.4,
+                "volume": 0.5,  # 🔧 FIXED: Changed from amplitude=1.4 to volume=0.5
                 "duration": 20 * 60,  # 20 minutes
                 "envelope_type": "adsr",
                 "description": "SMR training for attention and focus"
@@ -281,7 +340,7 @@ class AudioEngine:
             "calm": {
                 "base_frequency": 144,
                 "beat_frequency": 8,  # Alpha range
-                "amplitude": 1.2,
+                "volume": 0.5,  # 🔧 FIXED: Changed from amplitude=1.2 to volume=0.5
                 "duration": 15 * 60,
                 "envelope_type": "fade_in",
                 "description": "Alpha waves for relaxation and calm focus"
@@ -289,7 +348,7 @@ class AudioEngine:
             "deep_focus": {
                 "base_frequency": 144,
                 "beat_frequency": 40,  # Gamma range
-                "amplitude": 1.6,
+                "volume": 0.5,  # 🔧 FIXED: Changed from amplitude=1.6 to volume=0.5
                 "duration": 25 * 60,
                 "envelope_type": "pulse",
                 "pulse_frequency": 0.1,
@@ -298,11 +357,11 @@ class AudioEngine:
             "meditation": {
                 "base_frequency": 144,
                 "beat_frequency": 6,  # Theta range
-                "amplitude": 1.0,
+                "volume": 0.5,  # 🔧 FIXED: Changed from amplitude=1.0 to volume=0.5
                 "duration": 30 * 60,
                 "envelope_type": "constant",
                 "description": "Theta waves for meditation and creativity"
             }
         }
-        
+
         return protocols.get(protocol_type, protocols["focus"])

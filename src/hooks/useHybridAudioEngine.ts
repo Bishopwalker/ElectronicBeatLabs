@@ -145,7 +145,13 @@ export const useHybridAudioEngine = () => {
    * 3. Auto-crossfade to backend when ready
    */
   const startBinauralBeat = useCallback(async (config: BinauralBeatConfig) => {
-    console.log('🎵 Hybrid Engine: Starting binaural beat with config:', config);
+    // 🔍 DEBUG LOGGING: Track start parameters (Phase 1)
+    console.log('🎵 [HYBRID ENGINE DEBUG] Starting binaural beat:');
+    console.log('   ├─ base_frequency:', config.base_frequency, 'Hz');
+    console.log('   ├─ beat_frequency:', config.beat_frequency, 'Hz');
+    console.log('   ├─ amplitude:', config.amplitude ?? 'undefined (will use DEFAULT_VOLUME)');
+    console.log('   ├─ waveform:', config.waveform);
+    console.log('   └─ DEFAULT_VOLUME:', DEFAULT_VOLUME);
 
     // Initialize mixer if not ready
     if (!mixerRef.current) {
@@ -297,14 +303,19 @@ export const useHybridAudioEngine = () => {
   const updateVolume = useCallback((volume: number) => {
     const safeVolume = isNaN(volume) ? DEFAULT_VOLUME : Math.max(0, Math.min(2, volume));
 
-    console.log('🎚️ Hybrid Engine: Setting master volume to:', safeVolume);
+    // 🔍 DEBUG LOGGING: Track volume updates (Phase 1)
+    console.log('🎚️ [HYBRID ENGINE DEBUG] updateVolume called:');
+    console.log('   ├─ input volume:', volume);
+    console.log('   ├─ safe volume:', safeVolume, '(clamped to 0-2 range)');
+    console.log('   ├─ isNaN:', isNaN(volume));
+    console.log('   └─ mixer initialized:', !!mixerRef.current);
 
     // Update mixer master volume - this controls both engines since they're routed through it
     if (mixerRef.current) {
       mixerRef.current.setMasterVolume(safeVolume);
-      console.log('Hybrid Engine: Mixer master volume updated (controls both engines)');
+      console.log('   ✓ Mixer master volume updated (controls both engines)');
     } else {
-      console.warn('️ Hybrid Engine: Mixer not initialized, volume update skipped');
+      console.warn('   ⚠️ Mixer not initialized, volume update skipped');
     }
 
     // 🔥 REMOVED: Individual engine volume updates - caused duplicate volume setting

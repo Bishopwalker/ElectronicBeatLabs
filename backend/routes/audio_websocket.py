@@ -190,8 +190,25 @@ async def handle_websocket_message(message: dict, session_id: str, websocket: We
     try:
         if message_type == "start_session" or message_type == "start_stream":
             # Start audio session
-            settings = message.get("data", {}).get("settings", {}) if message.get("data") else message.get("settings", {})
+            # CRITICAL FIX: Frontend sends data directly in 'data' key, not nested in 'data.settings'
+            # Accept both formats for compatibility:
+            # Format 1: {"data": {"base_frequency": 144, ...}}  ← New format
+            # Format 2: {"data": {"settings": {"base_frequency": 144, ...}}}  ← Old format
+            # Format 3: {"settings": {"base_frequency": 144, ...}}  ← Alternative format
+            message_data = message.get("data", {})
+            if "settings" in message_data:
+                # Old nested format
+                settings = message_data["settings"]
+            elif message_data and ("base_frequency" in message_data or "beat_frequency" in message_data):
+                # New direct format - data contains settings directly
+                settings = message_data
+            else:
+                # Fallback to root-level settings
+                settings = message.get("settings", {})
+
             validated_settings = audio_engine.validate_frequencies(settings)
+            logger.info(f"[FREQUENCY SYNC] Received settings: {settings}")
+            logger.info(f"[FREQUENCY SYNC] Validated settings: {validated_settings}")
             audio_engine_session_id = audio_engine.start_session(validated_settings)
 
             # Store the mapping between WebSocket session ID and audio engine session ID

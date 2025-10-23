@@ -8,7 +8,8 @@ export const ElectromagneticLabStyles = {
   mainContainer: {
     width: '100vw',
     height: '100vh',
-     overflow: 'hidden',
+     overflowX: 'hidden',
+    overflowY: 'auto',
     display: 'grid',
 
   } as SxProps<Theme>,
@@ -135,7 +136,7 @@ export const ElectromagneticLabStyles = {
     backdropFilter: 'blur(10px)',
     borderBottom: '2px solid rgba(255, 255, 255, 0.2)',
     boxShadow: '0 4px 8px rgba(0, 0, 0, 0.3)',
-    flexShrink: 0,
+    flexShrink: 1,
     flexDirection: {
       xs: 'column',
       sm: 'column',
@@ -220,12 +221,12 @@ export const ElectromagneticLabStyles = {
   mainLayoutContainer: (closedSections: string[]) => ({
     p: 1,
     display: 'grid',
-
     gap: 1,
     width: '100%',
     height: '100%',
     overflow: 'hidden',
-    '& > div': {
+
+       '& > div': {
       transition: 'all 0.2s ease-in-out',
       opacity: closedSections.includes('all') ? 0 : 1,
       transform: closedSections.includes('all') ? 'scale(0.9)' : 'scale(1)',

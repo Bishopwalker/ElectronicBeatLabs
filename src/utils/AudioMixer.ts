@@ -103,6 +103,12 @@ export class AudioMixer {
     const safeVolume = Math.max(0, Math.min(2, volume));
     const now = this.audioContext.currentTime;
 
+    // 🔍 DEBUG LOGGING: Track volume changes (Phase 1)
+    console.log(`🎚️ [AUDIOMIXER DEBUG] setMasterVolume called:`);
+    console.log(`   ├─ input volume=${volume.toFixed(3)}, safe volume=${safeVolume.toFixed(3)}`);
+    console.log(`   ├─ current mode=${this.currentMode}`);
+    console.log(`   └─ crossfading=${this.isCrossfading}`);
+
     // DON'T override crossfade! Scale the existing gains proportionally
     const currentFrontend = this.frontendGain.gain.value;
     const currentBackend = this.backendGain.gain.value;
@@ -118,16 +124,19 @@ export class AudioMixer {
     if (this.currentMode === 'frontend') {
       this.frontendGain.gain.setValueAtTime(safeVolume * 0.5, now); // 50% for equal-power
       this.backendGain.gain.setValueAtTime(0, now);
+      console.log(`   ├─ FRONTEND mode: frontendGain=${(safeVolume * 0.5).toFixed(3)}, backendGain=0.000`);
     } else if (this.currentMode === 'backend') {
       this.frontendGain.gain.setValueAtTime(0, now);
       this.backendGain.gain.setValueAtTime(safeVolume * 0.5, now); // 50% for equal-power
+      console.log(`   ├─ BACKEND mode: frontendGain=0.000, backendGain=${(safeVolume * 0.5).toFixed(3)}`);
     } else if (this.currentMode === 'hybrid') {
       // In hybrid mode, split volume to prevent doubling
       this.frontendGain.gain.setValueAtTime(safeVolume * 0.25, now);
       this.backendGain.gain.setValueAtTime(safeVolume * 0.25, now);
+      console.log(`   ├─ HYBRID mode: frontendGain=${(safeVolume * 0.25).toFixed(3)}, backendGain=${(safeVolume * 0.25).toFixed(3)}`);
     }
 
-    console.log(`🔊 AudioMixer: Master volume set to ${safeVolume.toFixed(2)} (mode: ${this.currentMode})`);
+    console.log(`   └─ Master volume set to ${safeVolume.toFixed(2)}`);
   }
 
   /**
@@ -144,7 +153,12 @@ export class AudioMixer {
     const now = this.audioContext.currentTime;
     const endTime = now + duration;
 
-    console.log(`🎚️ AudioMixer: EQUAL-POWER crossfading to BACKEND over ${duration}s...`);
+    // 🔍 DEBUG LOGGING: Crossfade tracking (Phase 1)
+    console.log(`🎚️ [AUDIOMIXER DEBUG] Starting crossfade to BACKEND:`);
+    console.log(`   ├─ duration=${duration.toFixed(1)}s`);
+    console.log(`   ├─ current frontend gain=${this.frontendGain.gain.value.toFixed(3)}`);
+    console.log(`   ├─ current backend gain=${this.backendGain.gain.value.toFixed(3)}`);
+    console.log(`   └─ using equal-power curve (cosine/sine)`);
 
     // EQUAL-POWER CROSSFADE: Use cosine/sine curves
     // This maintains constant perceived loudness during crossfade

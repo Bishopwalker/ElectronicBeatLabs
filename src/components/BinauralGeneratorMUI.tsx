@@ -453,7 +453,69 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
               </Grid>
             </Grid>
           </Paper>
-
+          {/* Frequency Analyzer */}
+          {visualizationData && (
+            <Paper
+              elevation={0}
+              sx={{
+                p: 0.75,
+                background: 'rgba(255, 107, 0, 0.05)',
+                border: '1px solid rgba(255, 107, 0, 0.3)',
+              }}
+            >
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                📊 Real-time Frequency Analysis
+              </Typography>
+              <Grid container spacing={1}>
+                <Grid size={4}>
+                  <Typography variant="caption" sx={{ fontSize: '0.6rem', color: 'text.secondary' }}>
+                    SNR
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontSize: '0.75rem', color: '#ff6b00', fontWeight: 600 }}>
+                    {visualizationData.signalQuality.snr.toFixed(1)} dB
+                  </Typography>
+                </Grid>
+                <Grid size={4}>
+                  <Typography variant="caption" sx={{ fontSize: '0.6rem', color: 'text.secondary' }}>
+                    Clarity
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontSize: '0.75rem', color: '#ff6b00', fontWeight: 600 }}>
+                    {(visualizationData.signalQuality.clarity * 100).toFixed(0)}%
+                  </Typography>
+                </Grid>
+                <Grid size={4}>
+                  <Typography variant="caption" sx={{ fontSize: '0.6rem', color: 'text.secondary' }}>
+                    Quality
+                  </Typography>
+                  <Chip
+                    label={stats.dataQuality.toUpperCase()}
+                    size="small"
+                    sx={{
+                      fontSize: '0.55rem',
+                      height: '16px',
+                      backgroundColor:
+                        stats.dataQuality === 'excellent' ? 'rgba(76, 175, 80, 0.2)' :
+                        stats.dataQuality === 'good' ? 'rgba(255, 193, 7, 0.2)' :
+                        stats.dataQuality === 'fair' ? 'rgba(255, 152, 0, 0.2)' :
+                        'rgba(244, 67, 54, 0.2)',
+                      color:
+                        stats.dataQuality === 'excellent' ? '#4caf50' :
+                        stats.dataQuality === 'good' ? '#ffc107' :
+                        stats.dataQuality === 'fair' ? '#ff9800' :
+                        '#f44336',
+                    }}
+                  />
+                </Grid>
+              </Grid>
+              {visualizationData.peakFrequencies.length > 0 && (
+                <Box sx={{ mt: 0.5 }}>
+                  <Typography variant="caption" sx={{ fontSize: '0.6rem', color: 'text.secondary' }}>
+                    Detected Peaks: {visualizationData.peakFrequencies.slice(0, 2).map(p => `${p.frequency.toFixed(1)}Hz`).join(', ')}
+                  </Typography>
+                </Box>
+              )}
+            </Paper>
+          )}
 
           <Stack direction="row" spacing={0.5} justifyContent="center">
             <IconButton

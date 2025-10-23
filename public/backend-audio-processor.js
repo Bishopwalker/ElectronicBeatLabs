@@ -370,6 +370,14 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
     const rawVolume = volumeParam[0] || this.volume || 0.8;
     const volume = Math.min(2, isNaN(rawVolume) ? 0.8 : rawVolume); // Max 200% for flexibility, default 0.8 (80%) if NaN
 
+    // 🔍 DEBUG LOGGING: Track volume every 5 seconds (Phase 1)
+    if (this.frameCount % 3330 === 0 && this.isPlaying) {
+      console.log(`🎚️ [AUDIOWORKLET DEBUG] Volume tracking:`);
+      console.log(`   ├─ rawVolume=${rawVolume.toFixed(3)}, final volume=${volume.toFixed(3)}`);
+      console.log(`   ├─ this.volume=${this.volume.toFixed(3)}, volumeParam[0]=${volumeParam[0]?.toFixed(3) || 'undefined'}`);
+      console.log(`   └─ max allowed=2.0 (will clamp output to prevent distortion)`);
+    }
+
     // Buffer state management
     const availableSamples = this._audioBuffer.availableSamples;
 
@@ -432,9 +440,30 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
 
       if (this.isPlaying && this._audioBuffer.availableSamples > 0) {
         const sample = this.readFromRingBuffer();
-        // Apply volume and fade, then clamp to prevent clipping
-        const leftOut = Math.max(-1.0, Math.min(2.0, sample.left * volume * fadeMultiplier));
-        const rightOut = Math.max(-1.0, Math.min(2.0, sample.right * volume * fadeMultiplier));
+
+        // Apply volume and fade
+        const leftBeforeClamp = sample.left * volume * fadeMultiplier;
+        const rightBeforeClamp = sample.right * volume * fadeMultiplier;
+
+        // Clamp to prevent clipping
+        const leftOut = Math.max(-1.0, Math.min(2.0, leftBeforeClamp));
+        const rightOut = Math.max(-1.0, Math.min(2.0, rightBeforeClamp));
+
+        // 🔍 DEBUG LOGGING: Sample values and clipping detection (Phase 1)
+        if (this.frameCount % 3330 === 0 && i === 0 && this.isPlaying) {
+          console.log(`🎵 [AUDIOWORKLET DEBUG] Sample processing:`);
+          console.log(`   ├─ raw PCM: (${sample.left.toFixed(4)}, ${sample.right.toFixed(4)})`);
+          console.log(`   ├─ × volume (${volume.toFixed(3)}) × fade (${fadeMultiplier.toFixed(3)})`);
+          console.log(`   ├─ before clamp: (${leftBeforeClamp.toFixed(4)}, ${rightBeforeClamp.toFixed(4)})`);
+          console.log(`   └─ final output: (${leftOut.toFixed(4)}, ${rightOut.toFixed(4)})`);
+
+          // Detect if clamping occurred (indicates too-loud audio)
+          if (Math.abs(leftBeforeClamp) > 1.0 || Math.abs(rightBeforeClamp) > 1.0) {
+            console.warn(`   ⚠️  OUTPUT CLAMPED! Audio may be distorted or too loud.`);
+            console.warn(`   ⚠️  This indicates backend amplitude or volume is too high.`);
+          }
+        }
+
         leftChannel[i] = leftOut;
         rightChannel[i] = rightOut;
         consumed++;
