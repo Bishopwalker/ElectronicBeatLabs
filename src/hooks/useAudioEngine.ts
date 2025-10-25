@@ -29,9 +29,12 @@ export const useAudioEngine = () => {
   const externalAnalyserRef = useRef<AnalyserNode | null>(null);
   const equalizerInputRef = useRef<GainNode | null>(null);
   const equalizerOutputRef = useRef<GainNode | null>(null);
-  
+
   // 🔥 CRITICAL FIX: Stop lock to prevent auto-restart race conditions
   const stopLockRef = useRef<boolean>(false);
+
+  // 🔥 NEW: Initialization lock to prevent duplicate AudioContext creation
+  const initializingRef = useRef<boolean>(false);
   
   const [audioState, setAudioState] = useState<FrontendAudioEngineState>({
     isPlaying: false,
@@ -64,21 +67,39 @@ export const useAudioEngine = () => {
   // Initialize Web Audio API with user gesture handling (persistent context)
   const initializeAudio = useCallback(async (): Promise<AudioContext | null> => {
     try {
-      // Return existing context if already initialized and running
+      // 🔥 SAFEGUARD 1: Return existing context if already initialized and running
       if (audioContextRef.current && audioContextRef.current.state === 'running') {
-        console.log('🎵 Using existing audio context:', audioContextRef.current.state);
+        console.log('✅ [SAFEGUARD] Using existing audio context:', audioContextRef.current.state);
         return audioContextRef.current;
+      }
+
+      // 🔥 SAFEGUARD 2: Prevent concurrent initialization attempts
+      if (initializingRef.current) {
+        console.warn('⚠️ [SAFEGUARD] AudioContext initialization already in progress, waiting...');
+        // Wait for existing initialization to complete (max 2 seconds)
+        let attempts = 0;
+        while (initializingRef.current && attempts < 20) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+          attempts++;
+        }
+        // Return the context that was created by the other initialization
+        if (audioContextRef.current) {
+          console.log('✅ [SAFEGUARD] Returning context created by parallel initialization');
+          return audioContextRef.current;
+        }
       }
 
       // Resume existing context if suspended
       if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
         console.log('🎵 Resuming suspended audio context...');
         await audioContextRef.current.resume();
-
-
         console.log('🎵 Audio context resumed, new state:', audioContextRef.current.state);
         return audioContextRef.current;
       }
+
+      // 🔥 SAFEGUARD 3: Set initialization lock
+      initializingRef.current = true;
+      console.log('🔒 [SAFEGUARD] Initialization lock acquired');
 
       // Create new context only if none exists
       console.log('🎵 Creating new persistent audio context...');
@@ -87,21 +108,23 @@ export const useAudioEngine = () => {
 
       // Resume if suspended (required for user gesture)
       if (context.state === 'suspended') {
-        console.log('🎵 Audio context suspended, resuming...');
-        await context.resume();
-        console.log('🎵 Audio context resumed, new state:', context.state);
+        console.log('🎵 Audio context suspended, attempting to resume...');
+        try {
+          await context.resume();
+          console.log('✅ Audio context resumed successfully, new state:', context.state);
+        } catch (error) {
+          // 🔥 FIX: Browser autoplay policy blocks AudioContext.resume() without user gesture
+          // This is EXPECTED on page load - context will resume when user clicks "start"
+          console.log('⏸️ AudioContext requires user gesture to resume (expected on page load)');
+          console.log('💡 Context will auto-resume when user starts audio playback');
+          // Don't throw error - just leave context suspended until user interaction
+        }
       }
 
       if (context.state !== 'running') {
-        console.warn('⚠️ Audio context not running after resume. State:', context.state);
-        // Try to create a dummy sound to trigger user gesture
-        const oscillator = context.createOscillator();
-        const gainNode = context.createGain();
-        gainNode.gain.setValueAtTime(0, context.currentTime);
-        oscillator.connect(gainNode);
-        gainNode.connect(context.destination);
-        oscillator.start();
-        oscillator.stop(context.currentTime + 0.01);
+        console.log('⏸️ Audio context not running yet (state:', context.state, ') - will resume on user interaction');
+        // Don't try to force-start with dummy oscillator - this also requires user gesture
+        // Context will resume automatically when user clicks "start" button
       }
 
       setElectromagnetic(prev=>({
@@ -119,11 +142,20 @@ export const useAudioEngine = () => {
       }));
 
       console.log('✅ Persistent audio context initialized successfully');
+
+      // 🔥 SAFEGUARD 4: Release initialization lock
+      initializingRef.current = false;
+      console.log('🔓 [SAFEGUARD] Initialization lock released');
+
       return context;
     } catch (error) {
       console.error('❌ Failed to initialize audio context:', error);
-      return null;
 
+      // 🔥 SAFEGUARD 5: Release lock on error
+      initializingRef.current = false;
+      console.log('🔓 [SAFEGUARD] Initialization lock released (error path)');
+
+      return null;
     }
   }, []);
 

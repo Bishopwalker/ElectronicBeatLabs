@@ -13,7 +13,8 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import type {TimerPreset, TimerStatus} from '../data/timer';
 import type {AppState} from "../types";
 import { FrequencyVisualizer } from './FrequencyVisualizer';
- import { DEFAULT_BASE_FREQUENCY, DEFAULT_BEAT_FREQUENCY } from '../constants/audio.constants';
+import { DEFAULT_BASE_FREQUENCY, DEFAULT_BEAT_FREQUENCY } from '../constants/audio.constants';
+import CollapsibleSection from './shared/CollapsibleSection';
 
 interface TimerCountdownDisplayProps {
     timerStatus: TimerStatus | null,
@@ -43,9 +44,6 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
                                                                          defaultPosition = { x: window.innerWidth - 520, y: 150 },
                                                                          defaultSize = { width: 500, height: 200 }
                                                                      }) => {
-    // 🔥 NEW: State for collapsing the visualizer
-    const [isVisualizerCollapsed, setIsVisualizerCollapsed] = useState(false);
-
     // Show countdown if timer is running OR if session is active
     const shouldShow = isVisible && timerStatus && (
         timerStatus.isRunning ||
@@ -63,7 +61,7 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
             audioContext.resume().catch(err => console.warn('Failed to resume audio context:', err));
         }
     }, [audioContext]);
-    
+
     // Timer status for preset tracking
     const currentTransition = timerStatus.current_transition;
     const timeRemainingCurrent = timerStatus.time_remaining_current;
@@ -86,9 +84,6 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
     const transitionProgress = currentTransition ?
         ((currentTransition.duration_minutes - timeRemainingCurrent) / currentTransition.duration_minutes) * 100 : 0;
 
-    // Force component update when time changes
-    const timeKey = `${Math.floor((timeRemainingCurrent || 0) * 60)}`;
-
     // 🔥 CRITICAL FIX: Use ACTUAL audio engine state instead of appState
     // The hybrid engine knows the real isPlaying state from both frontend and backend
     const isAudioActuallyPlaying = hybridEngine?.audioState?.isPlaying || false;
@@ -104,9 +99,9 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
         });
     }, []);
 
-    // 🔥 CRITICAL FIX: Build visualizerState with proper structure for FrequencyVisualizer
-    // AppState doesn't have 'audio' property anymore, so we create a hybrid state object
-    // that includes both AppState properties AND the audio engine reference
+    // 🔥 OPTIMIZED: Build minimal visualizerState for FrequencyVisualizer
+    // Only include properties that FrequencyVisualizer actually uses
+    // Removed timer, patterns8D, electromagnetic, etc. to prevent unnecessary re-renders
     const visualizerState = useMemo(() => {
         // Calculate frequencies from timer transition or use defaults
         const baseFreq = currentTransition?.frequency_hz || DEFAULT_BASE_FREQUENCY;
@@ -130,20 +125,8 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
                 beat_frequency: beatFreq,
             },
 
-            // 🔥 AppState properties (spread safely)
+            // 🔥 Minimal AppState properties (only what's needed)
             mode: appState?.mode || 'AUTO',
-            currentPattern: appState?.currentPattern || null,
-            patterns8D: appState?.patterns8D || [],
-            timer: timerStatus,
-            electromagnetic: appState?.electromagnetic,
-            systemStatus: appState?.systemStatus,
-            visualizations: appState?.visualizations,
-            spatialAudio: appState?.spatialAudio,
-            youtube: appState?.youtube,
-            frequency: appState?.frequency,
-            adhd: appState?.adhd,
-            frequencyRange: appState?.frequencyRange,
-            waveGuide: appState?.waveGuide,
             activeTab: appState?.activeTab || 'main'
         };
     }, [
@@ -152,69 +135,36 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
         currentTransition?.frequency_hz,
         currentTransition?.right_ear_hz,
         currentTransition?.left_ear_hz,
-        timerStatus,
         appState?.mode,
-        appState?.currentPattern,
-        appState?.patterns8D,
-        appState?.electromagnetic,
-        appState?.systemStatus,
-        appState?.visualizations,
-        appState?.spatialAudio,
-        appState?.youtube,
-        appState?.frequency,
-        appState?.adhd,
-        appState?.frequencyRange,
-        appState?.waveGuide,
         appState?.activeTab
     ]);
 
     return (
-        <Paper
-            key={timeKey}
-            elevation={3}
-            sx={{
-                display: 'grid',
-                p: 1,  // ✅ REDUCED: from 2 to 1 - much less padding!
-                paddingBlock: 1,  // ✅ REDUCED: from 2 to 1 - less vertical space
-                background: 'linear-gradient(45deg, rgba(255, 107, 0, 0.1), rgba(138, 43, 226, 0.1))',
-                border: '1px solid',
-                borderColor: '#ff6b00',
-                borderRadius: 1,
-                overflowX: 'hidden',  // ✅ CHANGED: from visible to hidden - prevents overflow issuesF
-                overflowY: 'scroll',
-                width: '100%',
-                mb: 2,  // ✅ REDUCED: from 3 to 2 - less bottom margin
-                boxShadow: '0 4px 20px rgba(255, 107, 0, 0.3)',
-                '&::before': {
-                    content: '""',
-                     top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    background: 'linear-gradient(45deg, rgba(255, 107, 0, 0.05), rgba(138, 43, 226, 0.05))',
-                 }
-            }}
-        >
-            {/* 🔥 FIXED: Compact 50/50 Horizontal Layout */}
-            <Box sx={{
-                position: 'relative',
-                zIndex: 1,
-                display: 'flex',
-                gap: 1,  // Tight gap between sections
-                alignItems: 'stretch',
-                width: '100%',
-                minHeight: '280px',  // ✅ REDUCED: from 350px - much more compact!
-                maxHeight: '320px',  // ✅ ADDED: cap the maximum height
-                height: 'auto',
-            }}>
-                {/* LEFT SIDE: Timer Section - 50% Width */}
+        <Box sx={{ width: '100%', mb: 2 }}>
+            <CollapsibleSection
+                id="timerPanel"
+                title={preset?.name || 'Timer Session'}
+                icon="⏰"
+                onClose={onClose}
+                defaultOpen={true}
+                compact={false}
+            >
+                {/* 🔥 FIXED: Compact 50/50 Horizontal Layout */}
                 <Box sx={{
-                    flex: '1 1 50%',
                     display: 'flex',
-                    height: 'fit-content',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between'
+                    gap: 2,  // Gap between timer and visualizer
+                    alignItems: 'stretch',
+                    width: '100%',
+                    minHeight: '280px',
+                    height: 'auto',
                 }}>
+                    {/* LEFT SIDE: Timer Section - 50% Width */}
+                    <Box sx={{
+                        flex: '1 1 50%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between'
+                    }}>
                     {/* Header */}
                     <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5}}>
                         <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5}}>
@@ -368,8 +318,43 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
                         </Tooltip>
                     </Box>
                 </Box>
+
+                {/* RIGHT SIDE: Frequency Visualizer - 50% Width */}
+                <Box sx={{
+                    flex: '1 1 50%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    minHeight: '280px',
+                    bgcolor: 'rgba(0, 255, 136, 0.03)',
+                    borderRadius: 1,
+                    border: '1px solid rgba(0, 255, 136, 0.2)',
+                    p: 1
+                }}>
+                    <Typography variant="caption" sx={{
+                        color: '#00ff88',
+                        fontWeight: 'bold',
+                        mb: 1,
+                        fontSize: '0.8rem'
+                    }}>
+                        🎵 Live Frequency Analysis
+                    </Typography>
+                    {audioContext && analyserNode ? (
+                        <FrequencyVisualizer
+                            state={visualizerState as AppState}
+                            audioContext={audioContext}
+                            analyserNode={analyserNode}
+                        />
+                    ) : (
+                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
+                            Audio visualization unavailable
+                        </Typography>
+                    )}
+                </Box>
             </Box>
-        </Paper>
+            </CollapsibleSection>
+        </Box>
     );
 };
 export default TimerCountdownDisplay;

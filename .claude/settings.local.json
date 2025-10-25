@@ -127,7 +127,8 @@
       "Bash(py -3.11 --version)",
       "Bash(py -3.11 -c \"import sys; print(sys.executable)\")",
       "Bash(.venv/Scripts/python.exe -c \"import numpy; import scipy; import fastapi; import pyaudio; print(''✅ NumPy:'', numpy.__version__); print(''✅ SciPy:'', scipy.__version__); print(''✅ FastAPI:'', fastapi.__version__); print(''✅ PyAudio imported successfully'')\")",
-      "Bash(venv_linux/Scripts/python.exe -m uvicorn:*)"
+      "Bash(venv_linux/Scripts/python.exe -m uvicorn:*)",
+      "mcp__codex__codex_analyze"
     ],
     "deny": [],
     "ask": []

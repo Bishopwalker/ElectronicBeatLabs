@@ -87,8 +87,8 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
         // If connecting, log but don't return - let backend wait for it
         if (wsRef.current && wsRef.current.readyState === WebSocket.CONNECTING) {
             console.log('⏳ WebSocket: Connection already in progress (readyState = CONNECTING)');
-            setIsConnected(true);  // Update state in case it's out of sync
-            setIsConnecting(false);
+            setIsConnected(false);  // 🔥 FIX: NOT connected yet, still connecting
+            setIsConnecting(true);  // 🔥 FIX: IS connecting, not false
             return;
         }
 

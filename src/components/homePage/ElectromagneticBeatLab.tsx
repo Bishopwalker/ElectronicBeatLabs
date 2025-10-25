@@ -786,7 +786,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
         {/* ROW 1: Equalizer, Master Controls, Patterns */}
         {/* Patterns - SAME HEIGHT, Internal Scroll */}
         {!closedSections.includes('patternID') && (
-            <Grid  item xs={12} sm={6} md={4} lg={4} xl={3} sx={{
+            <Grid item size={{ xs: 12, sm: 6, md: 4, lg: 4, xl: 3 }} sx={{
               display: 'flex',
               maxHeight: { xs: '400px', sm: '380px', md: '550px', lg: '775px' },
               minHeight: { xs: '400px', sm: '380px', md: '550px', lg: '650px' }
@@ -805,7 +805,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
         )}
         {/* Frequency Visualizer - SAME HEIGHT */}
         {!closedSections.includes('frequencyVisualizer') && (
-            <Grid item xs={12} sm={12} md={8} lg={6} xl={6} sx={{
+            <Grid item size={{ xs: 12, sm: 12, md: 8, lg: 6, xl: 6 }} sx={{
               display: 'flex',
               overflowY: 'auto',
               maxHeight: { xs: '500px', sm: '450px', md: 'fit-content', lg: 'fit-content' }
@@ -826,7 +826,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
 
         {/* Binaural Beat Generator - SAME HEIGHT, Internal Scroll */}
         {!closedSections.includes('binauralBeats') && (
-            <Grid item xs={12} sm={6} md={4} lg={4} xl={3} sx={{
+            <Grid item size={{ xs: 12, sm: 6, md: 4, lg: 4, xl: 3 }} sx={{
               display: 'flex',
               maxHeight: { xs: '500px', sm: '450px', md: 'fit-content', lg: 'fit-content' }
             }}>
@@ -890,7 +890,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
         )}
         {/* Timer & Sessions - Wider for better usability */}
         {!closedSections.includes('timerPanel') && (
-            <Grid item xs={12} sm={6} md={4} lg={3} xl={3} sx={{
+            <Grid item size={{ xs: 12, sm: 6, md: 4, lg: 3, xl: 3 }} sx={{
               display: 'flex',
               maxHeight: { xs: '500px', sm: '450px', md: '550px', lg: '550px' }
             }}>
@@ -921,7 +921,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
         )}
         {/* Equalizer - SAME HEIGHT */}
         {!closedSections.includes('equalizer') && (
-          <Grid item xs={12} sm={6} md={4} lg={4} xl={3} sx={{ 
+          <Grid item size={{ xs: 12, sm: 6, md: 4, lg: 4, xl: 3 }} sx={{ 
             display: 'flex',
             flex: '1 1 2',
 
@@ -943,7 +943,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
 
         {/* Master Controls - SAME HEIGHT */}
         {!closedSections.includes('masterControls') && (
-          <Grid item xs={12} sm={6} md={4} lg={4} xl={3} sx={{ 
+          <Grid item size={{ xs: 12, sm: 6, md: 4, lg: 4, xl: 3 }} sx={{ 
             display: 'flex',
             maxHeight: { xs: '400px', sm: '380px', md: '350px', lg: '350px' }
           }}>
@@ -976,7 +976,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
 
         {/* Spatial Visualizer - Same width as Frequency Visualizer */}
         {!closedSections.includes('visualizeID') && (
-          <Grid item xs={12} sm={12} md={8} lg={6} xl={6} sx={{ 
+          <Grid item size={{ xs: 12, sm: 12, md: 8, lg: 6, xl: 6 }} sx={{ 
             display: 'flex',
             minWidth: { xs: '25%', sm: '25%', md: '25%', lg: '25%' },
             maxHeight: { xs: '500px', sm: '500px', md: '450px', lg: '550px' }

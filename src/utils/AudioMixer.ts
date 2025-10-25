@@ -19,8 +19,9 @@ export class AudioMixer {
   // REMOVED: merger not needed - we mix stereo signals directly
   public analyserNode: AnalyserNode;
 
-  private currentMode: 'frontend' | 'backend' | 'hybrid' = 'frontend';
+  private currentMode: 'frontend' | 'backend' | 'hybrid';
   private isCrossfading: boolean = false;
+
 
   constructor(audioContext: AudioContext) {
     this.audioContext = audioContext;
@@ -28,10 +29,9 @@ export class AudioMixer {
     // Create gain nodes for each engine
     this.frontendGain = audioContext.createGain();
     this.backendGain = audioContext.createGain();
-
-    // Start with frontend at 50% volume (equal-power standard), backend muted
+     // Start with frontend at 50% volume (equal-power standard), backend muted
     this.frontendGain.gain.value = 0.5;
-    this.backendGain.gain.value = 0.0;
+    this.backendGain.gain.value = 0.5;
 
     // No merger needed - stereo signals mix naturally at the analyser
 
@@ -84,7 +84,7 @@ export class AudioMixer {
   setFrontendGain(value: number): void {
     const safeValue = Math.max(0, Math.min(1, value));
     this.frontendGain.gain.setValueAtTime(safeValue, this.audioContext.currentTime);
-    console.log(`🎚️ AudioMixer: Frontend gain set to ${safeValue.toFixed(2)}`);
+    console.log(`🎚️ AudioMixer: Frontend gain set to ${safeValue.toFixed(3)}`);
   }
 
   /**
@@ -93,7 +93,7 @@ export class AudioMixer {
   setBackendGain(value: number): void {
     const safeValue = Math.max(0, Math.min(1, value));
     this.backendGain.gain.setValueAtTime(safeValue, this.audioContext.currentTime);
-    console.log(`🎚️ AudioMixer: Backend gain set to ${safeValue.toFixed(2)}`);
+    console.log(`🎚️ AudioMixer: Backend gain set to ${safeValue.toFixed(3)}`);
   }
 
   /**
@@ -125,11 +125,11 @@ export class AudioMixer {
       this.frontendGain.gain.setValueAtTime(safeVolume * 0.5, now); // 50% for equal-power
       this.backendGain.gain.setValueAtTime(0, now);
       console.log(`   ├─ FRONTEND mode: frontendGain=${(safeVolume * 0.5).toFixed(3)}, backendGain=0.000`);
-    } else if (this.currentMode === 'backend') {
+    } if (this.currentMode === 'backend') {
       this.frontendGain.gain.setValueAtTime(0, now);
       this.backendGain.gain.setValueAtTime(safeVolume * 0.5, now); // 50% for equal-power
       console.log(`   ├─ BACKEND mode: frontendGain=0.000, backendGain=${(safeVolume * 0.5).toFixed(3)}`);
-    } else if (this.currentMode === 'hybrid') {
+    } if (this.currentMode === 'hybrid') {
       // In hybrid mode, split volume to prevent doubling
       this.frontendGain.gain.setValueAtTime(safeVolume * 0.25, now);
       this.backendGain.gain.setValueAtTime(safeVolume * 0.25, now);
@@ -191,7 +191,7 @@ export class AudioMixer {
 
     // Update mode after crossfade completes
     setTimeout(() => {
-      this.currentMode = 'backend';
+      this.currentMode = 'hybrid';
       this.isCrossfading = false;
       console.log('✅ AudioMixer: Equal-power crossfade to backend complete');
     }, duration * 1000);

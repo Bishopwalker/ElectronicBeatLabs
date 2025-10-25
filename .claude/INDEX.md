@@ -60,6 +60,11 @@ CLAUDE.md → VALIDATION.md → ../backend/pytest.ini → test files
 URGENT_READ_FIRST.md → SESSION_*.md → TASK.md → proceed with work
 ```
 
+#### 🤖 **Dual-Agent Development (Claude + Codex)**
+```
+AGENT_WORKFLOW.md → DUAL_AGENT_QUICK_REF.md → Create CURRENT_PLAN.md → Invoke Codex
+```
+
 ## 📁 Context Hierarchy (Authority Order)
 
 ### **CRITICAL** (Check First - Session Continuity)
@@ -83,6 +88,14 @@ URGENT_READ_FIRST.md → SESSION_*.md → TASK.md → proceed with work
 - `RAG_CONTEXT.md` - Retrieval patterns and code location guides
 - `DOCKER_MCP_SETUP.md` - Docker MCP server configuration
 - `SETUP_COMPLETE.md` - Setup completion checklist
+
+### **DUAL-AGENT SYSTEM** (Claude + Codex Workflow)
+- `AGENT_WORKFLOW.md` - Complete dual-agent development system documentation
+- `DUAL_AGENT_QUICK_REF.md` - Quick reference for daily use
+- `commands/codex-snapshot.md` - Codex snapshot automation command
+- `commands/codex-enforce.md` - Codex enforcement automation command
+- `templates/CURRENT_PLAN_TEMPLATE.md` - Implementation plan template
+- `templates/CODEX_REPORT_TEMPLATE.md` - Enforcement report template
 
 ### **AUTOMATION** (Commands & Templates)
 - `commands/*.md` - Automation scripts and workflows
@@ -120,6 +133,14 @@ URGENT_READ_FIRST.md → SESSION_*.md → TASK.md → proceed with work
 3. `DOCKER_MCP_SETUP.md` - Complete Docker MCP guide
 4. `SETUP_COMPLETE.md` - Setup verification checklist
 5. `../claude-code-mcp-config.json` - Claude Code MCP template
+
+### **Dual-Agent Development System**
+1. `DUAL_AGENT_QUICK_REF.md` - Quick start guide (read this first)
+2. `AGENT_WORKFLOW.md` - Complete workflow documentation
+3. `commands/codex-snapshot.md` - How to invoke Codex for snapshots
+4. `commands/codex-enforce.md` - How to invoke Codex for enforcement
+5. `templates/CURRENT_PLAN_TEMPLATE.md` - Plan template for Claude
+6. `templates/CODEX_REPORT_TEMPLATE.md` - Report template for Codex
 
 ## 🔍 Quick Reference Lookup
 
@@ -180,10 +201,11 @@ If you lose context or get confused:
 
 **📋 Context Health Status**
 - ✅ Primary files present and up-to-date
-- ✅ Navigation paths established  
+- ✅ Navigation paths established
 - ✅ Task tracking system active
 - ✅ Validation processes defined
 - ✅ Session continuity system implemented
+- ✅ Dual-agent development system implemented
 
-**Last Updated:** 2025-10-21
-**Context Version:** 2.1
+**Last Updated:** 2025-10-25
+**Context Version:** 2.2

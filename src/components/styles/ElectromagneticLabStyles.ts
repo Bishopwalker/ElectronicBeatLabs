@@ -4,11 +4,14 @@
 import type { SxProps, Theme } from '@mui/material/styles';
 
 export const ElectromagneticLabStyles = {
-  // Main container styles - GRID: Header 15vh, Content 85vh
+  // Main container styles - GRID: Auto height with full viewport minimum
+  // ✅ FIXED: height: auto allows container to grow when timer appears
+  // Per CLAUDE.md: mainContainer must have minHeight: 100vh, height: auto, overflowY: auto
   mainContainer: {
     width: '100vw',
-    height: '100vh',
-     overflowX: 'hidden',
+    minHeight: '100vh',
+    height: 'auto',
+    overflowX: 'hidden',
     overflowY: 'auto',
     display: 'grid',
 

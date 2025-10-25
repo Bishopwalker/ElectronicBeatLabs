@@ -29,11 +29,12 @@ import { useAudioEngine } from './useAudioEngine';
 import { useBackendAudioEngine } from './useBackendAudioEngine';
 import { AudioMixer } from '../utils/AudioMixer';
 import type { BinauralBeatConfig, PatternConfig } from '../types';
-import { 
+import {
   DEFAULT_VOLUME,
   DEFAULT_BEAT_FREQUENCY,
   DEFAULT_BASE_FREQUENCY
 } from '../constants/audio.constants';
+import { debugLog, debugDecision, debugBreakpoint } from '../utils/audioDebugger';
 
 export const useHybridAudioEngine = () => {
   // Initialize both engines (will be routed through mixer after mixer is created)
@@ -47,6 +48,9 @@ export const useHybridAudioEngine = () => {
 
   // Track backend connection state for auto-crossfade
   const previousBackendConnected = useRef(backendEngine.backendConnected);
+
+  // 🔥 FIX: Track initialization attempts to prevent React StrictMode double-mounting issues
+  const initAttemptedRef = useRef(false);
 
   /**
    * Initialize audio mixer and connect both engines
@@ -96,12 +100,15 @@ export const useHybridAudioEngine = () => {
 
   /**
    * Initialize mixer when frontend context becomes available
+   * 🔥 FIXED: Use stable dependencies to prevent duplicate mixer creation
    */
   useEffect(() => {
     if (frontendEngine.audioContext && !mixerRef.current) {
       initializeMixer();
     }
-  }, [frontendEngine.audioContext, initializeMixer]);
+    // Only re-run when audioContext actually changes (null -> object)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [!!frontendEngine.audioContext]);
 
   /**
    * Monitor backend connection and auto-crossfade
@@ -145,7 +152,13 @@ export const useHybridAudioEngine = () => {
    * 3. Auto-crossfade to backend when ready
    */
   const startBinauralBeat = useCallback(async (config: BinauralBeatConfig) => {
-    // 🔍 DEBUG LOGGING: Track start parameters (Phase 1)
+    // 🔍 DEBUG LOGGING: Track start parameters
+    debugLog('HYBRID_START', 'Starting binaural beat', {
+      base_frequency: config.base_frequency,
+      beat_frequency: config.beat_frequency,
+      volume: config.volume ?? DEFAULT_VOLUME,
+      waveform: config.waveform
+    });
     console.log('🎵 [HYBRID ENGINE DEBUG] Starting binaural beat:');
     console.log('   ├─ base_frequency:', config.base_frequency, 'Hz');
     console.log('   ├─ beat_frequency:', config.beat_frequency, 'Hz');
@@ -153,13 +166,18 @@ export const useHybridAudioEngine = () => {
     console.log('   ├─ waveform:', config.waveform);
     console.log('   └─ DEFAULT_VOLUME:', DEFAULT_VOLUME);
 
+    // 🔍 BREAKPOINT: Set conditional breakpoint for debugging
+    debugBreakpoint(!mixerRef.current, 'Mixer not initialized at start', { config });
+
     // Initialize mixer if not ready
+    debugDecision('Mixer initialization check', !mixerRef.current, 'Initialize mixer');
     if (!mixerRef.current) {
       await initializeMixer();
     }
 
     try {
       // STEP 1: Start frontend immediately (instant audio)
+      debugLog('HYBRID_START', 'Starting FRONTEND engine (instant audio)');
       console.log('⚡ Hybrid Engine: Starting FRONTEND engine (instant)...');
       await frontendEngine.startBinauralBeat(config);
       
@@ -430,24 +448,35 @@ export const useHybridAudioEngine = () => {
 
   /**
    * Proactively initialize audio context on mount (like SettingsTab does)
+   * 🔥 FIXED: Prevent duplicate AudioContext creation by using stable dependencies
    */
   useEffect(() => {
     const autoInitialize = async () => {
+      // 🔥 FIX: Skip if already attempted during this mount cycle (React StrictMode safeguard)
+      if (initAttemptedRef.current) {
+        console.log('⏭️ Hybrid Engine: Skipping duplicate initialization (React StrictMode double-mount)');
+        return;
+      }
+
+      // 🔥 CRITICAL FIX: Only run on initial mount when context is null
+      // This prevents duplicate context creation when frontendEngine object changes
       if (!frontendEngine.audioContext) {
         console.log('🎵 Hybrid Engine: Proactively initializing audio context on mount...');
+        initAttemptedRef.current = true; // Mark as attempted
         try {
           // Create a simple user interaction to trigger audio context
           // This ensures analyser node exists for visualizers
           const context = await frontendEngine.initializeAudio();
           if (context) {
             console.log('✅ Hybrid Engine: Audio context initialized proactively');
-            // Initialize mixer immediately after context is ready
-            await initializeMixer();
+            // Mixer will be initialized by the other useEffect when context is ready
           }
         } catch (error) {
-          console.log('⚠️ Hybrid Engine: Auto-initialization requires user gesture, will retry on first interaction');
+          console.log('⏸️ Hybrid Engine: Auto-initialization requires user gesture, will retry on first interaction');
+          // Reset flag on error so user can retry
+          initAttemptedRef.current = false;
         }
-      } else if (!mixerRef.current) {
+      } else if (frontendEngine.audioContext && !mixerRef.current) {
         // Context exists but mixer doesn't - initialize mixer
         console.log('🎵 Hybrid Engine: Audio context exists, initializing mixer...');
         await initializeMixer();
@@ -455,7 +484,10 @@ export const useHybridAudioEngine = () => {
     };
 
     autoInitialize();
-  }, [frontendEngine, initializeMixer]); // 🔥 FIXED: Run when frontendEngine or initializeMixer changes
+    // 🔥 ONLY run when audioContext presence changes (null -> object or object -> null)
+    // Using !! converts to boolean for stable comparison
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [!!frontendEngine.audioContext]);
 
   /**
    * Cleanup on unmount

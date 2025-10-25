@@ -11,6 +11,7 @@ from typing import Dict, Set
 from datetime import datetime
 
 from core.audio_engine import AudioEngine
+from core.frame_buffer import FrameBuffer
 from modules.spatial_audio import SpatialAudioProcessor
 
 logger = logging.getLogger(__name__)
@@ -27,6 +28,8 @@ active_connections: Dict[str, WebSocket] = {}
 active_sessions: Set[str] = set()
 # Track WebSocket session ID to audio engine session ID mapping
 websocket_to_audio_session: Dict[str, str] = {}
+# Track frame buffers for each session (NEW: for zero-lag frame delivery)
+session_frame_buffers: Dict[str, FrameBuffer] = {}
 
 class ConnectionManager:
     def __init__(self):
@@ -47,6 +50,11 @@ class ConnectionManager:
         if session_id in websocket_to_audio_session:
             audio_engine_session_id = websocket_to_audio_session[session_id]
             audio_engine.stop_session(audio_engine_session_id)
+            # 🔥 NEW: Stop and cleanup frame buffer
+            if audio_engine_session_id in session_frame_buffers:
+                buffer = session_frame_buffers[audio_engine_session_id]
+                asyncio.create_task(buffer.stop())
+                del session_frame_buffers[audio_engine_session_id]
             del websocket_to_audio_session[session_id]
         logger.info(f"WebSocket disconnected: {session_id}")
     
@@ -67,16 +75,29 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 async def stream_audio_frames(websocket: WebSocket, session_id: str, use_binary: bool = True):
-    """Stream audio frames to client at precise 60 FPS with timing correction
+    """Stream audio frames to client at precise 60 FPS with zero lag
 
     Args:
         websocket: WebSocket connection
-        session_id: Unique session identifier
+        session_id: Unique session identifier (audio engine session ID)
         use_binary: If True, use binary WebSocket frames (50% smaller, faster)
     """
-    logger.info(f" STREAM START: Beginning audio stream for session {session_id} (binary={use_binary})")
+    logger.info(f"🎥 STREAM START: Beginning audio stream for session {session_id[:8]}... (binary={use_binary})")
     target_fps = 60
     frame_duration = 1.0 / target_fps  # 16.666ms target
+
+    # 🔥 NEW: Get or create frame buffer for this session
+    if session_id not in session_frame_buffers:
+        frame_buffer = FrameBuffer(
+            audio_engine,
+            session_id,
+            target_buffer_size=120  # 2 seconds of buffering at 60 FPS
+        )
+        session_frame_buffers[session_id] = frame_buffer
+        await frame_buffer.start()
+        logger.info(f"🎬 FrameBuffer created and started for session {session_id[:8]}...")
+    else:
+        frame_buffer = session_frame_buffers[session_id]
 
     # Use time.perf_counter() for better precision than event loop time
     import time
@@ -85,18 +106,14 @@ async def stream_audio_frames(websocket: WebSocket, session_id: str, use_binary:
     next_frame_time = start_time
 
     # Performance tracking
-    generation_times = []
     transmission_times = []
 
     try:
         while True:
             frame_start = time.perf_counter()
 
-            # Generate audio frame (binary mode for faster processing)
-            frame = await audio_engine.generate_frame(session_id, binary_mode=use_binary)
-            generation_end = time.perf_counter()
-            generation_time = (generation_end - frame_start) * 1000  # ms
-            generation_times.append(generation_time)
+            # 🔥 NEW: Get pre-generated frame from buffer (instant, non-blocking!)
+            frame = frame_buffer.get_frame()
 
             if frame:
                 # Send frame to client
@@ -104,17 +121,25 @@ async def stream_audio_frames(websocket: WebSocket, session_id: str, use_binary:
                     # Binary transmission: ~3.2KB vs ~6.4KB JSON (50% smaller)
                     await websocket.send_bytes(frame)
                 else:
-                    # Legacy JSON transmission
-                    await websocket.send_json({
-                        "type": "frame",
-                        "data": frame,
-                        "timestamp": frame_start,
-                        "frame_count": frame_count
-                    })
+                    # Legacy JSON transmission (not used, frame_buffer only generates binary)
+                    logger.warning("JSON mode not supported with FrameBuffer, using binary mode")
+                    await websocket.send_bytes(frame)
 
                 transmission_end = time.perf_counter()
-                transmission_time = (transmission_end - generation_end) * 1000  # ms
+                transmission_time = (transmission_end - frame_start) * 1000  # ms
                 transmission_times.append(transmission_time)
+
+                # Log performance every 5 seconds
+                if frame_count % 300 == 0 and frame_count > 0:
+                    avg_tx = sum(transmission_times[-300:]) / min(len(transmission_times), 300)
+                    buffer_status = frame_buffer.get_buffer_status()
+                    logger.info(
+                        f"📊 Stream Stats [{session_id[:8]}]: "
+                        f"Frame={frame_count}, "
+                        f"TxTime={avg_tx:.2f}ms, "
+                        f"Buffer={buffer_status['buffer_size']}/{buffer_status['target_size']} "
+                        f"({buffer_status['buffer_percent']:.0f}%)"
+                    )
 
             frame_count += 1
             next_frame_time = start_time + (frame_count * frame_duration)
@@ -126,18 +151,17 @@ async def stream_audio_frames(websocket: WebSocket, session_id: str, use_binary:
             if sleep_time > 0:
                 await asyncio.sleep(sleep_time)
             elif sleep_time < -0.003:  # If more than 3ms behind, log warning
-                avg_gen = sum(generation_times[-10:]) / min(len(generation_times), 10)
                 avg_tx = sum(transmission_times[-10:]) / min(len(transmission_times), 10)
                 logger.warning(
                     f"Frame timing drift: {sleep_time*1000:.1f}ms behind "
-                    f"(gen={avg_gen:.1f}ms, tx={avg_tx:.1f}ms)"
+                    f"(tx={avg_tx:.1f}ms)"
                 )
 
     except asyncio.CancelledError:
-        logger.info(f" STREAM CANCELLED: Audio stream cancelled for session {session_id}")
+        logger.info(f"🛑 STREAM CANCELLED: Audio stream cancelled for session {session_id[:8]}...")
         raise
     except Exception as e:
-        logger.error(f" STREAM ERROR: Audio streaming error for session {session_id}: {e}", exc_info=True)
+        logger.error(f"❌ STREAM ERROR: Audio streaming error for session {session_id[:8]}...: {e}", exc_info=True)
 
 @router.websocket("/ws/audio/{session_id}")
 async def websocket_audio_endpoint(websocket: WebSocket, session_id: str):
