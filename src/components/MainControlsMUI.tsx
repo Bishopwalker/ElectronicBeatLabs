@@ -11,10 +11,13 @@ import {
   Slider,
   Stack,
   Chip,
+  Switch,
+  FormControlLabel,
 } from '@mui/material';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import StopIcon from '@mui/icons-material/Stop';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
+import BoltIcon from '@mui/icons-material/Bolt';
 import type { MainControlsProps } from '../types';
 
 
@@ -28,12 +31,16 @@ const MainControlsMUI: React.FC<ExtendedMainControlsProps> = ({
   onPlay,
   onStop,
   onVolumeChange,
+  boostMode = false,
+  onBoostModeToggle,
   compact = false
 }) => {
+  const maxVolume = boostMode ? 2.0 : 1.0;  // 200% in boost mode, 100% normal
+
   const handleVolumeChange = (_: Event, value: number | number[]) => {
     const numValue = value as number;
-    const safeValue = isNaN(numValue) ? 0.3 : Math.max(0, Math.min(1, numValue));
-    console.log('🎚️ MainControlsMUI volume change:', { raw: numValue, safe: safeValue });
+    const safeValue = isNaN(numValue) ? 0.5 : Math.max(0, Math.min(maxVolume, numValue));
+    console.log('🎚️ MainControlsMUI volume change:', { raw: numValue, safe: safeValue, boostMode, maxVolume });
     onVolumeChange(safeValue);
   };
 
@@ -91,32 +98,38 @@ const MainControlsMUI: React.FC<ExtendedMainControlsProps> = ({
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: '200px' }}>
           <VolumeUpIcon color="secondary" fontSize="small" />
           <Slider
-            value={isNaN(volume) ? 0.3 : volume}
+            value={isNaN(volume) ? 0.5 : volume}
             onChange={handleVolumeChange}
             min={0}
-            max={1}
+            max={maxVolume}
             step={0.01}
             size="small"
             sx={{
               minWidth: '120px',
               '& .MuiSlider-track': {
-                background: 'linear-gradient(90deg, #8a2be2, #ff6b00)',
+                background: boostMode
+                  ? 'linear-gradient(90deg, #ff6b00, #ff0066)'  // Red gradient for boost
+                  : 'linear-gradient(90deg, #8a2be2, #ff6b00)',  // Normal gradient
               },
               '& .MuiSlider-thumb': {
-                background: 'linear-gradient(45deg, #8a2be2, #ff6b00)',
+                background: boostMode
+                  ? 'linear-gradient(45deg, #ff6b00, #ff0066)'
+                  : 'linear-gradient(45deg, #8a2be2, #ff6b00)',
                 border: '2px solid #fff',
                 '&:hover': {
-                  boxShadow: '0 0 15px rgba(138, 43, 226, 0.7)',
+                  boxShadow: boostMode
+                    ? '0 0 15px rgba(255, 107, 0, 0.7)'
+                    : '0 0 15px rgba(138, 43, 226, 0.7)',
                 },
               },
             }}
           />
-          <Typography 
-            variant="caption" 
-            color="secondary"
+          <Typography
+            variant="caption"
+            color={boostMode ? "error" : "secondary"}
             sx={{ fontFamily: 'monospace', minWidth: '35px' }}
           >
-            {Math.round(volume * 100)}%
+            {Math.round((volume / maxVolume) * 100)}%
           </Typography>
         </Box>
         
@@ -204,40 +217,81 @@ height: '100%',
           </Stack>
           
           <Box sx={{ width: '100%' }}>
-            <Stack direction="row" spacing={1} alignItems="center" mb={1}>
-              <VolumeUpIcon color="secondary" fontSize="small" />
-              <Typography variant="body2" color="text.secondary">
-                Master Volume
-              </Typography>
+            <Stack direction="row" spacing={1} alignItems="center" mb={1} justifyContent="space-between">
+              <Stack direction="row" spacing={1} alignItems="center">
+                <VolumeUpIcon color="secondary" fontSize="small" />
+                <Typography variant="body2" color="text.secondary">
+                  Master Volume
+                </Typography>
+              </Stack>
+              {onBoostModeToggle && (
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={boostMode}
+                      onChange={(e) => onBoostModeToggle(e.target.checked)}
+                      size="small"
+                      sx={{
+                        '& .MuiSwitch-switchBase.Mui-checked': {
+                          color: '#ff6b00',
+                        },
+                        '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                          backgroundColor: '#ff0066',
+                        },
+                      }}
+                    />
+                  }
+                  label={
+                    <Stack direction="row" spacing={0.5} alignItems="center">
+                      <BoltIcon fontSize="small" color={boostMode ? "error" : "disabled"} />
+                      <Typography variant="caption" color={boostMode ? "error" : "text.secondary"}>
+                        Boost
+                      </Typography>
+                    </Stack>
+                  }
+                  sx={{ margin: 0 }}
+                />
+              )}
             </Stack>
             <Slider
-              value={isNaN(volume) ? 0.3 : volume}
+              value={isNaN(volume) ? 0.5 : volume}
               onChange={handleVolumeChange}
               min={0}
-              max={1}
+              max={maxVolume}
               step={0.01}
               valueLabelDisplay="auto"
-              valueLabelFormat={(value) => `${Math.round(value * 100)}%`}
+              valueLabelFormat={(value) => `${Math.round((value / maxVolume) * 100)}%`}
               sx={{
                 '& .MuiSlider-track': {
-                  background: 'linear-gradient(90deg, #8a2be2, #ff6b00)',
+                  background: boostMode
+                    ? 'linear-gradient(90deg, #ff6b00, #ff0066)'
+                    : 'linear-gradient(90deg, #8a2be2, #ff6b00)',
                 },
                 '& .MuiSlider-thumb': {
-                  background: 'linear-gradient(45deg, #8a2be2, #ff6b00)',
+                  background: boostMode
+                    ? 'linear-gradient(45deg, #ff6b00, #ff0066)'
+                    : 'linear-gradient(45deg, #8a2be2, #ff6b00)',
                   border: '2px solid #fff',
                   '&:hover': {
-                    boxShadow: '0 0 15px rgba(138, 43, 226, 0.7)',
+                    boxShadow: boostMode
+                      ? '0 0 15px rgba(255, 107, 0, 0.7)'
+                      : '0 0 15px rgba(138, 43, 226, 0.7)',
                   },
                 },
               }}
             />
-            <Typography 
-              variant="h6" 
-              align="center" 
-              color="secondary"
+            <Typography
+              variant="h6"
+              align="center"
+              color={boostMode ? "error" : "secondary"}
               sx={{ fontFamily: 'monospace', mt: 0.5 }}
             >
-              {Math.round(volume * 100)}%
+              {Math.round((volume / maxVolume) * 100)}%
+              {boostMode && volume > 1.0 && (
+                <Typography component="span" variant="caption" color="error" sx={{ ml: 1 }}>
+                  BOOST
+                </Typography>
+              )}
             </Typography>
           </Box>
           

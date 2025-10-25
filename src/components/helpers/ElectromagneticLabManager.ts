@@ -59,19 +59,19 @@ export class ElectromagneticLabManager {
 
   // Enhanced electromagnetic field calculation
   calculateEnhancedElectromagnetic(currentElectromagnetic: any, currentAudioState: any) {
-    // Get amplitude from either backend (config.amplitude) or frontend (amplitude) format
-    const amplitude = currentAudioState.config?.amplitude ?? currentAudioState.amplitude ?? 0.5;
+    // Get volume from either backend (config.volume) or frontend (volume) format
+    const volume = currentAudioState.config?.volume ?? currentAudioState.volume ?? 0.5;
     const beatFreq = currentAudioState.beat_frequency ?? currentAudioState.config?.beat_frequency ?? this.state.appState.beat_frequency ?? 4;
 
     return {
       ...currentElectromagnetic,
       frequency: beatFreq,
-      strength: currentAudioState.isPlaying ? Math.min(1, amplitude * 2) : 0,
+      strength: currentAudioState.isPlaying ? Math.min(1, volume * 2) : 0,
       resonance: currentAudioState.isPlaying ? 0.7 + (beatFreq / 40) * 0.3 : 0,
       coherence: currentAudioState.isPlaying ? 0.8 : 0,
-      // Stability: Use amplitude as proxy - higher amplitude = more stable signal
-      // Scale from 0-1 amplitude to 0.5-1.0 stability range for playing state
-      stability: currentAudioState.isPlaying ? Math.max(0.5, amplitude) : 0
+      // Stability: Use volume as proxy - higher volume = more stable signal
+      // Scale from 0-1 volume to 0.5-1.0 stability range for playing state
+      stability: currentAudioState.isPlaying ? Math.max(0.5, volume) : 0
     };
   }
 
@@ -173,7 +173,7 @@ export class ElectromagneticLabManager {
         const config = {
           base_frequency: pattern.frequencies?.carrier || 140,
           beat_frequency: pattern.frequencies?.beat || 4,
-          amplitude: this.state.appState.volume || 0.3,
+          volume: this.state.appState.volume || 0.3,
           waveform: 'sine' as const,
           spatial: {
             enabled: true,
@@ -195,7 +195,7 @@ export class ElectromagneticLabManager {
         const config = {
           base_frequency: pattern.frequencies?.carrier || 140,
           beat_frequency: pattern.frequencies?.beat || 4,
-          amplitude: this.state.appState.volume || 0.3,
+          volume: this.state.appState.volume || 0.3,
           waveform: 'sine' as const
         };
         audioEngine.startBinauralBeat(config);

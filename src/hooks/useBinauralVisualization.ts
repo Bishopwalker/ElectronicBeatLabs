@@ -8,9 +8,9 @@ import type {BinauralBeatConfig, FrontendAudioEngineState} from '../types';
 // Visualization data interface using existing patterns
 interface VisualizationData {
   spectrumData: number[];
-  peakFrequencies: { frequency: number; amplitude: number }[];
+  peakFrequencies: { frequency: number; volume: number }[];
   currentBeatFreq: number;
-  amplitudes: {
+  volumes: {
     left: number;
     right: number;
   };
@@ -57,7 +57,7 @@ export const useBinauralVisualization = (config: Partial<VisualizationConfig> = 
   // State management using existing audio types
   const [audioState, setAudioState] = useState<FrontendAudioEngineState >({
     isPlaying: false,
-    amplitude: 0.3,
+    volume: 0.3,
     leftFreq: 440,
     rightFreq: 444,
     beat_frequency: 4,
@@ -157,7 +157,7 @@ export const useBinauralVisualization = (config: Partial<VisualizationConfig> = 
         }
       }
 
-      // Only return if amplitude is significant (above noise floor)
+      // Only return if volume is significant (above noise floor)
       if (maxAmplitude > 30) {
         return Math.round(peakBin * binFrequency * 10) / 10;
       }
@@ -176,21 +176,21 @@ export const useBinauralVisualization = (config: Partial<VisualizationConfig> = 
     snr: number;
     clarity: number;
   } => {
-    const { spectrumData, amplitudes } = data;
+    const { spectrumData, volumes } = data;
 
-    // Calculate noise floor (average of low-amplitude bins)
+    // Calculate noise floor (average of low-volume bins)
     const noiseFloor = spectrumData
-      .filter(amplitude => amplitude < 20)
+      .filter(volume => volume < 20)
       .reduce((sum, amp) => sum + amp, 0) / spectrumData.length;
 
-    // Signal strength is the average of left and right amplitudes
-    const signalStrength = (amplitudes.left + amplitudes.right) / 2;
+    // Signal strength is the average of left and right volumes
+    const signalStrength = (volumes.left + volumes.right) / 2;
 
     // SNR calculation
     const snr = signalStrength > 0 ? 20 * Math.log10(signalStrength / (noiseFloor || 1)) : 0;
 
     // Clarity based on how distinct the binaural peaks are
-    const peakAmplitudes = data.peakFrequencies.slice(0, 2).map(p => p.amplitude);
+    const peakAmplitudes = data.peakFrequencies.slice(0, 2).map(p => p.volume);
     const clarity = peakAmplitudes.length === 2 ?
       Math.min(100, (peakAmplitudes[0] + peakAmplitudes[1]) / 2) / 100 : 0;
 
@@ -201,10 +201,10 @@ export const useBinauralVisualization = (config: Partial<VisualizationConfig> = 
   }, []);
 
   // Detect peak frequencies
-  const detectPeakFrequencies = useCallback((): { frequency: number; amplitude: number }[] => {
+  const detectPeakFrequencies = useCallback((): { frequency: number; volume: number }[] => {
     if (!dataArray.current || !audioState.context || !analyser.current) return [];
 
-    const peaks: { frequency: number; amplitude: number }[] = [];
+    const peaks: { frequency: number; volume: number }[] = [];
     const minPeakHeight = 50;
     const sampleRate = audioState.context.sampleRate;
     const binFrequency = (sampleRate / 2) / analyser.current.frequencyBinCount;
@@ -216,11 +216,11 @@ export const useBinauralVisualization = (config: Partial<VisualizationConfig> = 
 
       if (current > minPeakHeight && current > prev && current > next) {
         const frequency = i * binFrequency;
-        peaks.push({ frequency: Math.round(frequency * 10) / 10, amplitude: current });
+        peaks.push({ frequency: Math.round(frequency * 10) / 10, volume: current });
       }
     }
 
-    return peaks.sort((a, b) => b.amplitude - a.amplitude).slice(0, 10);
+    return peaks.sort((a, b) => b.volume - a.volume).slice(0, 10);
   }, [audioState.context]);
 
   // Get visualization data
@@ -231,7 +231,7 @@ export const useBinauralVisualization = (config: Partial<VisualizationConfig> = 
     const spectrumData = Array.from(dataArray.current);
     const peakFrequencies = detectPeakFrequencies();
 
-    // Get actual amplitudes at target frequencies
+    // Get actual volumes at target frequencies
     const binFrequency = (audioState.context.sampleRate / 2) / analyser.current.frequencyBinCount;
     const leftBin = Math.round(audioState.leftFreq / binFrequency);
     const rightBin = Math.round(audioState.rightFreq / binFrequency);
@@ -240,7 +240,7 @@ export const useBinauralVisualization = (config: Partial<VisualizationConfig> = 
       spectrumData,
       peakFrequencies,
       currentBeatFreq: audioState.beat_frequency,
-      amplitudes: {
+      volumes: {
         left: dataArray.current[leftBin] || 0,
         right: dataArray.current[rightBin] || 0
       },
@@ -362,8 +362,8 @@ export const useBinauralVisualization = (config: Partial<VisualizationConfig> = 
       oscillatorR.type = config.waveform;
 
       // Configure gains
-      gainL.gain.setValueAtTime(config.amplitude, context.currentTime);
-      gainR.gain.setValueAtTime(config.amplitude, context.currentTime);
+      gainL.gain.setValueAtTime(config.volume, context.currentTime);
+      gainR.gain.setValueAtTime(config.volume, context.currentTime);
       masterGainNode.gain.setValueAtTime(1.0, context.currentTime);
 
       // Connect audio graph
@@ -383,7 +383,7 @@ export const useBinauralVisualization = (config: Partial<VisualizationConfig> = 
       setAudioState(prev => ({
         ...prev,
         isPlaying: true,
-        amplitude: config.amplitude,
+        volume: config.volume,
         leftFreq,
         rightFreq,
         beat_frequency: config.beat_frequency,
@@ -474,17 +474,17 @@ export const useBinauralVisualization = (config: Partial<VisualizationConfig> = 
     }
   }, [audioState]);
 
-  // Update amplitude
-  const updateAmplitude = useCallback((amplitude: number) => {
+  // Update volume
+  const updateAmplitude = useCallback((volume: number) => {
     if (audioState.gainL && audioState.gainR && audioState.context) {
       const currentTime = audioState.context.currentTime;
 
-      audioState.gainL.gain.setValueAtTime(amplitude, currentTime);
-      audioState.gainR.gain.setValueAtTime(amplitude, currentTime);
+      audioState.gainL.gain.setValueAtTime(volume, currentTime);
+      audioState.gainR.gain.setValueAtTime(volume, currentTime);
 
       setAudioState(prev => ({
         ...prev,
-        amplitude
+        volume
       }));
     }
   }, [audioState]);

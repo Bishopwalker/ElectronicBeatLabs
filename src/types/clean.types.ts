@@ -12,7 +12,7 @@
 export interface AudioConfig {
   base_frequency: number;    // Left ear frequency (Hz)
   beat_frequency: number;    // Beat frequency (Hz)
-  amplitude: number;        // Volume 0-1
+  volume: number;        // Volume 0-1
   waveform: 'sine' | 'square' | 'triangle' | 'sawtooth';
 }
 
@@ -141,7 +141,7 @@ export interface TimerTabProps {
  */
 export interface VisualizationData {
   spectrumData: number[];
-  peakFrequencies: { frequency: number; amplitude: number }[];
+  peakFrequencies: { frequency: number; volume: number }[];
   leftAmplitude: number;
   rightAmplitude: number;
   beat_frequency: number;
@@ -202,13 +202,13 @@ export const calculateBeatFreq = (leftFreq: number, rightFreq: number): number =
 export const validateAudioConfig = (config: Partial<AudioConfig>): {
   base_frequency: number;
   beat_frequency: number;
-  amplitude: number;
+  volume: number;
   waveform: "sine" | "square" | "triangle" | "sawtooth"
 } => {
   return {
     base_frequency: Math.max(20, Math.min(20000, config.base_frequency || 144)),
     beat_frequency: Math.max(0.1, Math.min(100, config.beat_frequency || 4)),
-    amplitude: Math.max(0, Math.min(1, config.amplitude || 0.3)),
+    volume: Math.max(0, Math.min(1, config.volume || 0.3)),
     waveform: config.waveform || 'sine'
   };
 };

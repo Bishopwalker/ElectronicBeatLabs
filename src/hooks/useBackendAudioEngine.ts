@@ -50,7 +50,7 @@ interface BackendFieldFrame {
 interface BackendSessionConfig {
   base_frequency: number;
   beat_frequency: number;
-  amplitude: number;
+  volume: number;
   spatial_enabled: boolean;
   spatial_settings: Record<string, unknown>;
 }
@@ -62,7 +62,7 @@ export const useBackendAudioEngine = () => {
     connected: false,
     isPlaying: false,
     config: {
-      amplitude: DEFAULT_VOLUME,
+      volume: DEFAULT_VOLUME,
       base_frequency: DEFAULT_BASE_FREQUENCY,
       beat_frequency: DEFAULT_BEAT_FREQUENCY,
       waveform: 'sine',
@@ -169,7 +169,7 @@ export const useBackendAudioEngine = () => {
         // Standalone mode: Create local gain and analyser nodes
         if (!gainNode.current) {
           gainNode.current = audioContext.current.createGain();
-          gainNode.current.gain.value = audioState.config?.amplitude ?? DEFAULT_VOLUME;
+          gainNode.current.gain.value = audioState.config?.volume ?? DEFAULT_VOLUME;
           gainNode.current.connect(audioContext.current.destination);
         }
 
@@ -193,7 +193,7 @@ export const useBackendAudioEngine = () => {
               numberOfOutputs: 1,
               outputChannelCount: [2],
               processorOptions: {
-                amplitude: audioState.config?.amplitude ?? DEFAULT_VOLUME
+                volume: audioState.config?.volume ?? DEFAULT_VOLUME
               }
             }
         );
@@ -251,7 +251,7 @@ export const useBackendAudioEngine = () => {
       const volumeParam = audioWorkletNode.current.parameters.get('volume');
       if (volumeParam) {
         volumeParam.setValueAtTime(
-            audioState.config?.amplitude,
+            audioState.config?.volume,
             audioContext.current.currentTime
         );
       }
@@ -263,14 +263,14 @@ export const useBackendAudioEngine = () => {
           ...prev.config!,
           base_frequency: frame.frequencies.left,
           beat_frequency: frame.frequencies.beat,
-          amplitude: audioState.config?.amplitude,
+          volume: audioState.config?.volume,
           duration: audioContext.current?.currentTime || Date.now(),
         }
       }));
     } catch (error) {
       console.error('❌ Backend Engine: Failed to process audio frame:', error);
     }
-  }, [audioState.config?.amplitude]);
+  }, [audioState.config?.volume]);
 
   // Process backend field frame
   const processFieldFrame = useCallback((frame: BackendFieldFrame) => {
@@ -562,15 +562,15 @@ export const useBackendAudioEngine = () => {
             ? config.base_frequency : DEFAULT_BASE_FREQUENCY,
         beat_frequency: ( !isNaN(config.beat_frequency))
             ? config.beat_frequency : DEFAULT_BEAT_FREQUENCY,
-        amplitude: ( !isNaN(config.amplitude))
-            ? config.amplitude : DEFAULT_VOLUME,
+        volume: ( !isNaN(config.volume))
+            ? config.volume : DEFAULT_VOLUME,
         spatial_enabled: config.spatial_enabled || false,
         spatial_settings: config.spatial_settings || {}
       } : {
         // When no config, use current audioState.config with proper fallbacks
         base_frequency: audioState.config?.base_frequency || DEFAULT_BASE_FREQUENCY,
         beat_frequency: audioState.config?.beat_frequency || DEFAULT_BEAT_FREQUENCY,
-        amplitude: audioState.config?.amplitude ?? DEFAULT_VOLUME,
+        volume: audioState.config?.volume ?? DEFAULT_VOLUME,
         spatial_enabled: audioState.config?.spatial?.enabled || false,
         spatial_settings: {
           mode: audioState.config?.spatial?.mode || 'binaural',
@@ -724,7 +724,7 @@ export const useBackendAudioEngine = () => {
           // Unmute gain node for playback
           if (gainNode.current) {
             console.log('🔊 startBackendSession: Unmuting gain node for playback');
-            gainNode.current.gain.setValueAtTime(sessionConfig.amplitude, context.currentTime);
+            gainNode.current.gain.setValueAtTime(sessionConfig.volume, context.currentTime);
           }
 
           // Send start command to AudioWorklet to enable immediate playback
@@ -751,7 +751,7 @@ export const useBackendAudioEngine = () => {
             ...prev.config!,
             base_frequency: sessionConfig.base_frequency,
             beat_frequency: sessionConfig.beat_frequency,
-            amplitude: sessionConfig.amplitude
+            volume: sessionConfig.volume
           },
           // Computed properties for UI (FrequencyVisualizer, etc.)
           leftFreq: computedLeft,
@@ -784,7 +784,7 @@ export const useBackendAudioEngine = () => {
     const config: BinauralBeatConfig & { spatial_enabled?: boolean; spatial_settings?: Record<string, unknown> } = {
       base_frequency: pattern.frequencies.carrier,
       beat_frequency: pattern.frequencies.beat,
-      amplitude: 0.5,
+      volume: 0.5,
       waveform: 'sine',
       spatial_enabled: true,
       spatial_settings: {
@@ -830,7 +830,7 @@ export const useBackendAudioEngine = () => {
 
     // Send update to backend via WebSocket
     updateSettings({
-      amplitude: safeVolume
+      volume: safeVolume
     });
 
     // CRITICAL FIX: Update gain node directly for immediate volume change
@@ -844,7 +844,7 @@ export const useBackendAudioEngine = () => {
       ...prev,
       config: {
         ...prev.config!,
-        amplitude: safeVolume
+        volume: safeVolume
       }
     }));
   }, [updateSettings]);
@@ -898,7 +898,7 @@ export const useBackendAudioEngine = () => {
     const sessionConfig = {
       base_frequency: config.base_frequency || 80,
       beat_frequency: config.beat_frequency || 15,
-      amplitude: config.amplitude ?? DEFAULT_VOLUME,
+      volume: config.volume ?? DEFAULT_VOLUME,
       waveform: config.waveform || 'sine',
       spatial_enabled: config.spatial?.enabled || true,
       spatial_settings: {
@@ -930,7 +930,7 @@ export const useBackendAudioEngine = () => {
             ...prev.config!,
             base_frequency: sessionConfig.base_frequency,
             beat_frequency: sessionConfig.beat_frequency,
-            amplitude: sessionConfig.amplitude
+            volume: sessionConfig.volume
           }
         }));
 
@@ -967,7 +967,7 @@ export const useBackendAudioEngine = () => {
     const config: BinauralBeatConfig = {
       base_frequency: leftFreq,
       beat_frequency: Math.abs(rightFreq - leftFreq),
-      amplitude: DEFAULT_VOLUME,
+      volume: DEFAULT_VOLUME,
       waveform: 'sine'
     };
 
@@ -1020,7 +1020,7 @@ export const useBackendAudioEngine = () => {
     const config: BinauralBeatConfig = {
       base_frequency: DEFAULT_BASE_FREQUENCY,
       beat_frequency: protocol.gammaFreq || 40,
-      amplitude: (protocol.intensity || 70) / 100,
+      volume: (protocol.intensity || 70) / 100,
       waveform: 'sine'
     };
 

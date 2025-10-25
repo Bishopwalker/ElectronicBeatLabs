@@ -101,7 +101,7 @@ export const useSimplifiedHybridAudio = () => {
     const rightFreq = config 
       ? config.base_frequency + config.beat_frequency
       : audioState.state.rightFreq;
-    const volume = config?.amplitude ?? audioState.state.volume;
+    const volume = config?.volume ?? audioState.state.volume;
     const waveform = config?.waveform ?? audioState.state.waveform;
 
     console.log(`🎵 Starting STEREO hybrid audio:`);

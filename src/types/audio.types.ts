@@ -11,7 +11,7 @@ export interface BinauralBeatConfig {
     beat_frequency: number;      // Beat frequency (Hz) - the difference creating binaural effect
 
     // Audio properties
-    amplitude: number;          // Volume 0-1 (NOT "volume", always "amplitude")
+    volume: number;             // Volume 0-2 (0-100% normal, 100-200% boost mode)
     waveform: 'sine' | 'square' | 'triangle' | 'sawtooth';
 
     // Optional spatial audio
@@ -34,7 +34,7 @@ export interface BinauralBeatConfig {
 export interface BackendAudioConfig {
     base_frequency: number;
     beat_frequency: number;
-    amplitude: number;
+    volume: number;  // Changed from amplitude to match backend API
     waveform: string;
     spatial_enabled?: boolean;
     spatial_settings?: {
@@ -75,7 +75,7 @@ export interface  BackendAudioEngineState {
  */
 export interface FrontendAudioEngineState {
     isPlaying: boolean;
-    amplitude: number;
+    volume: number;  // Changed from amplitude
     leftFreq: number;
     rightFreq: number;
     beat_frequency: number;

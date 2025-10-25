@@ -35,7 +35,7 @@ export const useAudioEngine = () => {
   
   const [audioState, setAudioState] = useState<FrontendAudioEngineState>({
     isPlaying: false,
-    amplitude: DEFAULT_VOLUME,
+    volume: DEFAULT_VOLUME,
     leftFreq: DEFAULT_LEFT_FREQUENCY,
     rightFreq: DEFAULT_RIGHT_FREQUENCY,
     beat_frequency: DEFAULT_BEAT_FREQUENCY,
@@ -259,9 +259,9 @@ export const useAudioEngine = () => {
       const oscL = createOscillator(context, leftFreq, config.waveform);
       const oscR = createOscillator(context, rightFreq, config.waveform);
 
-      // Create gain nodes - use config amplitude or default volume (no multiplication)
-      const gainL = createGainNode(context, config.amplitude ?? DEFAULT_VOLUME);
-      const gainR = createGainNode(context, config.amplitude ?? DEFAULT_VOLUME);
+      // Create gain nodes - use config volume or default volume (no multiplication)
+      const gainL = createGainNode(context, config.volume ?? DEFAULT_VOLUME);
+      const gainR = createGainNode(context, config.volume ?? DEFAULT_VOLUME);
 
       // Create channel merger for proper stereo separation
       const merger = context.createChannelMerger(2);
@@ -357,7 +357,7 @@ export const useAudioEngine = () => {
     // Don't start animation for frontend engine when backend is being used
     // This prevents the infinite loop issue
 
-  }, [audioState.amplitude, audioState.isPlaying, audioState.oscillatorL, audioState.oscillatorR, calculateElectromagneticField, createGainNode, createOscillator, initializeAudio]);
+  }, [audioState.volume, audioState.isPlaying, audioState.oscillatorL, audioState.oscillatorR, calculateElectromagneticField, createGainNode, createOscillator, initializeAudio]);
 
   // Stop binaural beat playback
   const stopBinauralBeat = useCallback(() => {
@@ -453,7 +453,7 @@ export const useAudioEngine = () => {
 
     setAudioState(prev => ({
       ...prev,
-      amplitude: safeVolume
+      volume: safeVolume
     }));
   }, [audioState.gainL, audioState.gainR, audioState.context]);
 
@@ -475,7 +475,7 @@ export const useAudioEngine = () => {
     const config: BinauralBeatConfig = {
       base_frequency: pattern.frequencies.carrier,
       beat_frequency: pattern.frequencies.beat,
-      amplitude: 0.5,
+      volume: 0.5,
       waveform: 'sine'
     };
 
@@ -487,7 +487,7 @@ export const useAudioEngine = () => {
     const config: BinauralBeatConfig = {
       base_frequency: leftFreq,
       beat_frequency: Math.abs(rightFreq - leftFreq),
-      amplitude: DEFAULT_VOLUME,
+      volume: DEFAULT_VOLUME,
       waveform: 'sine'
     };
 
@@ -526,7 +526,7 @@ export const useAudioEngine = () => {
     const config: BinauralBeatConfig = {
       base_frequency: DEFAULT_BASE_FREQUENCY,
       beat_frequency: protocol.gammaFreq,
-      amplitude: protocol.intensity / 100, // Convert percentage to amplitude
+      volume: protocol.intensity / 100, // Convert percentage to volume
       waveform: 'sine'
     };
 

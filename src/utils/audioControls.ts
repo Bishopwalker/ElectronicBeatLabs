@@ -19,8 +19,8 @@ import { DEFAULT_BASE_FREQUENCY, DEFAULT_BEAT_FREQUENCY, DEFAULT_VOLUME } from '
 export interface AudioControlConfig {
   base_frequency?: number;
   beat_frequency?: number;
-  amplitude?: number;
-  volume?: number; // Alias for amplitude
+  volume?: number;
+  volume?: number; // Alias for volume
   waveform?: 'sine' | 'square' | 'sawtooth' | 'triangle';
   spatial?: {
     enabled?: boolean;
@@ -60,7 +60,7 @@ export interface TimerControlInterface {
  * 5. Caller handles state updates (isPlaying: true)
  *
  * @param audioEngine - The hybrid audio engine (frontend + backend)
- * @param config - Audio configuration (base_frequency, beat_frequency, amplitude, etc.)
+ * @param config - Audio configuration (base_frequency, beat_frequency, volume, etc.)
  * @returns Promise<boolean> - true if successful, false otherwise
  */
 export async function startBinauralAudio(
@@ -76,11 +76,11 @@ export async function startBinauralAudio(
   }
 
   // STEP 2: Build config with defaults
-  const amplitude = config.amplitude ?? config.volume ?? DEFAULT_VOLUME;
+  const volume = config.volume ?? config.volume ?? DEFAULT_VOLUME;
   const binauralConfig: BinauralBeatConfig = {
     base_frequency: config.base_frequency ?? DEFAULT_BASE_FREQUENCY,
     beat_frequency: config.beat_frequency ?? DEFAULT_BEAT_FREQUENCY,
-    amplitude: amplitude,
+    volume: volume,
     waveform: config.waveform ?? 'sine',
     // Include spatial config if provided
     ...(config.spatial && { spatial: config.spatial })
@@ -200,7 +200,7 @@ export async function stopBinauralAudio(
  * const success = await startBinauralAudio(hybridEngine, {
  *   base_frequency: 140,
  *   beat_frequency: 4,
- *   amplitude: 0.5
+ *   volume: 0.5
  * });
  * if (success) {
  *   setIsPlaying(true);
@@ -228,7 +228,7 @@ export async function stopBinauralAudio(
  * const success = await startBinauralAudio(hybridEngine, {
  *   base_frequency: 140,
  *   beat_frequency: 4,
- *   amplitude: 0.5,
+ *   volume: 0.5,
  *   spatial: {
  *     enabled: true,
  *     mode: '3d',

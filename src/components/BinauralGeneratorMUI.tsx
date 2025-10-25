@@ -1,7 +1,7 @@
 // Electromagnetic Beat Lab - Binaural Generator with Visualization
 // Unified binaural beat generator with frequency and electromagnetic analysis
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   Card,
   CardContent,
@@ -23,10 +23,11 @@ import GraphicEqIcon from '@mui/icons-material/GraphicEq';
 import {calculateRightFreq} from "../types/clean.types.ts";
 import { useBinauralVisualization } from '../hooks/useBinauralVisualization';
 import  {DEFAULT_BASE_FREQUENCY,DEFAULT_BEAT_FREQUENCY} from '../constants/audio.constants.ts';
-import type { WaveForm } from '../types';
+import MainControlsMUI from "./MainControlsMUI.tsx";
+import type { WaveForm, MainControlsProps, AppState } from '../types';
 
-interface BinauralGeneratorProps {
-  base_frequency: number;
+interface BinauralGeneratorProps extends MainControlsProps{
+   base_frequency: number;
   beat_frequency: number;
   waveform?: WaveForm;
   onFrequencyChange: (base_frequency: number, beat_frequency: number) => void;
@@ -37,6 +38,7 @@ interface BinauralGeneratorProps {
     isActive?: boolean;
     source?: 'timer' | 'pattern' | 'manual';
   };
+  appState?:AppState;
 }
 
 const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
@@ -45,7 +47,13 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
   waveform = 'sine',
   onFrequencyChange,
   onWaveformChange,
-  currentPreset
+  currentPreset,
+  volume,
+  onVolumeChange,
+  isPlaying,
+  onPlay,
+         appState,
+                                                                  onStop
 }) => {
   // Calculate display frequencies from base + beat
   const leftFreq = base_frequency;
@@ -56,26 +64,115 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
   const [rightInput, setRightInput] = useState(rightFreq);
 
   // Binaural visualization hook for frequency and electromagnetic analysis
-  const { visualizationData, stats, isPlaying } = useBinauralVisualization({
+  const { visualizationData, stats, isPlaying: isVisualizing} = useBinauralVisualization({
     updateRate: 50,
     enabled: true,
     showSpectrum: true,
     showPeaks: true,
-    showAmplitudes: true
-  });
+    showAmplitudes: true });
 
-  // Calculate electromagnetic field strength from beat frequency
+  // 🔥 EM FIELD FREQUENCY MODULATION SYSTEM
+  // Calculates real-time frequency modulation based on electromagnetic field simulation
+  const calculateEMModulation = useCallback((
+    beatFreq: number,
+    baseFreq: number
+  ): number => {
+    // Null safety check
+    if (!appState?.electromagnetic || !appState?.currentPattern) return 0;
+
+    const emField = appState.electromagnetic;
+    const pattern = appState.currentPattern.type;
+
+    // Frequency range sensitivity (lower frequencies = more affected by EM)
+    let maxDeviation = 0.1; // Default 10%
+    if (beatFreq <= 4) maxDeviation = 0.10;       // Delta: ±10%
+    else if (beatFreq <= 8) maxDeviation = 0.07;  // Theta: ±7%
+    else if (beatFreq <= 13) maxDeviation = 0.05; // Alpha: ±5%
+    else if (beatFreq <= 30) maxDeviation = 0.03; // Beta: ±3%
+    else maxDeviation = 0.01;                     // Gamma: ±1%
+
+    // Pattern-specific modulation shape
+    const phase = emField.phase || 0;
+    let patternModifier = 1.0;
+
+    switch(pattern) {
+      case 'toroidal':
+        // Circular wave - smooth sine oscillation
+        patternModifier = Math.sin(phase * Math.PI / 180);
+        break;
+      case 'vortex':
+        // Spiral decay - sine with exponential falloff
+        patternModifier = Math.sin(phase * Math.PI / 180) * Math.exp(-phase / 720);
+        break;
+      case 'wave':
+      case 'standing':
+        // Standing wave interference - combination of harmonics
+        patternModifier = (Math.sin(phase * Math.PI / 90) + Math.cos(phase * Math.PI / 180)) / 2;
+        break;
+      case 'spiral':
+      case 'helix':
+        // Logarithmic growth
+        patternModifier = Math.sin(phase * Math.PI / 180) * (1 + Math.log(1 + phase / 360));
+        break;
+      default:
+        // Default to simple sine wave
+        patternModifier = Math.sin(phase * Math.PI / 180);
+    }
+
+    // Combine all factors: base freq * max deviation * EM strength * pattern shape * coherence
+    const modulation = baseFreq * maxDeviation * (emField.strength || 0) * patternModifier * (emField.coherence || 1);
+
+    console.log('🌀 EM Modulation:', {
+      baseFreq,
+      beatFreq,
+      maxDev: maxDeviation,
+      strength: emField.strength,
+      pattern,
+      patternMod: patternModifier.toFixed(3),
+      coherence: emField.coherence,
+      finalMod: modulation.toFixed(2)
+    });
+
+    return modulation;
+  }, [appState]);
+
+  // Calculate modulated frequencies based on EM field
+  const modulatedFrequencies = useMemo(() => {
+    const modulation = calculateEMModulation(beat_frequency, base_frequency);
+
+    return {
+      base: base_frequency + modulation,
+      beat: beat_frequency,
+      left: base_frequency + modulation,
+      right: base_frequency + beat_frequency + modulation,
+      offset: modulation,
+      original: {
+        base: base_frequency,
+        left: base_frequency,
+        right: base_frequency + beat_frequency
+      }
+    };
+  }, [base_frequency, beat_frequency, calculateEMModulation]);
+
+  const handleWaveformChange = (_: React.MouseEvent<HTMLElement>, value: WaveForm) => {
+    if (onWaveformChange) {
+      onWaveformChange(value);
+    }
+  };
+
+  // Calculate electromagnetic field strength for display (0-1 range)
   const calculateElectromagneticStrength = (beatFreq: number): number => {
-    // Reason: Map beat frequency to electromagnetic field strength (0-1 range)
-    // Delta (0.5-4Hz): High strength for deep relaxation
-    // Theta (4-8Hz): Medium-high strength for creativity
-    // Alpha (8-13Hz): Medium strength for relaxed focus
-    // Beta (13-30Hz): Lower strength for active focus
-    if (beatFreq <= 4) return 0.333; // Delta - Low field
-    if (beatFreq <= 8) return 0.444; // Theta - medium field
-    if (beatFreq <= 13) return 0.666; // Alpha - medium field
-    if (beatFreq <= 30) return 0.777; // Beta - moderate field
-    return 0.999; // Delta - very strong field very strong field
+    if (!appState?.electromagnetic) return 0.5;
+
+    // Use actual EM field strength with frequency-based weighting
+    const baseStrength = appState.electromagnetic.strength || 0.5;
+
+    // Frequency-based intensity mapping
+    if (beatFreq <= 4) return baseStrength * 0.333;  // Delta - Low field
+    if (beatFreq <= 8) return baseStrength * 0.444;  // Theta - medium field
+    if (beatFreq <= 13) return baseStrength * 0.666; // Alpha - medium field
+    if (beatFreq <= 30) return baseStrength * 0.777; // Beta - moderate field
+    return baseStrength * 0.999;                     // Gamma - very strong field
   };
 
   const electromagneticStrength = calculateElectromagneticStrength(beat_frequency);
@@ -113,7 +210,7 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
 
   const handleRightChange = (value: string) => {
     console.log('🎛️ Right Hz input changed:', value);
-    setRightInput(value);
+    setRightInput(parseFloat(value));
 
     const rightNum = parseFloat(value);
     if (!isNaN(rightNum)) {
@@ -239,7 +336,7 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
             <ToggleButtonGroup
               value={waveform}
               exclusive
-              onChange={(_e, value) => value && onWaveformChange(value as WaveForm)}
+              onChange={(e)=>handleWaveformChange(e.target as HTMLButtonElement,waveform)}
               size="small"
               fullWidth
               sx={{
@@ -284,7 +381,7 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
                 <TextField
                   type="text"
                   value={leftInput}
-                  onChange={(e) => handleLeftChange(e.target.value)}
+                  onChange={(e) => handleLeftChange(parseFloat(e.target.value),)}
                   size="small"
                   fullWidth
                   inputProps={{ 
@@ -536,10 +633,19 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
           <Stack direction="row" spacing={0.5} justifyContent="center">
             <Chip label={`Viz: ${stats.averageFps} FPS`} size="small" sx={{ fontSize: '0.65rem' }} />
             <Chip
-              label={isPlaying ? 'ANALYZING' : 'READY'}
-              color={isPlaying ? 'success' : 'default'}
+              label={isVisualizing ? 'ANALYZING' : 'READY'}
+              color={isVisualizing ? 'success' : 'default'}
               size="small"
               sx={{ fontSize: '0.65rem' }}
+            />
+          </Stack>
+          <Stack direction="row" spacing={0.5} justifyContent="center">
+           <MainControlsMUI
+               isPlaying={isPlaying}
+               volume={volume}
+               onVolumeChange={onVolumeChange}
+               onPlay={onPlay}
+               onStop={onStop}
             />
           </Stack>
         </Stack>

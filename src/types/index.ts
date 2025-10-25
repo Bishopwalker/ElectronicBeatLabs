@@ -512,6 +512,8 @@ export interface MainControlsProps {
     onStop: () => void;
     onVolumeChange: (volume: number) => void;
     audioEngine?: () => AudioEngine;
+    boostMode?: boolean;  // Enable 0-200% volume range (default: false = 0-100%)
+    onBoostModeToggle?: (enabled: boolean) => void;
 }
 
 // Timer-related types

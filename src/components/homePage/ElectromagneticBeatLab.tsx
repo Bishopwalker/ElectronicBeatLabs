@@ -112,7 +112,10 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
 
   // 🔥 NEW: Initialize audio context on first user interaction
   const [audioInitialized, setAudioInitialized] = useState(false);
-  
+
+  // Boost mode state (enables 0-200% volume range)
+  const [boostMode, setBoostMode] = useState(false);
+
   useEffect(() => {
     const initAudioOnInteraction = async () => {
       if (!audioInitialized && !hybridEngine.audioContext) {
@@ -154,16 +157,16 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
     return {
       baseFreq: config?.base_frequency || audioState?.leftFreq || DEFAULT_BASE_FREQUENCY,
       beatFreq: config?.beat_frequency || audioState?.beat_frequency || DEFAULT_BEAT_FREQUENCY,
-      amplitude: audioState?.amplitude || config?.amplitude || DEFAULT_VOLUME,
+      volume: audioState?.volume || config?.volume || DEFAULT_VOLUME,
       spatialEnabled: appState?.spatialAudio?.enabled || false
     };
   }, [
     hybridEngine?.audioState?.config?.base_frequency,
     hybridEngine?.audioState?.config?.beat_frequency,
-    hybridEngine?.audioState?.config?.amplitude,
+    hybridEngine?.audioState?.config?.volume,
     hybridEngine?.audioState?.leftFreq,
     hybridEngine?.audioState?.beat_frequency,
-    hybridEngine?.audioState?.amplitude,
+    hybridEngine?.audioState?.volume,
     appState?.spatialAudio?.enabled
   ]);
   // NOTE: Electromagnetic state updates removed from useEffect to prevent infinite loops
@@ -334,7 +337,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
     const success = await startBinauralAudio(hybridEngine, {
       base_frequency: audioConfig.baseFreq,
       beat_frequency: audioConfig.beatFreq,
-      amplitude: audioConfig.amplitude,
+      volume: audioConfig.volume,
       waveform: 'sine'
     });
 
@@ -405,7 +408,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
             await frontendEngine.startBinauralBeat({
               base_frequency: audioConfig.baseFreq,
               beat_frequency: audioConfig.beatFreq,
-              amplitude: audioConfig.amplitude,
+              volume: audioConfig.volume,
               waveform: 'sine'
             });
             // Audio state updated by hybrid engine automatically - no updateAppState needed
@@ -437,7 +440,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
               const defaultConfig = {
                 base_frequency: audioConfig.baseFreq,
                 beat_frequency: audioConfig.beatFreq,
-                amplitude: audioConfig.amplitude,
+                volume: audioConfig.volume,
                 waveform: 'sine' as const,
                 spatial_enabled: audioConfig.spatialEnabled,
                 frequency: audioConfig.baseFreq
@@ -726,10 +729,12 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
           <Box sx={ElectromagneticLabStyles.compactStatusOverview}>
             <MainControlsMUI
               isPlaying={hybridEngine.audioState.isPlaying}
-              volume={hybridEngine.audioState.amplitude || DEFAULT_VOLUME}
+              volume={hybridEngine.audioState.volume || DEFAULT_VOLUME}
               onPlay={handlePlayBound}
               onStop={handleStop}
               onVolumeChange={handleVolumeChangeBound}
+              boostMode={boostMode}
+              onBoostModeToggle={setBoostMode}
               compact={true}
             />
 
@@ -831,6 +836,9 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                       base_frequency={audioConfig.baseFreq}
                       beat_frequency={audioConfig.beatFreq}
                       waveform={activeAudioEngine?.audioState?.waveform || 'sine'}
+                      isPlaying={hybridEngine.audioState.isPlaying}
+                      volume={audioConfig.volume}
+                      appState={appState}
                       onFrequencyChange={(base_frequency, beat_frequency) => {
                         console.log('🎛️ Parent received frequency change - base_frequency:', base_frequency, 'beat_frequency:', beat_frequency);
 
@@ -854,6 +862,24 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                         if (activeAudioEngine.updateWaveform) {
                           activeAudioEngine.updateWaveform(waveform);
                         }
+                      }}
+                      onVolumeChange={(volume) => {
+                        console.log('🎚️ Volume change received in parent:', volume);
+                        hybridEngine.updateVolume(volume);
+                      }}
+                      onPlay={() => {
+                        console.log('▶️ Play button clicked - starting audio with hybridEngine');
+                        const config = {
+                          base_frequency: audioConfig.baseFreq,
+                          beat_frequency: audioConfig.beatFreq,
+                          volume: audioConfig.volume,
+                          waveform: (activeAudioEngine?.audioState?.waveform || 'sine') as 'sine' | 'square' | 'triangle' | 'sawtooth'
+                        };
+                        hybridEngine.startBinauralBeat(config);
+                      }}
+                      onStop={() => {
+                        console.log('⏹️ Stop button clicked - stopping audio with hybridEngine');
+                        hybridEngine.stopBinauralBeat();
                       }}
                       currentPreset={currentPreset}
                   />
@@ -936,7 +962,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                   right: audioConfig.baseFreq + audioConfig.beatFreq,
                   beat: audioConfig.beatFreq
                 }}
-                volume={hybridEngine.audioState.amplitude || DEFAULT_VOLUME}
+                volume={hybridEngine.audioState.volume || DEFAULT_VOLUME}
                 audioEngine={backendEngine}
                 onToggleEngine={handleEngineToggle}
                 appState={appState}

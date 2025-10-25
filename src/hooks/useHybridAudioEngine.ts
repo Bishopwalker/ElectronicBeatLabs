@@ -149,7 +149,7 @@ export const useHybridAudioEngine = () => {
     console.log('🎵 [HYBRID ENGINE DEBUG] Starting binaural beat:');
     console.log('   ├─ base_frequency:', config.base_frequency, 'Hz');
     console.log('   ├─ beat_frequency:', config.beat_frequency, 'Hz');
-    console.log('   ├─ amplitude:', config.amplitude ?? 'undefined (will use DEFAULT_VOLUME)');
+    console.log('   ├─ volume:', config.volume ?? 'undefined (will use DEFAULT_VOLUME)');
     console.log('   ├─ waveform:', config.waveform);
     console.log('   └─ DEFAULT_VOLUME:', DEFAULT_VOLUME);
 
@@ -349,7 +349,7 @@ export const useHybridAudioEngine = () => {
     const config: BinauralBeatConfig = {
       base_frequency: pattern.frequencies.carrier,
       beat_frequency: pattern.frequencies.beat,
-      amplitude: DEFAULT_VOLUME,
+      volume: DEFAULT_VOLUME,
       waveform: 'sine'
     };
 
@@ -363,7 +363,7 @@ export const useHybridAudioEngine = () => {
     const config: BinauralBeatConfig = {
       base_frequency: leftFreq,
       beat_frequency: Math.abs(rightFreq - leftFreq),
-      amplitude: DEFAULT_VOLUME,
+      volume: DEFAULT_VOLUME,
       waveform: 'sine'
     };
 
@@ -503,12 +503,12 @@ export const useHybridAudioEngine = () => {
     const beatFreq = frontendEngine.audioState.beat_frequency || backendEngine.audioState.config?.beat_frequency || DEFAULT_BEAT_FREQUENCY;
     const leftFreq = baseFreq;
     const rightFreq = baseFreq + beatFreq;
-    const amplitude = frontendEngine.audioState.amplitude || backendEngine.audioState.config?.amplitude || DEFAULT_VOLUME;
+    const volume = frontendEngine.audioState.volume || backendEngine.audioState.config?.volume || DEFAULT_VOLUME;
     const waveform = frontendEngine.audioState.waveform || 'sine';
     
     return {
       isPlaying, // Boolean - never null
-      amplitude, // Number - always has default
+      volume, // Number - always has default
       leftFreq, // Number - always has default
       rightFreq, // Number - always has default
       beat_frequency: beatFreq, // Number - always has default
@@ -516,7 +516,7 @@ export const useHybridAudioEngine = () => {
       config: {
         base_frequency: baseFreq, // Number - always has default
         beat_frequency: beatFreq, // Number - always has default
-        amplitude, // Number - always has default
+        volume, // Number - always has default
         waveform // String - always has default
       },
       // 🔥 NEW: Add context and nodes for compatibility
@@ -531,7 +531,7 @@ export const useHybridAudioEngine = () => {
     isPlaying,
     frontendEngine.audioState.leftFreq,
     frontendEngine.audioState.beat_frequency,
-    frontendEngine.audioState.amplitude,
+    frontendEngine.audioState.volume,
     frontendEngine.audioState.waveform,
     frontendEngine.audioContext,
     frontendEngine.audioState.gainL,
@@ -540,7 +540,7 @@ export const useHybridAudioEngine = () => {
     frontendEngine.audioState.oscillatorR,
     backendEngine.audioState.config?.base_frequency,
     backendEngine.audioState.config?.beat_frequency,
-    backendEngine.audioState.config?.amplitude
+    backendEngine.audioState.config?.volume
   ]);
 
   return {
