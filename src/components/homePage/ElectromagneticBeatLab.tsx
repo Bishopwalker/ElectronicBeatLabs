@@ -299,19 +299,32 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                   audioConfig.beatFreq <= 30 ? 'ACTIVE FOCUS' : 'HIGH ALERT') : 'INACTIVE';
 
   // Simple one-time backend connection attempt on startup
-  // 🔥 FIX: Add connection attempt guard to prevent React StrictMode double-mounting issues
-  const connectionAttemptedRef = React.useRef(false);
+  // Guard against React 18 StrictMode double-mount using a module-level flag on window
+  // Toggle with VITE_BACKEND_AUTOCONNECT (default true)
   useEffect(() => {
-    if (!backendEngine.backendConnected && backendEngine.connectBackend && !connectionAttemptedRef.current) {
+    const autoConnect = (import.meta as any).env?.VITE_BACKEND_AUTOCONNECT !== 'false';
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    if (typeof (window as any).__ebl_backend_connect_attempted === 'undefined') {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      (window as any).__ebl_backend_connect_attempted = false;
+    }
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    const alreadyAttempted = (window as any).__ebl_backend_connect_attempted === true;
+
+    if (autoConnect && !alreadyAttempted && !backendEngine.backendConnected && backendEngine.connectBackend) {
       console.log('🔌 One-time backend connection attempt on startup...');
-      connectionAttemptedRef.current = true;
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      (window as any).__ebl_backend_connect_attempted = true;
       backendEngine.connectBackend().catch((error) => {
         console.log('⚠️ Backend connection failed (expected if backend not running):', error.message);
-        // Reset flag on error so user can retry
-        connectionAttemptedRef.current = false;
+        // Keep the global flag true to avoid StrictMode double-attempt; user can click to retry
       });
     }
-  }, []); // Empty dependency array - only run once on mount (but React StrictMode will double-call)
+  }, [backendEngine.backendConnected, backendEngine.connectBackend]);
 
   // Bound handler functions with context
   // 🔥 FIXED: Stable closure with proper dependencies
@@ -802,6 +815,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
         {!closedSections.includes('patternID') && (
             <Grid item size={{ xs: 12, sm: 6, md: 4, lg: 4, xl: 3 }} sx={{
               display: 'flex',
+              flex: '1 1 auto',
               maxHeight: { xs: '400px', sm: '380px', md: '550px', lg: '775px' },
               minHeight: { xs: '400px', sm: '380px', md: '550px', lg: '650px' }
             }}>
@@ -821,6 +835,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
         {!closedSections.includes('frequencyVisualizer') && (
             <Grid item size={{ xs: 12, sm: 12, md: 8, lg: 6, xl: 6 }} sx={{
               display: 'flex',
+              flex: '2 1 auto',
               overflowY: 'auto',
               maxHeight: { xs: '500px', sm: '450px', md: 'fit-content', lg: 'fit-content' }
             }}>
@@ -842,6 +857,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
         {!closedSections.includes('binauralBeats') && (
             <Grid item size={{ xs: 12, sm: 6, md: 4, lg: 4, xl: 3 }} sx={{
               display: 'flex',
+              flex: '2 1 auto',
               maxHeight: { xs: '500px', sm: '450px', md: 'fit-content', lg: 'fit-content' }
             }}>
               <CollapsibleSection id="binauralBeats" title="Binaural Beat Generator" icon="🎧" defaultOpen={true} onClose={handleSectionClose}>
@@ -906,6 +922,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
         {!closedSections.includes('timerPanel') && (
             <Grid item size={{ xs: 12, sm: 6, md: 4, lg: 3, xl: 3 }} sx={{
               display: 'flex',
+              flex: '1 1 auto',
               maxHeight: { xs: '500px', sm: '450px', md: '550px', lg: '550px' }
             }}>
               <CollapsibleSection id="timerPanel" title="Timer & Sessions" icon="⏰" defaultOpen={true} onClose={handleSectionClose}>
@@ -935,10 +952,9 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
         )}
         {/* Equalizer - SAME HEIGHT */}
         {!closedSections.includes('equalizer') && (
-          <Grid item size={{ xs: 12, sm: 6, md: 4, lg: 4, xl: 3 }} sx={{ 
+          <Grid item size={{ xs: 12, sm: 6, md: 4, lg: 4, xl: 3 }} sx={{
             display: 'flex',
-            flex: '1 1 2',
-
+            flex: '1 1 auto'
           }}>
             <CollapsibleSection id="equalizer" title="Equalizer" icon="🎚️" defaultOpen={true} onClose={handleSectionClose}>
               <EqualizerMUI
@@ -957,6 +973,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
         {!closedSections.includes('masterControls') && (
           <Grid item size={{ xs: 12, sm: 6, md: 4, lg: 4, xl: 3 }} sx={{
             display: 'flex',
+            flex: '1 1 auto',
             maxHeight: { xs: '400px', sm: '380px', md: '350px', lg: '350px' }
           }}>
             <CollapsibleSection id="masterControls" title="Master Controls" icon="🎛️" defaultOpen={true} onClose={handleSectionClose}>
