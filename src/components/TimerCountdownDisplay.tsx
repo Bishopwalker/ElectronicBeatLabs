@@ -5,9 +5,11 @@ import React, {useState,useEffect,useMemo} from 'react';
 import {Box, Typography, Paper, LinearProgress, Chip, IconButton, Tooltip, Collapse} from '@mui/material';
 import TimerIcon from '@mui/icons-material/Timer';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import PauseIcon from '@mui/icons-material/Pause';
 import SkipPreviousIcon from '@mui/icons-material/SkipPrevious';
 import SkipNextIcon from '@mui/icons-material/SkipNext';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
+import RepeatIcon from '@mui/icons-material/Repeat';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import type {TimerPreset, TimerStatus} from '../data/timer';
@@ -23,6 +25,9 @@ interface TimerCountdownDisplayProps {
     appState?: AppState,
     onJumpToTransition?: (direction: 'next' | 'previous') => void,
     onRestartTransition?: () => void,
+    onPauseTimer?: () => void,
+    onResumeTimer?: () => void,
+    onRepeatSession?: () => void,
     audioContext?: AudioContext,
     analyserNode?: AnalyserNode,
     hybridEngine?: any, // 🔥 NEW: Pass the hybrid engine to get real audio state
@@ -37,6 +42,9 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
                                                                          appState,
                                                                          onJumpToTransition,
                                                                          onRestartTransition,
+                                                                         onPauseTimer,
+                                                                         onResumeTimer,
+                                                                         onRepeatSession,
                                                                          audioContext,
                                                                          analyserNode,
                                                                          hybridEngine, // 🔥 NEW
@@ -269,53 +277,92 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
                     )}
 
                     {/* Navigation Controls */}
-                    <Box sx={{display: 'flex', justifyContent: 'center', gap: 1}}>
-                        <Tooltip title="Previous Transition">
-                            <span>
+                    <Box sx={{display: 'flex', justifyContent: 'center', gap: 1, flexWrap: 'wrap'}}>
+                        {/* First Row - Transport Controls */}
+                        <Box sx={{display: 'flex', gap: 1}}>
+                            <Tooltip title={timerStatus.session?.is_paused ? "Resume Timer" : "Pause Timer"}>
                                 <IconButton
                                     size="small"
-                                    onClick={() => onJumpToTransition?.('previous')}
-                                    disabled={currentIndex === 0}
+                                    onClick={() => timerStatus.session?.is_paused ? onResumeTimer?.() : onPauseTimer?.()}
+                                    disabled={!onPauseTimer || !onResumeTimer}
+                                    sx={{
+                                        bgcolor: timerStatus.session?.is_paused ? 'rgba(0, 255, 136, 0.2)' : 'rgba(255, 193, 7, 0.2)',
+                                        '&:hover': {
+                                            bgcolor: timerStatus.session?.is_paused ? 'rgba(0, 255, 136, 0.3)' : 'rgba(255, 193, 7, 0.3)'
+                                        }
+                                    }}
+                                >
+                                    {timerStatus.session?.is_paused ?
+                                        <PlayArrowIcon sx={{fontSize: '1.2rem', color: '#00ff88'}} /> :
+                                        <PauseIcon sx={{fontSize: '1.2rem', color: '#ffc107'}} />
+                                    }
+                                </IconButton>
+                            </Tooltip>
+
+                            <Tooltip title="Repeat Session">
+                                <IconButton
+                                    size="small"
+                                    onClick={() => onRepeatSession?.()}
+                                    disabled={!onRepeatSession}
+                                    sx={{
+                                        bgcolor: 'rgba(33, 150, 243, 0.2)',
+                                        '&:hover': {bgcolor: 'rgba(33, 150, 243, 0.3)'}
+                                    }}
+                                >
+                                    <RepeatIcon sx={{fontSize: '1.2rem', color: '#2196f3'}} />
+                                </IconButton>
+                            </Tooltip>
+                        </Box>
+
+                        {/* Second Row - Transition Controls */}
+                        <Box sx={{display: 'flex', gap: 1, width: '100%', justifyContent: 'center'}}>
+                            <Tooltip title="Previous Transition">
+                                <span>
+                                    <IconButton
+                                        size="small"
+                                        onClick={() => onJumpToTransition?.('previous')}
+                                        disabled={currentIndex === 0}
+                                        sx={{
+                                            bgcolor: 'rgba(255, 107, 0, 0.2)',
+                                            '&:hover': {bgcolor: 'rgba(255, 107, 0, 0.3)'},
+                                            '&:disabled': {opacity: 0.3}
+                                        }}
+                                    >
+                                        <SkipPreviousIcon sx={{fontSize: '1.2rem', color: '#ff6b00'}} />
+                                    </IconButton>
+                                </span>
+                            </Tooltip>
+
+                            <Tooltip title="Restart Current Transition">
+                                <IconButton
+                                    size="small"
+                                    onClick={() => onRestartTransition?.()}
+                                    disabled={!onRestartTransition}
+                                    sx={{
+                                        bgcolor: 'rgba(138, 43, 226, 0.2)',
+                                        '&:hover': {bgcolor: 'rgba(138, 43, 226, 0.3)'}
+                                    }}
+                                >
+                                    <RestartAltIcon sx={{fontSize: '1.2rem', color: '#8a2be2'}} />
+                                </IconButton>
+                            </Tooltip>
+
+                            <Tooltip title="Next Transition">
+                                <span>
+                                <IconButton
+                                    size="small"
+                                    onClick={() => onJumpToTransition?.('next')}
+                                    disabled={!onJumpToTransition || currentIndex >= totalTransitions - 1}
                                     sx={{
                                         bgcolor: 'rgba(255, 107, 0, 0.2)',
                                         '&:hover': {bgcolor: 'rgba(255, 107, 0, 0.3)'},
                                         '&:disabled': {opacity: 0.3}
                                     }}
-                                >
-                                    <SkipPreviousIcon sx={{fontSize: '1.2rem', color: '#ff6b00'}} />
+                                >   <SkipNextIcon sx={{fontSize: '1.2rem', color: '#ff6b00'}} />
                                 </IconButton>
-                            </span>
-                        </Tooltip>
-
-                        <Tooltip title="Restart Current Transition">
-                            <IconButton
-                                size="small"
-                                onClick={() => onRestartTransition?.()}
-                                disabled={!onRestartTransition}
-                                sx={{
-                                    bgcolor: 'rgba(138, 43, 226, 0.2)',
-                                    '&:hover': {bgcolor: 'rgba(138, 43, 226, 0.3)'}
-                                }}
-                            >
-                                <RestartAltIcon sx={{fontSize: '1.2rem', color: '#8a2be2'}} />
-                            </IconButton>
-                        </Tooltip>
-
-                        <Tooltip title="Next Transition">
-                            <span>
-                            <IconButton
-                                size="small"
-                                onClick={() => onJumpToTransition?.('next')}
-                                disabled={!onJumpToTransition || currentIndex >= totalTransitions - 1}
-                                sx={{
-                                    bgcolor: 'rgba(255, 107, 0, 0.2)',
-                                    '&:hover': {bgcolor: 'rgba(255, 107, 0, 0.3)'},
-                                    '&:disabled': {opacity: 0.3}
-                                }}
-                            >   <SkipNextIcon sx={{fontSize: '1.2rem', color: '#ff6b00'}} />
-                            </IconButton>
-                                </span>
-                        </Tooltip>
+                                    </span>
+                            </Tooltip>
+                        </Box>
                     </Box>
                 </Box>
 
@@ -345,6 +392,7 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
                             state={visualizerState as AppState}
                             audioContext={audioContext}
                             analyserNode={analyserNode}
+                            audioWorkletStatus={hybridEngine?.audioWorkletStatus}
                         />
                     ) : (
                         <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>

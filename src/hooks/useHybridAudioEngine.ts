@@ -35,8 +35,7 @@ import {
   DEFAULT_BASE_FREQUENCY
 } from '../constants/audio.constants';
 import { debugLog, debugDecision, debugBreakpoint } from '../utils/audioDebugger';
-
-export const useHybridAudioEngine = () => {
+ export const useHybridAudioEngine = () => {
   // Initialize both engines (will be routed through mixer after mixer is created)
   const frontendEngine = useAudioEngine();
   const backendEngine = useBackendAudioEngine();
@@ -72,7 +71,24 @@ export const useHybridAudioEngine = () => {
         // Create mixer
         mixerRef.current = new AudioMixer(frontendEngine.audioContext);
 
-        // 🔥 CRITICAL FIX: Connect BOTH engines to mixer
+        // 🔥 CRITICAL FIX: Save current playing state and config BEFORE setting external nodes
+        const wasPlaying = frontendEngine.audioState.isPlaying;
+        const currentConfig = wasPlaying ? {
+          base_frequency: frontendEngine.audioState.leftFreq || DEFAULT_BASE_FREQUENCY,
+          beat_frequency: frontendEngine.audioState.beat_frequency || DEFAULT_BEAT_FREQUENCY,
+          volume: frontendEngine.audioState.volume || DEFAULT_VOLUME,
+          waveform: frontendEngine.audioState.waveform || 'sine'
+        } : null;
+
+        // 🔥 CRITICAL FIX: STOP audio before changing nodes to avoid disconnection issues
+        if (wasPlaying) {
+          console.log('🛑 Hybrid Engine: Stopping frontend audio before mixer connection...');
+          frontendEngine.stopBinauralBeat();
+          // Wait for audio to fully stop
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+
+        // Connect BOTH engines to mixer
         // This ensures both frontend and backend audio route through mixer for synchronized volume control
 
         // Connect frontend engine to mixer's frontend gain
@@ -89,6 +105,13 @@ export const useHybridAudioEngine = () => {
           mixerRef.current.analyserNode,
           frontendEngine.audioContext // 🔥 FIXED: Use frontend's context!
         );
+
+        // 🔥 CRITICAL FIX: RESTART audio if it was playing, now routing through mixer
+        if (wasPlaying && currentConfig) {
+          console.log('▶️ Hybrid Engine: Restarting audio through mixer with config:', currentConfig);
+          await frontendEngine.startBinauralBeat(currentConfig);
+          console.log('✅ Hybrid Engine: Audio reconnected through mixer successfully');
+        }
 
         console.log('✅ Hybrid Engine: Audio mixer initialized and connected to BOTH engines');
         setIsInitialized(true);
@@ -115,7 +138,7 @@ export const useHybridAudioEngine = () => {
    * 🔥 CRITICAL FIX: Crossfade if audio playing OR backend has active session
    */
   useEffect(() => {
-    const backendNowConnected = backendEngine.backendConnected && backendEngine.sessionId;
+    const backendNowConnected = backendEngine.backendConnected && backendEngine.sessionId?true:false;
     const backendWasConnected = previousBackendConnected.current;
     const isAudioPlaying = frontendEngine.audioState.isPlaying || backendEngine.audioState.isPlaying;
     const hasActiveSession = !!backendEngine.sessionId; // Backend has session = will play soon
@@ -319,13 +342,12 @@ export const useHybridAudioEngine = () => {
    * 🔥 FIXED: Only update mixer volume - engines are routed through mixer, so no duplicate setting
    */
   const updateVolume = useCallback((volume: number) => {
-    const safeVolume = isNaN(volume) ? DEFAULT_VOLUME : Math.max(0, Math.min(2, volume));
+    const safeVolume = DEFAULT_VOLUME || Math.max(0, Math.min(2, volume));
 
     // 🔍 DEBUG LOGGING: Track volume updates (Phase 1)
     console.log('🎚️ [HYBRID ENGINE DEBUG] updateVolume called:');
     console.log('   ├─ input volume:', volume);
     console.log('   ├─ safe volume:', safeVolume, '(clamped to 0-2 range)');
-    console.log('   ├─ isNaN:', isNaN(volume));
     console.log('   └─ mixer initialized:', !!mixerRef.current);
 
     // Update mixer master volume - this controls both engines since they're routed through it
@@ -367,12 +389,16 @@ export const useHybridAudioEngine = () => {
     const config: BinauralBeatConfig = {
       base_frequency: pattern.frequencies.carrier,
       beat_frequency: pattern.frequencies.beat,
-      volume: DEFAULT_VOLUME,
-      waveform: 'sine'
+      waveform: 'sine', // PatternConfig doesn't have waveform property, default to sine
+      volume: DEFAULT_VOLUME
     };
+    const appstate:AppState ={
+
+    }
 
     await startBinauralBeat(config);
   }, [startBinauralBeat]);
+
 
   /**
    * Generate test tones
@@ -386,6 +412,7 @@ export const useHybridAudioEngine = () => {
     };
 
     startBinauralBeat(config);
+
 
     setTimeout(() => {
       stopBinauralBeat();
@@ -596,6 +623,7 @@ export const useHybridAudioEngine = () => {
     // Audio context management (CRITICAL for SettingsTab compatibility)
     initializeAudio,
     setAudioState: frontendEngine.setAudioState, // Passthrough to frontend engine
+    setEqualizerNodes: frontendEngine.setEqualizerNodes, // 🔥 NEW: Passthrough for equalizer
 
     // 🔥 FIXED: Return correct analyserNode based on active engine
     audioContext: frontendEngine.audioContext,
@@ -615,6 +643,9 @@ export const useHybridAudioEngine = () => {
 
     // Browser support
     isSupported: frontendEngine.isSupported,
+
+    // 🔥 NEW: AudioWorklet status (for debugging and visibility)
+    audioWorkletStatus: backendEngine.audioWorkletStatus,
 
     // EXPOSED INTERNAL ENGINES (for legacy component compatibility)
     // These are the SAME engines managed internally by hybrid

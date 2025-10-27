@@ -96,11 +96,17 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
     restartCurrentTransition: () => console.warn('Timer navigation not initialized')
   });
 
-  // Timer control callback ref for stopping timer
+  // Timer control callback ref for controlling timer (stop, pause, resume, restart)
   const timerControlRef = useRef<{
     stopTimer: () => void;
+    pauseTimer: () => void;
+    resumeTimer: () => void;
+    restartTimer: () => void;
   }>({
-    stopTimer: () => console.warn('Timer control not initialized')
+    stopTimer: () => console.warn('Timer control not initialized'),
+    pauseTimer: () => console.warn('Timer control not initialized'),
+    resumeTimer: () => console.warn('Timer control not initialized'),
+    restartTimer: () => console.warn('Timer control not initialized')
   });
 
   // Current preset tracking
@@ -293,14 +299,19 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                   audioConfig.beatFreq <= 30 ? 'ACTIVE FOCUS' : 'HIGH ALERT') : 'INACTIVE';
 
   // Simple one-time backend connection attempt on startup
+  // 🔥 FIX: Add connection attempt guard to prevent React StrictMode double-mounting issues
+  const connectionAttemptedRef = React.useRef(false);
   useEffect(() => {
-    if (!backendEngine.backendConnected && backendEngine.connectBackend) {
+    if (!backendEngine.backendConnected && backendEngine.connectBackend && !connectionAttemptedRef.current) {
       console.log('🔌 One-time backend connection attempt on startup...');
+      connectionAttemptedRef.current = true;
       backendEngine.connectBackend().catch((error) => {
         console.log('⚠️ Backend connection failed (expected if backend not running):', error.message);
+        // Reset flag on error so user can retry
+        connectionAttemptedRef.current = false;
       });
     }
-  }, []); // Empty dependency array - only run once on mount
+  }, []); // Empty dependency array - only run once on mount (but React StrictMode will double-call)
 
   // Bound handler functions with context
   // 🔥 FIXED: Stable closure with proper dependencies
@@ -441,8 +452,8 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                 base_frequency: audioConfig.baseFreq,
                 beat_frequency: audioConfig.beatFreq,
                 volume: audioConfig.volume,
-                waveform: 'sine' as const,
-                spatial_enabled: audioConfig.spatialEnabled,
+                waveform: appState.config.waveform,
+  spatial_enabled: audioConfig.spatialEnabled,
                 frequency: audioConfig.baseFreq
               };
               await backendEngine.startBackendSession(defaultConfig);
@@ -492,7 +503,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
     // Get frequency values from hybrid engine (the ACTUAL playing frequencies)
     const baseFreq = hybridEngine.audioState.config?.base_frequency || DEFAULT_BASE_FREQUENCY;
     const beatFreq = hybridEngine.audioState.config?.beat_frequency || DEFAULT_BEAT_FREQUENCY;
-    const isPlaying = hybridEngine.audioState.isPlaying;
+    const isPlaying = hybridEngine.audioState?.isPlaying;
 
     return {
       // 🔥 Audio engine reference - FrequencyVisualizer accesses state.audio.audioState.isPlaying
@@ -762,6 +773,9 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
             appState={appState}
             onJumpToTransition={timerNavigationRef.current.jumpToTransition}
             onRestartTransition={timerNavigationRef.current.restartCurrentTransition}
+            onPauseTimer={timerControlRef.current.pauseTimer}
+            onResumeTimer={timerControlRef.current.resumeTimer}
+            onRepeatSession={timerControlRef.current.restartTimer}
             audioContext={activeAudioEngine.audioContext}
             analyserNode={activeAudioEngine.analyserNode}
             hybridEngine={hybridEngine}
@@ -932,9 +946,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                 analyserNode={activeAudioEngine.analyserNode || null}
                 isPlaying={hybridEngine.audioState.isPlaying}
                 onEqualizerChange={(inputNode, outputNode) => {
-                  if (activeAudioEngine.setEqualizerNodes) {
-                    activeAudioEngine.setEqualizerNodes(inputNode, outputNode);
-                  }
+                  activeAudioEngine?.setEqualizerNodes(inputNode, outputNode);
                 }}
               />
             </CollapsibleSection>
@@ -943,7 +955,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
 
         {/* Master Controls - SAME HEIGHT */}
         {!closedSections.includes('masterControls') && (
-          <Grid item size={{ xs: 12, sm: 6, md: 4, lg: 4, xl: 3 }} sx={{ 
+          <Grid item size={{ xs: 12, sm: 6, md: 4, lg: 4, xl: 3 }} sx={{
             display: 'flex',
             maxHeight: { xs: '400px', sm: '380px', md: '350px', lg: '350px' }
           }}>
@@ -976,16 +988,16 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
 
         {/* Spatial Visualizer - Same width as Frequency Visualizer */}
         {!closedSections.includes('visualizeID') && (
-          <Grid item size={{ xs: 12, sm: 12, md: 8, lg: 6, xl: 6 }} sx={{ 
+          <Grid item size={{ xs: 12, sm: 12, md: 8, lg: 6, xl: 6 }} sx={{
             display: 'flex',
             minWidth: { xs: '25%', sm: '25%', md: '25%', lg: '25%' },
             maxHeight: { xs: '500px', sm: '500px', md: '450px', lg: '550px' }
           }}>
-            <CollapsibleSection 
-              id="visualizeID" 
-              title="Visualization" 
-              icon="🎨" 
-              defaultOpen={false} 
+            <CollapsibleSection
+              id="visualizeID"
+              title="Visualization"
+              icon="🎨"
+              defaultOpen={false}
               onClose={handleSectionClose}
               onFullscreen={(id) => {
                 console.log('📺 Fullscreen requested for:', id);
@@ -997,7 +1009,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                   <SpatialVisualizer
                     pattern={
                       // 🔥 FIXED: Find matching Pattern8D from pre-generated patterns8D array
-                      appState.currentPattern 
+                      appState.currentPattern
                         ? appState.patterns8D.find(p => p.id === appState.currentPattern?.id) || appState.patterns8D[0]
                         : appState.patterns8D[0] // Default to first pattern
                     }
@@ -1021,9 +1033,9 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
  {/* Dark Screen Overlay */}
       {darkScreen && (
         <Box sx={ElectromagneticLabStyles.darkScreenOverlay} onClick={toggleDarkScreen}>
-          <Typography 
-            variant="h6" 
-            sx={{ 
+          <Typography
+            variant="h6"
+            sx={{
               color: 'rgba(255, 255, 255, 0.3)',
               fontStyle: 'italic',
               cursor: 'pointer',

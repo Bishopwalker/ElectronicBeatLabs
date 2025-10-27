@@ -159,33 +159,28 @@ export const useAudioEngine = () => {
     }
   }, []);
 
-  // Initialize audio context on component mount (requires user gesture)
-  // useEffect(() => {
-  //   if (skipInitialization) {
-  //     console.log('🚫 Frontend Engine: Skipping initialization (backend engine active)');
-  //     return;
-  //   }
-  //
-  //   const initAudioContextOnMount = async () => {
-  //     if (!audioState.context) {
-  //       console.log('🎵 Frontend Engine: Initializing audio context on mount...');
-  //       try {
-  //         const context = await initializeAudio();
-  //         if (context) {
-  //           setAudioState(prev => ({
-  //             ...prev,
-  //             context
-  //           }));
-  //           console.log('✅ Frontend Engine: Audio context initialized and stored in state, state:', context.state);
-  //         }
-  //       } catch (error) {
-  //         console.log('⚠️ Frontend Engine: Audio context initialization requires user gesture:', error);
-  //       }
-  //     }
-  //   };
-  //
-  //   initAudioContextOnMount();
-  // }, [audioState.context, initializeAudio, skipInitialization]); // Only depend on skipInitialization, initializeAudio is stable
+  useEffect(() => {
+
+    const initAudioContextOnMount = async () => {
+      if (!audioState.context) {
+        console.log('🎵 Frontend Engine: Initializing audio context on mount...');
+        try {
+          const context = await initializeAudio();
+          if (context) {
+            setAudioState(prev => ({
+              ...prev,
+              context
+            }));
+            console.log('✅ Frontend Engine: Audio context initialized and stored in state, state:', context.state);
+          }
+        } catch (error) {
+          console.log('⚠️ Frontend Engine: Audio context initialization requires user gesture:', error);
+        }
+      }
+    };
+
+    initAudioContextOnMount();
+  }, [audioState.context, initializeAudio]); // Only depend on skipInitialization, initializeAudio is stable
 
   // Create oscillator with specified waveform
   const createOscillator = useCallback((
@@ -292,8 +287,8 @@ export const useAudioEngine = () => {
       const oscR = createOscillator(context, rightFreq, config.waveform);
 
       // Create gain nodes - use config volume or default volume (no multiplication)
-      const gainL = createGainNode(context, config.volume ?? DEFAULT_VOLUME);
-      const gainR = createGainNode(context, config.volume ?? DEFAULT_VOLUME);
+      const gainL = createGainNode(context, config.volume ?? audioState.volume ?? DEFAULT_VOLUME);
+      const gainR = createGainNode(context, config.volume ?? audioState.volume ?? DEFAULT_VOLUME);
 
       // Create channel merger for proper stereo separation
       const merger = context.createChannelMerger(2);
@@ -313,11 +308,11 @@ export const useAudioEngine = () => {
 
       // Connect left oscillator to left channel only
       oscL.connect(gainL);
-      gainL.connect(merger, 0, 0); // Connect to left output channel
+      gainL.connect(merger, 0, 0); // ✅ FIXED: Connect to left input (index 0)
 
       // Connect right oscillator to right channel only
       oscR.connect(gainR);
-      gainR.connect(merger, 0, 1); // Connect to right output channel
+      gainR.connect(merger, 0, 1); // ✅ Connect to right input (index 1)
 
       // 🔥 CRITICAL FIX: Route through external output gain node if provided (AudioMixer integration)
       // This ensures the mixer can control frontend engine volume

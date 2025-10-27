@@ -67,6 +67,11 @@ export interface  BackendAudioEngineState {
     leftFreq?: number;  // Left ear = base_frequency
     rightFreq?: number; // Right ear = base_frequency + beat_frequency
     beat_frequency?: number; // Beat frequency from config
+    gainL: GainNode | null;
+    gainR: GainNode | null;
+    oscillatorL: OscillatorNode | null;
+    oscillatorR: OscillatorNode | null;
+    context: AudioContext | null;
 }
 
 /**

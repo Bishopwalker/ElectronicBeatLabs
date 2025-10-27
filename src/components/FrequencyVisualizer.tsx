@@ -153,7 +153,7 @@ function generateWaveform(t: number, waveform: 'sine' | 'square' | 'triangle' | 
 
 interface FrequencyVisualizerProps {
   state: AppState & {
-    audio?: any;
+    audio?: AnyAudion;
     base_frequency?: number;
     beat_frequency?: number;
     config?: {
@@ -169,6 +169,13 @@ interface FrequencyVisualizerProps {
   width?: number;
   audioContext?: AudioContext;
   analyserNode?: AnalyserNode;
+  // 🔥 NEW: AudioWorklet status for debugging and visibility
+  audioWorkletStatus?: {
+    moduleLoaded: boolean;
+    nodeExists: boolean;
+    nodeReference: AudioWorkletNode | null;
+    isProcessing: boolean;
+  };
 }
 
 type VisualizationMode = 'waveform' | 'spiral2d' | 'spiral3d' | 'radial' | 'combined';
@@ -218,6 +225,8 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
   showMetrics = true,
   audioContext,
   analyserNode,
+    // 🔥 NEW: AudioWorklet status for debugging and visibility
+  audioWorkletStatus,
 }) => {
   // Early return if state is invalid
   if (!state || typeof state !== 'object') {
@@ -329,8 +338,61 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
       console.error('❌ Fullscreen toggle failed:', error);
     }
   };
-// console.log(analyserNode)
-//   console.log(audioContext)
+// 🔥 NEW: Enhanced AudioWorklet visibility debugging
+  // Run only once on mount to avoid interference
+  const debugLoggedRef = React.useRef(false);
+  React.useEffect(() => {
+    if (!audioContext && !analyserNode) return;
+    if (debugLoggedRef.current) return; // Only log once
+    debugLoggedRef.current = true;
+
+    console.log('=== 🎵 FREQUENCY VISUALIZER AUDIO DEBUG ===');
+    console.log('📊 AudioContext:', audioContext);
+    console.log('   ├─ State:', audioContext?.state);
+    console.log('   ├─ Sample Rate:', audioContext?.sampleRate, 'Hz');
+    console.log('   ├─ Current Time:', audioContext?.currentTime?.toFixed(2), 's');
+    console.log('   └─ Has audioWorklet interface?', !!audioContext?.audioWorklet);
+
+    console.log('📈 AnalyserNode:', analyserNode);
+    console.log('   ├─ FFT Size:', analyserNode?.fftSize);
+    console.log('   ├─ Frequency Bin Count:', analyserNode?.frequencyBinCount);
+    console.log('   └─ Smoothing:', analyserNode?.smoothingTimeConstant);
+
+    // 🔥 REMOVED: Test AudioWorkletNode creation was interfering with audio playback!
+    // We already have audioWorkletStatus from the backend engine - no need to test here
+
+    // 🔥 NEW: Display AudioWorklet status if available
+    if (audioWorkletStatus) {
+      console.log('🎛️ AudioWorklet Status (from backend engine):');
+      console.log('   ├─ Module Loaded?', audioWorkletStatus.moduleLoaded);
+      console.log('   ├─ Node Exists?', audioWorkletStatus.nodeExists);
+      console.log('   ├─ Is Processing?', audioWorkletStatus.isProcessing);
+      console.log('   └─ Node Reference:', audioWorkletStatus.nodeReference);
+
+      if (audioWorkletStatus.nodeReference) {
+        console.log('      ├─ Parameters:', Array.from(audioWorkletStatus.nodeReference.parameters.keys()));
+        console.log('      └─ Channel Count:', audioWorkletStatus.nodeReference.channelCount);
+      }
+    } else {
+      console.log('⚠️ No audioWorkletStatus prop provided (expected if using frontend engine)');
+    }
+
+    console.log('===========================================');
+
+    // 🔥 NEW: Listen for AudioWorklet metrics responses
+    if (audioWorkletStatus?.nodeReference) {
+      const handleWorkletMessage = (event: MessageEvent) => {
+        if (event.data.type === 'metrics') {
+          console.log('📊 AudioWorklet Metrics Received:', event.data.data);
+        }
+      };
+
+      audioWorkletStatus.nodeReference.port.addEventListener('message', handleWorkletMessage);
+      return () => {
+        audioWorkletStatus.nodeReference?.port.removeEventListener('message', handleWorkletMessage);
+      };
+    }
+  }, [audioContext, analyserNode, audioWorkletStatus]);
   // Fullscreen change listener
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -449,8 +511,9 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
         // 🔥 CALCULATE AUDIO BANDS FOR ALL RENDERS
         const audioBands = getFrequencyBands(frequencyData);
 
-        // 🎨 DEBUG: Show audio levels on canvas for troubleshooting
-        if (frameCount % 60 === 0) {
+        // 🎨 DEBUG: Show audio levels on canvas for troubleshooting (every 10 seconds)
+        if (frameCount % 600 === 0) {
+          const freqSum = frequencyData.reduce((a, b) => a + b, 0);
           console.log('🎵 FrequencyVisualizer Audio Levels:', {
             bass: (audioBands.bass * 100).toFixed(1) + '%',
             mid: (audioBands.mid * 100).toFixed(1) + '%',
@@ -458,8 +521,39 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
             overall: (audioBands.overall * 100).toFixed(1) + '%',
             dominant: audioBands.dominant,
             analyserNode: !!analyserNode,
-            frequencyDataSum: frequencyData.reduce((a, b) => a + b, 0)
+            frequencyDataSum: freqSum
           });
+
+          // 🔥 CRITICAL DEBUG: If no audio detected, diagnose why
+          if (freqSum === 0 && analyserNode) {
+            console.warn('⚠️ ZERO AUDIO DETECTED! Diagnosing...');
+            console.log('   ├─ AudioContext state:', audioContext?.state);
+            console.log('   ├─ AudioContext currentTime:', audioContext?.currentTime);
+            console.log('   ├─ AnalyserNode exists?', !!analyserNode);
+            console.log('   ├─ AnalyserNode.fftSize:', analyserNode.fftSize);
+            console.log('   ├─ AnalyserNode.numberOfInputs:', analyserNode.numberOfInputs);
+            console.log('   ├─ AnalyserNode.numberOfOutputs:', analyserNode.numberOfOutputs);
+            console.log('   ├─ AppState.audio.isPlaying:', state?.audio?.isPlaying);
+
+            // 🔥 Check if AudioWorklet is actually playing
+            if (audioWorkletStatus?.nodeReference) {
+              console.log('   🎛️ AudioWorklet Node Status:');
+              console.log('      ├─ Node exists:', !!audioWorkletStatus.nodeReference);
+              console.log('      ├─ Number of inputs:', audioWorkletStatus.nodeReference.numberOfInputs);
+              console.log('      ├─ Number of outputs:', audioWorkletStatus.nodeReference.numberOfOutputs);
+              console.log('      ├─ Channel count:', audioWorkletStatus.nodeReference.channelCount);
+
+              // Ask the worklet for metrics
+              try {
+                audioWorkletStatus.nodeReference.port.postMessage({ type: 'get_metrics' });
+                console.log('      └─ ✅ Requested metrics from AudioWorklet processor');
+              } catch (error) {
+                console.log('      └─ ❌ Failed to request metrics:', error);
+              }
+            }
+
+            console.log('   └─ 💡 TIP: Click "Start" button if you haven\'t already!');
+          }
         }
 
         // Electromagnetic field modulation

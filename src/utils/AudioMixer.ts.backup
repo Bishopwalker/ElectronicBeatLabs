@@ -19,7 +19,7 @@ export class AudioMixer {
   // REMOVED: merger not needed - we mix stereo signals directly
   public analyserNode: AnalyserNode;
 
-  private currentMode: 'hybrid'|'frontend' | 'backend' = 'frontend';
+  private currentMode: 'hybrid'|'frontend' | 'backend';
   private isCrossfading: boolean = false;
 
 
@@ -31,7 +31,7 @@ export class AudioMixer {
     this.backendGain = audioContext.createGain();
      // Start with frontend at 50% volume (equal-power standard), backend muted
     this.frontendGain.gain.value = 0.5;
-    this.backendGain.gain.value = 0.0;  // FIXED: Backend starts muted
+    this.backendGain.gain.value = 0.5;
 
     // No merger needed - stereo signals mix naturally at the analyser
 
@@ -125,11 +125,11 @@ export class AudioMixer {
       this.frontendGain.gain.setValueAtTime(safeVolume * 0.5, now); // 50% for equal-power
       this.backendGain.gain.setValueAtTime(0, now);
       console.log(`   ├─ FRONTEND mode: frontendGain=${(safeVolume * 0.5).toFixed(3)}, backendGain=0.000`);
-    } else if (this.currentMode === 'backend') {
+    } if (this.currentMode === 'backend') {
       this.frontendGain.gain.setValueAtTime(0, now);
       this.backendGain.gain.setValueAtTime(safeVolume * 0.5, now); // 50% for equal-power
       console.log(`   ├─ BACKEND mode: frontendGain=0.000, backendGain=${(safeVolume * 0.5).toFixed(3)}`);
-    } else if (this.currentMode === 'hybrid') {
+    } if (this.currentMode === 'hybrid') {
       // In hybrid mode, split volume to prevent doubling
       this.frontendGain.gain.setValueAtTime(safeVolume * 0.25, now);
       this.backendGain.gain.setValueAtTime(safeVolume * 0.25, now);
@@ -191,7 +191,7 @@ export class AudioMixer {
 
     // Update mode after crossfade completes
     setTimeout(() => {
-      this.currentMode = 'backend';  // FIXED: Was 'hybrid' but should be 'backend'
+      this.currentMode = 'hybrid';
       this.isCrossfading = false;
       console.log('✅ AudioMixer: Equal-power crossfade to backend complete');
     }, duration * 1000);

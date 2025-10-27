@@ -15,20 +15,6 @@ import type {
   WaveForm
 } from '../types';
 
-// Default 10-band equalizer configuration - more compact labels
-const DEFAULT_BANDS: EqualizerBand[] = [
-  { id: 'band1', frequency: 32, gain: 0, Q: 1.0, type: 'peaking', label: '32Hz' },
-  { id: 'band2', frequency: 64, gain: 0, Q: 1.0, type: 'peaking', label: '64Hz' },
-  { id: 'band3', frequency: 125, gain: 0, Q: 1.0, type: 'peaking', label: '125Hz' },
-  { id: 'band4', frequency: 250, gain: 0, Q: 1.0, type: 'peaking', label: '250Hz' },
-  { id: 'band5', frequency: 500, gain: 0, Q: 1.0, type: 'peaking', label: '500Hz' },
-  { id: 'band6', frequency: 1000, gain: 0, Q: 1.0, type: 'peaking', label: '1k' },
-  { id: 'band7', frequency: 2000, gain: 0, Q: 1.0, type: 'peaking', label: '2k' },
-  { id: 'band8', frequency: 4000, gain: 0, Q: 1.0, type: 'peaking', label: '4k' },
-  { id: 'band9', frequency: 8000, gain: 0, Q: 1.0, type: 'peaking', label: '8k' },
-  { id: 'band10', frequency: 16000, gain: 0, Q: 1.0, type: 'peaking', label: '16k' },
-];
-
 // Default modulator configuration
 const DEFAULT_MODULATOR: ModulatorConfig = {
   enabled: false,
@@ -104,6 +90,21 @@ export const EQ_PRESETS = {
 };
 
 export const useEqualizer = (audioContext: AudioContext | null) => {
+
+// Default 10-band equalizer configuration - more compact labels
+  const DEFAULT_BANDS: EqualizerBand[] = [
+    { id: 'band1', frequency: 32, gain: 0, Q: 1.0, type: 'peaking', label: '32Hz' },
+    { id: 'band2', frequency: 64, gain: 0, Q: 1.0, type: 'peaking', label: '64Hz' },
+    { id: 'band3', frequency: 125, gain: 0, Q: 1.0, type: 'peaking', label: '125Hz' },
+    { id: 'band4', frequency: 250, gain: 0, Q: 1.0, type: 'peaking', label: '250Hz' },
+    { id: 'band5', frequency: 500, gain: 0, Q: 1.0, type: 'peaking', label: '500Hz' },
+    { id: 'band6', frequency: 1000, gain: 0, Q: 1.0, type: 'peaking', label: '1k' },
+    { id: 'band7', frequency: 2000, gain: 0, Q: 1.0, type: 'peaking', label: '2k' },
+    { id: 'band8', frequency: 4000, gain: 0, Q: 1.0, type: 'peaking', label: '4k' },
+    { id: 'band9', frequency: 8000, gain: 0, Q: 1.0, type: 'peaking', label: '8k' },
+    { id: 'band10', frequency: 16000, gain: 0, Q: 1.0, type: 'peaking', label: '16k' },
+  ];
+
   const [equalizerState, setEqualizerState] = useState<EnhancedEqualizerState>({
     enabled: true,  // Enable by default
     bands: DEFAULT_BANDS.map(band => ({

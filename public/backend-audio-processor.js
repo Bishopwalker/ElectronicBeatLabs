@@ -28,11 +28,11 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
     this.framesPerSecond = 60;
 
     // ULTRA-STABLE buffer thresholds for 48kHz/800 samples per frame - MAXIMUM RELIABILITY
-    // 🔥 FIXED: Massively increased thresholds to eliminate buffer underruns and beeping
-    this.minBufferSize = this.frameSamples * 40; // ~40 frames minimum (667ms) - large startup buffer
-    this.targetBufferSize = this.frameSamples * 60; // ~60 frames target (1000ms) - 1 second buffer for stability
-    this.maxBufferSize = this.frameSamples * 180; // ~180 frames max (3000ms) - 3 second max buffering
-    this.restartThreshold = this.frameSamples * 20; // ~20 frames (333ms) - safe restart threshold with hysteresis
+    // 🔥 FIXED: Massively increased thresholds to handle 400-600ms WebSocket processing delays
+    this.minBufferSize = this.frameSamples * 80; // ~80 frames minimum (1333ms) - handles 600ms WebSocket delays
+    this.targetBufferSize = this.frameSamples * 120; // ~120 frames target (2000ms) - 2 second buffer for rock-solid stability
+    this.maxBufferSize = this.frameSamples * 300; // ~300 frames max (5000ms) - 5 second max buffering for network spikes
+    this.restartThreshold = this.frameSamples * 40; // ~40 frames (667ms) - increased restart threshold with hysteresis
 
     // Playback state management
     this.isPlaying = false;

@@ -211,14 +211,30 @@ export const useBackendAudioEngine = () => {
           }
         };
 
-        // Route AudioWorklet based on mode
+// 🔥 CRITICAL FIX: Connect AudioWorklet directly to output node
+// The AudioMixer has its own analyserNode that monitors the backend gain output
+// Audio flow: AudioWorkletNode → Mixer's Backend Gain → Mixer's AnalyserNode → Destination
         if (outputNode) {
+          // AudioMixer mode: AudioWorklet → Mixer's backend gain (mixer handles analyser)
+          console.log('🎵 Backend Engine: Connecting AudioWorklet → Mixer Backend Gain');
+          console.log('   ├─ AudioWorklet will output to mixer\'s backend gain node');
+          console.log('   └─ Mixer\'s analyserNode will monitor backend gain output');
           audioWorkletNode.current.connect(outputNode);
+        } else if (gainNode.current) {
+          // Standalone mode: AudioWorklet → AnalyserNode → GainNode → Destination
+          console.log('🎵 Backend Engine: Standalone mode - AudioWorklet → AnalyserNode → GainNode → Destination');
+          if (analyserNode.current) {
+            audioWorkletNode.current.connect(analyserNode.current);
+            // AnalyserNode should already be connected to gainNode from earlier setup
+          } else {
+            audioWorkletNode.current.connect(gainNode.current);
+          }
         } else {
-          audioWorkletNode.current.connect(gainNode.current!);
+          // Fallback: Direct connection (shouldn't happen)
+          console.error('❌ Backend Engine: No output node available! This shouldn\'t happen.');
         }
-      }
-    } catch (error) {
+      }}
+    catch (error) {
       console.error('❌ Backend Engine: Failed to initialize AudioWorklet audio:', error);
     }
   }, [audioState]);
@@ -402,8 +418,13 @@ export const useBackendAudioEngine = () => {
   // Connect to backend with auto WebSocket connection
   const connectBackend = useCallback(async () => {
     // Prevent multiple simultaneous connection attempts
-    if (backendConnected || websocket.isConnecting) {
-      console.log('⏭️ Backend Engine: Connection already established or in progress, skipping...');
+    if (backendConnected) {
+      console.log('✅ Backend Engine: Already connected, skipping...');
+      return;
+    }
+
+    if (websocket.isConnecting) {
+      console.log('⏳ Backend Engine: Connection already in progress, skipping...');
       return;
     }
 
@@ -434,13 +455,10 @@ export const useBackendAudioEngine = () => {
               clearTimeout(timeout);
               console.log('✅ Backend Engine: WebSocket connected, session ID:', websocket.sessionId);
               resolve(true);
-            } else if (!websocket.isConnecting) {
-              // If not connecting and not connected, it failed
-              clearTimeout(timeout);
-              console.log('⚠️ Backend Engine: WebSocket connection stopped without connecting');
-              resolve(false);
             } else {
-              // Still connecting, check again
+              // 🔥 FIX: Keep checking until connected or timeout
+              // Don't resolve(false) based on isConnecting state - it's unreliable due to React state update timing
+              // Let the timeout handle failure cases
               setTimeout(checkConnection, 100);
             }
           };
@@ -449,7 +467,7 @@ export const useBackendAudioEngine = () => {
         });
 
         if (!wsConnected) {
-          console.warn('⚠️ Backend Engine: WebSocket connection failed, but backend is available');
+          console.warn('⚠️ Backend Engine: WebSocket connection timeout (5s), continuing without WebSocket');
         }
       }
 
@@ -1105,6 +1123,13 @@ export const useBackendAudioEngine = () => {
     // 🔥 CRITICAL FIX: Return external analyser if set (AudioMixer integration)
     // This ensures visualizers work even before audio starts
     audioContext: audioContext.current,
-    analyserNode: externalAnalyserRef.current || analyserNode.current
+    analyserNode: externalAnalyserRef.current || analyserNode.current,
+    // 🔥 NEW: Expose AudioWorklet status for debugging and visibility
+    audioWorkletStatus: {
+      moduleLoaded: workletLoaded.current,
+      nodeExists: !!audioWorkletNode.current,
+      nodeReference: audioWorkletNode.current, // Direct ref for advanced debugging
+      isProcessing: audioState.isPlaying && !!audioWorkletNode.current
+    }
   };
 };

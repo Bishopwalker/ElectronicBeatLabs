@@ -45,7 +45,7 @@ interface EqualizerMUIProps {
 const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
   audioContext,
   analyserNode,
-  isPlaying = false,
+  isPlaying,
   onEqualizerChange
 }) => {
   // ALL HOOKS MUST BE AT THE TOP - NO CONDITIONALS BEFORE THIS

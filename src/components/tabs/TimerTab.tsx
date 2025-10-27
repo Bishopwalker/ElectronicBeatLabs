@@ -49,6 +49,9 @@ interface TimerTabProps {
     };
     onTimerControl?: {
         stopTimer: () => void;
+        pauseTimer: () => void;
+        resumeTimer: () => void;
+        restartTimer: () => void;
     };
     audioEngine?: {
         startBinauralBeat: (config: BinauralBeatConfig) => Promise<void>;
@@ -139,6 +142,18 @@ const TimerTab: React.FC<TimerTabProps> = ({
             onTimerControl.stopTimer = () => {
                 console.log('⏰ Timer control: Stop requested from parent');
                 controlTimer('stop');
+            };
+            onTimerControl.pauseTimer = () => {
+                console.log('⏰ Timer control: Pause requested from parent');
+                controlTimer('pause');
+            };
+            onTimerControl.resumeTimer = () => {
+                console.log('⏰ Timer control: Resume requested from parent');
+                controlTimer('resume');
+            };
+            onTimerControl.restartTimer = () => {
+                console.log('⏰ Timer control: Restart requested from parent');
+                controlTimer('restart');
             };
         }
     }, [controlTimer, onTimerControl]);

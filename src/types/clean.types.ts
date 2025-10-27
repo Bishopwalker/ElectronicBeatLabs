@@ -44,7 +44,7 @@ export interface FrontendEngine {
   stop: () => void;
   updateFrequency: (base: number, beat: number) => void;
   updateVolume: (volume: number) => void;
-  updateWaveform: (waveform: AudioConfig['waveform']) => void;
+  updateWaveform: AudioConfig['waveform'];
   isSupported: boolean;
 }
 
@@ -82,6 +82,10 @@ export interface Pattern {
   description: string;
   audio: AudioConfig;
   spatial: SpatialConfig;
+  intensity: number;
+  frequency: number;
+  volume: number;
+  waveform: AudioConfig['waveform'];
   duration: number; // minutes
   category: 'meditation' | 'focus' | 'creativity' | 'healing' | 'adhd';
 }

@@ -99,6 +99,10 @@ export interface AudioEngine {
     frequencySweep: (startFreq: number, endFreq: number, duration: number) => void;
     createGammaProtocol: (protocol: ADHDProtocol) => void;
     isSupported: boolean;
+    initializeAudio: () => Promise<AudioContext | null>;
+    setAudioState?: (updater: (prev: BackendAudioEngineState) => BackendAudioEngineState) => void;
+    waveform?: WaveForm;
+    pattern?: PatternConfig;
     updateSpatialSettings?: (settings: SpatialAudioConfig) => void;
     backendConnected?: boolean;
     sessionId?: string | null;
@@ -122,6 +126,7 @@ export interface FrontendAudioEngine {
     updateFrequency: (left: number, right: number) => void;
     updateVolume: (volume: number) => void;
     updateWaveform: (waveForm: WaveForm) => void;
+   waveform?: WaveForm;
     loadPattern: (pattern: PatternConfig) => void;
     generateTestTones: (leftFreq: number, rightFreq: number, duration?: number) => void;
     frequencySweep: (startFreq: number, endFreq: number, duration: number) => void;
