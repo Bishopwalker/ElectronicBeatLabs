@@ -59,8 +59,6 @@ import { debugLog, debugDecision, debugBreakpoint } from '../utils/audioDebugger
       return;
     }
 
-    console.log('🎚️ Hybrid Engine: Initializing audio mixer...');
-
     try {
       // Ensure frontend audio context is ready
       if (!frontendEngine.audioContext) {
@@ -82,7 +80,6 @@ import { debugLog, debugDecision, debugBreakpoint } from '../utils/audioDebugger
 
         // 🔥 CRITICAL FIX: STOP audio before changing nodes to avoid disconnection issues
         if (wasPlaying) {
-          console.log('🛑 Hybrid Engine: Stopping frontend audio before mixer connection...');
           frontendEngine.stopBinauralBeat();
           // Wait for audio to fully stop
           await new Promise(resolve => setTimeout(resolve, 100));
@@ -108,16 +105,12 @@ import { debugLog, debugDecision, debugBreakpoint } from '../utils/audioDebugger
 
         // 🔥 CRITICAL FIX: RESTART audio if it was playing, now routing through mixer
         if (wasPlaying && currentConfig) {
-          console.log('▶️ Hybrid Engine: Restarting audio through mixer with config:', currentConfig);
           await frontendEngine.startBinauralBeat(currentConfig);
-          console.log('✅ Hybrid Engine: Audio reconnected through mixer successfully');
         }
 
-        console.log('✅ Hybrid Engine: Audio mixer initialized and connected to BOTH engines');
         setIsInitialized(true);
       }
     } catch (error) {
-      console.error('❌ Hybrid Engine: Failed to initialize mixer:', error);
     }
   }, [frontendEngine, backendEngine]);
 
@@ -146,22 +139,18 @@ import { debugLog, debugDecision, debugBreakpoint } from '../utils/audioDebugger
     // Backend just connected - crossfade if audio playing OR has active session
     if (backendNowConnected && !backendWasConnected && mixerRef.current) {
       if (isAudioPlaying || hasActiveSession) {
-        console.log('🔄 Hybrid Engine: Backend connected with active session, crossfading from frontend to backend...');
         mixerRef.current.crossfadeToBackend(2.0);
         setCurrentEngine('backend');
       } else {
-        console.log('⏸️ Hybrid Engine: Backend connected but no active session - skipping crossfade');
       }
     }
 
     // Backend just disconnected - instant failover ONLY IF AUDIO IS PLAYING
     if (!backendNowConnected && backendWasConnected && mixerRef.current) {
       if (isAudioPlaying) {
-        console.log('🚨 Hybrid Engine: Backend disconnected AND audio playing, instant failover to frontend!');
         mixerRef.current.failoverToFrontend();
         setCurrentEngine('frontend');
       } else {
-        console.log('⏸️ Hybrid Engine: Backend disconnected but audio NOT playing - skipping failover');
       }
     }
 
@@ -182,12 +171,6 @@ import { debugLog, debugDecision, debugBreakpoint } from '../utils/audioDebugger
       volume: config.volume ?? DEFAULT_VOLUME,
       waveform: config.waveform
     });
-    console.log('🎵 [HYBRID ENGINE DEBUG] Starting binaural beat:');
-    console.log('   ├─ base_frequency:', config.base_frequency, 'Hz');
-    console.log('   ├─ beat_frequency:', config.beat_frequency, 'Hz');
-    console.log('   ├─ volume:', config.volume ?? 'undefined (will use DEFAULT_VOLUME)');
-    console.log('   ├─ waveform:', config.waveform);
-    console.log('   └─ DEFAULT_VOLUME:', DEFAULT_VOLUME);
 
     // 🔍 BREAKPOINT: Set conditional breakpoint for debugging
     debugBreakpoint(!mixerRef.current, 'Mixer not initialized at start', { config });
@@ -201,7 +184,6 @@ import { debugLog, debugDecision, debugBreakpoint } from '../utils/audioDebugger
     try {
       // STEP 1: Start frontend immediately (instant audio)
       debugLog('HYBRID_START', 'Starting FRONTEND engine (instant audio)');
-      console.log('⚡ Hybrid Engine: Starting FRONTEND engine (instant)...');
       await frontendEngine.startBinauralBeat(config);
       
       // 🔥 FIXED: Properly update frontend engine state
@@ -210,33 +192,41 @@ import { debugLog, debugDecision, debugBreakpoint } from '../utils/audioDebugger
           ...prev,
           isPlaying: true
         }));
-        console.log('✅ Frontend engine state updated: isPlaying = true');
       }
       
       setCurrentEngine('frontend');
-      
-      // STEP 2: Connect backend in background (no await - non-blocking)
-      console.log('🔌 Hybrid Engine: Connecting BACKEND engine (background)...');
 
-      // Try to connect backend without blocking
+      // STEP 2: Connect backend in background with proper sequencing
+
+      // 🔥 CRITICAL FIX: Properly sequence backend connection and session start
+      // This prevents race condition where session starts before WebSocket is connected
       if (!backendEngine.backendConnected) {
-        backendEngine.connectBackend().catch(err => {
-          console.warn('⚠️ Hybrid Engine: Backend unavailable, continuing frontend-only:', err);
-        });
+        // Connect backend first, THEN start session (proper chaining)
+        backendEngine.connectBackend()
+          .then(async () => {
+            // Only start session after connection succeeds
+            return backendEngine.startBackendSession(config);
+          })
+          .then(() => {
+            if (backendEngine.audioState) {
+              backendEngine.audioState.isPlaying = true;
+            }
+          })
+          .catch(err => {
+          });
+      } else {
+        // Already connected, just start session
+        backendEngine.startBackendSession(config)
+          .then(() => {
+            if (backendEngine.audioState) {
+              backendEngine.audioState.isPlaying = true;
+            }
+          })
+          .catch(err => {
+          });
       }
 
-      // Start backend session
-      backendEngine.startBackendSession(config).then(() => {
-        console.log('✅ Hybrid Engine: Backend session started, crossfade will happen automatically');
-      }).catch(err => {
-        console.warn('⚠️ Hybrid Engine: Backend session failed, continuing frontend-only:', err);
-      });
-      if (backendEngine.audioState){
-        backendEngine.audioState.isPlaying = true;
-      }
-      console.log('✅ Hybrid Engine: Audio started (frontend playing, backend connecting)');
     } catch (error) {
-      console.error('❌ Hybrid Engine: Failed to start audio:', error);
       throw error;
     }
   }, [frontendEngine.audioState, backendEngine, initializeMixer]);
@@ -245,16 +235,12 @@ import { debugLog, debugDecision, debugBreakpoint } from '../utils/audioDebugger
    * Stop binaural beat (stops both engines)
    */
   const stopBinauralBeat = useCallback(async () => {
-    console.log('🛑 Hybrid Engine: stopBinauralBeat called');
-    console.log('🛑 Frontend isPlaying:', frontendEngine.audioState.isPlaying);
-    console.log('🛑 Backend isPlaying:', backendEngine.audioState.isPlaying);
 
     let stoppedSuccessfully = false;
 
     try {
       // Stop frontend
       if (frontendEngine.audioState) {
-        console.log('🛑 Stopping frontend engine...');
         frontendEngine.stopBinauralBeat();
         
         // 🔥 FIXED: Properly update frontend state after stopping
@@ -264,30 +250,22 @@ import { debugLog, debugDecision, debugBreakpoint } from '../utils/audioDebugger
             isPlaying: false
           }));
         }
-        console.log('✅ Frontend engine stopped and state updated');
         stoppedSuccessfully = true;
       } else {
-        console.log('⏭️ Frontend engine not playing, skipping');
       }
 
       // Stop backend
       if (backendEngine.audioState) {
-        console.log('🛑 Stopping backend engine...');
         await backendEngine.stopBinauralBeat();
         backendEngine.audioState.isPlaying = false;
-        console.log('✅ Backend engine stopped');
         stoppedSuccessfully = true;
       } else {
-        console.log('⏭️ Backend engine not playing, skipping');
       }
       
       if (!stoppedSuccessfully) {
-        console.warn('⚠️ No engines were playing, nothing to stop');
       } else {
-        console.log('✅ Hybrid Engine: Both engines stopped successfully');
       }
     } catch (error) {
-      console.error('❌ Hybrid Engine: Failed to stop audio:', error);
       throw error; // 🔥 IMPORTANT: Throw error so caller knows it failed
     }
   }, [frontendEngine, backendEngine]);
@@ -322,7 +300,6 @@ import { debugLog, debugDecision, debugBreakpoint } from '../utils/audioDebugger
    * 🔥 CRITICAL FIX: Syncs both engines with new frequency settings
    */
   const updateSettings = useCallback((settings: { base_frequency?: number; beat_frequency?: number }) => {
-    console.log('🎛️ Hybrid Engine: Syncing settings to BOTH engines -', settings);
 
     // Update BACKEND engine (native format)
     if (backendEngine.updateSettings) {
@@ -345,17 +322,11 @@ import { debugLog, debugDecision, debugBreakpoint } from '../utils/audioDebugger
     const safeVolume = DEFAULT_VOLUME || Math.max(0, Math.min(2, volume));
 
     // 🔍 DEBUG LOGGING: Track volume updates (Phase 1)
-    console.log('🎚️ [HYBRID ENGINE DEBUG] updateVolume called:');
-    console.log('   ├─ input volume:', volume);
-    console.log('   ├─ safe volume:', safeVolume, '(clamped to 0-2 range)');
-    console.log('   └─ mixer initialized:', !!mixerRef.current);
 
     // Update mixer master volume - this controls both engines since they're routed through it
     if (mixerRef.current) {
       mixerRef.current.setMasterVolume(safeVolume);
-      console.log('   ✓ Mixer master volume updated (controls both engines)');
     } else {
-      console.warn('   ⚠️ Mixer not initialized, volume update skipped');
     }
 
     // 🔥 REMOVED: Individual engine volume updates - caused duplicate volume setting
@@ -378,7 +349,6 @@ import { debugLog, debugDecision, debugBreakpoint } from '../utils/audioDebugger
     if (backendEngine.backendConnected) {
       backendEngine.updateSpatialSettings(spatialSettings);
     } else {
-      console.warn('🎧 Spatial audio requires backend connection');
     }
   }, [backendEngine]);
 
@@ -399,7 +369,6 @@ import { debugLog, debugDecision, debugBreakpoint } from '../utils/audioDebugger
     await startBinauralBeat(config);
   }, [startBinauralBeat]);
 
-
   /**
    * Generate test tones
    */
@@ -412,7 +381,6 @@ import { debugLog, debugDecision, debugBreakpoint } from '../utils/audioDebugger
     };
 
     startBinauralBeat(config);
-
 
     setTimeout(() => {
       stopBinauralBeat();
@@ -447,7 +415,6 @@ import { debugLog, debugDecision, debugBreakpoint } from '../utils/audioDebugger
    * This is the CRITICAL method that SettingsTab uses
    */
   const initializeAudio = useCallback(async () => {
-    console.log('🎵 Hybrid Engine: Manual audio context initialization...');
     try {
       const context = await frontendEngine.initializeAudio();
       if (context) {
@@ -458,7 +425,6 @@ import { debugLog, debugDecision, debugBreakpoint } from '../utils/audioDebugger
             context
           }));
         }
-        console.log('✅ Hybrid Engine: Audio context initialized, state:', context.state);
 
         // Initialize mixer now that context is ready
         if (!mixerRef.current) {
@@ -468,7 +434,6 @@ import { debugLog, debugDecision, debugBreakpoint } from '../utils/audioDebugger
         return context;
       }
     } catch (error) {
-      console.error('❌ Hybrid Engine: Failed to initialize audio context:', error);
       throw error;
     }
   }, [frontendEngine, initializeMixer]);
@@ -481,31 +446,26 @@ import { debugLog, debugDecision, debugBreakpoint } from '../utils/audioDebugger
     const autoInitialize = async () => {
       // 🔥 FIX: Skip if already attempted during this mount cycle (React StrictMode safeguard)
       if (initAttemptedRef.current) {
-        console.log('⏭️ Hybrid Engine: Skipping duplicate initialization (React StrictMode double-mount)');
         return;
       }
 
       // 🔥 CRITICAL FIX: Only run on initial mount when context is null
       // This prevents duplicate context creation when frontendEngine object changes
       if (!frontendEngine.audioContext) {
-        console.log('🎵 Hybrid Engine: Proactively initializing audio context on mount...');
         initAttemptedRef.current = true; // Mark as attempted
         try {
           // Create a simple user interaction to trigger audio context
           // This ensures analyser node exists for visualizers
           const context = await frontendEngine.initializeAudio();
           if (context) {
-            console.log('✅ Hybrid Engine: Audio context initialized proactively');
             // Mixer will be initialized by the other useEffect when context is ready
           }
         } catch (error) {
-          console.log('⏸️ Hybrid Engine: Auto-initialization requires user gesture, will retry on first interaction');
           // Reset flag on error so user can retry
           initAttemptedRef.current = false;
         }
       } else if (frontendEngine.audioContext && !mixerRef.current) {
         // Context exists but mixer doesn't - initialize mixer
-        console.log('🎵 Hybrid Engine: Audio context exists, initializing mixer...');
         await initializeMixer();
       }
     };
@@ -522,7 +482,6 @@ import { debugLog, debugDecision, debugBreakpoint } from '../utils/audioDebugger
   useEffect(() => {
     return () => {
       if (mixerRef.current) {
-        console.log('🧹 Hybrid Engine: Cleaning up mixer...');
         mixerRef.current.destroy();
         mixerRef.current = null;
       }
