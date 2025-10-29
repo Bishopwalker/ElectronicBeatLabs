@@ -16,52 +16,72 @@ export class AudioMixer {
   private audioContext: AudioContext;
   private frontendGain: GainNode;
   private backendGain: GainNode;
-  // REMOVED: merger not needed - we mix stereo signals directly
+  private frontendPreAnalyserGain: GainNode; // 🔥 NEW: Full-strength signal for analyser
+  private backendPreAnalyserGain: GainNode;  // 🔥 NEW: Full-strength signal for analyser
   public analyserNode: AnalyserNode;
 
   private currentMode: 'hybrid'|'frontend' | 'backend' = 'frontend';
   private isCrossfading: boolean = false;
 
-
   constructor(audioContext: AudioContext) {
     this.audioContext = audioContext;
 
-    // Create gain nodes for each engine
+    // 🔥 NEW: Create pre-analyser gain nodes (always at 1.0 for full strength)
+    this.frontendPreAnalyserGain = audioContext.createGain();
+    this.backendPreAnalyserGain = audioContext.createGain();
+    this.frontendPreAnalyserGain.gain.value = 1.0; // Full strength to analyser
+    this.backendPreAnalyserGain.gain.value = 1.0;  // Full strength to analyser
+
+    // Create gain nodes for each engine (for volume control)
     this.frontendGain = audioContext.createGain();
     this.backendGain = audioContext.createGain();
-     // Start with frontend at 50% volume (equal-power standard), backend muted
+    // Start with frontend at 50% volume (equal-power standard), backend muted
     this.frontendGain.gain.value = 0.5;
-    this.backendGain.gain.value = 0.0;  // FIXED: Backend starts muted
-
-    // No merger needed - stereo signals mix naturally at the analyser
+    this.backendGain.gain.value = 0.0;  // Backend starts muted
 
     // Create shared analyser for visualization
     this.analyserNode = audioContext.createAnalyser();
     this.analyserNode.fftSize = 2048;
     this.analyserNode.smoothingTimeConstant = 0.8;
+    // 🔥 FIXED: Analyser now receives full-strength signals, so use standard settings
+    this.analyserNode.minDecibels = -100;
+    this.analyserNode.maxDecibels = -30;
 
-    // FIXED: Connect audio chain properly for STEREO signals
-    // Both engines output stereo → Mix them together → analyser → destination
-    // Don't use merger - just sum the gains directly!
-    this.frontendGain.connect(this.analyserNode);
-    this.backendGain.connect(this.analyserNode);
-    this.analyserNode.connect(audioContext.destination);
+    // 🔥 NEW ARCHITECTURE: Linear signal path with full-strength analyser tap
+    // Engine → Pre-Analyser Gain (1.0) → [Split to analyser + main gain]
+    //                                      ├→ Analyser (full strength visualization)
+    //                                      └→ Main Gain (0-1.0) → Destination (volume control)
+    //
+    // This ensures FrequencyVisualizer ALWAYS gets strong signal regardless of crossfade
 
-    console.log('🎚️ AudioMixer: Initialized with STEREO dual-engine crossfade');
+    // Connect pre-analyser gains to analyser (full strength tap for visualization)
+    this.frontendPreAnalyserGain.connect(this.analyserNode);
+    this.backendPreAnalyserGain.connect(this.analyserNode);
+
+    // Connect pre-analyser gains to main gains (for volume-controlled output)
+    this.frontendPreAnalyserGain.connect(this.frontendGain);
+    this.backendPreAnalyserGain.connect(this.backendGain);
+
+    // Connect main gains to destination
+    this.frontendGain.connect(audioContext.destination);
+    this.backendGain.connect(audioContext.destination);
+
   }
 
   /**
    * Get gain node for frontend engine to connect to
+   * 🔥 RETURNS: Pre-analyser gain (always 1.0) for full-strength signal
    */
   getFrontendGain(): GainNode {
-    return this.frontendGain;
+    return this.frontendPreAnalyserGain; // Return pre-analyser gain, not main gain
   }
 
   /**
    * Get gain node for backend engine to connect to
+   * 🔥 RETURNS: Pre-analyser gain (always 1.0) for full-strength signal
    */
   getBackendGain(): GainNode {
-    return this.backendGain;
+    return this.backendPreAnalyserGain; // Return pre-analyser gain, not main gain
   }
 
   /**
@@ -84,7 +104,6 @@ export class AudioMixer {
   setFrontendGain(value: number): void {
     const safeValue = Math.max(0, Math.min(1, value));
     this.frontendGain.gain.setValueAtTime(safeValue, this.audioContext.currentTime);
-    console.log(`🎚️ AudioMixer: Frontend gain set to ${safeValue.toFixed(3)}`);
   }
 
   /**
@@ -93,7 +112,6 @@ export class AudioMixer {
   setBackendGain(value: number): void {
     const safeValue = Math.max(0, Math.min(1, value));
     this.backendGain.gain.setValueAtTime(safeValue, this.audioContext.currentTime);
-    console.log(`🎚️ AudioMixer: Backend gain set to ${safeValue.toFixed(3)}`);
   }
 
   /**
@@ -104,10 +122,6 @@ export class AudioMixer {
     const now = this.audioContext.currentTime;
 
     // 🔍 DEBUG LOGGING: Track volume changes (Phase 1)
-    console.log(`🎚️ [AUDIOMIXER DEBUG] setMasterVolume called:`);
-    console.log(`   ├─ input volume=${volume.toFixed(3)}, safe volume=${safeVolume.toFixed(3)}`);
-    console.log(`   ├─ current mode=${this.currentMode}`);
-    console.log(`   └─ crossfading=${this.isCrossfading}`);
 
     // DON'T override crossfade! Scale the existing gains proportionally
     const currentFrontend = this.frontendGain.gain.value;
@@ -116,7 +130,6 @@ export class AudioMixer {
     // If we're crossfading, maintain the ratio
     if (this.isCrossfading) {
       // Don't change anything during crossfade - let it complete
-      console.log(`⚠️ AudioMixer: Volume change during crossfade ignored`);
       return;
     }
     
@@ -124,19 +137,15 @@ export class AudioMixer {
     if (this.currentMode === 'frontend') {
       this.frontendGain.gain.setValueAtTime(safeVolume * 0.5, now); // 50% for equal-power
       this.backendGain.gain.setValueAtTime(0, now);
-      console.log(`   ├─ FRONTEND mode: frontendGain=${(safeVolume * 0.5).toFixed(3)}, backendGain=0.000`);
     } else if (this.currentMode === 'backend') {
       this.frontendGain.gain.setValueAtTime(0, now);
       this.backendGain.gain.setValueAtTime(safeVolume * 0.5, now); // 50% for equal-power
-      console.log(`   ├─ BACKEND mode: frontendGain=0.000, backendGain=${(safeVolume * 0.5).toFixed(3)}`);
     } else if (this.currentMode === 'hybrid') {
       // In hybrid mode, split volume to prevent doubling
       this.frontendGain.gain.setValueAtTime(safeVolume * 0.25, now);
       this.backendGain.gain.setValueAtTime(safeVolume * 0.25, now);
-      console.log(`   ├─ HYBRID mode: frontendGain=${(safeVolume * 0.25).toFixed(3)}, backendGain=${(safeVolume * 0.25).toFixed(3)}`);
     }
 
-    console.log(`   └─ Master volume set to ${safeVolume.toFixed(2)}`);
   }
 
   /**
@@ -145,7 +154,6 @@ export class AudioMixer {
    */
   crossfadeToBackend(duration: number = 2.0): void {
     if (this.isCrossfading) {
-      console.warn('⚠️ AudioMixer: Crossfade already in progress, skipping...');
       return;
     }
 
@@ -154,17 +162,7 @@ export class AudioMixer {
     const endTime = now + duration;
 
     // 🔍 DEBUG LOGGING: Crossfade tracking (Phase 1)
-    console.log(`🎚️ [AUDIOMIXER DEBUG] Starting crossfade to BACKEND:${this.currentMode}`);
-    console.log(`   ├─ duration=${duration.toFixed(1)}s`);
-    console.log(`   ├─ current frontend gain=${this.frontendGain.gain.value.toFixed(3)}`);
-    console.log(`   ├─ current backend gain=${this.backendGain.gain.value.toFixed(3)}`);
-    console.log(`   └─ using equal-power curve (cosine/sine)`);
 
-    // EQUAL-POWER CROSSFADE: Use cosine/sine curves
-    // This maintains constant perceived loudness during crossfade
-    // Frontend goes from cos(0) = 1 to cos(π/2) = 0
-    // Backend goes from sin(0) = 0 to sin(π/2) = 1
-    
     const steps = 20; // Number of interpolation points
     const stepTime = duration / steps;
     
@@ -193,7 +191,6 @@ export class AudioMixer {
     setTimeout(() => {
       this.currentMode = 'backend';  // FIXED: Was 'hybrid' but should be 'backend'
       this.isCrossfading = false;
-      console.log('✅ AudioMixer: Equal-power crossfade to backend complete');
     }, duration * 1000);
   }
 
@@ -203,8 +200,6 @@ export class AudioMixer {
    */
   failoverToFrontend(): void {
     const now = this.audioContext.currentTime;
-
-    console.log('🚨 AudioMixer: INSTANT FAILOVER to frontend (backend dropped)');
 
     // Instant switch - no ramp
     // Use 0.5 for equal-power standard
@@ -221,7 +216,6 @@ export class AudioMixer {
    */
   crossfadeToFrontend(duration: number = 2.0): void {
     if (this.isCrossfading) {
-      console.warn('⚠️ AudioMixer: Crossfade already in progress, skipping...');
       return;
     }
 
@@ -229,12 +223,6 @@ export class AudioMixer {
     const now = this.audioContext.currentTime;
     const endTime = now + duration;
 
-    console.log(`🎚️ AudioMixer: EQUAL-POWER crossfading to FRONTEND over ${duration}s...`);
-
-    // EQUAL-POWER CROSSFADE: Reverse of backend crossfade
-    // Backend goes from cos(0) = 1 to cos(π/2) = 0  
-    // Frontend goes from sin(0) = 0 to sin(π/2) = 1
-    
     const steps = 20;
     const stepTime = duration / steps;
     
@@ -260,7 +248,6 @@ export class AudioMixer {
     setTimeout(() => {
       this.currentMode = 'frontend';
       this.isCrossfading = false;
-      console.log('✅ AudioMixer: Equal-power crossfade to frontend complete');
     }, duration * 1000);
   }
 
@@ -270,8 +257,6 @@ export class AudioMixer {
    */
   setHybridMode(frontendRatio: number = 0.5, backendRatio: number = 0.5): void {
     const now = this.audioContext.currentTime;
-
-    console.log(`🔀 AudioMixer: Setting HYBRID mode (F:${frontendRatio} B:${backendRatio})`);
 
     this.frontendGain.gain.setValueAtTime(frontendRatio, now);
     this.backendGain.gain.setValueAtTime(backendRatio, now);
@@ -294,7 +279,6 @@ export class AudioMixer {
    * Cleanup - disconnect all nodes
    */
   destroy(): void {
-    console.log('🧹 AudioMixer: Cleaning up...');
 
     this.frontendGain.disconnect();
     this.backendGain.disconnect();
