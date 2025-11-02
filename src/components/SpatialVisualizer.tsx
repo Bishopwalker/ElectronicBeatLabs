@@ -160,7 +160,6 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
   useEffect(() => {
     if (pattern && pattern.name && !isManualOverride) {
       const detectedMode = detectVisualizationModeFromPattern(pattern.name);
-      console.log(`🎨 SpatialVisualizer: Auto-syncing to "${detectedMode}" mode for pattern "${pattern.name}"`);
       setVisualizationMode(detectedMode);
     }
   }, [pattern?.name, isManualOverride]); // Re-run when pattern name changes or override toggled
@@ -685,7 +684,6 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
               // 🔥 CRITICAL FIX: Enable manual override when user changes mode
               setIsManualOverride(true);
               setVisualizationMode(newMode);
-              console.log(`🎨 SpatialVisualizer: Manual override enabled - switched to "${newMode}" mode`);
             }
           }}
           size="small"

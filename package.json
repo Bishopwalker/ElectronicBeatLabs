@@ -18,10 +18,13 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:ci": "jest --ci --coverage --watchAll=false",
+    "lint:sec": "eslint . -c eslint-security.config.js",
     "cucumber": "cucumber-js",
     "test:e2e": "cucumber-js --require-module ts-node/register",
     "test:all": "npm run test && npm run test:e2e",
     "test:full": "npm run test:coverage && npm run test:e2e && npm run backend:test",
+    "enforce": "npm run lint:sec && npm run build:check && npm test && npm run test:e2e && npm run backend:test && npm run rag:generate",
+    "rag:generate": "node scripts/generate-enforcer-rag.mjs",
     "deploy:frontend": "bash scripts/deploy-frontend.sh",
     "deploy:frontend:staging": "bash scripts/deploy-frontend.sh staging",
     "deploy:backend": "bash scripts/deploy-backend.sh",
@@ -63,6 +66,7 @@
     "globals": "^16.3.0",
     "inquirer": "^12.9.4",
     "jest": "^30.1.2",
+    "babel-jest": "^30.1.0",
     "jest-axe": "^10.0.0",
     "jest-environment-jsdom": "^30.1.2",
     "jest-junit": "^16.0.0",
@@ -71,6 +75,9 @@
     "ts-node": "^10.9.2",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.39.1",
-    "vite": "^7.1.2"
+    "vite": "^7.1.2",
+    "eslint-plugin-security": "^3.0.1",
+    "eslint-plugin-sonarjs": "^0.25.0",
+    "identity-obj-proxy": "^3.0.0"
   }
 }

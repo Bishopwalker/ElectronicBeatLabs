@@ -7,7 +7,6 @@ from typing import Optional, Dict, Any, List
 from datetime import datetime
 import re
 
-
 class UserRegistration(BaseModel):
     """
     User registration schema
@@ -26,14 +25,12 @@ class UserRegistration(BaseModel):
             raise ValueError('Password must contain at least one number')
         return v
 
-
 class UserLogin(BaseModel):
     """
     User login schema
     """
     email: EmailStr
     password: str
-
 
 class UserResponse(BaseModel):
     """
@@ -52,7 +49,6 @@ class UserResponse(BaseModel):
     class Config:
         from_attributes = True
 
-
 class Token(BaseModel):
     """
     JWT token response
@@ -62,14 +58,12 @@ class Token(BaseModel):
     expires_in: int
     user: UserResponse
 
-
 class TokenData(BaseModel):
     """
     Token data schema
     """
     user_id: Optional[str] = None
     email: Optional[str] = None
-
 
 class OAuthStart(BaseModel):
     """
@@ -84,7 +78,6 @@ class OAuthStart(BaseModel):
             raise ValueError('Invalid OAuth provider')
         return v
 
-
 class OAuthCallback(BaseModel):
     """
     OAuth callback data
@@ -92,13 +85,11 @@ class OAuthCallback(BaseModel):
     code: str
     state: Optional[str] = None
 
-
 class PasswordReset(BaseModel):
     """
     Password reset request
     """
     email: EmailStr
-
 
 class PasswordResetConfirm(BaseModel):
     """
@@ -117,14 +108,12 @@ class PasswordResetConfirm(BaseModel):
             raise ValueError('Password must contain at least one number')
         return v
 
-
 class UserUpdate(BaseModel):
     """
     User profile update schema
     """
     full_name: Optional[str] = None
     email: Optional[EmailStr] = None
-
 
 class UsageStats(BaseModel):
     """
@@ -142,7 +131,6 @@ class UsageStats(BaseModel):
     subscription_status: str
     usage_percentage: float
 
-
 class SessionStart(BaseModel):
     """
     Session start request
@@ -153,14 +141,12 @@ class SessionStart(BaseModel):
     beat_frequency: Optional[float] = None
     pattern_used: Optional[str] = None
 
-
 class SessionEnd(BaseModel):
     """
     Session end request
     """
     session_duration: float  # Duration in minutes
     session_metadata: Optional[Dict[str, Any]] = None
-
 
 class SubscriptionInfo(BaseModel):
     """
@@ -179,14 +165,12 @@ class SubscriptionInfo(BaseModel):
     class Config:
         from_attributes = True
 
-
 class CreateSubscription(BaseModel):
     """
     Create subscription request
     """
     price_id: str
     payment_method_id: Optional[str] = None
-
 
 class WebhookEvent(BaseModel):
     """

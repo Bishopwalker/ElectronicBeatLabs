@@ -18,6 +18,7 @@ export const GlobalStyles = createGlobalStyle`
     color: #e0e0e0;
     background: #000000;
     overflow-x: hidden;
+    overflow-y: auto;
     scroll-behavior: smooth;
   }
 

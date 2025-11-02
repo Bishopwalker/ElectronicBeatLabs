@@ -4,17 +4,13 @@
 import type { SxProps, Theme } from '@mui/material/styles';
 
 export const ElectromagneticLabStyles = {
-  // Main container styles - GRID: Auto height with full viewport minimum
-  // ✅ FIXED: height: auto allows container to grow when timer appears
-  // Per CLAUDE.md: mainContainer must have minHeight: 100vh, height: auto, overflowY: auto
+  // Main container styles - GRID: Header 15vh, Content 85vh
   mainContainer: {
     width: '100vw',
-    minHeight: '100vh',
-    height: 'auto',
-    overflowX: 'hidden',
-    overflowY: 'auto',
+    height: '100vh',
+    overflow: 'hidden',
     display: 'grid',
-
+    gridTemplateRows: '15vh 85vh'
   } as SxProps<Theme>,
     
   // Dark screen toggle button
@@ -97,7 +93,7 @@ export const ElectromagneticLabStyles = {
   // Tab content area
   tabContent: {
     flex: 1,
-    overflowY: 'hidden',
+    overflowY: 'auto',
     p: 2,
     backgroundColor: 'rgba(30, 60, 90, 0.1)',
     display: 'flex',
@@ -113,10 +109,10 @@ export const ElectromagneticLabStyles = {
     left: 0,
     right: 0,
     zIndex: 100,
-    p: 1,
+    p: { xs: 1.5, sm: 2, md: 2.5 },
     display: 'flex',
     flexDirection: 'column',
-    gap: 1,
+    gap: { xs: 1, sm: 1.5 },
     backdropFilter: 'blur(10px)',
     bgcolor: 'rgba(0, 0, 0, 0.95)',
     borderBottom: '2px solid rgba(255, 255, 255, 0.2)',
@@ -140,6 +136,8 @@ export const ElectromagneticLabStyles = {
     borderBottom: '2px solid rgba(255, 255, 255, 0.2)',
     boxShadow: '0 4px 8px rgba(0, 0, 0, 0.3)',
     flexShrink: 1,
+    p: 1,
+    flexWrap: 'wrap',
     flexDirection: {
       xs: 'column',
       sm: 'column',
@@ -220,105 +218,134 @@ export const ElectromagneticLabStyles = {
     borderColor: isActive ? 'rgba(0, 255, 136, 0.5)' : 'rgba(255, 255, 255, 0.3)'
   }) as SxProps<Theme>,
 
-  // MAIN LAYOUT GRID - 3 columns, 2 rows (each 42.5vh), fills 85vh
-  mainLayoutContainer: (closedSections: string[]) => ({
-    p: 1,
+  // CUSTOM CSS GRID LAYOUT - Supports fractional sizing
+  // Grid uses 6 columns (allows 1x, 1.5x, 2x sizing) and 4 rows (allows 1x, 1.5x, 2x height)
+  customGridLayout: {
     display: 'grid',
-    gap: 1,
+    gridTemplateColumns: 'repeat(6, 1fr)', // 6 columns for fractional sizing
+    gridTemplateRows: 'repeat(4, 1fr)', // 4 rows for fractional sizing
+    gap: 2,
     width: '100%',
     height: '100%',
-    overflow: 'hidden',
+    p: 2,
+    overflowX: 'hidden',
+    overflowY: 'auto'
+  } as SxProps<Theme>,
 
-       '& > div': {
-      transition: 'all 0.2s ease-in-out',
-      opacity: closedSections.includes('all') ? 0 : 1,
-      transform: closedSections.includes('all') ? 'scale(0.9)' : 'scale(1)',
-      '&:hover': {
-        opacity: 1,
-        transform: 'scale(1)',
-      }
-    }
-  }) as SxProps<Theme>,
-
-  // Standard panel
+  // Standard panel (1x1) - takes 2 columns, 1 row
   panelFlex: {
-    display: 'grid',
+    display: 'flex',
     flexDirection: 'column',
-    overflow: 'hidden',
-    '& > div': {
-      height: '100%',
-      display: 'grid',
-      flexDirection: 'column',
-      overflow: 'hidden'
-    }
-  } as SxProps<Theme>,
-
-  // Wide panel
-  widePanelFlex: {
-    display: 'grid',
-    flexDirection: 'column',
+    minHeight: 0,
     gridColumn: 'span 2',
-    overflow: 'hidden',
+    gridRow: 'span 1',
+    overflowX: 'hidden',
+    overflowY: 'auto',
     '& > div': {
       height: '100%',
-      display: 'grid',
+      display: 'flex',
       flexDirection: 'column',
-      overflow: 'hidden'
+      overflowX: 'hidden',
+      overflowY: 'auto'
     }
   } as SxProps<Theme>,
 
-  // Double height panel
-  doubleHeightPanelFlex: {
-    display: 'grid',
+  // Double wide panel (2x1) - takes 4 columns, 1 row
+  widePanelFlex: {
+    display: 'flex',
     flexDirection: 'column',
-    gridRow: 'span 2',
-    overflow: 'hidden',
+    minHeight: 0,
+    gridColumn: 'span 4',
+    gridRow: 'span 1',
+    overflowX: 'hidden',
+    overflowY: 'auto',
     '& > div': {
       height: '100%',
-      display: 'grid',
+      display: 'flex',
       flexDirection: 'column',
+      overflowX: 'hidden',
+      overflowY: 'auto'
+    }
+  } as SxProps<Theme>,
+
+  // Double height panel (1x2) - takes 2 columns, 2 rows
+  doubleHeightPanelFlex: {
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: 0,
+    gridColumn: 'span 2',
+    gridRow: 'span 2',
+    overflowX: 'hidden',
+    overflowY: 'auto',
+    '& > div': {
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      overflowX: 'hidden',
+      overflowY: 'auto'
+    }
+  } as SxProps<Theme>,
+
+  // 1.5x panel (1.5 width, 1.5 height) - takes 3 columns, 1.5 rows
+  onePointFivePanelFlex: {
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: 0,
+    gridColumn: 'span 3',
+    gridRow: 'span 1.5',
+    overflowX: 'hidden',
+    overflowY: 'auto',
+    '& > div': {
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      overflowX: 'hidden',
       overflowY: 'auto'
     }
   } as SxProps<Theme>,
 
   // Half panel
   halfPanelFlex: {
-    display: 'grid',
+    display: 'flex',
     flexDirection: 'column',
-    overflow: 'hidden',
+    minHeight: 0,
+    gridColumn: 'span 1',
+    gridRow: 'span 1',
+    overflowX: 'hidden',
+    overflowY: 'auto',
     '& > div': {
       height: '100%',
-      display: 'grid',
+      display: 'flex',
       flexDirection: 'column',
-      overflow: 'hidden'
+      overflowX: 'hidden',
+      overflowY: 'auto'
     }
   } as SxProps<Theme>,
 
   // Equalizer panel
   equalizerPanelFlex: {
-    display: 'grid',
-     overflowX: 'hidden',
-    overflowY:'auto'
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: 0,
+    overflowX: 'hidden',
+    overflowY: 'auto'
   } as SxProps<Theme>,
 
   // Equalizer horizontal
   equalizerPanelFlexHorizontal: {
-    display: 'grid',
-      overflowX: 'hidden',
-      overflowY:'auto',
-    gridColumn:{
-      height: '100%',
-      display: 'grid',
-      flexDirection: 'column',
-      overflowX: 'hidden',
-      overflowY:'auto'
-    },
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: 0,
+    gridColumn: 'span 4',
+    gridRow: 'span 1',
+    overflowX: 'hidden',
+    overflowY: 'auto',
     '& > div': {
       height: '100%',
-      display: 'grid',
+      display: 'flex',
       flexDirection: 'column',
       overflowX: 'hidden',
-      overflowY:'auto'
+      overflowY: 'auto'
     }
   } as SxProps<Theme>,
 

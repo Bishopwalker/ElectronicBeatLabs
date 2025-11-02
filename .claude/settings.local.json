@@ -128,14 +128,22 @@
       "Bash(py -3.11 -c \"import sys; print(sys.executable)\")",
       "Bash(.venv/Scripts/python.exe -c \"import numpy; import scipy; import fastapi; import pyaudio; print(''✅ NumPy:'', numpy.__version__); print(''✅ SciPy:'', scipy.__version__); print(''✅ FastAPI:'', fastapi.__version__); print(''✅ PyAudio imported successfully'')\")",
       "Bash(venv_linux/Scripts/python.exe -m uvicorn:*)",
-      "mcp__codex__codex_analyze"
+      "mcp__enforcer-dual-agent-coding-assistant__codex_analyze",
+      "Bash(git config:*)",
+      "mcp__codex__codex_execute",
+      "Bash(ping:*)",
+      "Bash(nul)",
+      "Bash(.venvScriptspython.exe -m pip list)",
+      "mcp__enforcer-dual-agent-coding-assistant__codex_debug",
+      "Bash(../.venv/Scripts/python.exe:*)",
+      "Bash(C:UsersbishoAppDataLocalProgramsPythonPython311python.exe -m uvicorn:*)"
     ],
     "deny": [],
     "ask": []
   },
   "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
-    "MCP_DOCKER"
+    "enforcer-dual-agent-coding-assistant"
   ],
   "hooks": {
     "UserPromptSubmit": [

@@ -442,7 +442,6 @@ function useControlled(props) {
   if (true) {
     React3.useEffect(() => {
       if (isControlled !== (controlled !== void 0)) {
-        console.error([`MUI: A component is changing the ${isControlled ? "" : "un"}controlled ${state} state of ${name} to be ${isControlled ? "un" : ""}controlled.`, "Elements should not switch from uncontrolled to controlled (or vice versa).", `Decide between using a controlled or uncontrolled ${name} element for the lifetime of the component.`, "The nature of the state is determined during the first render. It's considered controlled if the value is not `undefined`.", "More info: https://fb.me/react-controlled-components"].join("\n"));
       }
     }, [state, name, controlled]);
     const {
@@ -450,7 +449,6 @@ function useControlled(props) {
     } = React3.useRef(defaultProp);
     React3.useEffect(() => {
       if (!isControlled && !Object.is(defaultValue, defaultProp)) {
-        console.error([`MUI: A component is changing the default ${state} state of an uncontrolled ${name} after being initialized. To suppress this warning opt to use a controlled ${name}.`].join("\n"));
       }
     }, [JSON.stringify(defaultProp)]);
   }
@@ -601,7 +599,6 @@ function mergeSlotProps(externalSlotProps, defaultSlotProps) {
 var unstable_ClassNameGenerator = {
   configure: (generator) => {
     if (true) {
-      console.warn(["MUI: `ClassNameGenerator` import from `@mui/material/utils` is outdated and might cause unexpected issues.", "", "You should use `import { unstable_ClassNameGenerator } from '@mui/material/className'` instead", "", "The detail of the issue: https://github.com/mui/material-ui/issues/30011#issuecomment-1024993401", "", "The updated documentation: https://mui.com/guides/classname-generator/"].join("\n"));
     }
     ClassNameGenerator_default.configure(generator);
   }

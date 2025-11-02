@@ -1,9 +1,9 @@
-# Codex Snapshot Command
+# Enforcer Snapshot Command
 # Automated pristine state snapshot and RAG mapping
 
 ## Purpose
 This command is invoked by Claude after creating the implementation plan.
-Codex takes a snapshot of all affected files and builds/updates the RAG dependency map.
+The Enforcer Dual-Agent Coding Assistant takes a snapshot of all affected files and builds/updates the RAG dependency map.
 
 ## Invocation
 
@@ -12,7 +12,7 @@ Codex takes a snapshot of all affected files and builds/updates the RAG dependen
 mcp__codex__codex_execute({
   prompt: `# CODEX SNAPSHOT TASK
 
-You are Codex, the Enforcer agent in a dual-agent development system.
+You are the Enforcer Dual-Agent Coding Assistant in a dual-agent development system.
 Claude (the Builder) has created an implementation plan for a task.
 
 ## Your Responsibilities:
@@ -169,7 +169,7 @@ Return a summary of what was snapshotted and confirm readiness.
 
 ## Expected Output
 
-Codex should return a summary like:
+Enforcer should return a summary like:
 
 ```
 ✅ CODEX SNAPSHOT COMPLETE

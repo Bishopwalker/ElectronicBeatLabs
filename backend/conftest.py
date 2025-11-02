@@ -13,5 +13,3 @@ if str(backend_dir) not in sys.path:
     sys.path.insert(0, str(backend_dir))
 
 # Print for debugging
-print(f"Added to Python path: {backend_dir}")
-print(f"Current sys.path: {sys.path[:3]}...")

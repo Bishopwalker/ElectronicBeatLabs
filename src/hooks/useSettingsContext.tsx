@@ -139,12 +139,9 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
         const merged = deepMerge(DEFAULT_SETTINGS, parsed);
 
         setSettings(merged);
-        console.log('⚙️ Settings loaded from localStorage:', merged);
       } else {
-        console.log('⚙️ No saved settings found, using defaults');
       }
     } catch (error) {
-      console.error('❌ Failed to load settings from localStorage:', error);
     } finally {
       setIsLoading(false);
     }
@@ -155,9 +152,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
     if (!isLoading) {
       try {
         localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
-        console.log('💾 Settings saved to localStorage');
       } catch (error) {
-        console.error('❌ Failed to save settings to localStorage:', error);
       }
     }
   }, [settings, isLoading]);
@@ -168,7 +163,6 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   const updateSettings = useCallback((updates: Partial<AppSettings>) => {
     setSettings(prev => {
       const updated = deepMerge(prev, updates);
-      console.log('⚙️ Settings updated:', updates);
       return updated;
     });
   }, []);
@@ -179,7 +173,6 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   const resetSettings = useCallback(() => {
     setSettings(DEFAULT_SETTINGS);
     localStorage.removeItem(SETTINGS_STORAGE_KEY);
-    console.log('🔄 Settings reset to defaults');
   }, []);
 
   const value: SettingsContextValue = {

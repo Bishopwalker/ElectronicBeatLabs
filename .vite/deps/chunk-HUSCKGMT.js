@@ -799,7 +799,6 @@ var require_checkPropTypes = __commonJS({
       printWarning = function(text) {
         var message = "Warning: " + text;
         if (typeof console !== "undefined") {
-          console.error(message);
         }
         try {
           throw new Error(message);
@@ -867,7 +866,6 @@ var require_factoryWithTypeCheckers = __commonJS({
       printWarning = function(text) {
         var message = "Warning: " + text;
         if (typeof console !== "undefined") {
-          console.error(message);
         }
         try {
           throw new Error(message);
@@ -1488,7 +1486,6 @@ var StyleSheet = (function() {
     {
       var isImportRule3 = rule.charCodeAt(0) === 64 && rule.charCodeAt(1) === 105;
       if (isImportRule3 && this._alreadyInsertedOrderInsensitiveRule) {
-        console.error("You're attempting to insert the following rule:\n" + rule + "\n\n`@import` rules must be before all other types of rules in a stylesheet but other rules have already been inserted. Please ensure that `@import` rules are before all other rules.");
       }
       this._alreadyInsertedOrderInsensitiveRule = this._alreadyInsertedOrderInsensitiveRule || !isImportRule3;
     }
@@ -1498,7 +1495,6 @@ var StyleSheet = (function() {
         sheet.insertRule(rule, sheet.cssRules.length);
       } catch (e) {
         if (!/:(-moz-placeholder|-moz-focus-inner|-moz-focusring|-ms-input-placeholder|-moz-read-write|-moz-read-only|-ms-clear|-ms-expand|-ms-reveal){/.test(rule)) {
-          console.error('There was a problem inserting the following rule: "' + rule + '"', e);
         }
       }
     } else {
@@ -1697,202 +1693,7 @@ function commenter(type, index) {
       break;
     else if (type + character === 42 + 42 && peek() === 47)
       break;
-  return "/*" + slice(index, position - 1) + "*" + from(type === 47 ? type : next());
-}
-function identifier(index) {
-  while (!token(peek()))
-    next();
-  return slice(index, position);
-}
-
-// node_modules/@emotion/cache/node_modules/stylis/src/Parser.js
-function compile(value) {
-  return dealloc(parse("", null, null, null, [""], value = alloc(value), 0, [0], value));
-}
-function parse(value, root, parent, rule, rules, rulesets, pseudo, points, declarations) {
-  var index = 0;
-  var offset = 0;
-  var length2 = pseudo;
-  var atrule = 0;
-  var property = 0;
-  var previous = 0;
-  var variable = 1;
-  var scanning = 1;
-  var ampersand = 1;
-  var character2 = 0;
-  var type = "";
-  var props = rules;
-  var children = rulesets;
-  var reference = rule;
-  var characters2 = type;
-  while (scanning)
-    switch (previous = character2, character2 = next()) {
-      // (
-      case 40:
-        if (previous != 108 && charat(characters2, length2 - 1) == 58) {
-          if (indexof(characters2 += replace(delimit(character2), "&", "&\f"), "&\f") != -1)
-            ampersand = -1;
-          break;
-        }
-      // " ' [
-      case 34:
-      case 39:
-      case 91:
-        characters2 += delimit(character2);
-        break;
-      // \t \n \r \s
-      case 9:
-      case 10:
-      case 13:
-      case 32:
-        characters2 += whitespace(previous);
-        break;
-      // \
-      case 92:
-        characters2 += escaping(caret() - 1, 7);
-        continue;
-      // /
-      case 47:
-        switch (peek()) {
-          case 42:
-          case 47:
-            append(comment(commenter(next(), caret()), root, parent), declarations);
-            break;
-          default:
-            characters2 += "/";
-        }
-        break;
-      // {
-      case 123 * variable:
-        points[index++] = strlen(characters2) * ampersand;
-      // } ; \0
-      case 125 * variable:
-      case 59:
-      case 0:
-        switch (character2) {
-          // \0 }
-          case 0:
-          case 125:
-            scanning = 0;
-          // ;
-          case 59 + offset:
-            if (ampersand == -1) characters2 = replace(characters2, /\f/g, "");
-            if (property > 0 && strlen(characters2) - length2)
-              append(property > 32 ? declaration(characters2 + ";", rule, parent, length2 - 1) : declaration(replace(characters2, " ", "") + ";", rule, parent, length2 - 2), declarations);
-            break;
-          // @ ;
-          case 59:
-            characters2 += ";";
-          // { rule/at-rule
-          default:
-            append(reference = ruleset(characters2, root, parent, index, offset, rules, points, type, props = [], children = [], length2), rulesets);
-            if (character2 === 123)
-              if (offset === 0)
-                parse(characters2, root, reference, reference, props, rulesets, length2, points, children);
-              else
-                switch (atrule === 99 && charat(characters2, 3) === 110 ? 100 : atrule) {
-                  // d l m s
-                  case 100:
-                  case 108:
-                  case 109:
-                  case 115:
-                    parse(value, reference, reference, rule && append(ruleset(value, reference, reference, 0, 0, rules, points, type, rules, props = [], length2), children), rules, children, length2, points, rule ? props : children);
-                    break;
-                  default:
-                    parse(characters2, reference, reference, reference, [""], children, 0, points, children);
-                }
-        }
-        index = offset = property = 0, variable = ampersand = 1, type = characters2 = "", length2 = pseudo;
-        break;
-      // :
-      case 58:
-        length2 = 1 + strlen(characters2), property = previous;
-      default:
-        if (variable < 1) {
-          if (character2 == 123)
-            --variable;
-          else if (character2 == 125 && variable++ == 0 && prev() == 125)
-            continue;
-        }
-        switch (characters2 += from(character2), character2 * variable) {
-          // &
-          case 38:
-            ampersand = offset > 0 ? 1 : (characters2 += "\f", -1);
-            break;
-          // ,
-          case 44:
-            points[index++] = (strlen(characters2) - 1) * ampersand, ampersand = 1;
-            break;
-          // @
-          case 64:
-            if (peek() === 45)
-              characters2 += delimit(next());
-            atrule = peek(), offset = length2 = strlen(type = characters2 += identifier(caret())), character2++;
-            break;
-          // -
-          case 45:
-            if (previous === 45 && strlen(characters2) == 2)
-              variable = 0;
-        }
-    }
-  return rulesets;
-}
-function ruleset(value, root, parent, index, offset, rules, points, type, props, children, length2) {
-  var post = offset - 1;
-  var rule = offset === 0 ? rules : [""];
-  var size = sizeof(rule);
-  for (var i = 0, j = 0, k = 0; i < index; ++i)
-    for (var x = 0, y = substr(value, post + 1, post = abs(j = points[i])), z = value; x < size; ++x)
-      if (z = trim(j > 0 ? rule[x] + " " + y : replace(y, /&\f/g, rule[x])))
-        props[k++] = z;
-  return node(value, root, parent, offset === 0 ? RULESET : type, props, children, length2);
-}
-function comment(value, root, parent) {
-  return node(value, root, parent, COMMENT, from(char()), substr(value, 2, -2), 0);
-}
-function declaration(value, root, parent, length2) {
-  return node(value, root, parent, DECLARATION, substr(value, 0, length2), substr(value, length2 + 1, -1), length2);
-}
-
-// node_modules/@emotion/cache/node_modules/stylis/src/Serializer.js
-function serialize(children, callback) {
-  var output = "";
-  var length2 = sizeof(children);
-  for (var i = 0; i < length2; i++)
-    output += callback(children[i], i, children, callback) || "";
-  return output;
-}
-function stringify(element, index, children, callback) {
-  switch (element.type) {
-    case LAYER:
-      if (element.children.length) break;
-    case IMPORT:
-    case DECLARATION:
-      return element.return = element.return || element.value;
-    case COMMENT:
-      return "";
-    case KEYFRAMES:
-      return element.return = element.value + "{" + serialize(element.children, callback) + "}";
-    case RULESET:
-      element.value = element.props.join(",");
-  }
-  return strlen(children = serialize(element.children, callback)) ? element.return = element.value + "{" + children + "}" : "";
-}
-
-// node_modules/@emotion/cache/node_modules/stylis/src/Middleware.js
-function middleware(collection) {
-  var length2 = sizeof(collection);
-  return function(element, index, children, callback) {
-    var output = "";
-    for (var i = 0; i < length2; i++)
-      output += collection[i](element, index, children, callback) || "";
-    return output;
-  };
-}
-
-// node_modules/@emotion/weak-memoize/dist/emotion-weak-memoize.esm.js
-var weakMemoize = function weakMemoize2(func) {
-  var cache = /* @__PURE__ */ new WeakMap();
+  return " new WeakMap();
   return function(arg2) {
     if (cache.has(arg2)) {
       return cache.get(arg2);
@@ -2020,7 +1821,6 @@ var createUnsafeSelectorsAlarm = function createUnsafeSelectorsAlarm2(cache) {
         }
       }
       unsafePseudoClasses.forEach(function(unsafePseudoClass) {
-        console.error('The pseudo class "' + unsafePseudoClass + '" is potentially unsafe when doing server-side rendering. Try changing it to "' + unsafePseudoClass.split("-child")[0] + '-of-type".');
       });
     }
   };
@@ -2048,10 +1848,8 @@ var incorrectImportAlarm = function incorrectImportAlarm2(element, index, childr
     return;
   }
   if (element.parent) {
-    console.error("`@import` rules can't be nested inside other rules. Please move it to the top level and put it before regular rules. Keep in mind that they can only be used within global styles.");
     nullifyElement(element);
   } else if (isPrependedWithRegularRules(index, children)) {
-    console.error("`@import` rules can't be after other rules. Please put your `@import` rules before your other rules.");
     nullifyElement(element);
   }
 };
@@ -2373,11 +2171,6 @@ function getRegisteredStyles(registered, registeredStyles, classNames) {
 var registerStyles = function registerStyles2(cache, serialized, isStringTag2) {
   var className = cache.key + "-" + serialized.name;
   if (
-    // we only need to add the styles to the registered cache if the
-    // class name could be used further down
-    // the tree but if it's a string tag, we know it won't
-    // so we don't have to add it to registered cache.
-    // this improves memory usage since we can avoid storing the whole style string
     (isStringTag2 === false || // we need to always store it if we're in compat mode and
     // in node since emotion-server relies on whether a style is in
     // the registered cache to know whether a style is global or not
@@ -2609,7 +2402,6 @@ function handleInterpolation(mergedProps, registered, interpolation) {
         cursor = previousCursor;
         return handleInterpolation(mergedProps, registered, result);
       } else {
-        console.error("Functions that are interpolated in css calls will be stringified.\nIf you want to have a css call based on props, create a function that returns a css call like this\nlet dynamicStyle = (props) => css`color: ${props.color}`\nIt can be called directly with props or interpolated in a styled call like this\nlet SomeComponent = styled('div')`${dynamicStyle}`");
       }
       break;
     }
@@ -2622,7 +2414,6 @@ function handleInterpolation(mergedProps, registered, interpolation) {
           return "${" + fakeVarName + "}";
         });
         if (matched.length) {
-          console.error("`keyframes` output got interpolated into plain string, please wrap it with `css`.\n\nInstead of doing this:\n\n" + [].concat(matched, ["`" + replaced + "`"]).join("\n") + "\n\nYou should wrap it with `css` like this:\n\ncss`" + replaced + "`");
         }
       }
       break;
@@ -2670,7 +2461,6 @@ function createStringFromObject(mergedProps, registered, obj) {
             }
             default: {
               if (key === "undefined") {
-                console.error(UNDEFINED_AS_OBJECT_KEY_ERROR);
               }
               string += key + "{" + interpolated + "}";
             }
@@ -2697,7 +2487,6 @@ function serializeStyles(args, registered, mergedProps) {
   } else {
     var asTemplateStringsArr = strings;
     if (asTemplateStringsArr[0] === void 0) {
-      console.error(ILLEGAL_ESCAPE_SEQUENCE_ERROR);
     }
     styles += asTemplateStringsArr[0];
   }
@@ -2706,7 +2495,6 @@ function serializeStyles(args, registered, mergedProps) {
     if (stringMode) {
       var templateStringsArr = strings;
       if (templateStringsArr[i] === void 0) {
-        console.error(ILLEGAL_ESCAPE_SEQUENCE_ERROR);
       }
       styles += templateStringsArr[i];
     }
@@ -3229,7 +3017,6 @@ var Global = withEmotionCache(function(props, cache) {
   // means it will be turned into a className prop
   // I don't really want to add it to the type since it shouldn't be used
   ("className" in props && props.className || "css" in props && props.css)) {
-    console.error("It looks like you're using the css prop on Global, did you mean to use the styles prop instead?");
     warnedAboutCssPropForGlobal = true;
   }
   var styles = props.styles;
@@ -3314,7 +3101,6 @@ var classnames = function classnames2(args) {
           toAdd = classnames2(arg2);
         } else {
           if (arg2.styles !== void 0 && arg2.name !== void 0) {
-            console.error("You have passed styles created with `css` from `@emotion/react` package to the `cx`.\n`cx` is meant to compose class names (strings) so you should convert those styles to a class name by passing them to the `css` received from <ClassNames/> component.");
           }
           toAdd = "";
           for (var k in arg2) {
@@ -3400,7 +3186,6 @@ var ClassNames = withEmotionCache(function(props, cache) {
     globalContext = typeof globalThis !== "undefined" ? globalThis : isBrowser2 ? window : global;
     globalKey = "__EMOTION_REACT_" + pkg.version.split(".")[0] + "__";
     if (globalContext[globalKey]) {
-      console.warn("You are loading @emotion/react when it is already loaded. Running multiple instances may cause problems. This can happen if multiple versions are used, or if multiple builds of the same version are used.");
     }
     globalContext[globalKey] = true;
   }
@@ -3607,14 +3392,12 @@ var createStyled = function createStyled2(tag, options) {
     } else {
       var templateStringsArr = args[0];
       if (templateStringsArr[0] === void 0) {
-        console.error(ILLEGAL_ESCAPE_SEQUENCE_ERROR2);
       }
       styles.push(templateStringsArr[0]);
       var len = args.length;
       var i = 1;
       for (; i < len; i++) {
         if (templateStringsArr[i] === void 0) {
-          console.error(ILLEGAL_ESCAPE_SEQUENCE_ERROR2);
         }
         styles.push(args[i], templateStringsArr[i]);
       }
@@ -3856,9 +3639,7 @@ function styled2(tag, options) {
     return (...styles) => {
       const component = typeof tag === "string" ? `"${tag}"` : "component";
       if (styles.length === 0) {
-        console.error([`MUI: Seems like you called \`styled(${component})()\` without a \`style\` argument.`, 'You must provide a `styles` argument: `styled("div")(styleYouForgotToPass)`.'].join("\n"));
       } else if (styles.some((style4) => style4 === void 0)) {
-        console.error(`MUI: the styled(${component})(...args) API requires all its args to be defined.`);
       }
       return stylesFactory(...styles);
     };
@@ -4011,7 +3792,6 @@ var clamp_default = clamp;
 function clampWrapper(value, min = 0, max = 1) {
   if (true) {
     if (value < min || value > max) {
-      console.error(`MUI: The value provided ${value} is out of range [${min}, ${max}].`);
     }
   }
   return clamp_default(value, min, max);
@@ -4025,7 +3805,6 @@ function hexToRgb(color2) {
   }
   if (true) {
     if (color2.length !== color2.trim().length) {
-      console.error(`MUI: The color: "${color2}" is invalid. Make sure the color input doesn't contain leading/trailing space.`);
     }
   }
   return colors ? `rgb${colors.length === 4 ? "a" : ""}(${colors.map((n, index) => {
@@ -4080,7 +3859,6 @@ var private_safeColorChannel = (color2, warning) => {
     return colorChannel(color2);
   } catch (error) {
     if (warning && true) {
-      console.warn(warning);
     }
     return color2;
   }
@@ -4170,7 +3948,6 @@ function private_safeAlpha(color2, value, warning) {
     return alpha(color2, value);
   } catch (error) {
     if (warning && true) {
-      console.warn(warning);
     }
     return color2;
   }
@@ -4192,7 +3969,6 @@ function private_safeDarken(color2, coefficient, warning) {
     return darken(color2, coefficient);
   } catch (error) {
     if (warning && true) {
-      console.warn(warning);
     }
     return color2;
   }
@@ -4218,7 +3994,6 @@ function private_safeLighten(color2, coefficient, warning) {
     return lighten(color2, coefficient);
   } catch (error) {
     if (warning && true) {
-      console.warn(warning);
     }
     return color2;
   }
@@ -4231,7 +4006,6 @@ function private_safeEmphasize(color2, coefficient, warning) {
     return emphasize(color2, coefficient);
   } catch (error) {
     if (warning && true) {
-      console.warn(warning);
     }
     return color2;
   }
@@ -4656,7 +4430,6 @@ function createUnaryUnit(theme, themeKey, defaultValue, propName) {
       }
       if (true) {
         if (typeof val !== "number") {
-          console.error(`MUI: Expected ${propName} argument to be a number or a string, got ${val}.`);
         }
       }
       if (typeof themeSpacing === "string") {
@@ -4679,9 +4452,7 @@ function createUnaryUnit(theme, themeKey, defaultValue, propName) {
       const abs2 = Math.abs(val);
       if (true) {
         if (!Number.isInteger(abs2)) {
-          console.error([`MUI: The \`theme.${themeKey}\` array type cannot be combined with non integer values.You should either use an integer value that can be used as index, or define the \`theme.${themeKey}\` as a number.`].join("\n"));
         } else if (abs2 > themeSpacing.length - 1) {
-          console.error([`MUI: The value provided (${abs2}) overflows.`, `The supported values are: ${JSON.stringify(themeSpacing)}.`, `${abs2} > ${themeSpacing.length - 1}, you need to add the missing values.`].join("\n"));
         }
       }
       const transformed = themeSpacing[abs2];
@@ -4701,7 +4472,6 @@ function createUnaryUnit(theme, themeKey, defaultValue, propName) {
     return themeSpacing;
   }
   if (true) {
-    console.error([`MUI: The \`theme.${themeKey}\` value (${themeSpacing}) is invalid.`, "It should be a number, an array or a function."].join("\n"));
   }
   return () => void 0;
 }
@@ -4769,7 +4539,6 @@ function createSpacing(spacingInput = 8, transform = createUnarySpacing({
   const spacing2 = (...argsInput) => {
     if (true) {
       if (!(argsInput.length <= 4)) {
-        console.error(`MUI: Too many arguments provided, expected between 0 and 4, got ${argsInput.length}`);
       }
     }
     const args = argsInput.length === 0 ? [1] : argsInput;
@@ -6319,13 +6088,11 @@ function unstable_createUseMediaQuery(params = {}) {
     });
     if (true) {
       if (typeof queryInput === "function" && theme === null) {
-        console.error(["MUI: The `query` argument provided is invalid.", "You are providing a function without a theme in the context.", "One of the parent elements needs to use a ThemeProvider."].join("\n"));
       }
     }
     let query = typeof queryInput === "function" ? queryInput(theme) : queryInput;
     query = query.replace(/^@media( ?)/m, "");
     if (query.includes("print")) {
-      console.warn([`MUI: You have provided a \`print\` query to the \`useMediaQuery\` hook.`, "Using the print media query to modify print styles can lead to unexpected results.", "Consider using the `displayPrint` field in the `sx` prop instead.", "More information about `displayPrint` on our docs: https://mui.com/system/display/#display-in-print."].join("\n"));
     }
     const useMediaQueryImplementation = maybeReactUseSyncExternalStore !== void 0 ? useMediaQueryNew : useMediaQueryOld;
     const match2 = useMediaQueryImplementation(query, defaultMatches, matchMedia, ssrMatchMedia, noSsr);
@@ -6395,7 +6162,6 @@ function mergeOuterLocalTheme(outerTheme, localTheme) {
     const mergedTheme = localTheme(outerTheme);
     if (true) {
       if (!mergedTheme) {
-        console.error(["MUI: You should return an object from your theme function, i.e.", "<ThemeProvider theme={() => ({})} />"].join("\n"));
       }
     }
     return mergedTheme;
@@ -6413,7 +6179,6 @@ function ThemeProvider2(props) {
   const outerTheme = useTheme4();
   if (true) {
     if (outerTheme === null && typeof localTheme === "function") {
-      console.error(["MUI: You are providing a theme function prop to the ThemeProvider component:", "<ThemeProvider theme={outerTheme => outerTheme} />", "", "However, no outer theme is present.", "Make sure a theme is already injected higher in the React tree or provide a theme object."].join("\n"));
     }
   }
   const theme = React15.useMemo(() => {
@@ -6637,7 +6402,6 @@ function ThemeProvider3(props) {
   const upperPrivateTheme = useTheme4() || EMPTY_THEME;
   if (true) {
     if (upperTheme === null && typeof localTheme === "function" || themeId && upperTheme && !upperTheme[themeId] && typeof localTheme === "function") {
-      console.error(["MUI: You are providing a theme function prop to the ThemeProvider component:", "<ThemeProvider theme={outerTheme => outerTheme} />", "", "However, no outer theme is present.", "Make sure a theme is already injected higher in the React tree or provide a theme object."].join("\n"));
     }
   }
   const engineTheme = useThemeScoping(themeId, upperTheme, localTheme);
@@ -6936,7 +6700,6 @@ function useCurrentColorScheme(options) {
       });
     } else if (typeof value === "string") {
       if (value && !joinedColorSchemes.includes(value)) {
-        console.error(`\`${value}\` does not exist in \`theme.colorSchemes\`.`);
       } else {
         setState((currentState) => {
           const newState = {
@@ -6964,7 +6727,6 @@ function useCurrentColorScheme(options) {
         const newDarkColorScheme = value.dark === null ? defaultDarkColorScheme : value.dark;
         if (newLightColorScheme) {
           if (!joinedColorSchemes.includes(newLightColorScheme)) {
-            console.error(`\`${newLightColorScheme}\` does not exist in \`theme.colorSchemes\`.`);
           } else {
             newState.lightColorScheme = newLightColorScheme;
             lightStorage?.set(newLightColorScheme);
@@ -6972,7 +6734,6 @@ function useCurrentColorScheme(options) {
         }
         if (newDarkColorScheme) {
           if (!joinedColorSchemes.includes(newDarkColorScheme)) {
-            console.error(`\`${newDarkColorScheme}\` does not exist in \`theme.colorSchemes\`.`);
           } else {
             newState.darkColorScheme = newDarkColorScheme;
             darkStorage?.set(newDarkColorScheme);
@@ -7153,7 +6914,6 @@ function createCssVarsProvider(options) {
     }
     if (true) {
       if (forceThemeRerender && !restThemeProp.vars) {
-        console.warn(["MUI: The `forceThemeRerender` prop should only be used with CSS theme variables.", "Note that it will slow down the app when changing between modes, so only do this when you cannot find a better solution."].join("\n"));
       }
     }
     let calculatedColorScheme = colorScheme || restThemeProp.defaultColorScheme;
@@ -7252,7 +7012,6 @@ function createCssVarsProvider(options) {
       setColorScheme,
       setMode: false ? setMode : (newMode) => {
         if (memoTheme.colorSchemeSelector === "media") {
-          console.error(["MUI: The `setMode` function has no effect if `colorSchemeSelector` is `media` (`media` is the default value).", "To toggle the mode manually, please configure `colorSchemeSelector` to use a class or data attribute.", "To learn more, visit https://mui.com/material-ui/customization/css-theme-variables/configuration/#toggling-dark-mode-manually"].join("\n"));
         }
         setMode(newMode);
       },
@@ -7448,354 +7207,7 @@ function cssVarsParser(theme, options) {
       }
     },
     (keys) => keys[0] === "vars"
-    // skip 'vars/*' paths
-  );
-  return {
-    css: css2,
-    vars,
-    varsWithDefaults
-  };
-}
-
-// node_modules/@mui/system/esm/cssVars/prepareCssVars.js
-function prepareCssVars(theme, parserConfig = {}) {
-  const {
-    getSelector = defaultGetSelector,
-    disableCssColorScheme,
-    colorSchemeSelector: selector,
-    enableContrastVars
-  } = parserConfig;
-  const {
-    colorSchemes = {},
-    components,
-    defaultColorScheme = "light",
-    ...otherTheme
-  } = theme;
-  const {
-    vars: rootVars,
-    css: rootCss,
-    varsWithDefaults: rootVarsWithDefaults
-  } = cssVarsParser(otherTheme, parserConfig);
-  let themeVars = rootVarsWithDefaults;
-  const colorSchemesMap = {};
-  const {
-    [defaultColorScheme]: defaultScheme,
-    ...otherColorSchemes
-  } = colorSchemes;
-  Object.entries(otherColorSchemes || {}).forEach(([key, scheme]) => {
-    const {
-      vars,
-      css: css2,
-      varsWithDefaults
-    } = cssVarsParser(scheme, parserConfig);
-    themeVars = deepmerge(themeVars, varsWithDefaults);
-    colorSchemesMap[key] = {
-      css: css2,
-      vars
-    };
-  });
-  if (defaultScheme) {
-    const {
-      css: css2,
-      vars,
-      varsWithDefaults
-    } = cssVarsParser(defaultScheme, parserConfig);
-    themeVars = deepmerge(themeVars, varsWithDefaults);
-    colorSchemesMap[defaultColorScheme] = {
-      css: css2,
-      vars
-    };
-  }
-  function defaultGetSelector(colorScheme, cssObject) {
-    let rule = selector;
-    if (selector === "class") {
-      rule = ".%s";
-    }
-    if (selector === "data") {
-      rule = "[data-%s]";
-    }
-    if (selector?.startsWith("data-") && !selector.includes("%s")) {
-      rule = `[${selector}="%s"]`;
-    }
-    if (colorScheme) {
-      if (rule === "media") {
-        if (theme.defaultColorScheme === colorScheme) {
-          return ":root";
-        }
-        const mode = colorSchemes[colorScheme]?.palette?.mode || colorScheme;
-        return {
-          [`@media (prefers-color-scheme: ${mode})`]: {
-            ":root": cssObject
-          }
-        };
-      }
-      if (rule) {
-        if (theme.defaultColorScheme === colorScheme) {
-          return `:root, ${rule.replace("%s", String(colorScheme))}`;
-        }
-        return rule.replace("%s", String(colorScheme));
-      }
-    }
-    return ":root";
-  }
-  const generateThemeVars = () => {
-    let vars = {
-      ...rootVars
-    };
-    Object.entries(colorSchemesMap).forEach(([, {
-      vars: schemeVars
-    }]) => {
-      vars = deepmerge(vars, schemeVars);
-    });
-    return vars;
-  };
-  const generateStyleSheets = () => {
-    const stylesheets = [];
-    const colorScheme = theme.defaultColorScheme || "light";
-    function insertStyleSheet(key, css2) {
-      if (Object.keys(css2).length) {
-        stylesheets.push(typeof key === "string" ? {
-          [key]: {
-            ...css2
-          }
-        } : key);
-      }
-    }
-    insertStyleSheet(getSelector(void 0, {
-      ...rootCss
-    }), rootCss);
-    const {
-      [colorScheme]: defaultSchemeVal,
-      ...other
-    } = colorSchemesMap;
-    if (defaultSchemeVal) {
-      const {
-        css: css2
-      } = defaultSchemeVal;
-      const cssColorSheme = colorSchemes[colorScheme]?.palette?.mode;
-      const finalCss = !disableCssColorScheme && cssColorSheme ? {
-        colorScheme: cssColorSheme,
-        ...css2
-      } : {
-        ...css2
-      };
-      insertStyleSheet(getSelector(colorScheme, {
-        ...finalCss
-      }), finalCss);
-    }
-    Object.entries(other).forEach(([key, {
-      css: css2
-    }]) => {
-      const cssColorSheme = colorSchemes[key]?.palette?.mode;
-      const finalCss = !disableCssColorScheme && cssColorSheme ? {
-        colorScheme: cssColorSheme,
-        ...css2
-      } : {
-        ...css2
-      };
-      insertStyleSheet(getSelector(key, {
-        ...finalCss
-      }), finalCss);
-    });
-    if (enableContrastVars) {
-      stylesheets.push({
-        ":root": {
-          // use double underscore to indicate that these are private variables
-          "--__l-threshold": "0.7",
-          "--__l": "clamp(0, (l / var(--__l-threshold) - 1) * -infinity, 1)",
-          "--__a": "clamp(0.87, (l / var(--__l-threshold) - 1) * -infinity, 1)"
-          // 0.87 is the default alpha value for black text.
-        }
-      });
-    }
-    return stylesheets;
-  };
-  return {
-    vars: themeVars,
-    generateThemeVars,
-    generateStyleSheets
-  };
-}
-var prepareCssVars_default = prepareCssVars;
-
-// node_modules/@mui/system/esm/cssVars/getColorSchemeSelector.js
-function createGetColorSchemeSelector(selector) {
-  return function getColorSchemeSelector(colorScheme) {
-    if (selector === "media") {
-      if (true) {
-        if (colorScheme !== "light" && colorScheme !== "dark") {
-          console.error(`MUI: @media (prefers-color-scheme) supports only 'light' or 'dark', but receive '${colorScheme}'.`);
-        }
-      }
-      return `@media (prefers-color-scheme: ${colorScheme})`;
-    }
-    if (selector) {
-      if (selector.startsWith("data-") && !selector.includes("%s")) {
-        return `[${selector}="${colorScheme}"] &`;
-      }
-      if (selector === "class") {
-        return `.${colorScheme} &`;
-      }
-      if (selector === "data") {
-        return `[data-${colorScheme}] &`;
-      }
-      return `${selector.replace("%s", colorScheme)} &`;
-    }
-    return "&";
-  };
-}
-
-// node_modules/@mui/system/esm/version/index.js
-var major = Number("7");
-var minor = Number("3");
-var patch = Number("1");
-
-// node_modules/@mui/system/esm/Container/createContainer.js
-var React24 = __toESM(require_react(), 1);
-var import_prop_types12 = __toESM(require_prop_types(), 1);
-var import_jsx_runtime12 = __toESM(require_jsx_runtime(), 1);
-var defaultTheme = createTheme_default();
-var defaultCreateStyledComponent = styled_default("div", {
-  name: "MuiContainer",
-  slot: "Root",
-  overridesResolver: (props, styles) => {
-    const {
-      ownerState
-    } = props;
-    return [styles.root, styles[`maxWidth${capitalize(String(ownerState.maxWidth))}`], ownerState.fixed && styles.fixed, ownerState.disableGutters && styles.disableGutters];
-  }
-});
-var useThemePropsDefault = (inProps) => useThemeProps({
-  props: inProps,
-  name: "MuiContainer",
-  defaultTheme
-});
-var useUtilityClasses = (ownerState, componentName) => {
-  const getContainerUtilityClass = (slot) => {
-    return generateUtilityClass(componentName, slot);
-  };
-  const {
-    classes,
-    fixed,
-    disableGutters,
-    maxWidth: maxWidth2
-  } = ownerState;
-  const slots = {
-    root: ["root", maxWidth2 && `maxWidth${capitalize(String(maxWidth2))}`, fixed && "fixed", disableGutters && "disableGutters"]
-  };
-  return composeClasses(slots, getContainerUtilityClass, classes);
-};
-function createContainer(options = {}) {
-  const {
-    // This will allow adding custom styled fn (for example for custom sx style function)
-    createStyledComponent = defaultCreateStyledComponent,
-    useThemeProps: useThemeProps2 = useThemePropsDefault,
-    componentName = "MuiContainer"
-  } = options;
-  const ContainerRoot = createStyledComponent(({
-    theme,
-    ownerState
-  }) => ({
-    width: "100%",
-    marginLeft: "auto",
-    boxSizing: "border-box",
-    marginRight: "auto",
-    ...!ownerState.disableGutters && {
-      paddingLeft: theme.spacing(2),
-      paddingRight: theme.spacing(2),
-      // @ts-ignore module augmentation fails if custom breakpoints are used
-      [theme.breakpoints.up("sm")]: {
-        paddingLeft: theme.spacing(3),
-        paddingRight: theme.spacing(3)
-      }
-    }
-  }), ({
-    theme,
-    ownerState
-  }) => ownerState.fixed && Object.keys(theme.breakpoints.values).reduce((acc, breakpointValueKey) => {
-    const breakpoint = breakpointValueKey;
-    const value = theme.breakpoints.values[breakpoint];
-    if (value !== 0) {
-      acc[theme.breakpoints.up(breakpoint)] = {
-        maxWidth: `${value}${theme.breakpoints.unit}`
-      };
-    }
-    return acc;
-  }, {}), ({
-    theme,
-    ownerState
-  }) => ({
-    // @ts-ignore module augmentation fails if custom breakpoints are used
-    ...ownerState.maxWidth === "xs" && {
-      // @ts-ignore module augmentation fails if custom breakpoints are used
-      [theme.breakpoints.up("xs")]: {
-        // @ts-ignore module augmentation fails if custom breakpoints are used
-        maxWidth: Math.max(theme.breakpoints.values.xs, 444)
-      }
-    },
-    ...ownerState.maxWidth && // @ts-ignore module augmentation fails if custom breakpoints are used
-    ownerState.maxWidth !== "xs" && {
-      // @ts-ignore module augmentation fails if custom breakpoints are used
-      [theme.breakpoints.up(ownerState.maxWidth)]: {
-        // @ts-ignore module augmentation fails if custom breakpoints are used
-        maxWidth: `${theme.breakpoints.values[ownerState.maxWidth]}${theme.breakpoints.unit}`
-      }
-    }
-  }));
-  const Container2 = React24.forwardRef(function Container3(inProps, ref) {
-    const props = useThemeProps2(inProps);
-    const {
-      className,
-      component = "div",
-      disableGutters = false,
-      fixed = false,
-      maxWidth: maxWidth2 = "lg",
-      classes: classesProp,
-      ...other
-    } = props;
-    const ownerState = {
-      ...props,
-      component,
-      disableGutters,
-      fixed,
-      maxWidth: maxWidth2
-    };
-    const classes = useUtilityClasses(ownerState, componentName);
-    return (
-      // @ts-ignore theme is injected by the styled util
-      (0, import_jsx_runtime12.jsx)(ContainerRoot, {
-        as: component,
-        ownerState,
-        className: clsx_default(classes.root, className),
-        ref,
-        ...other
-      })
-    );
-  });
-  true ? Container2.propTypes = {
-    children: import_prop_types12.default.node,
-    classes: import_prop_types12.default.object,
-    className: import_prop_types12.default.string,
-    component: import_prop_types12.default.elementType,
-    disableGutters: import_prop_types12.default.bool,
-    fixed: import_prop_types12.default.bool,
-    maxWidth: import_prop_types12.default.oneOfType([import_prop_types12.default.oneOf(["xs", "sm", "md", "lg", "xl", false]), import_prop_types12.default.string]),
-    sx: import_prop_types12.default.oneOfType([import_prop_types12.default.arrayOf(import_prop_types12.default.oneOfType([import_prop_types12.default.func, import_prop_types12.default.object, import_prop_types12.default.bool])), import_prop_types12.default.func, import_prop_types12.default.object])
-  } : void 0;
-  return Container2;
-}
-
-// node_modules/@mui/system/esm/Container/Container.js
-var import_prop_types13 = __toESM(require_prop_types(), 1);
-var Container = createContainer();
-true ? Container.propTypes = {
-  // ┌────────────────────────────── Warning ──────────────────────────────┐
-  // │ These PropTypes are generated from the TypeScript type definitions. │
-  // │ To update them, edit the TypeScript types and run `pnpm proptypes`. │
-  // └─────────────────────────────────────────────────────────────────────┘
-  /**
-   * @ignore
-   */
+    // skip 'vars
   children: import_prop_types13.default.node,
   /**
    * Override or extend the styles applied to the component.
@@ -8623,10 +8035,8 @@ function createTypography(palette2, typography2) {
   } = typeof typography2 === "function" ? typography2(palette2) : typography2;
   if (true) {
     if (typeof fontSize2 !== "number") {
-      console.error("MUI: `fontSize` is required to be a number.");
     }
     if (typeof htmlFontSize !== "number") {
-      console.error("MUI: `htmlFontSize` is required to be a number.");
     }
   }
   const coef = fontSize2 / 14;
@@ -8739,22 +8149,16 @@ function createTransitions(inputTransitions) {
       const isString = (value) => typeof value === "string";
       const isNumber = (value) => !Number.isNaN(parseFloat(value));
       if (!isString(props) && !Array.isArray(props)) {
-        console.error('MUI: Argument "props" must be a string or Array.');
       }
       if (!isNumber(durationOption) && !isString(durationOption)) {
-        console.error(`MUI: Argument "duration" must be a number or a string but found ${durationOption}.`);
       }
       if (!isString(easingOption)) {
-        console.error('MUI: Argument "easing" must be a string.');
       }
       if (!isNumber(delay) && !isString(delay)) {
-        console.error('MUI: Argument "delay" must be a number or a string.');
       }
       if (typeof options !== "object") {
-        console.error(["MUI: Secong argument of transition.create must be an object.", "Arguments should be either `create('prop1', options)` or `create(['prop1', 'prop2'], options)`"].join("\n"));
       }
       if (Object.keys(other).length !== 0) {
-        console.error(`MUI: Unrecognized argument(s) [${Object.keys(other).join(",")}].`);
       }
     }
     return (Array.isArray(props) ? props : [props]).map((animatedProp) => `${animatedProp} ${typeof durationOption === "string" ? durationOption : formatMs(durationOption)} ${easingOption} ${typeof delay === "string" ? delay : formatMs(delay)}`).join(",");
@@ -9126,7 +8530,6 @@ function createPalette(palette2) {
     if (true) {
       const contrast = getContrastRatio(background, contrastText);
       if (contrast < 3) {
-        console.error([`MUI: The contrast ratio of ${contrast}:1 for ${contrastText} on ${background}`, "falls below the WCAG recommended absolute minimum contrast ratio of 3:1.", "https://www.w3.org/TR/2008/REC-WCAG20-20081211/#visual-audio-contrast-contrast"].join("\n"));
       }
     }
     return contrastText;
@@ -9184,7 +8587,6 @@ const theme2 = createTheme({ palette: {
   }
   if (true) {
     if (!modeHydrated) {
-      console.error(`MUI: The palette mode \`${mode}\` is not supported.`);
     }
   }
   const paletteOutput = deepmerge({

@@ -8,7 +8,6 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 from enum import Enum
 
-
 class FrequencyType(str, Enum):
     """Brainwave frequency types."""
     DELTA = "delta"      # 0.5-4 Hz - Deep sleep
@@ -16,7 +15,6 @@ class FrequencyType(str, Enum):
     ALPHA = "alpha"      # 8-12 Hz - Relaxed awareness
     BETA = "beta"        # 12-30 Hz - Normal waking consciousness
     GAMMA = "gamma"      # 25-100 Hz - High-level cognitive processing
-
 
 class FrequencyTransition(BaseModel):
     """
@@ -36,7 +34,6 @@ class FrequencyTransition(BaseModel):
     left_ear_hz: float = Field(gt=20, le=20000, description="Left ear frequency")
     right_ear_hz: float = Field(gt=20, le=20000, description="Right ear frequency")
     description: Optional[str] = Field(None, max_length=200, description="Phase description")
-
 
 class TimerPreset(BaseModel):
     """
@@ -61,11 +58,9 @@ class TimerPreset(BaseModel):
         """Calculate total duration from all transitions."""
         return sum(transition.duration_minutes for transition in self.transitions)
 
-
 class CreatePresetRequest(BaseModel):
     """Request to create a new timer preset."""
     preset: TimerPreset
-
 
 class TimerSession(BaseModel):
     """
@@ -90,13 +85,11 @@ class TimerSession(BaseModel):
     is_active: bool = Field(default=True)
     is_paused: bool = Field(default=False)
 
-
 class TimerControlRequest(BaseModel):
     """Request to control timer session."""
     action: str = Field(pattern="^(start|pause|resume|stop|next|previous)$")
     session_id: Optional[str] = None
     preset_id: Optional[str] = None
-
 
 class TimerStatusResponse(BaseModel):
     """Timer session status response."""
@@ -107,7 +100,6 @@ class TimerStatusResponse(BaseModel):
     time_remaining_total: int    # Minutes remaining in entire session
     subscription_required: bool = Field(default=False)
     upgrade_message: Optional[str] = None
-
 
 # Pre-defined free presets
 FREE_PRESETS = [

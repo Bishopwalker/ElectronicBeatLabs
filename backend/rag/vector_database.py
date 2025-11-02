@@ -14,7 +14,6 @@ from enum import Enum
 from sentence_transformers import SentenceTransformer
 from .chunking_strategy import CodeChunk
 
-
 class VectorProvider(Enum):
     """Supported vector database providers"""
     CHROMA = "chroma"
@@ -22,7 +21,6 @@ class VectorProvider(Enum):
     WEAVIATE = "weaviate"
     QDRANT = "qdrant"
     OPENSEARCH = "opensearch"
-
 
 class BaseVectorDatabase(ABC):
     """Abstract base class for vector databases"""
@@ -54,7 +52,6 @@ class BaseVectorDatabase(ABC):
         """Generate embedding for text"""
         embedding = self.embedder.encode(text, convert_to_tensor=False)
         return embedding.tolist()
-
 
 class ChromaVectorDatabase(BaseVectorDatabase):
     """Local ChromaDB implementation"""
@@ -131,7 +128,6 @@ class ChromaVectorDatabase(BaseVectorDatabase):
             })
         return {'query': query, 'results': formatted}
 
-
 class VectorDatabaseFactory:
     """Factory to create the appropriate vector database"""
 
@@ -151,7 +147,6 @@ class VectorDatabaseFactory:
             return ChromaVectorDatabase(**config)
         else:
             raise ValueError(f"Unsupported provider: {provider}")
-
 
 class CloudRAGPipeline:
     """
@@ -179,14 +174,11 @@ class CloudRAGPipeline:
         # Create vector database
         self.vector_db = VectorDatabaseFactory.create(provider, **vector_config)
 
-        print(f"Initialized RAG pipeline with {provider.value} provider")
-
     def index_project(self, force_reindex: bool = False):
         """Index the entire project"""
         stats = self.vector_db.get_stats()
 
         if not force_reindex and stats['total_documents'] > 0:
-            print(f"Database already contains {stats['total_documents']} documents")
             if not force_reindex:
                 return
 
@@ -194,20 +186,13 @@ class CloudRAGPipeline:
             self.vector_db.clear_database()
 
         # Chunk and index
-        print("Chunking project...")
         chunks = self.chunker.chunk_project()
-        print(f"Created {len(chunks)} chunks")
 
-        print("Adding to vector database...")
         self.vector_db.add_chunks(chunks)
-
-        print("Indexing complete!")
-        print(self.vector_db.get_stats())
 
     def query(self, query: str, n_results: int = 5):
         """Query the RAG system"""
         return self.vector_db.search(query, n_results)
-
 
 if __name__ == "__main__":
     # Example: Start with local ChromaDB
@@ -219,4 +204,3 @@ if __name__ == "__main__":
 
     # Test local search
     results = local_rag.query("audio engine")
-    print(f"Local search found {len(results['results'])} results")

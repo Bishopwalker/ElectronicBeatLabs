@@ -9,7 +9,7 @@ interface FrequencyTabProps {
   audioEngine: AudioEngine;
   patterns8D: Pattern8D[];
   onStateChange: (state: Partial<AppState>) => void;
-  onFrequencyChange: (freq: number) => void;
+  onFrequencyChange: (base_frequency: number, beat_frequency?: number) => void;
 }
 
 const FrequencyTab: React.FC<FrequencyTabProps> = () => {

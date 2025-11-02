@@ -294,22 +294,18 @@ async def stop_session(session_id: str):
 @app.websocket("/ws/{session_id}")
 async def websocket_endpoint(
     websocket: WebSocket, 
-    session_id: str,
-    base_frequency: int = 440,
-    beat_frequency: int = 4
+    session_id: str
 ):
-    """WebSocket endpoint for real-time audio and field streaming"""
+    """
+    WebSocket endpoint for real-time audio and field streaming
+    
+    🔥 FIX: Frequencies come from WebSocket messages/audio context, NOT URL params!
+    """
     print(f"[CONNECT] WEBSOCKET CONNECTION ATTEMPT: {session_id}")
-    print(f"[PARAMS] base_frequency={base_frequency}, beat_frequency={beat_frequency}")
-    logger.info(f"Main WebSocket connection for session: {session_id}, base_frequency={base_frequency}, beat_frequency={beat_frequency}")
+    logger.info(f"Main WebSocket connection for session: {session_id}")
     await manager.connect(websocket, session_id)
     print(f"[SUCCESS] WEBSOCKET CONNECTED: {session_id}")
     logger.info(f"Main WebSocket connected for session: {session_id}")
-    
-    # Store initial frequency parameters in session
-    if session_id in manager.sessions:
-        manager.sessions[session_id]["initial_base_frequency"] = base_frequency
-        manager.sessions[session_id]["initial_beat_frequency"] = beat_frequency
     
     try:
         while True:
@@ -321,17 +317,7 @@ async def websocket_endpoint(
                 # Start audio and field generation
                 settings = data.get("settings", {})
                 
-                # Use initial frequencies from connection if not provided in settings
-                if session_id in manager.sessions:
-                    if "base_frequency" not in settings and "initial_base_frequency" in manager.sessions[session_id]:
-                        settings["base_frequency"] = manager.sessions[session_id]["initial_base_frequency"]
-                    if "beat_frequency" not in settings and "initial_beat_frequency" in manager.sessions[session_id]:
-                        settings["beat_frequency"] = manager.sessions[session_id]["initial_beat_frequency"]
-                    
-                    # Store settings in session
-                    manager.sessions[session_id]["settings"] = settings
-                
-                # Configure generators
+                # Configure generators with settings from message
                 audio_engine.configure(session_id, settings)
                 field_simulator.configure(session_id, settings)
                 
@@ -374,9 +360,16 @@ async def stream_data(websocket: WebSocket, session_id: str, settings: dict):
             # Generate field data
             field_data = await field_simulator.generate_frame(session_id)
             
-            # Calculate frequencies from settings
-            base_frequency = settings.get("base_frequency", 140)
-            beat_frequency = settings.get("beat_frequency", 4)
+            # 🔥 FIX: Get current settings from audio engine session, not initial settings
+            # This ensures frequency updates are reflected in real-time
+            if session_id in audio_engine.sessions:
+                current_settings = audio_engine.sessions[session_id].get("settings", settings)
+            else:
+                current_settings = settings
+            
+            # Calculate frequencies from CURRENT settings
+            base_frequency = current_settings.get("base_frequency", 140)
+            beat_frequency = current_settings.get("beat_frequency", 4)
             left_freq = base_frequency
             right_freq = base_frequency + beat_frequency
             

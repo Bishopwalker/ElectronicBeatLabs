@@ -60,8 +60,8 @@ export class ElectromagneticLabManager {
   // Enhanced electromagnetic field calculation
   calculateEnhancedElectromagnetic(currentElectromagnetic: any, currentAudioState: any) {
     // Get volume from either backend (config.volume) or frontend (volume) format
-    const volume = currentAudioState.config?.volume ?? currentAudioState.volume ?? 0.5;
-    const beatFreq = currentAudioState.beat_frequency ?? currentAudioState.config?.beat_frequency ?? this.state.appState.beat_frequency ?? 4;
+    const volume = currentAudioState?.config?.volume ?? currentAudioState?.volume ?? 0.5;
+    const beatFreq = currentAudioState?.beat_frequency ?? currentAudioState?.config?.beat_frequency ?? 4;
 
     return {
       ...currentElectromagnetic,
@@ -106,7 +106,6 @@ export class ElectromagneticLabManager {
       // ✅ FIXED: Convert PatternConfig → Pattern8D before setting for visualization
       if (patterns8D && patterns8D.setActivePattern) {
         const pattern8D = convertPatternConfigToPattern8D(pattern);
-        console.log('🎨 Converting pattern to Pattern8D for visualization:', pattern8D);
         patterns8D.setActivePattern(pattern8D);
       }
     }
@@ -122,16 +121,18 @@ export class ElectromagneticLabManager {
   }
 
   // Handle frequency change
-  handleFrequencyChange(frequency: number, audioEngine: any) {
-    this.updateAppState({ frequency });
-    
-    // 🔥 BULLETPROOF: Check pattern AND frequencies exist
-    if (this.state.appState.currentPattern?.frequencies?.carrier) {
-      const leftFreq = this.state.appState.currentPattern.frequencies.carrier;
-      const rightFreq = leftFreq + frequency;
+  handleFrequencyChange(base_frequency: number, beat_frequency: number, audioEngine: any) {
+    // Prefer unified settings API when available; fallback to left/right
+    if (audioEngine?.updateSettings) {
+      audioEngine.updateSettings({ base_frequency, beat_frequency });
+      return;
+    }
+
+    // Compute channel frequencies from base/beat
+    const leftFreq = base_frequency;
+    const rightFreq = base_frequency + beat_frequency;
+    if (audioEngine?.updateFrequency) {
       audioEngine.updateFrequency(leftFreq, rightFreq);
-    } else {
-      console.warn('⚠️ Cannot update frequency - pattern or frequencies missing');
     }
   }
 
@@ -139,22 +140,19 @@ export class ElectromagneticLabManager {
   handleVolumeChange(volume: number, audioEngine: any) {
     // Protect against NaN values
     const safeVolume = isNaN(volume) ? 0.3 : Math.max(0, Math.min(1, volume));
-    console.log('🔊 handleVolumeChange:', { original: volume, safe: safeVolume });
-    this.updateAppState({ volume: safeVolume });
     audioEngine.updateVolume(safeVolume);
   }
 
   // Handle play
   handlePlay(audioEngine: any, backendEngine: any, patterns8D: any) {
-    console.log('🎛️ HandlePlay called - Current Pattern:', this.state.appState.currentPattern?.name, 'Is Playing:', this.state.appState.isPlaying);
 
     // 🔥 BULLETPROOF: Get pattern with full null checking and defaults
     const pattern = this.state.appState.currentPattern?.frequencies ? 
       this.state.appState.currentPattern : 
       {
         frequencies: {
-          carrier: this.state.appState.frequency || 140,
-          beat: this.state.appState.beat_frequency || 4
+          carrier: 140,
+          beat: 4
         }
       };
 
@@ -163,7 +161,6 @@ export class ElectromagneticLabManager {
     const useSpatialAudio = this.state.appState.spatialAudio?.enabled && backendEngine.backendConnected;
 
     if (useSpatialAudio) {
-      console.log('🎧 Using Backend Engine for 8D Spatial Audio');
       if (backendEngine.loadPattern && this.state.appState.currentPattern) {
         backendEngine.loadPattern(this.state.appState.currentPattern);
       }
@@ -173,7 +170,7 @@ export class ElectromagneticLabManager {
         const config = {
           base_frequency: pattern.frequencies?.carrier || 140,
           beat_frequency: pattern.frequencies?.beat || 4,
-          volume: this.state.appState.volume || 0.3,
+          volume: 0.3,
           waveform: 'sine' as const,
           spatial: {
             enabled: true,
@@ -185,7 +182,6 @@ export class ElectromagneticLabManager {
         backendEngine.startBinauralBeat(config);
       }
     } else {
-      console.log('🎵 Using Frontend Engine for Basic Binaural Beats');
       if (audioEngine.loadPattern && this.state.appState.currentPattern) {
         audioEngine.loadPattern(this.state.appState.currentPattern);
       }
@@ -195,7 +191,7 @@ export class ElectromagneticLabManager {
         const config = {
           base_frequency: pattern.frequencies?.carrier || 140,
           beat_frequency: pattern.frequencies?.beat || 4,
-          volume: this.state.appState.volume || 0.3,
+          volume: 0.3,
           waveform: 'sine' as const
         };
         audioEngine.startBinauralBeat(config);
@@ -205,17 +201,13 @@ export class ElectromagneticLabManager {
     // ✅ FIXED: Convert PatternConfig → Pattern8D before setting for visualizer (only if real pattern)
     if (patterns8D && patterns8D.setActivePattern && this.state.appState.currentPattern) {
       const pattern8D = convertPatternConfigToPattern8D(this.state.appState.currentPattern);
-      console.log('🎨 Converting pattern to Pattern8D for visualization on play:', pattern8D);
       patterns8D.setActivePattern(pattern8D);
     }
 
-    this.updateAppState({ isPlaying: true });
-    console.log('✅ Play completed successfully');
   }
 
   // Handle stop
   handleStop(audioEngine: AudioEngine, backendEngine: any, patterns8D: any) {
-    console.log('🛑 HandleStop called');
 
     // Stop both audio engines
     if (backendEngine.stopBinauralBeat) {
@@ -230,8 +222,6 @@ export class ElectromagneticLabManager {
       patterns8D.clearActivePattern();
     }
 
-    this.updateAppState({ isPlaying: false });
-    console.log('✅ Stop completed successfully');
   }
 
   // Handle tab change
@@ -241,7 +231,6 @@ export class ElectromagneticLabManager {
 
   // Handle section close
   handleSectionClose(id: string) {
-    console.log('🔴 Closing section:', id);  // Debug log
     this.setState(prev => ({
       ...prev,
       closedSections: [...prev.closedSections, id]
@@ -263,14 +252,11 @@ export class ElectromagneticLabManager {
       
       // Auto-connect backend when opening advanced controls (only if not connected and not connecting)
       if (willOpen && backendEngine && !backendEngine.backendConnected && !backendEngine.websocketState?.connecting) {
-        console.log('🔌 Advanced Controls: Auto-connecting to backend engine...');
         try {
           backendEngine.connectBackend();
         } catch (error) {
-          console.error('❌ Advanced Controls: Failed to auto-connect backend:', error);
         }
       } else if (willOpen && backendEngine?.websocketState?.connecting) {
-        console.log('⏳ Advanced Controls: Backend connection already in progress, skipping auto-connect');
       }
       
       return {

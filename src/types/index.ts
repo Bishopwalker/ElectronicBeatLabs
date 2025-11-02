@@ -37,7 +37,6 @@ export interface Position3D {
     z: number;
 }
 
-
 export interface FrequencyPoint {
     frequency: number;
     amplitude: number;
@@ -90,7 +89,7 @@ export interface AudioEngine {
     audioState: BackendAudioEngineState;
     electromagnetic: ElectromagneticField;
     startBinauralBeat: (config: BinauralBeatConfig) => Promise<void>;
-    stopBinauralBeat: (config: BinauralBeatConfig) => Promise<void>;
+    stopBinauralBeat: (config?: BinauralBeatConfig) => Promise<void> | void;
     updateFrequency: (left: number, right: number) => void;
     updateVolume: (volume: number) => void;
     updateWaveform: (waveForm: WaveForm) => void;
@@ -246,7 +245,6 @@ export interface PatternPreset {
     saved: boolean;
     rating: number;
 }
-
 
 export interface VisualizationSettings {
     starField: {
@@ -485,9 +483,6 @@ export interface WaveGuidePanelProps {
     onChange: (config: WaveGuideConfig) => void;
 }
 
-
-
-
 export interface QuickStartProps {
     activeStatus: ActiveAudioStatus;
     frequencies?: {
@@ -553,13 +548,17 @@ export interface FrequencyTransition {
     spatial_settings?: SpatialAudioConfig; // 🔥 FIXED: Should be SpatialAudioConfig, not ActiveAudioStatus
 }
 
+export interface ControlTabsTab {
+    id: string;
+    label: string;
+    icon: string;
+    enabled: boolean;
+}
 
 export interface ControlTabsProps {
-
-    activeTab: string,
-    onTabChange: (tabId: string) => void,
-    tabs?: ({
-    })[]
+    activeTab: string;
+    onTabChange: (tabId: string) => void;
+    tabs: ControlTabsTab[];
 }
 
 export interface BinauralTestProps {

@@ -16,7 +16,3 @@ chunker.save_chunks("ebl_chunks.json")
 
 # Find relevant chunks for a query
 relevant = chunker.get_relevant_chunks("audio engine frequency", top_k=5)
-
-print("EBL RAG System Successfully Set Up!")
-print(f"Created {len(chunks)} chunks")
-print(f"Found {len(relevant)} relevant chunks for 'audio engine frequency'")

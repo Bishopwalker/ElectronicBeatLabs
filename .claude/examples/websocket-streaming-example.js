@@ -32,7 +32,6 @@ class EBLWebSocketClient {
             latency: 0
         };
         
-        console.log('🎵 EBL WebSocket Client initialized');
     }
     
     /**
@@ -43,9 +42,7 @@ class EBLWebSocketClient {
         try {
             this.sessionId = sessionId || this.generateSessionId();
             const wsUrl = `${this.serverUrl}/ws/${this.sessionId}`;
-            
-            console.log(`🔌 Connecting to EBL WebSocket: ${wsUrl}`);
-            
+
             this.socket = new WebSocket(wsUrl);
             this.setupSocketHandlers();
             
@@ -60,19 +57,16 @@ class EBLWebSocketClient {
                     this.isConnected = true;
                     this.reconnectAttempts = 0;
                     this.reconnectDelay = 1000;
-                    console.log('✅ Connected to EBL WebSocket server');
                     resolve();
                 };
                 
                 this.socket.onerror = (error) => {
                     clearTimeout(timeout);
-                    console.error('❌ WebSocket connection error:', error);
                     reject(error);
                 };
             });
             
         } catch (error) {
-            console.error('❌ Failed to connect to EBL WebSocket:', error);
             throw error;
         }
     }
@@ -86,13 +80,11 @@ class EBLWebSocketClient {
                 const data = JSON.parse(event.data);
                 this.handleMessage(data);
             } catch (error) {
-                console.error('❌ Failed to parse WebSocket message:', error);
             }
         };
         
         this.socket.onclose = (event) => {
             this.isConnected = false;
-            console.log(`🔌 WebSocket connection closed (code: ${event.code})`);
             
             if (event.code !== 1000 && this.reconnectAttempts < this.maxReconnectAttempts) {
                 this.attemptReconnect();
@@ -100,7 +92,6 @@ class EBLWebSocketClient {
         };
         
         this.socket.onerror = (error) => {
-            console.error('❌ WebSocket error:', error);
         };
     }
     
@@ -121,7 +112,6 @@ class EBLWebSocketClient {
                 break;
                 
             case 'error':
-                console.error('❌ Server error:', data.message);
                 break;
                 
             case 'ping':
@@ -130,7 +120,6 @@ class EBLWebSocketClient {
                 break;
                 
             default:
-                console.warn('⚠️ Unknown message type:', data.type);
         }
     }
     
@@ -184,7 +173,6 @@ class EBLWebSocketClient {
             // Initialize audio context if needed
             if (!this.audioContext) {
                 this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                console.log('🎵 Audio context initialized');
             }
             
             // Resume audio context if suspended (Chrome autoplay policy)
@@ -212,7 +200,6 @@ class EBLWebSocketClient {
             this.queueAudioBuffer(audioBuffer);
             
         } catch (error) {
-            console.error('❌ Audio processing error:', error);
         }
     }
     
@@ -238,7 +225,6 @@ class EBLWebSocketClient {
             try {
                 callback(fieldData);
             } catch (error) {
-                console.error('❌ Field callback error:', error);
             }
         });
     }
@@ -248,7 +234,6 @@ class EBLWebSocketClient {
      * @param {Object} data - Session status data
      */
     handleSessionStatus(data) {
-        console.log('📊 Session status:', data);
         
         // Trigger custom event for UI updates
         const event = new CustomEvent('eblSessionStatus', { 
@@ -263,7 +248,6 @@ class EBLWebSocketClient {
      */
     startStream(settings = {}) {
         if (!this.isConnected) {
-            console.error('❌ Cannot start stream: not connected');
             return;
         }
         
@@ -276,9 +260,7 @@ class EBLWebSocketClient {
         };
         
         const streamSettings = { ...defaultSettings, ...settings };
-        
-        console.log('▶️ Starting EBL stream with settings:', streamSettings);
-        
+
         this.send({
             type: 'start_stream',
             settings: streamSettings
@@ -291,12 +273,9 @@ class EBLWebSocketClient {
      */
     updateSettings(settings) {
         if (!this.isConnected) {
-            console.error('❌ Cannot update settings: not connected');
             return;
         }
-        
-        console.log('⚙️ Updating EBL stream settings:', settings);
-        
+
         this.send({
             type: 'update_settings',
             settings: settings
@@ -308,12 +287,9 @@ class EBLWebSocketClient {
      */
     stopStream() {
         if (!this.isConnected) {
-            console.error('❌ Cannot stop stream: not connected');
             return;
         }
-        
-        console.log('⏹️ Stopping EBL stream');
-        
+
         this.send({
             type: 'stop_stream'
         });
@@ -334,14 +310,12 @@ class EBLWebSocketClient {
      */
     send(message) {
         if (!this.isConnected || !this.socket) {
-            console.error('❌ Cannot send message: not connected');
             return;
         }
         
         try {
             this.socket.send(JSON.stringify(message));
         } catch (error) {
-            console.error('❌ Failed to send message:', error);
         }
     }
     
@@ -351,7 +325,6 @@ class EBLWebSocketClient {
      */
     onFieldUpdate(callback) {
         this.fieldCallbacks.push(callback);
-        console.log(`📡 Registered field visualization callback (${this.fieldCallbacks.length} total)`);
     }
     
     /**
@@ -362,7 +335,6 @@ class EBLWebSocketClient {
         const index = this.fieldCallbacks.indexOf(callback);
         if (index > -1) {
             this.fieldCallbacks.splice(index, 1);
-            console.log(`📡 Unregistered field visualization callback (${this.fieldCallbacks.length} total)`);
         }
     }
     
@@ -379,18 +351,14 @@ class EBLWebSocketClient {
      */
     attemptReconnect() {
         this.reconnectAttempts++;
-        
-        console.log(`🔄 Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
-        
+
         setTimeout(() => {
             this.connect(this.sessionId).catch(error => {
-                console.error(`❌ Reconnection attempt ${this.reconnectAttempts} failed:`, error);
                 
                 if (this.reconnectAttempts < this.maxReconnectAttempts) {
                     this.reconnectDelay *= 2; // Exponential backoff
                     this.attemptReconnect();
                 } else {
-                    console.error('❌ Max reconnection attempts reached. Please refresh the page.');
                     
                     // Trigger custom event for UI notification
                     const event = new CustomEvent('eblConnectionFailed', {
@@ -415,7 +383,6 @@ class EBLWebSocketClient {
      */
     disconnect() {
         if (this.socket) {
-            console.log('🔌 Disconnecting from EBL WebSocket server');
             this.socket.close(1000, 'Client disconnect');
             this.socket = null;
         }

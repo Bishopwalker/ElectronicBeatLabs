@@ -19,7 +19,6 @@ from schemas.timer_schemas import (
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/timer", tags=["timer"])
 
-
 @router.get("/presets", response_model=List[Dict[str, Any]])
 async def get_timer_presets(current_user: User = Depends(get_current_user)):
     """
@@ -64,7 +63,6 @@ async def get_timer_presets(current_user: User = Depends(get_current_user)):
         logger.error(f"Error retrieving presets for user {current_user.email}: {e}")
         raise HTTPException(status_code=500, detail="Error retrieving timer presets")
 
-
 @router.post("/presets", response_model=Dict[str, str])
 async def create_timer_preset(
     request: CreatePresetRequest,
@@ -97,7 +95,6 @@ async def create_timer_preset(
     except Exception as e:
         logger.error(f"Error creating preset for user {current_user.email}: {e}")
         raise HTTPException(status_code=500, detail="Error creating timer preset")
-
 
 @router.post("/start", response_model=TimerStatusResponse)
 async def start_timer(
@@ -133,7 +130,6 @@ async def start_timer(
     except Exception as e:
         logger.error(f"Error starting timer for user {current_user.email}: {e}")
         raise HTTPException(status_code=500, detail="Error starting timer session")
-
 
 @router.post("/control", response_model=TimerStatusResponse)
 async def control_timer(
@@ -176,7 +172,6 @@ async def control_timer(
         logger.error(f"Error controlling timer for user {current_user.email}: {e}")
         raise HTTPException(status_code=500, detail="Error controlling timer session")
 
-
 @router.get("/status", response_model=TimerStatusResponse)
 async def get_timer_status(current_user: User = Depends(get_current_user)):
     """
@@ -199,7 +194,6 @@ async def get_timer_status(current_user: User = Depends(get_current_user)):
     except Exception as e:
         logger.error(f"Error getting timer status for user {current_user.email}: {e}")
         raise HTTPException(status_code=500, detail="Error retrieving timer status")
-
 
 @router.delete("/presets/{preset_id}")
 async def delete_timer_preset(
@@ -231,7 +225,6 @@ async def delete_timer_preset(
     except Exception as e:
         logger.error(f"Error deleting preset {preset_id} for user {current_user.email}: {e}")
         raise HTTPException(status_code=500, detail="Error deleting timer preset")
-
 
 @router.get("/subscription-benefits")
 def get_subscription_benefits():

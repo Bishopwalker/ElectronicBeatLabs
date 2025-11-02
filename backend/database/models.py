@@ -8,7 +8,6 @@ from sqlalchemy.sql import func
 from database.database import Base
 import uuid
 
-
 class User(Base):
     """
     Simple user model - just OAuth email and subscription status
@@ -34,7 +33,6 @@ class User(Base):
     subscriptions = relationship("Subscription", back_populates="user")
     payments = relationship("PaymentRecord", back_populates="user")
 
-
 class Subscription(Base):
     """
     Subscription tracking for premium features
@@ -53,7 +51,6 @@ class Subscription(Base):
     # Relationship
     user = relationship("User", back_populates="subscriptions")
 
-
 class PaymentRecord(Base):
     """
     Payment history tracking
@@ -70,7 +67,6 @@ class PaymentRecord(Base):
     
     # Relationship
     user = relationship("User", back_populates="payments")
-
 
 class UsageRecord(Base):
     """
@@ -90,7 +86,6 @@ class UsageRecord(Base):
     year_month = Column(String, nullable=False, index=True)  # "2024-01"
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-
 
 # Simple webhook logging for Stripe events
 class WebhookEvent(Base):

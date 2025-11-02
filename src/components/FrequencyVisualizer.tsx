@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { Box, Typography, Paper, Chip, ToggleButtonGroup, ToggleButton, IconButton } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { useAudioAnalysis } from '../hooks/useAudioAnalysis';
-import type { AppState } from '../types';
+import type { Pattern8D, PatternConfig, ElectromagneticField, PatternMode, WaveForm } from '../types';
 import { DEFAULT_BASE_FREQUENCY, DEFAULT_BEAT_FREQUENCY } from '../constants/audio.constants';
 import WavesIcon from '@mui/icons-material/Waves';
 import BubbleChartIcon from '@mui/icons-material/BubbleChart';
@@ -151,16 +151,41 @@ function generateWaveform(t: number, waveform: 'sine' | 'square' | 'triangle' | 
 // STYLED COMPONENTS
 // ============================================================================
 
-interface FrequencyVisualizerProps {
-  state: AppState & {
-    audio?: AnyAudion;
-    base_frequency?: number;
-    beat_frequency?: number;
-    config?: {
-      base_frequency?: number;
-      beat_frequency?: number;
+// 🔥 FIXED: Minimal interface - only requires what FrequencyVisualizer actually uses
+// No longer coupled to full AppState
+interface FrequencyVisualizerState {
+  // Audio engine reference (optional)
+  audio?: {
+    audioState?: {
+      isPlaying?: boolean;
+      waveform?: WaveForm;
     };
   };
+  
+  // Direct audio properties (fallback if audio engine not available)
+  isPlaying?: boolean;
+  base_frequency?: number;
+  beat_frequency?: number;
+  
+  // Config object (alternative source for frequencies)
+  config?: {
+    base_frequency?: number;
+    beat_frequency?: number;
+    waveform?: WaveForm;
+  };
+  
+  // Optional pattern/EM data for advanced visualizations
+  patterns8D?: Pattern8D[];
+  currentPattern?: PatternConfig | null;
+  electromagnetic?: ElectromagneticField;
+  
+  // UI state
+  mode?: PatternMode;
+  activeTab?: string;
+}
+
+interface FrequencyVisualizerProps {
+  state: FrequencyVisualizerState;
   title?: string;
   showSpectrum?: boolean;
   showFrequencies?: boolean;
@@ -230,7 +255,6 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
 }) => {
   // Early return if state is invalid
   if (!state || typeof state !== 'object') {
-    console.error('❌ FrequencyVisualizer: Invalid state provided', state);
     return (
       <Box sx={{ p: 2, color: 'error.main', textAlign: 'center' }}>
         <Typography>Frequency Visualizer: Invalid state</Typography>
@@ -281,12 +305,10 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
       state.base_frequency??
        DEFAULT_BASE_FREQUENCY ;
 
-
   const beat_frequency =
     state?.config?.beat_frequency ??
       state.base_frequency ??
      DEFAULT_BEAT_FREQUENCY;
-
 
   const isPlaying =
     state?.audio?.audioState?.isPlaying ??
@@ -335,7 +357,6 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
         setIsFullscreen(false);
       }
     } catch (error) {
-      console.error('❌ Fullscreen toggle failed:', error);
     }
   };
 // 🔥 NEW: Enhanced AudioWorklet visibility debugging
@@ -346,44 +367,21 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
     if (debugLoggedRef.current) return; // Only log once
     debugLoggedRef.current = true;
 
-    console.log('=== 🎵 FREQUENCY VISUALIZER AUDIO DEBUG ===');
-    console.log('📊 AudioContext:', audioContext);
-    console.log('   ├─ State:', audioContext?.state);
-    console.log('   ├─ Sample Rate:', audioContext?.sampleRate, 'Hz');
-    console.log('   ├─ Current Time:', audioContext?.currentTime?.toFixed(2), 's');
-    console.log('   └─ Has audioWorklet interface?', !!audioContext?.audioWorklet);
-
-    console.log('📈 AnalyserNode:', analyserNode);
-    console.log('   ├─ FFT Size:', analyserNode?.fftSize);
-    console.log('   ├─ Frequency Bin Count:', analyserNode?.frequencyBinCount);
-    console.log('   └─ Smoothing:', analyserNode?.smoothingTimeConstant);
-
     // 🔥 REMOVED: Test AudioWorkletNode creation was interfering with audio playback!
     // We already have audioWorkletStatus from the backend engine - no need to test here
 
     // 🔥 NEW: Display AudioWorklet status if available
     if (audioWorkletStatus) {
-      console.log('🎛️ AudioWorklet Status (from backend engine):');
-      console.log('   ├─ Module Loaded?', audioWorkletStatus.moduleLoaded);
-      console.log('   ├─ Node Exists?', audioWorkletStatus.nodeExists);
-      console.log('   ├─ Is Processing?', audioWorkletStatus.isProcessing);
-      console.log('   └─ Node Reference:', audioWorkletStatus.nodeReference);
 
       if (audioWorkletStatus.nodeReference) {
-        console.log('      ├─ Parameters:', Array.from(audioWorkletStatus.nodeReference.parameters.keys()));
-        console.log('      └─ Channel Count:', audioWorkletStatus.nodeReference.channelCount);
       }
     } else {
-      console.log('⚠️ No audioWorkletStatus prop provided (expected if using frontend engine)');
     }
-
-    console.log('===========================================');
 
     // 🔥 NEW: Listen for AudioWorklet metrics responses
     if (audioWorkletStatus?.nodeReference) {
       const handleWorkletMessage = (event: MessageEvent) => {
         if (event.data.type === 'metrics') {
-          console.log('📊 AudioWorklet Metrics Received:', event.data.data);
         }
       };
 
@@ -526,33 +524,19 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
 
           // 🔥 CRITICAL DEBUG: If no audio detected, diagnose why
           if (freqSum === 0 && analyserNode) {
-            console.warn('⚠️ ZERO AUDIO DETECTED! Diagnosing...');
-            console.log('   ├─ AudioContext state:', audioContext?.state);
-            console.log('   ├─ AudioContext currentTime:', audioContext?.currentTime);
-            console.log('   ├─ AnalyserNode exists?', !!analyserNode);
-            console.log('   ├─ AnalyserNode.fftSize:', analyserNode.fftSize);
-            console.log('   ├─ AnalyserNode.numberOfInputs:', analyserNode.numberOfInputs);
-            console.log('   ├─ AnalyserNode.numberOfOutputs:', analyserNode.numberOfOutputs);
-            console.log('   ├─ AppState.audio.isPlaying:', state?.audio?.isPlaying);
-
+console.log('🎵 FrequencyVisualizer Audio Worklet Status:', {
+  audioWorkletStatus
+});
             // 🔥 Check if AudioWorklet is actually playing
             if (audioWorkletStatus?.nodeReference) {
-              console.log('   🎛️ AudioWorklet Node Status:');
-              console.log('      ├─ Node exists:', !!audioWorkletStatus.nodeReference);
-              console.log('      ├─ Number of inputs:', audioWorkletStatus.nodeReference.numberOfInputs);
-              console.log('      ├─ Number of outputs:', audioWorkletStatus.nodeReference.numberOfOutputs);
-              console.log('      ├─ Channel count:', audioWorkletStatus.nodeReference.channelCount);
-
+console.log('Deez niggaz playing')
               // Ask the worklet for metrics
               try {
                 audioWorkletStatus.nodeReference.port.postMessage({ type: 'get_metrics' });
-                console.log('      └─ ✅ Requested metrics from AudioWorklet processor');
               } catch (error) {
-                console.log('      └─ ❌ Failed to request metrics:', error);
               }
             }
 
-            console.log('   └─ 💡 TIP: Click "Start" button if you haven\'t already!');
           }
         }
 

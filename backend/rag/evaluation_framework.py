@@ -12,7 +12,6 @@ from dataclasses import dataclass, asdict
 
 from backend.rag.enhanced_retrieval import EnhancedRAGRetrieval, SearchResult
 
-
 @dataclass
 class EvaluationMetrics:
     """Container for evaluation metrics"""
@@ -23,7 +22,6 @@ class EvaluationMetrics:
     mrr: float  # Mean Reciprocal Rank
     avg_latency_ms: float
     total_queries: int
-
 
 @dataclass
 class QueryEvaluation:
@@ -37,7 +35,6 @@ class QueryEvaluation:
     latency_ms: float
     relevant_found: int
     total_relevant: int
-
 
 class RAGEvaluator:
     """Comprehensive RAG evaluation system"""
@@ -136,14 +133,11 @@ class RAGEvaluator:
         Returns:
             EvaluationMetrics with detailed performance data
         """
-        print(f"\nEvaluating {system_name}...")
-        print("=" * 50)
 
         query_evaluations = []
         total_latency = 0
 
         for i, test_case in enumerate(self.test_queries, 1):
-            print(f"Query {i}/{len(self.test_queries)}: {test_case['query']}")
 
             # Measure retrieval latency
             start_time = time.time()
@@ -292,8 +286,6 @@ class RAGEvaluator:
         with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(results, f, indent=2)
 
-        print(f"\nDetailed results saved to {output_file}")
-
     def compare_systems(self, systems: List[Tuple[EnhancedRAGRetrieval, str]]) -> Dict[str, EvaluationMetrics]:
         """Compare multiple RAG systems"""
         results = {}
@@ -309,13 +301,8 @@ class RAGEvaluator:
 
     def _print_comparison_table(self, results: Dict[str, EvaluationMetrics]):
         """Print a comparison table of system performance"""
-        print("\n" + "=" * 80)
-        print("SYSTEM COMPARISON")
-        print("=" * 80)
 
         # Header
-        print(f"{'System':<20} {'P@1':<8} {'P@3':<8} {'P@5':<8} {'R@5':<8} {'MRR':<8} {'Latency':<10}")
-        print("-" * 80)
 
         # Results
         for system_name, metrics in results.items():
@@ -327,12 +314,8 @@ class RAGEvaluator:
                   f"{metrics.mrr:<8.3f} "
                   f"{metrics.avg_latency_ms:<10.1f}ms")
 
-        print("-" * 80)
-
         # Find best performer
         best_system = max(results.items(), key=lambda x: x[1].precision_at_3)
-        print(f"Best overall system: {best_system[0]} (P@3: {best_system[1].precision_at_3:.3f})")
-
 
 def run_comprehensive_evaluation():
     """Run comprehensive evaluation of RAG systems"""
@@ -343,45 +326,30 @@ def run_comprehensive_evaluation():
 
     try:
         # Standard embedding model
-        print("Loading system with all-MiniLM-L6-v2...")
         system1 = EnhancedRAGRetrieval(embedding_model="all-MiniLM-L6-v2")
         systems_to_test.append((system1, "MiniLM-L6-v2"))
     except Exception as e:
-        print(f"Could not load MiniLM-L6-v2: {e}")
 
     try:
         # Better embedding model
-        print("Loading system with all-mpnet-base-v2...")
         system2 = EnhancedRAGRetrieval(embedding_model="all-mpnet-base-v2")
         systems_to_test.append((system2, "MPNet-Base-v2"))
     except Exception as e:
-        print(f"Could not load MPNet-Base-v2: {e}")
 
     if systems_to_test:
         # Run comparison
         comparison_results = evaluator.compare_systems(systems_to_test)
 
         # Generate recommendations
-        print("\n" + "=" * 80)
-        print("RECOMMENDATIONS")
-        print("=" * 80)
 
         best_precision = max(comparison_results.items(), key=lambda x: x[1].precision_at_3)
         best_speed = min(comparison_results.items(), key=lambda x: x[1].avg_latency_ms)
 
-        print(f"• Best accuracy: {best_precision[0]} (P@3: {best_precision[1].precision_at_3:.3f})")
-        print(f"• Fastest system: {best_speed[0]} ({best_speed[1].avg_latency_ms:.1f}ms avg)")
-
         if best_precision[1].precision_at_3 > 0.7:
-            print("• System performance is GOOD for production use")
         elif best_precision[1].precision_at_3 > 0.5:
-            print("• System performance is ACCEPTABLE, consider improvements")
         else:
-            print("• System performance needs IMPROVEMENT before production")
 
     else:
-        print("No systems could be loaded for evaluation")
-
 
 if __name__ == "__main__":
     run_comprehensive_evaluation()

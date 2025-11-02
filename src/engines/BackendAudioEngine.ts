@@ -1,6 +1,6 @@
 /**
  * BackendAudioEngine - WebSocket Audio Streaming Engine
- * 
+ *
  * CRITICAL: This engine receives STEREO audio frames from Python backend
  * Processes both LEFT and RIGHT channels through AudioWorklet
  * Maintains binaural beat integrity from NumPy-generated audio
@@ -12,6 +12,18 @@ interface AudioFrame {
   timestamp: number;
 }
 
+// Audio engine constants
+const RING_BUFFER_SIZE = 4096;
+const CONNECTION_TIMEOUT_MS = 10000;
+const CONNECTION_CHECK_INTERVAL_MS = 100;
+const MAX_RECONNECT_DELAY_MS = 30000;
+const MAX_RECONNECT_ATTEMPTS = 5;
+const DEFAULT_SESSION_VOLUME = 0.8;
+const MIN_VOLUME = 0;
+const MAX_VOLUME = 2;
+const DEFAULT_WAVEFORM = 'sine';
+const BINARY_FRAME_HEADER_SIZE = 4;
+
 export class BackendAudioEngine {
   private audioContext: AudioContext;
   private outputNode: AudioNode;
@@ -20,13 +32,11 @@ export class BackendAudioEngine {
   private isConnected: boolean = false;
   private sessionId: string | null = null;
   private reconnectAttempts: number = 0;
-  private maxReconnectAttempts: number = 5;
+  private maxReconnectAttempts: number = MAX_RECONNECT_ATTEMPTS;
 
   constructor(audioContext: AudioContext, outputNode: AudioNode) {
     this.audioContext = audioContext;
     this.outputNode = outputNode;
-    
-    console.log('🔌 BackendAudioEngine initialized (STEREO WebSocket mode)');
   }
 
   /**
@@ -34,11 +44,8 @@ export class BackendAudioEngine {
    */
   async connect(url: string = 'ws://localhost:8000/ws/audio'): Promise<void> {
     if (this.isConnected) {
-      console.log('✅ BackendEngine: Already connected');
       return;
     }
-
-    console.log('🔌 BackendEngine: Connecting to WebSocket...');
 
     try {
       // Initialize AudioWorklet for processing backend frames
@@ -57,7 +64,6 @@ export class BackendAudioEngine {
       // Wait for connection
       await this.waitForConnection();
     } catch (error) {
-      console.error('❌ BackendEngine: Connection failed:', error);
       throw error;
     }
   }
@@ -69,7 +75,6 @@ export class BackendAudioEngine {
     try {
       // Check if worklet module already loaded
       if (this.audioWorklet) {
-        console.log('✅ AudioWorklet already initialized');
         return;
       }
 
@@ -78,8 +83,8 @@ export class BackendAudioEngine {
         class BackendProcessor extends AudioWorkletProcessor {
           constructor() {
             super();
-            this.bufferL = new Float32Array(4096);
-            this.bufferR = new Float32Array(4096);
+            this.bufferL = new Float32Array(${RING_BUFFER_SIZE});
+            this.bufferR = new Float32Array(${RING_BUFFER_SIZE});
             this.writeIndex = 0;
             this.readIndex = 0;
             
@@ -140,9 +145,7 @@ export class BackendAudioEngine {
       // Connect to output
       this.audioWorklet.connect(this.outputNode);
 
-      console.log('✅ BackendEngine: AudioWorklet initialized for STEREO streaming');
     } catch (error) {
-      console.error('❌ BackendEngine: Failed to initialize AudioWorklet:', error);
       throw error;
     }
   }
@@ -151,7 +154,6 @@ export class BackendAudioEngine {
    * Handle WebSocket open
    */
   private handleOpen(): void {
-    console.log('✅ BackendEngine: WebSocket connected');
     this.isConnected = true;
     this.reconnectAttempts = 0;
   }
@@ -165,10 +167,10 @@ export class BackendAudioEngine {
         // Parse binary STEREO frame
         const dataView = new DataView(event.data);
         const frameSize = dataView.getUint32(0, true);
-        
-        // Extract STEREO channels
-        const leftOffset = 4;
-        const rightOffset = 4 + frameSize * 4;
+
+        // Extract STEREO channels from binary frame
+        const leftOffset = BINARY_FRAME_HEADER_SIZE;
+        const rightOffset = BINARY_FRAME_HEADER_SIZE + frameSize * BINARY_FRAME_HEADER_SIZE;
         
         const leftChannel = new Float32Array(event.data, leftOffset, frameSize);
         const rightChannel = new Float32Array(event.data, rightOffset, frameSize);
@@ -187,11 +189,10 @@ export class BackendAudioEngine {
         
         if (data.type === 'session_started') {
           this.sessionId = data.session_id;
-          console.log(`✅ BackendEngine: Session started - ${this.sessionId}`);
         }
       }
     } catch (error) {
-      console.error('❌ BackendEngine: Error processing message:', error);
+      console.error('[BackendAudioEngine] Error handling WebSocket message:', error);
     }
   }
 
@@ -199,22 +200,20 @@ export class BackendAudioEngine {
    * Handle WebSocket error
    */
   private handleError(error: Event): void {
-    console.error('❌ BackendEngine: WebSocket error:', error);
+    console.error('[BackendAudioEngine] WebSocket error:', error);
   }
 
   /**
    * Handle WebSocket close
    */
   private handleClose(): void {
-    console.log('🔌 BackendEngine: WebSocket disconnected');
     this.isConnected = false;
     this.sessionId = null;
-    
-    // Attempt reconnection
+
+    // Attempt reconnection with exponential backoff
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
-      const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000);
-      console.log(`🔄 BackendEngine: Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})...`);
+      const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), MAX_RECONNECT_DELAY_MS);
       setTimeout(() => this.connect(), delay);
     }
   }
@@ -226,7 +225,7 @@ export class BackendAudioEngine {
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         reject(new Error('Connection timeout'));
-      }, 10000);
+      }, CONNECTION_TIMEOUT_MS);
 
       const checkInterval = setInterval(() => {
         if (this.isConnected) {
@@ -234,14 +233,19 @@ export class BackendAudioEngine {
           clearTimeout(timeout);
           resolve();
         }
-      }, 100);
+      }, CONNECTION_CHECK_INTERVAL_MS);
     });
   }
 
   /**
    * Start audio session with STEREO parameters
+   *
+   * Args:
+   *   leftFreq: Left channel frequency in Hz
+   *   rightFreq: Right channel frequency in Hz
+   *   volume: Audio volume (0-2 range, default 0.8)
    */
-  async startSession(leftFreq: number, rightFreq: number, volume: number = 0.8): Promise<void> {
+  async startSession(leftFreq: number, rightFreq: number, volume: number = DEFAULT_SESSION_VOLUME): Promise<void> {
     if (!this.isConnected || !this.websocket) {
       throw new Error('BackendEngine: Not connected');
     }
@@ -249,17 +253,14 @@ export class BackendAudioEngine {
     const beatFreq = Math.abs(rightFreq - leftFreq);
     const baseFreq = Math.min(leftFreq, rightFreq);
 
-    console.log(`🎵 BackendEngine: Starting STEREO session`);
-    console.log(`   Base: ${baseFreq}Hz, Beat: ${beatFreq}Hz`);
-    console.log(`   Left: ${leftFreq}Hz, Right: ${rightFreq}Hz`);
-
-    // Send session parameters
     this.websocket.send(JSON.stringify({
       type: 'start_session',
-      base_frequency: baseFreq,
-      beat_frequency: beatFreq,
-      amplitude: volume,
-      waveform: 'sine'
+      data: {
+        base_frequency: baseFreq,
+        beat_frequency: beatFreq,
+        amplitude: volume,
+        waveform: DEFAULT_WAVEFORM
+      }
     }));
   }
 
@@ -268,11 +269,8 @@ export class BackendAudioEngine {
    */
   stopSession(): void {
     if (!this.isConnected || !this.websocket) {
-      console.warn('⚠️ BackendEngine: Not connected');
       return;
     }
-
-    console.log('🛑 BackendEngine: Stopping session');
 
     this.websocket.send(JSON.stringify({
       type: 'stop_session'
@@ -283,10 +281,13 @@ export class BackendAudioEngine {
 
   /**
    * Update STEREO frequencies
+   *
+   * Args:
+   *   leftFreq: New left channel frequency in Hz
+   *   rightFreq: New right channel frequency in Hz
    */
   updateFrequencies(leftFreq: number, rightFreq: number): void {
     if (!this.isConnected || !this.websocket || !this.sessionId) {
-      console.warn('⚠️ BackendEngine: Cannot update - no active session');
       return;
     }
 
@@ -294,41 +295,39 @@ export class BackendAudioEngine {
     const baseFreq = Math.min(leftFreq, rightFreq);
 
     this.websocket.send(JSON.stringify({
-      type: 'update_parameters',
-      session_id: this.sessionId,
-      base_frequency: baseFreq,
-      beat_frequency: beatFreq
+      type: 'update_settings',
+      settings: {
+        base_frequency: baseFreq,
+        beat_frequency: beatFreq
+      }
     }));
-
-    console.log(`🎛️ BackendEngine: Updated STEREO - L:${leftFreq}Hz, R:${rightFreq}Hz`);
   }
 
   /**
    * Update volume
+   *
+   * Args:
+   *   volume: New volume level (0-2 range)
    */
   updateVolume(volume: number): void {
     if (!this.isConnected || !this.websocket || !this.sessionId) {
-      console.warn('⚠️ BackendEngine: Cannot update volume - no active session');
       return;
     }
 
-    const safeVolume = Math.max(0, Math.min(2, volume));
+    const safeVolume = Math.max(MIN_VOLUME, Math.min(MAX_VOLUME, volume));
 
     this.websocket.send(JSON.stringify({
-      type: 'update_parameters',
-      session_id: this.sessionId,
-      amplitude: safeVolume
+      type: 'update_settings',
+      settings: {
+        amplitude: safeVolume
+      }
     }));
-
-    console.log(`🔊 BackendEngine: Volume set to ${safeVolume.toFixed(2)}`);
   }
 
   /**
    * Disconnect and cleanup
    */
   disconnect(): void {
-    console.log('🧹 BackendEngine: Disconnecting...');
-    
     if (this.sessionId) {
       this.stopSession();
     }
@@ -365,7 +364,6 @@ export class BackendAudioEngine {
    * Destroy engine
    */
   destroy(): void {
-    console.log('🧹 BackendEngine: Destroying...');
     this.disconnect();
   }
 }

@@ -563,7 +563,6 @@ var require_react_development = __commonJS({
           process.emit("uncaughtException", error);
           return;
         }
-        console.error(error);
       }, didWarnAboutMessageChannel = false, enqueueTaskImpl = null, actScopeDepth = 0, didWarnNoAwaitAct = false, isFlushing = false, queueSeveralMicrotasks = "function" === typeof queueMicrotask ? function(callback) {
         queueMicrotask(function() {
           return queueMicrotask(callback);

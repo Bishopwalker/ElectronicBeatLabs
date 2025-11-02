@@ -3,7 +3,7 @@
 
 import React from 'react';
 import { Tabs, Tab } from '@mui/material';
-import type {ControlTabsProps} from '../types';
+import type {ControlTabsProps} from '../../types';
 
 const ControlTabs: React.FC<ControlTabsProps> = ({
 

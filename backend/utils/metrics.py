@@ -118,7 +118,6 @@ memory_usage = Gauge(
     registry=registry
 )
 
-
 class MetricsCollector:
     """Metrics collection utility"""
     
@@ -187,7 +186,6 @@ class MetricsCollector:
         cpu_usage.set(cpu)
         memory_usage.set(memory)
 
-
 def timing_metric(metric_name: str):
     """Decorator to measure function execution time"""
     def decorator(func):
@@ -224,11 +222,9 @@ def timing_metric(metric_name: str):
             return sync_wrapper
     return decorator
 
-
 def get_metrics():
     """Get current metrics in Prometheus format"""
     return generate_latest(registry)
-
 
 # Import asyncio for async support
 import asyncio

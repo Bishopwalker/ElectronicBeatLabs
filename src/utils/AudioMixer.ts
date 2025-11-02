@@ -121,12 +121,10 @@ export class AudioMixer {
     const safeVolume = Math.max(0, Math.min(2, volume));
     const now = this.audioContext.currentTime;
 
-    // 🔍 DEBUG LOGGING: Track volume changes (Phase 1)
-
     // DON'T override crossfade! Scale the existing gains proportionally
     const currentFrontend = this.frontendGain.gain.value;
     const currentBackend = this.backendGain.gain.value;
-    
+
     // If we're crossfading, maintain the ratio
     if (this.isCrossfading) {
       // Don't change anything during crossfade - let it complete
@@ -135,13 +133,13 @@ export class AudioMixer {
     
     // Apply volume based on current mode
     if (this.currentMode === 'frontend') {
-      this.frontendGain.gain.setValueAtTime(safeVolume * 0.5, now); // 50% for equal-power
+      this.frontendGain.gain.setValueAtTime(safeVolume * 0.5, now); // 50% base volume
       this.backendGain.gain.setValueAtTime(0, now);
     } else if (this.currentMode === 'backend') {
       this.frontendGain.gain.setValueAtTime(0, now);
-      this.backendGain.gain.setValueAtTime(safeVolume * 0.5, now); // 50% for equal-power
+      this.backendGain.gain.setValueAtTime(safeVolume * 0.5, now); // 50% base volume
     } else if (this.currentMode === 'hybrid') {
-      // In hybrid mode, split volume to prevent doubling
+      // In hybrid mode, split volume to prevent doubling (0.25 + 0.25 = 0.5 total)
       this.frontendGain.gain.setValueAtTime(safeVolume * 0.25, now);
       this.backendGain.gain.setValueAtTime(safeVolume * 0.25, now);
     }
@@ -150,7 +148,13 @@ export class AudioMixer {
 
   /**
    * Crossfade to backend engine over specified duration
-   * Uses EQUAL-POWER crossfade to maintain constant perceived loudness
+   * Uses LINEAR crossfade for correlated signals (same frequency)
+   *
+   * Why linear instead of equal-power:
+   * - Equal-power is for uncorrelated signals (different sources)
+   * - Our signals are correlated (same frequency on both engines)
+   * - Correlated signals add in amplitude, causing volume spike
+   * - Linear crossfade maintains constant total amplitude (0.5)
    */
   crossfadeToBackend(duration: number = 2.0): void {
     if (this.isCrossfading) {
@@ -161,21 +165,19 @@ export class AudioMixer {
     const now = this.audioContext.currentTime;
     const endTime = now + duration;
 
-    // 🔍 DEBUG LOGGING: Crossfade tracking (Phase 1)
-
     const steps = 20; // Number of interpolation points
     const stepTime = duration / steps;
-    
+
     for (let i = 0; i <= steps; i++) {
-      const progress = i / steps;
-      const angle = progress * Math.PI / 2; // 0 to π/2
-      
-      // Equal-power curves
-      const frontendGain = Math.cos(angle) * 0.5; // Max 0.5 to prevent clipping
-      const backendGain = Math.sin(angle) * 0.5;  // Max 0.5 to prevent clipping
-      
+      const progress = i / steps; // 0 to 1
+
+      // Linear crossfade for correlated signals (maintains constant total gain)
+      const frontendGain = (1 - progress) * 0.5; // Decreases from 0.5 to 0
+      const backendGain = progress * 0.5;        // Increases from 0 to 0.5
+      // Total always = 0.5 (no volume spike!)
+
       const time = now + (i * stepTime);
-      
+
       if (i === 0) {
         // Set initial values
         this.frontendGain.gain.setValueAtTime(frontendGain, time);
@@ -189,7 +191,7 @@ export class AudioMixer {
 
     // Update mode after crossfade completes
     setTimeout(() => {
-      this.currentMode = 'backend';  // FIXED: Was 'hybrid' but should be 'backend'
+      this.currentMode = 'backend';
       this.isCrossfading = false;
     }, duration * 1000);
   }
@@ -212,7 +214,7 @@ export class AudioMixer {
 
   /**
    * Crossfade to frontend engine (graceful switch)
-   * Uses EQUAL-POWER crossfade to maintain constant perceived loudness
+   * Uses LINEAR crossfade for correlated signals (same frequency)
    */
   crossfadeToFrontend(duration: number = 2.0): void {
     if (this.isCrossfading) {
@@ -225,17 +227,17 @@ export class AudioMixer {
 
     const steps = 20;
     const stepTime = duration / steps;
-    
+
     for (let i = 0; i <= steps; i++) {
-      const progress = i / steps;
-      const angle = progress * Math.PI / 2;
-      
-      // Equal-power curves (reversed)
-      const backendGain = Math.cos(angle) * 0.5;
-      const frontendGain = Math.sin(angle) * 0.5;
-      
+      const progress = i / steps; // 0 to 1
+
+      // Linear crossfade for correlated signals (maintains constant total gain)
+      const backendGain = (1 - progress) * 0.5;  // Decreases from 0.5 to 0
+      const frontendGain = progress * 0.5;       // Increases from 0 to 0.5
+      // Total always = 0.5 (no volume spike!)
+
       const time = now + (i * stepTime);
-      
+
       if (i === 0) {
         this.backendGain.gain.setValueAtTime(backendGain, time);
         this.frontendGain.gain.setValueAtTime(frontendGain, time);

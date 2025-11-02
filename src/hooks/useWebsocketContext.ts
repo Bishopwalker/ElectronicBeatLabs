@@ -1,7 +1,5 @@
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 
-
-
 interface WebSocketMessage {
     type: string;
     data?: any;
@@ -15,7 +13,7 @@ interface WebSocketContextType {
     lastMessage: WebSocketMessage | null;
     sessionId: string | null;
     sendMessage: (message: WebSocketMessage | string) => void;
-    connect: (base_frequency?: number, beat_frequency?: number) => void;
+    connect: () => void;
     disconnect: () => void;
     registerFrameHandler: (handler: (message: any) => void) => void;
 }
@@ -50,9 +48,8 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     const wsRef = useRef<WebSocket | null>(null);
     const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const reconnectAttemptsRef = useRef(0);
-    const maxReconnectAttempts = 3; // Reduced for better UX
-    const reconnectDelay = 2000;
-    const currentParamsRef = useRef<{ base_frequency?: number; beat_frequency?: number }>({});
+    const maxReconnectAttempts = 1; // Only try once to avoid connection spam
+    const reconnectDelay = 5000; // Longer delay between attempts
     const frameMessageHandlerRef = useRef<{ handler?: (message: WebSocketMessage) => void; lastUpdate?: number } | null>(null);
 
     // Cleanup function
@@ -73,12 +70,12 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     }, []);
 
     // Connect function
-    const connect = useCallback((base_frequency: number | undefined, beat_frequency: number | undefined) => {
-        console.log('🔌 WebSocket connect() called with:', {base_frequency, beat_frequency});
+    const connect = useCallback(() => {
+        console.log('🔌 WebSocket connect() called, checking state...');
 
         // Check WebSocket ref directly for state
         if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-            console.log('✅ WebSocket: Already connected (readyState = OPEN)');
+            console.log('✅ WebSocket already OPEN, skipping duplicate connection');
             setIsConnected(true);  // Update state in case it's out of sync
             setIsConnecting(false);
             return;
@@ -86,14 +83,11 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
 
         // If connecting, log but don't return - let backend wait for it
         if (wsRef.current && wsRef.current.readyState === WebSocket.CONNECTING) {
-            console.log('⏳ WebSocket: Connection already in progress (readyState = CONNECTING)');
+            console.log('⏳ WebSocket already CONNECTING, waiting for it to open...');
             setIsConnected(false);  // 🔥 FIX: NOT connected yet, still connecting
             setIsConnecting(true);  // 🔥 FIX: IS connecting, not false
             return;
         }
-
-        // Store parameters for potential reconnection
-        currentParamsRef.current = {base_frequency: base_frequency, beat_frequency: beat_frequency};
 
         try {
             // Clean up any existing connection first
@@ -110,7 +104,6 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
             // Now set connecting state
             setIsConnecting(true);
             setError(null);
-            console.log('🔧 WebSocket: Starting connection process...');
 
             // Construct WebSocket URL - BACKEND EXPECTS base_frequency and beat_frequency!
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -120,39 +113,31 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
 
             // Generate a unique session ID if not provided
             const currentSessionId = sessionId || `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-            console.log('🆔 WebSocket: Using session ID:', currentSessionId);
 
-            // Backend calculates: left_ear = base_frequency - beat_frequency
-            // Using audio-specific WebSocket endpoint for backend audio engine
-            const wsUrl = `${baseUrl}/ws/audio/${currentSessionId}?base_frequency=${base_frequency}&beat_frequency=${beat_frequency}`;
-
-            console.log('🚀 Connecting to WebSocket:', wsUrl);
+            // 🔥 FIX: NO URL PARAMS - frequencies come from WebSocket messages/audio context
+            const wsUrl = `${baseUrl}/ws/audio/${currentSessionId}`;
 
             const ws = new WebSocket(wsUrl);
             wsRef.current = ws;
-            console.log('📡 WebSocket object created, readyState:', ws.readyState);
 
             // Add immediate state check
             setTimeout(() => {
-                console.log('🔍 WebSocket state after 10ms:', ws.readyState, 'CONNECTING=', WebSocket.CONNECTING, 'OPEN=', WebSocket.OPEN, 'CLOSING=', WebSocket.CLOSING, 'CLOSED=', WebSocket.CLOSED);
             }, 100);
 
             setTimeout(() => {
-                console.log('🔍 WebSocket state after 500ms:', ws.readyState);
                 if (ws.readyState === WebSocket.CONNECTING) {
-                    console.log('⚠️ Still connecting after 500ms...');
                 }
             }, 500);
 
             ws.onopen = () => {
-                console.log('✅ WebSocket connected successfully');
+                console.log('✅🎉 WebSocket CONNECTED successfully!', wsUrl);
                 // Extract session ID from URL: /ws/session-123?params -> session-123
                 const extractedSessionId = wsUrl.split('/').pop()?.split('?')[0];
-                console.log('🆔 WebSocket Session ID from URL:', extractedSessionId);
 
-                if (extractedSessionId)
+                if (extractedSessionId) {
+                    console.log('🎫 Session ID:', extractedSessionId);
                     setCurrentSessionId(extractedSessionId);
-                console.log('💾 Session ID stored in WebSocket context:', extractedSessionId);
+                }
 
                 // Move these inside onopen to ensure proper state sync
                 setIsConnected(true);
@@ -160,8 +145,6 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
                 setError(null);
                 reconnectAttemptsRef.current = 0;
             }
-
-
 
             ws.onmessage = (event) => {
                 try {
@@ -185,8 +168,6 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
                         ? JSON.parse(event.data)
                         : event.data;
 
-                    console.log('📨 WebSocket message received:', data);
-
                     // Optimize: For frame messages, only call handlers without updating state
                     if (data.type === 'frame' || data.type === 'audio_frame') {
                         // Don't update state for frame messages to prevent re-render loops
@@ -199,12 +180,10 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
                         setLastMessage(data);
                     }
                 } catch (err) {
-                    console.error(' Error parsing WebSocket message:', err);
                 }
             };
 
             ws.onerror = (event) => {
-                console.error(' WebSocket error:', event);
                 console.error(' Error details:', {
                     readyState: ws.readyState,
                     url: ws.url,
@@ -216,7 +195,6 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
             };
 
             ws.onclose = (event) => {
-                console.log('🔌 WebSocket disconnected:', event.code, event.reason);
                 setIsConnected(false);
                 setIsConnecting(false);
                 setCurrentSessionId(null); // Clear session ID on disconnect
@@ -226,11 +204,9 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
                 if (event.code !== 1000 && event.code !== 1001) {
                     if (reconnectAttemptsRef.current < maxReconnectAttempts) {
                         reconnectAttemptsRef.current++;
-                        console.log(`🔄 Reconnecting (${reconnectAttemptsRef.current}/${maxReconnectAttempts})...`);
 
                         reconnectTimeoutRef.current = setTimeout(() => {
-                            const { base_frequency, beat_frequency } = currentParamsRef.current;
-                           if (currentParamsRef.current) connect(base_frequency ,beat_frequency);
+                            connect();
                         }, reconnectDelay * reconnectAttemptsRef.current); // Exponential backoff
                     } else {
                         setError(new Error('Max reconnection attempts reached'));
@@ -239,7 +215,6 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
             };
 
         } catch (err) {
-            console.error(' Error creating WebSocket connection:', err);
             let connectionError: Error;
             if (err instanceof Error) {
                 connectionError = err;
@@ -254,7 +229,6 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     // Send message function
     const sendMessage = useCallback((message: WebSocketMessage | string) => {
         if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
-            console.warn('⚠ Cannot send message: WebSocket not connected');
             return;
         }
 
@@ -264,16 +238,13 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
                 : JSON.stringify(message);
 
             wsRef.current.send(messageToSend);
-            console.log(' Message sent:', messageToSend);
         } catch (err) {
-            console.error('Error sending message:', err);
             setError(err instanceof Error ? err : new Error('Failed to send message'));
         }
     }, []);
 
     // Disconnect function
     const disconnect = useCallback(() => {
-        console.log('🔌 Manually disconnecting WebSocket');
         reconnectAttemptsRef.current = maxReconnectAttempts; // Prevent auto-reconnect
         cleanup();
     }, [cleanup]);
@@ -288,8 +259,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     // Auto-connect on mount if enabled
     useEffect(() => {
         if (autoConnect) {
-            const { base_frequency, beat_frequency } = currentParamsRef.current;
-            connect(base_frequency,beat_frequency);
+            connect();
         }
 
         // Cleanup on unmount

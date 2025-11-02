@@ -2,8 +2,8 @@
 // Extracted from main component for better organization
 
 import type { AppState } from '../../types';
-import { DEFAULT_BASE_FREQUENCY, DEFAULT_BEAT_FREQUENCY, DEFAULT_VOLUME, DEFAULT_MAX_VOLUME } from '../../constants/audio.constants';
-import { WAVE_PATTERNS } from '../../data/patterns';
+import { DEFAULT_BASE_FREQUENCY, DEFAULT_BEAT_FREQUENCY, DEFAULT_VOLUME, DEFAULT_WAVEFORM } from '../../constants/audio.constants';
+import { WAVE_PATTERNS, WAVEGUIDE_CONFIGS } from '../../data/patterns';
 import { convertAllPatternsToPattern8D } from '../../utils/patternGeometry';
 
 // Default app state configuration
@@ -12,6 +12,13 @@ import { convertAllPatternsToPattern8D } from '../../utils/patternGeometry';
 export const DEFAULT_APP_STATE: AppState = {
   mode: 'AUTO',
   currentPattern: null,
+  // Audio config lives here (engines read from centralized AudioState too)
+  config: {
+    base_frequency: DEFAULT_BASE_FREQUENCY,
+    beat_frequency: DEFAULT_BEAT_FREQUENCY,
+    volume: DEFAULT_VOLUME,
+    waveform: DEFAULT_WAVEFORM as 'sine'
+  },
   // REMOVED: base_frequency, beat_frequency, isPlaying, volume → HybridEngine.audioState
   electromagnetic: {
     strength: 0,
@@ -66,6 +73,18 @@ export const DEFAULT_APP_STATE: AppState = {
       glow: true
     }
   },
+  // Frequency analysis defaults
+  frequency: {
+    current: DEFAULT_BEAT_FREQUENCY,
+    target: DEFAULT_BEAT_FREQUENCY,
+    variance: 0,
+    stability: 1,
+    harmonics: [],
+    resonancePoints: []
+  },
+  // Defaults for range and waveguide
+  frequencyRange: 'alpha',
+  waveGuide: WAVEGUIDE_CONFIGS[0],
   spatialAudio: {
     enabled: true,
     hrtf: false,
@@ -108,6 +127,7 @@ export const SECTION_DATA = {
   'waveGuideID': { title: 'Wave Guide', icon: '📡' },
   'adhdID': { title: 'ADHD Protocol', icon: '⚡' },
   'patternID': { title: 'Patterns', icon: '🌀' },
+  'timerDisplay': { title: 'Timer Display', icon: '⏱️' },
   'masterControls': { title: 'Master Controls', icon: '🎛️' },
   'equalizer': { title: 'Equalizer', icon: '🎚️' },
   'binauralBeats': { title: 'Binaural Beat Generator', icon: '🎧' },
@@ -116,4 +136,4 @@ export const SECTION_DATA = {
 };
 
 // Default closed sections (Master Controls and FrequencyVisualizer closed initially)
-export const DEFAULT_CLOSED_SECTIONS = ['masterControls', 'frequencyVisualizer'];
+export const DEFAULT_CLOSED_SECTIONS: string[] = ['masterControls', 'equalizer'];

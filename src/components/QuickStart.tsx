@@ -11,8 +11,12 @@ import {
   Stack,
   Chip,
   Divider,
-  Alert
+  Alert,
+  ToggleButtonGroup,
+  ToggleButton,
+  Tooltip
 } from '@mui/material';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import SpatialAudioIcon from '@mui/icons-material/SpatialAudio';
@@ -30,7 +34,8 @@ const QuickStart: React.FC<QuickStartProps> = ({
   appState
 }) => {
   const isAnyActive = Object.values(activeStatus).some(Boolean);
-  const activeCount = Object.values(activeStatus).filter(Boolean);
+  const activeCount = Object.values(activeStatus).filter(Boolean).length;
+  const [spatialHintOpen, setSpatialHintOpen] = React.useState(false);
 
   const getStatusChip = (
     isActive: boolean,
@@ -38,33 +43,58 @@ const QuickStart: React.FC<QuickStartProps> = ({
     icon: React.ReactNode,
     engineType?: 'binaural' | 'backend' | 'spatial',
     clickable: boolean = false
-  ) => (
-    <Chip
-      icon={icon as React.ReactElement}
-      label={label}
-      color={isActive ? "success" : "default"}
-      variant={isActive ? "filled" : "outlined"}
-      size="small"
-      onClick={clickable && onToggleEngine ? () => {
-        console.log(`🔄 Toggling ${engineType} engine:`, !isActive);
-        onToggleEngine(engineType!, !isActive);
-      } : undefined}
-      sx={{
-        minWidth: 100,
-        '& .MuiChip-icon': {
-          color: isActive ? 'inherit' : 'rgba(255,255,255,0.5)'
-        },
-        ...(clickable && {
-          cursor: 'pointer',
-          '&:hover': {
-            backgroundColor: isActive ? 'rgba(76, 175, 80, 0.2)' : 'rgba(255, 255, 255, 0.1)',
-            transform: 'scale(1.02)',
+  ) => {
+    const chip = (
+      <Chip
+        icon={icon as React.ReactElement}
+        label={label}
+        color={isActive ? "success" : "default"}
+        variant={isActive ? "filled" : "outlined"}
+        size="small"
+        onClick={clickable && onToggleEngine ? () => {
+          // Intercept: Spatial requires Backend or Hybrid
+          if (engineType === 'spatial' && !isActive) {
+            const frontendOnly = !audioEngine?.backendConnected;
+            if (frontendOnly) {
+              setSpatialHintOpen(true);
+              setTimeout(() => setSpatialHintOpen(false), 1800);
+              return;
+            }
+          }
+          onToggleEngine(engineType!, !isActive);
+        } : undefined}
+        sx={{
+          minWidth: 100,
+          '& .MuiChip-icon': {
+            color: isActive ? 'inherit' : 'rgba(255,255,255,0.5)'
           },
-          transition: 'all 0.2s ease-in-out'
-        })
-      }}
-    />
-  );
+          ...(clickable && {
+            cursor: 'pointer',
+            '&:hover': {
+              backgroundColor: isActive ? 'rgba(76, 175, 80, 0.2)' : 'rgba(255, 255, 255, 0.1)',
+              transform: 'scale(1.02)',
+            },
+            transition: 'all 0.2s ease-in-out'
+          })
+        }}
+      />
+    );
+
+    if (engineType === 'spatial') {
+      return (
+        <Tooltip
+          open={spatialHintOpen}
+          placement="top"
+          title={
+            <Typography variant="caption">Spatial requires Backend or Hybrid mode.</Typography>
+          }
+        >
+          {chip}
+        </Tooltip>
+      );
+    }
+    return chip;
+  };
 
   return (
     <Card  sx={{
@@ -80,6 +110,79 @@ const QuickStart: React.FC<QuickStartProps> = ({
         </Typography>
 
         <Divider sx={{ my: 2, borderColor: 'rgba(255, 255, 255, 0.1)' }} />
+
+        {/* Engine Mode Toggle */}
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="subtitle1" sx={{ mb: 0.5, color: '#ffd700', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            Engine Mode
+            <Tooltip
+              placement="right"
+              title={
+                <Box sx={{ p: 0.5 }}>
+                  <Typography variant="caption" display="block"><b>Frontend</b>: instant, lowest latency; great for focus sprints.</Typography>
+                  <Typography variant="caption" display="block"><b>Hybrid</b>: instant start + spatial depth; balanced for deep work.</Typography>
+                  <Typography variant="caption" display="block"><b>Backend</b>: richest spatial/DSP; immersive meditation sessions.</Typography>
+                </Box>
+              }
+            >
+              <InfoOutlinedIcon fontSize="inherit" sx={{ opacity: 0.8, cursor: 'help' }} />
+            </Tooltip>
+          </Typography>
+          <Typography variant="caption" sx={{ display: 'block', mb: 1, color: 'rgba(255,255,255,0.6)' }}>
+            Default selection is Hybrid. Mode selection does not auto-start engines.
+          </Typography>
+          {(() => {
+            const saved = (typeof window !== 'undefined' && window.localStorage) ? localStorage.getItem('ebl_engine_mode') as 'frontend'|'hybrid'|'backend'|null : null;
+            const modeValue = (
+              audioEngine?.backendConnected && activeStatus.binauralEngine
+                ? 'hybrid'
+                : audioEngine?.backendConnected
+                  ? 'backend'
+                  : activeStatus.binauralEngine
+                    ? 'frontend'
+                    : (saved || 'hybrid')
+            );
+            return (
+              <ToggleButtonGroup
+                size="small"
+                exclusive
+                color="primary"
+                value={modeValue}
+                onChange={(_, value) => {
+                  if (!value || !onToggleEngine) return;
+                  try { localStorage.setItem('ebl_engine_mode', value); } catch {}
+                  if (value === 'frontend') {
+                    onToggleEngine('backend', false);
+                    onToggleEngine('spatial', false);
+                    onToggleEngine('binaural', true);
+                  } else if (value === 'backend') {
+                    onToggleEngine('binaural', false);
+                    onToggleEngine('backend', true);
+                    onToggleEngine('spatial', true);
+                  } else if (value === 'hybrid') {
+                    onToggleEngine('binaural', true);
+                    onToggleEngine('backend', true);
+                    onToggleEngine('spatial', true);
+                  }
+                }}
+                sx={{
+                  '& .MuiToggleButton-root': {
+                    color: 'rgba(255,255,255,0.85)',
+                    px: 1,
+                    py: 0.25,
+                    minWidth: 'auto',
+                    fontSize: '0.75rem',
+                    lineHeight: 1.2
+                  }
+                }}
+              >
+                <ToggleButton value="frontend">Frontend</ToggleButton>
+                <ToggleButton value="hybrid">Hybrid</ToggleButton>
+                <ToggleButton value="backend">Backend</ToggleButton>
+              </ToggleButtonGroup>
+            );
+          })()}
+        </Box>
 
         {/* Status Overview */}
         {isAnyActive && (

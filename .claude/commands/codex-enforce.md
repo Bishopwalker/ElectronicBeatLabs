@@ -1,9 +1,9 @@
-# Codex Enforcement Command
+# Enforcer Enforcement Command
 # Automated code quality enforcement and cleanup
 
 ## Purpose
 This command is invoked by Claude after implementation is complete.
-Codex compares changes against the snapshot, enforces quality standards, and returns code to pristine state.
+The Enforcer Dual-Agent Coding Assistant compares changes against the snapshot, enforces quality standards, and returns code to pristine state.
 
 ## Invocation
 
@@ -12,7 +12,7 @@ Codex compares changes against the snapshot, enforces quality standards, and ret
 mcp__codex__codex_execute({
   prompt: `# CODEX ENFORCEMENT TASK
 
-You are Codex, the Enforcer agent in a dual-agent development system.
+You are the Enforcer Dual-Agent Coding Assistant in a dual-agent development system.
 Claude (the Builder) has completed implementing a feature/fix.
 
 ## Your Responsibilities:
@@ -320,7 +320,7 @@ Return the enforcement report and confirm pristine state (or list issues).
 
 ## Expected Output
 
-Codex should return a report like:
+Enforcer should return a report like:
 
 ```
 ✅ CODEX ENFORCEMENT COMPLETE

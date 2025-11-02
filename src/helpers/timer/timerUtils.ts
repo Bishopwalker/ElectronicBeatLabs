@@ -28,17 +28,14 @@ export const loadCustomPresets = () => {
     
     if (savedPresetsJson) {
       savedCustomPresets = JSON.parse(savedPresetsJson);
-      console.log('📦 LOADED CUSTOM PRESETS:', savedCustomPresets);
     }
     
     if (savedTransitionsJson) {
       savedTransitions = JSON.parse(savedTransitionsJson);
-      console.log('📦 LOADED CUSTOM TRANSITIONS:', savedTransitions);
     }
     
     return { savedCustomPresets, savedTransitions };
   } catch (err) {
-    console.error('❌ ERROR LOADING SAVED PRESETS:', err);
     return { savedCustomPresets: [], savedTransitions: {} };
   }
 };
@@ -55,10 +52,8 @@ export const savePresetToStorage = (presetId: string, preset: any, transitions: 
     currentPresets.push(preset);
     localStorage.setItem('ebl-custom-presets', JSON.stringify(currentPresets));
     
-    console.log('✅ SAVED TO LOCALSTORAGE');
     return true;
   } catch (err) {
-    console.error('❌ LOCALSTORAGE SAVE FAILED:', err);
     return false;
   }
 };
@@ -77,14 +72,11 @@ export const updatePresetInStorage = (presetId: string, updatedPreset: any, upda
     if (presetIndex !== -1) {
       currentPresets[presetIndex] = updatedPreset;
       localStorage.setItem('ebl-custom-presets', JSON.stringify(currentPresets));
-      console.log('✅ UPDATED PRESET IN LOCALSTORAGE:', presetId);
       return true;
     } else {
-      console.error('❌ PRESET NOT FOUND FOR UPDATE:', presetId);
       return false;
     }
   } catch (err) {
-    console.error('❌ PRESET UPDATE FAILED:', err);
     return false;
   }
 };
@@ -101,10 +93,8 @@ export const deletePresetFromStorage = (presetId: string) => {
     const filteredPresets = currentPresets.filter((p: any) => p.id !== presetId);
     localStorage.setItem('ebl-custom-presets', JSON.stringify(filteredPresets));
     
-    console.log('✅ DELETED PRESET FROM LOCALSTORAGE:', presetId);
     return true;
   } catch (err) {
-    console.error('❌ PRESET DELETE FAILED:', err);
     return false;
   }
 };

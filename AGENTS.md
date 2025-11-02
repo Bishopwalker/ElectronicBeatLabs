@@ -39,3 +39,20 @@
 - Never commit secrets; use `.env.example` (root and `backend/`) as templates.
 - Validate inputs on both sides; prefer TypeScript types and Pydantic models.
 - Run linters and tests locally before pushing to ensure CI passes.
+
+## Snapshot QA (Dual-Agent Enforcement)
+- Single source of truth only: do not duplicate defaults/config/constants; update the canonical module.
+- Remove duplication: files, lines, imports, types, and helpers must not be repeated.
+- TypeScript: zero TS errors; use `npm run build:check`; keep `@/` paths consistent.
+- Python: stay compatible with `backend/requirements.txt`; avoid breaking ABI/runtime.
+- Security/CI: no secrets; ESLint (security config) clean; GitLab CI green; respect Sonar rules.
+- Attribution: do not add AI co-author footers or vendor tags to code, commits, or PRs.
+- Docs hygiene: avoid new redundant docs; update `.claude/*`, `PLANNING.md`, or `TASK.md` instead.
+
+## Ops Shortcuts
+- Stop local dev quickly: `stop-dev.bat` (kills ports 5173 and 8000).
+- Compose workflow: `build-and-deploy.bat` or `Makefile` targets (`make up-dev`, `make logs-backend`).
+- Fast AWS deploy: `aws-deploy-quick.ps1` (ECR push + App Runner; writes `aws-deployment-info.txt`).
+
+## Coordination With Claude
+- Treat `.claude/CLAUDE.md` and `.claude/INDEX.md` as authoritative. For snapshots and enforcement, see `.claude/commands/codex-snapshot.md` and `codex-enforce.md`.

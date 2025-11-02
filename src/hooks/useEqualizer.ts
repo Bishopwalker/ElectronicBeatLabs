@@ -141,22 +141,17 @@ export const useEqualizer = (audioContext: AudioContext | null) => {
   // Initialize equalizer filter chain
   const initializeEqualizer = useCallback(() => {
     if (!audioContext) {
-      console.log(audioContext)
-      console.warn('⚠️ Cannot initialize equalizer: AudioContext not available');
       return null;
     }
 
     // Check if already initialized
     if (isInitializedRef.current && inputNodeRef.current && outputNodeRef.current) {
-      console.log('🎚️ Equalizer already initialized, returning existing nodes');
       return {
         input: inputNodeRef.current,
         output: outputNodeRef.current,
         filters: filterNodesRef.current
       };
     }
-
-    console.log('🎚️ Creating new equalizer with', equalizerState.bands.length, 'bands');
 
     try {
       // Create input/output gain nodes for connecting to audio graph
@@ -182,7 +177,6 @@ export const useEqualizer = (audioContext: AudioContext | null) => {
         previousNode = filter;
         filters.push(filter);
 
-        console.log(`🎚️ Created filter ${index + 1}: ${band.frequency}Hz, ${band.gain}dB`);
       });
 
       // Connect last filter to output
@@ -194,15 +188,12 @@ export const useEqualizer = (audioContext: AudioContext | null) => {
       outputNodeRef.current = outputNode;
       isInitializedRef.current = true;
 
-      console.log('✅ Equalizer initialized successfully with', filters.length, 'bands');
-
       return {
         input: inputNode,
         output: outputNode,
         filters: filters
       };
     } catch (error) {
-      console.error('❌ Failed to initialize equalizer:', error);
       return null;
     }
   }, [audioContext, equalizerState.bands]);
@@ -210,7 +201,6 @@ export const useEqualizer = (audioContext: AudioContext | null) => {
   // Update a specific band's gain
   const updateBandGain = useCallback((bandId: string, gain: number) => {
     if (!audioContext) {
-      console.warn('⚠️ Cannot update band: AudioContext not available');
       return;
     }
 
@@ -232,9 +222,7 @@ export const useEqualizer = (audioContext: AudioContext | null) => {
       try {
         const filter = filterNodesRef.current[bandIndex];
         filter.gain.setValueAtTime(clampedGain, audioContext.currentTime);
-        console.log(`🎚️ Updated band ${bandIndex + 1} (${equalizerState.bands[bandIndex].label}) to ${clampedGain}dB`);
       } catch (error) {
-        console.error(`❌ Failed to update band ${bandId}:`, error);
       }
     }
   }, [audioContext, equalizerState.bands]);
@@ -242,17 +230,13 @@ export const useEqualizer = (audioContext: AudioContext | null) => {
   // Load a preset
   const loadPreset = useCallback((presetName: keyof typeof EQ_PRESETS) => {
     if (!audioContext) {
-      console.warn('⚠️ Cannot load preset: AudioContext not available');
       return;
     }
 
     const preset = EQ_PRESETS[presetName];
     if (!preset) {
-      console.warn('⚠️ Unknown preset:', presetName);
       return;
     }
-
-    console.log('🎚️ Loading preset:', preset.name);
 
     // Update state with preset gains
     setEqualizerState(prev => ({
@@ -275,26 +259,21 @@ export const useEqualizer = (audioContext: AudioContext | null) => {
               audioContext.currentTime
             );
           } catch (error) {
-            console.error(`❌ Failed to update filter ${index}:`, error);
           }
         }
       });
-      console.log('✅ Preset applied to filters:', preset.name);
     } else {
-      console.log('⚠️ Filters not initialized yet, preset will be applied on initialization');
     }
   }, [audioContext]);
 
   // Reset all bands to 0 dB
   const resetEqualizer = useCallback(() => {
-    console.log('🔄 Resetting equalizer to flat');
     loadPreset('flat');
   }, [loadPreset]);
 
   // Toggle equalizer on/off
   const toggleEqualizer = useCallback((enabled: boolean) => {
     setEqualizerState(prev => ({ ...prev, enabled }));
-    console.log('🎚️ Equalizer', enabled ? 'enabled' : 'disabled');
     
     // If enabling and not initialized, initialize now
     if (enabled && !isInitializedRef.current) {
@@ -305,7 +284,6 @@ export const useEqualizer = (audioContext: AudioContext | null) => {
   // Auto-initialize when audio context becomes available
   useEffect(() => {
     if (audioContext && equalizerState.enabled && !isInitializedRef.current) {
-      console.log('🎚️ Auto-initializing equalizer on audio context availability');
       initializeEqualizer();
     }
   }, [audioContext, equalizerState.enabled, initializeEqualizer]);
@@ -321,7 +299,6 @@ export const useEqualizer = (audioContext: AudioContext | null) => {
               audioContext.currentTime
             );
           } catch (error) {
-            console.error(`❌ Failed to sync filter ${index}:`, error);
           }
         }
       });
@@ -357,7 +334,6 @@ export const useEqualizer = (audioContext: AudioContext | null) => {
       }
 
       isInitializedRef.current = false;
-      console.log('🎚️ Equalizer cleaned up');
     };
   }, []);
 
@@ -370,7 +346,6 @@ export const useEqualizer = (audioContext: AudioContext | null) => {
    */
   const updateWaveform = useCallback((waveform: WaveForm) => {
     setEqualizerState(prev => ({ ...prev, waveform }));
-    console.log('🎚️ Waveform updated to:', waveform);
   }, []);
 
   /**
@@ -397,7 +372,6 @@ export const useEqualizer = (audioContext: AudioContext | null) => {
       lfoOscillatorRef.current = lfo;
       lfoGainRef.current = lfoGain;
 
-      console.log('🎚️ LFO oscillator created:', equalizerState.modulator);
     } else if (lfoOscillatorRef.current && audioContext) {
       // Update existing LFO
       if (modulator.rate !== undefined) {
@@ -408,7 +382,6 @@ export const useEqualizer = (audioContext: AudioContext | null) => {
       }
     }
 
-    console.log('🎚️ Modulator updated:', modulator);
   }, [audioContext, equalizerState.modulator]);
 
   /**
@@ -420,7 +393,6 @@ export const useEqualizer = (audioContext: AudioContext | null) => {
       spatialEffect,
       spatialIntensity: intensity !== undefined ? intensity : prev.spatialIntensity
     }));
-    console.log('🎚️ Spatial effect updated:', spatialEffect, 'intensity:', intensity);
   }, []);
 
   /**
@@ -444,7 +416,6 @@ export const useEqualizer = (audioContext: AudioContext | null) => {
       }
     }
 
-    console.log(`🎚️ Band ${bandId} vector updated:`, vector);
   }, [audioContext, equalizerState.bands]);
 
   /**
@@ -475,7 +446,6 @@ export const useEqualizer = (audioContext: AudioContext | null) => {
       }
     }
 
-    console.log(`🎚️ Band ${bandId} amplifier updated:`, amplifier);
   }, [audioContext, equalizerState.bands]);
 
   return {

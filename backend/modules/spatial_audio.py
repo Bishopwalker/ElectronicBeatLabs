@@ -4,7 +4,6 @@ import numpy as np
 from scipy import signal
 from typing import Dict, Tuple, Optional
 
-
 class SpatialAudioProcessor:
     def __init__(self, sample_rate: int = 48000):
         self.sample_rate = sample_rate

@@ -58,17 +58,15 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
       this.handleMessage(event.data);
     };
 
-    console.log('🎵 BackendAudioProcessor: Initialized with sample rate:', this.sampleRate);
-    console.log(`📊 Frame-Based Buffer Config: Min=${this.minBufferSize} (~${Math.round(this.minBufferSize/this.frameSamples)} frames), Target=${this.targetBufferSize} (~${Math.round(this.targetBufferSize/this.frameSamples)} frames), Max=${this.maxBufferSize} (~${Math.round(this.maxBufferSize/this.frameSamples)} frames)`);
   }
 
   static get parameterDescriptors() {
     return [
       {
         name: 'volume',
-        defaultValue: 0.8,
+        defaultValue: 0.5,
         minValue: 0,
-        maxValue: 2.0,
+        maxValue: 1.0,
         automationRate: 'a-rate'
       }
     ];
@@ -90,13 +88,11 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
       case 'start':
       case 'start_session':
       case 'start_stream':
-        console.log('🔊 AudioWorklet: Start command received');
         this.isPrimed = true; // Force prime to allow immediate playback
         break;
       case 'stop':
       case 'stop_session':
       case 'stop_stream':
-        console.log('⏹️ AudioWorklet: Stop command received');
         this.isPlaying = false;
         this.isPrimed = false;
         this.fadingIn = false;
@@ -104,7 +100,6 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
         this.clearBuffer();
         break;
       case 'update_settings':
-        console.log('🔧 AudioWorklet: Update settings received', message.settings);
         // Settings are handled by backend, just acknowledge
         this.port.postMessage({
           type: 'settings_updated',
@@ -112,21 +107,18 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
         });
         break;
       case 'enable_spatial':
-        console.log('🌀 AudioWorklet: Spatial audio enabled');
         this.port.postMessage({
           type: 'spatial_enabled',
           acknowledged: true
         });
         break;
       case 'disable_spatial':
-        console.log('🌀 AudioWorklet: Spatial audio disabled');
         this.port.postMessage({
           type: 'spatial_disabled',
           acknowledged: true
         });
         break;
       case 'load_protocol':
-        console.log('📋 AudioWorklet: Protocol load requested', message.protocol);
         this.port.postMessage({
           type: 'protocol_loaded',
           protocol: message.protocol,
@@ -134,7 +126,6 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
         });
         break;
       case 'get_metrics':
-        console.log('📊 AudioWorklet: Metrics requested');
         this.port.postMessage({
           type: 'metrics',
           data: {
@@ -149,14 +140,12 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
         });
         break;
       case 'configure':
-        console.log('⚙️ AudioWorklet: Configuration received', message.settings);
         this.port.postMessage({
           type: 'configured',
           acknowledged: true
         });
         break;
       default:
-        console.warn('🎵 BackendAudioProcessor: Unknown message type:', message.type);
     }
   }
 
@@ -199,7 +188,6 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
 
       // Legacy JSON frame format
       if (!frameData || !frameData.left || !frameData.right) {
-        console.warn('🎵 BackendAudioProcessor: Invalid frame data received');
         return;
       }
 
@@ -208,7 +196,6 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
 
       // Validate expected frame size to catch timing issues
       if (samplesReceived !== this.frameSamples) {
-        console.warn(`⚠️ Frame size mismatch: expected ${this.frameSamples}, got ${samplesReceived}`);
       }
 
       // Add samples to ring buffer with improved conversion
@@ -231,13 +218,11 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
 
       // Auto-prime when we have enough buffer for the first time
       if (bufferBefore < this.minBufferSize && this._audioBuffer.availableSamples >= this.minBufferSize) {
-        console.log(`✅ Buffer reached minimum threshold: ${this._audioBuffer.availableSamples} samples - auto-priming`);
         this.isPrimed = true;
       }
 
       // Warn if buffer is getting too full
       if (this._audioBuffer.availableSamples > this.maxBufferSize * 0.95) {
-        console.warn(`⚠️ Buffer near maximum: ${this._audioBuffer.availableSamples}/${this.maxBufferSize}`);
       }
 
       // Send confirmation back to main thread
@@ -253,7 +238,6 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
       });
 
     } catch (error) {
-      console.error('🎵 BackendAudioProcessor: Error processing frame:', error);
       this.port.postMessage({
         type: 'processingError',
         error: error.message
@@ -281,7 +265,6 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
       const frameSize = dataView.getUint32(0, true);
 
       if (frameSize !== this.frameSamples) {
-        console.warn(`⚠️ Binary frame size mismatch: expected ${this.frameSamples}, got ${frameSize}`);
       }
 
       // Calculate byte positions (after 4-byte header)
@@ -311,7 +294,6 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
 
       // Auto-prime when we have enough buffer for the first time
       if (bufferBefore < this.minBufferSize && this._audioBuffer.availableSamples >= this.minBufferSize) {
-        console.log(`✅ Binary frame: Buffer reached minimum threshold: ${this._audioBuffer.availableSamples} samples - auto-priming`);
         this.isPrimed = true;
       }
 
@@ -329,7 +311,6 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
       });
 
     } catch (error) {
-      console.error('🎵 BackendAudioProcessor: Error processing binary frame:', error);
       this.port.postMessage({
         type: 'processingError',
         error: error.message
@@ -350,7 +331,6 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
     this.fadingOut = false;
     this.currentFade = 0;
 
-    console.log(`🧹 Cleared audio buffer (had ${size} samples) and reset all playback states`);
   }
 
   process(inputs, outputs, parameters) {
@@ -367,15 +347,11 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
 
     // Get current volume parameter - clamp to safe range with NaN protection
     const volumeParam = parameters.volume;
-    const rawVolume = volumeParam[0] || this.volume || 0.8;
-    const volume = Math.min(2, isNaN(rawVolume) ? 0.8 : rawVolume); // Max 200% for flexibility, default 0.8 (80%) if NaN
+    const rawVolume = volumeParam[0] || this.volume || 0.5;
+    const volume = Math.min(1, isNaN(rawVolume) ? 0.5 : rawVolume); // Max 200% for flexibility, default 0.8 (80%) if NaN
 
     // 🔍 DEBUG LOGGING: Track volume every 5 seconds (Phase 1)
     if (this.frameCount % 3330 === 0 && this.isPlaying) {
-      console.log(`🎚️ [AUDIOWORKLET DEBUG] Volume tracking:`);
-      console.log(`   ├─ rawVolume=${rawVolume.toFixed(3)}, final volume=${volume.toFixed(3)}`);
-      console.log(`   ├─ this.volume=${this.volume.toFixed(3)}, volumeParam[0]=${volumeParam[0]?.toFixed(3) || 'undefined'}`);
-      console.log(`   └─ max allowed=2.0 (will clamp output to prevent distortion)`);
     }
 
     // Buffer state management
@@ -387,7 +363,6 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
       this.isPlaying = true;
       this.fadingIn = true;
       this.currentFade = 0;
-      console.log(`▶️ Starting playback with fade-in: ${availableSamples} samples (target: ${this.targetBufferSize})`);
     }
 
     // 🔥 FIXED: Stop playing if buffer runs too low (with hysteresis to prevent rapid cycling)
@@ -397,7 +372,6 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
         this.currentFade = 0;
         this.underrunCount++;
         this.underrunRecoveryFrames = 0; // Reset recovery counter
-        console.warn(`⚠️ UNDERRUN #${this.underrunCount}! Buffer below ${this.restartThreshold} samples (${availableSamples} available), starting fade-out. Will restart when buffer reaches ${this.targetBufferSize} AND stabilizes`);
       }
     }
 
@@ -409,7 +383,6 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
         this.isPlaying = true;
         this.fadingIn = true;
         this.currentFade = 0;
-        console.log(`🔄 Restarting playback after buffer recovery and stabilization: ${availableSamples} samples`);
         this.underrunRecoveryFrames = 0;
       }
     } else if (availableSamples < this.targetBufferSize) {
@@ -451,16 +424,9 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
 
         // 🔍 DEBUG LOGGING: Sample values and clipping detection (Phase 1)
         if (this.frameCount % 3330 === 0 && i === 0 && this.isPlaying) {
-          console.log(`🎵 [AUDIOWORKLET DEBUG] Sample processing:`);
-          console.log(`   ├─ raw PCM: (${sample.left.toFixed(4)}, ${sample.right.toFixed(4)})`);
-          console.log(`   ├─ × volume (${volume.toFixed(3)}) × fade (${fadeMultiplier.toFixed(3)})`);
-          console.log(`   ├─ before clamp: (${leftBeforeClamp.toFixed(4)}, ${rightBeforeClamp.toFixed(4)})`);
-          console.log(`   └─ final output: (${leftOut.toFixed(4)}, ${rightOut.toFixed(4)})`);
 
           // Detect if clamping occurred (indicates too-loud audio)
           if (Math.abs(leftBeforeClamp) > 1.0 || Math.abs(rightBeforeClamp) > 1.0) {
-            console.warn(`   ⚠️  OUTPUT CLAMPED! Audio may be distorted or too loud.`);
-            console.warn(`   ⚠️  This indicates backend amplitude or volume is too high.`);
           }
         }
 
@@ -515,12 +481,9 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
 // Guard against double registration (Vite HMR causes this)
 try {
   registerProcessor('backend-audio-processor', BackendAudioProcessor);
-  console.log('✅ Backend audio processor registered successfully');
 } catch (error) {
   if (error.name === 'NotSupportedError' && error.message.includes('already registered')) {
-    console.warn('⚠️ Backend audio processor already registered (HMR reload)');
   } else {
-    console.error('❌ Failed to register backend audio processor:', error);
     throw error;
   }
 }

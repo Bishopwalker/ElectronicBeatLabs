@@ -22,7 +22,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setUser(userData);
           // DISABLED FOR PERFORMANCE: await refreshUsageForUser(userData.email);
         } catch (err) {
-          console.error('Failed to load saved user:', err);
           localStorage.removeItem('ebl_user');
         }
       } else {
@@ -66,7 +65,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
       
     } catch (error) {
-      console.error('Login error:', error);
       throw error;
     } finally {
       setLoading(false);
@@ -88,7 +86,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setRequiresLogin(usageData.requires_login || false);
       }
     } catch (error) {
-      console.error('Failed to refresh anonymous usage:', error);
     }
   };
 
@@ -101,7 +98,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setRequiresLogin(false); // Already logged in
       }
     } catch (error) {
-      console.error('Failed to refresh user usage:', error);
     }
   };
 
@@ -137,7 +133,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
       }
     } catch (error) {
-      console.error('Failed to record usage:', error);
       throw error;
     }
   };
@@ -170,7 +165,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setRequiresLogin(false);
     localStorage.setItem('ebl_user', JSON.stringify(adminUser));
     
-    console.log('🔑 Logged in as admin with full access');
   };
 
   const value: AuthContextType = {

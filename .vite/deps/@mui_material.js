@@ -1727,9 +1727,6 @@ function elementTypeAcceptingRef(props, propName, componentName, location, propF
   const propValue = props[propName];
   const safePropName = propFullName || propName;
   if (propValue == null || // When server-side rendering React doesn't warn either.
-  // This is not an accurate check for SSR.
-  // This is only in place for emotion compat.
-  // TODO: Revisit once https://github.com/facebook/react/issues/20047 is resolved.
   typeof window === "undefined") {
     return null;
   }
@@ -2283,7 +2280,6 @@ var Paper = React10.forwardRef(function Paper2(inProps, ref) {
   const classes = useUtilityClasses2(ownerState);
   if (true) {
     if (theme.shadows[elevation] === void 0) {
-      console.error([`MUI: The elevation provided <Paper elevation={${elevation}}> is not available in the theme.`, `Please make sure that \`theme.shadows[${elevation}]\` is defined.`].join("\n"));
     }
   }
   return (0, import_jsx_runtime2.jsx)(PaperRoot, {
@@ -3066,7 +3062,6 @@ function isFocusVisible(element) {
     return element.matches(":focus-visible");
   } catch (error) {
     if (!/jsdom/.test(window.navigator.userAgent)) {
-      console.warn(["MUI: The `:focus-visible` pseudo class is not supported in this browser.", "Some components rely on this feature to work properly."].join("\n"));
     }
   }
   return false;
@@ -5896,7 +5891,6 @@ function useAutocomplete(props) {
     if (typeof optionLabel !== "string") {
       if (true) {
         const erroneousReturn = optionLabel === void 0 ? "undefined" : `${typeof optionLabel} (${optionLabel})`;
-        console.error(`MUI: The \`getOptionLabel\` method of ${componentName} returned ${erroneousReturn} instead of a string for ${JSON.stringify(option)}.`);
       }
       return String(optionLabel);
     }
@@ -6217,9 +6211,7 @@ function useAutocomplete(props) {
     React32.useEffect(() => {
       if (!inputRef.current || inputRef.current.nodeName !== "INPUT") {
         if (inputRef.current && inputRef.current.nodeName === "TEXTAREA") {
-          console.warn([`A textarea element was provided to ${componentName} where input was expected.`, `This is not a supported scenario but it may work under certain conditions.`, `A textarea keyboard navigation may conflict with Autocomplete controls (for example enter and arrow keys).`, `Make sure to test keyboard navigation and add custom event handlers if necessary.`].join("\n"));
         } else {
-          console.error([`MUI: Unable to find the input element. It was resolved to ${inputRef.current} while an HTMLInputElement was expected.`, `Instead, ${componentName} expects an input element.`, "", componentName === "useAutocomplete" ? "Make sure you have bound getInputProps correctly and that the normal ref/effect resolutions order is guaranteed." : "Make sure you have customized the input component correctly."].join("\n"));
         }
       }
     }, [componentName]);
@@ -6270,7 +6262,6 @@ function useAutocomplete(props) {
       if (true) {
         const matches = newValue.filter((val) => isOptionEqualToValue(option, val));
         if (matches.length > 1) {
-          console.error([`MUI: The \`isOptionEqualToValue\` method of ${componentName} does not handle the arguments correctly.`, `The component expects a single value to match a given option but found ${matches.length} matches.`].join("\n"));
         }
       }
       const itemIndex = newValue.findIndex((valueItem) => isOptionEqualToValue(option, valueItem));
@@ -6612,7 +6603,6 @@ function useAutocomplete(props) {
       } else {
         if (true) {
           if (indexBy.get(group) && !warn) {
-            console.warn(`MUI: The options provided combined with the \`groupBy\` method of ${componentName} returns duplicated headers.`, "You can solve the issue by sorting the options with the output of `groupBy`.");
             warn = true;
           }
           indexBy.set(group, true);
@@ -8133,11 +8123,6 @@ function popperGenerator(generatorOptions) {
         runModifierEffects();
         return instance.update();
       },
-      // Sync update – it will always be executed, even if not necessary. This
-      // is useful for low frequency updates where sync behavior simplifies the
-      // logic.
-      // For high frequency updates (e.g. `resize` and `scroll` events), always
-      // prefer the async Popper#update method
       forceUpdate: function forceUpdate() {
         if (isDestroyed) {
           return;
@@ -8439,7 +8424,6 @@ var PopperTooltip = React35.forwardRef(function PopperTooltip2(props, forwardedR
       if (resolvedAnchorElement && isHTMLElement2(resolvedAnchorElement) && resolvedAnchorElement.nodeType === 1) {
         const box = resolvedAnchorElement.getBoundingClientRect();
         if (box.top === 0 && box.left === 0 && box.right === 0 && box.bottom === 0) {
-          console.warn(["MUI: The `anchorEl` prop provided to the component is invalid.", "The anchor element should be part of the document layout.", "Make sure the element is present in the document or that it's not display none."].join("\n"));
         }
       }
     }
@@ -9502,7 +9486,6 @@ var Chip = React39.forwardRef(function Chip2(inProps, ref) {
   }
   if (true) {
     if (avatar && icon) {
-      console.error("MUI: The Chip component can not handle the avatar and the icon prop at the same time. Pick one.");
     }
   }
   const externalForwardedProps = {
@@ -10222,7 +10205,6 @@ var InputBase = React43.forwardRef(function InputBase2(inProps, ref) {
   const handleInputRefWarning = React43.useCallback((instance) => {
     if (true) {
       if (instance && instance.nodeName !== "INPUT" && !instance.focus) {
-        console.error(["MUI: You have provided a `inputComponent` to the input component", "that does not correctly handle the `ref` prop.", "Make sure the `ref` prop is called with a HTMLInputElement."].join("\n"));
       }
     }
   }, []);
@@ -10329,7 +10311,6 @@ var InputBase = React43.forwardRef(function InputBase2(inProps, ref) {
     if (rows) {
       if (true) {
         if (minRows || maxRows) {
-          console.warn("MUI: You can not use the `minRows` or `maxRows` props when the input `rows` prop is set.");
         }
       }
       inputProps = {
@@ -12284,7 +12265,6 @@ var AvatarGroup = React48.forwardRef(function AvatarGroup2(inProps, ref) {
   const children2 = React48.Children.toArray(childrenProp).filter((child) => {
     if (true) {
       if ((0, import_react_is2.isFragment)(child)) {
-        console.error(["MUI: The AvatarGroup component doesn't accept a Fragment as a child.", "Consider providing an array instead."].join("\n"));
       }
     }
     return React48.isValidElement(child);
@@ -12454,9 +12434,6 @@ function acceptingRef(props, propName, componentName, location, propFullName) {
   const element = props[propName];
   const safePropName = propFullName || propName;
   if (element == null || // When server-side rendering React doesn't warn either.
-  // This is not an accurate check for SSR.
-  // This is only in place for Emotion compat.
-  // TODO: Revisit once https://github.com/facebook/react/issues/20047 is resolved.
   typeof window === "undefined") {
     return null;
   }
@@ -13424,7 +13401,6 @@ var BottomNavigation = React52.forwardRef(function BottomNavigation2(inProps, re
       }
       if (true) {
         if ((0, import_react_is3.isFragment)(child)) {
-          console.error(["MUI: The BottomNavigation component doesn't accept a Fragment as a child.", "Consider providing an array instead."].join("\n"));
         }
       }
       const childValue = child.props.value === void 0 ? childIndex : child.props.value;
@@ -13957,7 +13933,6 @@ var Breadcrumbs = React56.forwardRef(function Breadcrumbs2(inProps, ref) {
     };
     if (itemsBeforeCollapse + itemsAfterCollapse >= allItems2.length) {
       if (true) {
-        console.error(["MUI: You have provided an invalid combination of props to the Breadcrumbs.", `itemsAfterCollapse={${itemsAfterCollapse}} + itemsBeforeCollapse={${itemsBeforeCollapse}} >= maxItems={${maxItems}}`].join("\n"));
       }
       return allItems2;
     }
@@ -13975,7 +13950,6 @@ var Breadcrumbs = React56.forwardRef(function Breadcrumbs2(inProps, ref) {
   const allItems = React56.Children.toArray(children2).filter((child) => {
     if (true) {
       if ((0, import_react_is4.isFragment)(child)) {
-        console.error(["MUI: The Breadcrumbs component doesn't accept a Fragment as a child.", "Consider providing an array instead."].join("\n"));
       }
     }
     return React56.isValidElement(child);
@@ -17161,7 +17135,6 @@ function FocusTrap(props) {
     if (!rootRef.current.contains(doc.activeElement)) {
       if (!rootRef.current.hasAttribute("tabIndex")) {
         if (true) {
-          console.error(["MUI: The modal content node does not accept focus.", 'For the benefit of assistive technologies, the tabIndex of the node is being set to "-1".'].join("\n"));
         }
         rootRef.current.setAttribute("tabIndex", "-1");
       }
@@ -17457,12 +17430,7 @@ function useModal(parameters) {
       ...otherHandlers
     };
     return {
-      /*
-       * Marking an element with the role presentation indicates to assistive technology
-       * that this element should be ignored; it exists to support the web application and
-       * is not meant for humans to interact with directly.
-       * https://github.com/evcohen/eslint-plugin-jsx-a11y/blob/master/docs/rules/no-static-element-interactions.md
-       */
+      
       role: "presentation",
       ...externalEventHandlers,
       onKeyDown: createHandleKeyDown(externalEventHandlers),
@@ -19444,9 +19412,6 @@ var DrawerPaper = styled_default(Paper_default, {
   // temporary style
   position: "fixed",
   top: 0,
-  // We disable the focus ring for mouse, touch and keyboard users.
-  // At some point, it would be better to keep it for keyboard users.
-  // :focus-ring CSS pseudo-class will help.
   outline: 0,
   variants: [{
     props: {
@@ -20705,7 +20670,6 @@ var FormControl = React88.forwardRef(function FormControl2(inProps, ref) {
   if (true) {
     registerEffect = () => {
       if (registeredInput.current) {
-        console.error(["MUI: There are multiple `InputBase` components inside a FormControl.", "This creates visual inconsistencies, only use one `InputBase`."].join("\n"));
       }
       registeredInput.current = true;
       return () => {
@@ -21629,7 +21593,6 @@ var warnedOnce = false;
 function warnAboutDeprecatedGridLegacy() {
   if (!warnedOnce && true) {
     warnedOnce = true;
-    console.warn("MUI: The GridLegacy component is deprecated. See https://mui.com/material-ui/migration/upgrade-to-grid-v2/ for migration instructions.\n");
   }
 }
 function generateGridLegacy({
@@ -23027,7 +22990,6 @@ var ImageListItem = React99.forwardRef(function ImageListItem2(inProps, ref) {
       }
       if (true) {
         if ((0, import_react_is5.isFragment)(child)) {
-          console.error(["MUI: The ImageListItem component doesn't accept a Fragment as a child.", "Consider providing an array instead."].join("\n"));
         }
       }
       if (child.type === "img" || isMuiElement_default(child, ["Image"])) {
@@ -23785,7 +23747,6 @@ var InputAdornment = React102.forwardRef(function InputAdornment2(inProps, ref) 
   if (variantProp && muiFormControl.variant) {
     if (true) {
       if (variantProp === muiFormControl.variant) {
-        console.error("MUI: The `InputAdornment` variant infers the variant prop you do not have to provide one.");
       }
     }
   }
@@ -24520,7 +24481,6 @@ var LinearProgress = React104.forwardRef(function LinearProgress2(inProps, ref) 
       }
       inlineStyles.bar1.transform = `translateX(${transform}%)`;
     } else if (true) {
-      console.error("MUI: You need to provide a value prop when using the determinate or buffer variant of LinearProgress .");
     }
   }
   if (variant === "buffer") {
@@ -24531,7 +24491,6 @@ var LinearProgress = React104.forwardRef(function LinearProgress2(inProps, ref) 
       }
       inlineStyles.bar2.transform = `translateX(${transform}%)`;
     } else if (true) {
-      console.error("MUI: You need to provide a valueBuffer prop when using the buffer variant of LinearProgress.");
     }
   }
   return (0, import_jsx_runtime80.jsxs)(LinearProgressRoot, {
@@ -25211,7 +25170,6 @@ var ListItemButton = React108.forwardRef(function ListItemButton2(inProps, ref) 
       if (listItemRef.current) {
         listItemRef.current.focus();
       } else if (true) {
-        console.error("MUI: Unable to set focus to a ListItemButton whose component has not been rendered.");
       }
     }
   }, [autoFocus]);
@@ -26355,7 +26313,6 @@ var MenuList = React114.forwardRef(function MenuList2(props, ref) {
     }
     if (true) {
       if ((0, import_react_is6.isFragment)(child)) {
-        console.error(["MUI: The Menu component doesn't accept a Fragment as a child.", "Consider providing an array instead."].join("\n"));
       }
     }
     if (!child.props.disabled) {
@@ -26566,7 +26523,6 @@ var Popover = React115.forwardRef(function Popover2(inProps, ref) {
     if (anchorReference === "anchorPosition") {
       if (true) {
         if (!anchorPosition) {
-          console.error('MUI: You need to provide a `anchorPosition` prop when using <Popover anchorReference="anchorPosition" />.');
         }
       }
       return anchorPosition;
@@ -26577,7 +26533,6 @@ var Popover = React115.forwardRef(function Popover2(inProps, ref) {
     if (true) {
       const box = anchorElement.getBoundingClientRect();
       if (box.top === 0 && box.left === 0 && box.right === 0 && box.bottom === 0) {
-        console.warn(["MUI: The `anchorEl` prop provided to the component is invalid.", "The anchor element should be part of the document layout.", "Make sure the element is present in the document or that it's not display none."].join("\n"));
       }
     }
     return {
@@ -26623,7 +26578,6 @@ var Popover = React115.forwardRef(function Popover2(inProps, ref) {
     }
     if (true) {
       if (elemRect.height > heightThreshold && elemRect.height && heightThreshold) {
-        console.error(["MUI: The popover component is too tall.", `Some part of it can not be seen on the screen (${elemRect.height - heightThreshold}px).`, "Please consider adding a `max-height` to improve the user-experience."].join("\n"));
       }
     }
     if (marginThreshold !== null && left2 < marginThreshold) {
@@ -27104,7 +27058,6 @@ var Menu = React116.forwardRef(function Menu2(inProps, ref) {
     }
     if (true) {
       if ((0, import_react_is7.isFragment)(child)) {
-        console.error(["MUI: The Menu component doesn't accept a Fragment as a child.", "Consider providing an array instead."].join("\n"));
       }
     }
     if (!child.props.disabled) {
@@ -27478,7 +27431,6 @@ var MenuItem = React117.forwardRef(function MenuItem2(inProps, ref) {
       if (menuItemRef.current) {
         menuItemRef.current.focus();
       } else if (true) {
-        console.error("MUI: Unable to set focus to a MenuItem whose component has not been rendered.");
       }
     }
   }, [autoFocus]);
@@ -31480,7 +31432,6 @@ var SelectInput = React141.forwardRef(function SelectInput2(props, ref) {
     }
     if (true) {
       if ((0, import_react_is8.isFragment)(child)) {
-        console.error(["MUI: The Select component doesn't accept a Fragment as a child.", "Consider providing an array instead."].join("\n"));
       }
     }
     let selected;
@@ -31524,7 +31475,6 @@ var SelectInput = React141.forwardRef(function SelectInput2(props, ref) {
     React141.useEffect(() => {
       if (!foundMatch && !multiple && value !== "") {
         const values2 = childrenArray.map((child) => child.props.value);
-        console.warn([`MUI: You have provided an out-of-range value \`${value}\` for the select ${name ? `(name="${name}") ` : ""}component.`, "Consider providing a value that matches one of the available options or ''.", `The available values are ${values2.filter((x) => x != null).map((x) => `\`${x}\``).join(", ") || '""'}.`].join("\n"));
       }
     }, [foundMatch, childrenArray, multiple, name, value]);
   }
@@ -35276,7 +35226,6 @@ var SpeedDial = React151.forwardRef(function SpeedDial2(inProps, ref) {
   const allItems = React151.Children.toArray(childrenProp).filter((child) => {
     if (true) {
       if ((0, import_react_is9.isFragment)(child)) {
-        console.error(["MUI: The SpeedDial component doesn't accept a Fragment as a child.", "Consider providing an array instead."].join("\n"));
       }
     }
     return React151.isValidElement(child);
@@ -35888,7 +35837,6 @@ var Tooltip = React152.forwardRef(function Tooltip2(inProps, ref) {
     } = React152.useRef(openProp !== void 0);
     React152.useEffect(() => {
       if (childNode && childNode.disabled && !isControlled && title !== "" && childNode.tagName.toLowerCase() === "button") {
-        console.warn(["MUI: You are providing a disabled `button` child to the Tooltip component.", "A disabled element does not fire events.", "Tooltip needs to listen to the child element's events to display the title.", "", "Add a simple wrapper element, such as a `span`."].join("\n"));
       }
     }, [title, childNode, isControlled]);
   }
@@ -36050,7 +35998,6 @@ var Tooltip = React152.forwardRef(function Tooltip2(inProps, ref) {
     childrenProps["data-mui-internal-clone-element"] = true;
     React152.useEffect(() => {
       if (childNode && !childNode.getAttribute("data-mui-internal-clone-element")) {
-        console.error(["MUI: The `children` component of the Tooltip is not forwarding its props correctly.", "Please make sure that props are spread on the same element that the ref is applied to."].join("\n"));
       }
     }, [childNode]);
   }
@@ -36077,7 +36024,6 @@ var Tooltip = React152.forwardRef(function Tooltip2(inProps, ref) {
   }
   if (true) {
     if (children2.props.title) {
-      console.error(["MUI: You have provided a `title` prop to the child of <Tooltip />.", `Remove this title prop \`${children2.props.title}\` or the Tooltip component.`].join("\n"));
     }
   }
   const ownerState = {
@@ -37972,7 +37918,6 @@ var StepContent = React165.forwardRef(function StepContent2(inProps, ref) {
   const classes = useUtilityClasses96(ownerState);
   if (true) {
     if (orientation !== "vertical") {
-      console.error("MUI: <StepContent /> is only designed for use with the vertical stepper.");
     }
   }
   let transitionDuration = transitionDurationProp;
@@ -42193,7 +42138,6 @@ var Tabs = React189.forwardRef(function Tabs2(inProps, ref) {
   });
   if (true) {
     if (centered && scrollable) {
-      console.error('MUI: You can not use the `centered={true}` and `variant="scrollable"` properties at the same time on a `Tabs` component.');
     }
   }
   const [mounted, setMounted] = React189.useState(false);
@@ -42239,7 +42183,6 @@ var Tabs = React189.forwardRef(function Tabs2(inProps, ref) {
         const tab = children3[valueToIndex.get(value)];
         if (true) {
           if (!tab) {
-            console.error([`MUI: The \`value\` provided to the Tabs component is invalid.`, `None of the Tabs' children match with "${value}".`, valueToIndex.keys ? `You can provide one of the following values: ${Array.from(valueToIndex.keys()).join(", ")}.` : null].join("\n"));
           }
         }
         tabMeta = tab ? tab.getBoundingClientRect() : null;
@@ -42247,7 +42190,6 @@ var Tabs = React189.forwardRef(function Tabs2(inProps, ref) {
           if (!warnedOnceTabPresent && tabMeta && tabMeta.width === 0 && tabMeta.height === 0 && // if the whole Tabs component is hidden, don't warn
           tabsMeta.clientWidth !== 0) {
             tabsMeta = null;
-            console.error(["MUI: The `value` provided to the Tabs component is invalid.", `The Tab with this \`value\` ("${value}") is not part of the document layout.`, "Make sure the tab item is present in the document or that it's not `display: none`."].join("\n"));
             warnedOnceTabPresent = true;
           }
         }
@@ -42514,7 +42456,6 @@ var Tabs = React189.forwardRef(function Tabs2(inProps, ref) {
     }
     if (true) {
       if ((0, import_react_is10.isFragment)(child)) {
-        console.error(["MUI: The Tabs component doesn't accept a Fragment as a child.", "Consider providing an array instead."].join("\n"));
       }
     }
     const childValue = child.props.value === void 0 ? childIndex : child.props.value;
@@ -42880,7 +42821,6 @@ var TextField = React190.forwardRef(function TextField2(inProps, ref) {
   const classes = useUtilityClasses113(ownerState);
   if (true) {
     if (select && !children2) {
-      console.error("MUI: `children` must be passed when using the `TextField` component with `select`.");
     }
   }
   const id = useId(idOverride);
@@ -43692,7 +43632,6 @@ var ToggleButtonGroup = React194.forwardRef(function ToggleButtonGroup2(inProps,
       children: validChildren.map((child, index) => {
         if (true) {
           if ((0, import_react_is11.isFragment)(child)) {
-            console.error(["MUI: The ToggleButtonGroup component doesn't accept a Fragment as a child.", "Consider providing an array instead."].join("\n"));
           }
         }
         return (0, import_jsx_runtime158.jsx)(ToggleButtonGroupButtonContext_default.Provider, {

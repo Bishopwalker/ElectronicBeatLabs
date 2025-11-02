@@ -60,7 +60,6 @@ class AudioDebugger {
   private maxHistorySize: number = 100;
 
   private constructor() {
-    console.log('🔍 AudioDebugger initialized - access via window.__audioDebugger');
   }
 
   static getInstance(): AudioDebugger {
@@ -75,7 +74,6 @@ class AudioDebugger {
    */
   setEnabled(enabled: boolean): void {
     this.enabled = enabled;
-    console.log(`🔍 AudioDebugger ${enabled ? 'ENABLED' : 'DISABLED'}`);
   }
 
   /**
@@ -88,9 +86,7 @@ class AudioDebugger {
     const logEntry = `[${timestamp}] [${category}] ${message}`;
 
     if (data !== undefined) {
-      console.log(`🔍 ${logEntry}`, data);
     } else {
-      console.log(`🔍 ${logEntry}`);
     }
 
     this.logHistory.push(logEntry);
@@ -173,12 +169,9 @@ class AudioDebugger {
     this.log('GRAPH', '=== Audio Graph ===');
     nodes.forEach(({ name, node }) => {
       if (node) {
-        console.log(`  ├─ ${name}:`, node.constructor.name);
       } else {
-        console.log(`  ├─ ${name}: NULL`);
       }
     });
-    console.log('  └─ End of graph');
   }
 
   /**
@@ -257,7 +250,6 @@ class AudioDebugger {
       a.download = `audio-debug-${Date.now()}.json`;
       a.click();
       URL.revokeObjectURL(url);
-      console.log('📥 Debug data exported to download');
     }
 
     return data;
@@ -310,7 +302,6 @@ class AudioDebugger {
    */
   breakpoint(condition: boolean, message: string, data?: any): void {
     if (condition) {
-      console.log(`🔴 BREAKPOINT: ${message}`, data || '');
       // Uncomment next line to trigger actual debugger breakpoint
       // debugger;
     }
@@ -356,6 +347,4 @@ export const debugDecision = (description: string, condition: boolean, path: str
 // Make debugger globally available in development
 if (typeof window !== 'undefined') {
   (window as any).__audioDebugger = audioDebugger;
-  console.log('🔍 Global debugger available: window.__audioDebugger');
-  console.log('   Methods: setEnabled(), log(), captureState(), exportDebugData(), getLogHistory(), clearHistory()');
 }

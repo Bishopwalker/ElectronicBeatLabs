@@ -28,15 +28,21 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import {
     AppState,
-    AudioEngine,
     ElectromagneticField,
     PatternConfig,
     BinauralBeatConfig, AnyAudioEngine
 } from '../../types';
+import type { AudioState as CoreAudioState } from '../../hooks/useAudioState';
 import type { CustomPresetForm, TimerStatus } from '../../data/timer';
 import { formatTime } from '../../helpers/timer/timerUtils';
 import { useTimerLogic } from '../../hooks/useTimerLogic';
 import CustomPresetDialog from '../timer/CustomPresetDialog';
+import {
+    DEFAULT_LEFT_FREQUENCY,
+    DEFAULT_RIGHT_FREQUENCY,
+    DEFAULT_BEAT_FREQUENCY,
+    DEFAULT_VOLUME
+} from '../../constants/audio.constants';
 
 interface TimerTabProps {
     appState: AppState;
@@ -53,12 +59,7 @@ interface TimerTabProps {
         resumeTimer: () => void;
         restartTimer: () => void;
     };
-    audioEngine?: {
-        startBinauralBeat: (config: BinauralBeatConfig) => Promise<void>;
-        stopBinauralBeat: () => Promise<void>;
-        updateFrequency: (left: number, right: number) => void;
-        audioState?:AnyAudioEngine;
-    };
+    audioEngine?: AnyAudioEngine;
     patterns8DEngine?: {
         setActivePattern: (pattern: PatternConfig) => void;
         clearActivePattern: () => void;
@@ -76,26 +77,34 @@ const TimerTab: React.FC<TimerTabProps> = ({
     onTimerControl
 }) => {
     // Extract audioState from the audio engine
-    const audioState = audioEngine?.audioState || {
-        isPlaying: false,
-        leftFreq: 140,
-        rightFreq: 144,
-        beat_frequency: 4,
-        volume: 0.5,
-        analyserNode: null,
-        config: null
-    };
+    const audioState: CoreAudioState = React.useMemo(() => {
+        const left = (audioEngine as any)?.audioState?.leftFreq ?? DEFAULT_LEFT_FREQUENCY;
+        const right = (audioEngine as any)?.audioState?.rightFreq ?? DEFAULT_RIGHT_FREQUENCY;
+        const beat = Math.abs(right - left) || DEFAULT_BEAT_FREQUENCY;
+        return {
+            isPlaying: (audioEngine as any)?.audioState?.isPlaying ?? false,
+            currentEngine: (audioEngine as any)?.backendConnected ? 'backend' : 'frontend',
+            leftFreq: left,
+            rightFreq: right,
+            baseFreq: Math.min(left, right),
+            beatFreq: beat,
+            volume: (audioEngine as any)?.audioState?.volume ?? DEFAULT_VOLUME,
+            waveform: (audioEngine as any)?.audioState?.waveform ?? 'sine',
+            backendConnected: !!(audioEngine as any)?.backendConnected,
+            sessionId: (audioEngine as any)?.sessionId ?? null,
+            spatialEnabled: false,
+            spatialMode: 'off'
+        } as CoreAudioState;
+    }, [audioEngine]);
 
     // Create updateAudioState wrapper using audioEngine methods
     const updateAudioState = React.useMemo(() => ({
         updateFrequencies: (left: number, right: number) => {
-            console.log('🎛️ TimerTab: Updating frequencies - left:', left, 'right:', right);
             if (audioEngine?.updateFrequency) {
                 audioEngine.updateFrequency(left, right);
             }
         },
         setPlaying: (playing: boolean) => {
-            console.log('🎛️ TimerTab: Setting playing state:', playing);
             // Audio engine handles its own playing state
         }
     }), [audioEngine]);
@@ -140,19 +149,15 @@ const TimerTab: React.FC<TimerTabProps> = ({
     React.useEffect(() => {
         if (onTimerControl) {
             onTimerControl.stopTimer = () => {
-                console.log('⏰ Timer control: Stop requested from parent');
                 controlTimer('stop');
             };
             onTimerControl.pauseTimer = () => {
-                console.log('⏰ Timer control: Pause requested from parent');
                 controlTimer('pause');
             };
             onTimerControl.resumeTimer = () => {
-                console.log('⏰ Timer control: Resume requested from parent');
                 controlTimer('resume');
             };
             onTimerControl.restartTimer = () => {
-                console.log('⏰ Timer control: Restart requested from parent');
                 controlTimer('restart');
             };
         }
@@ -335,7 +340,6 @@ const TimerTab: React.FC<TimerTabProps> = ({
                             value={presets.some(p => p.id === selectedPresetId) ? selectedPresetId : ''}
                             label="Choose Preset"
                             onChange={(e) => {
-                                console.log('🔄 Timer preset selected:', e.target.value);
                                 setSelectedPresetId(e.target.value);
                             }}
                             disabled={false}
@@ -440,9 +444,7 @@ const TimerTab: React.FC<TimerTabProps> = ({
                         variant="contained"
                         fullWidth
                         onClick={() => {
-                            console.log('🚀 Start Timer clicked! Selected preset:', selectedPresetId, 'Loop enabled:', loopEnabled);
                             if (!selectedPresetId) {
-                                console.log('❌ No preset selected');
                                 return;
                             }
                             startTimer(loopEnabled);

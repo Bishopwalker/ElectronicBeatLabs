@@ -93,8 +93,8 @@ class SimpleAuthService:
             )
             user.stripe_customer_id = stripe_customer.id
         except Exception as e:
-            print(f"Failed to create Stripe customer: {e}")
             # Continue without Stripe customer for now
+            logger.warning(f"Failed to create Stripe customer for {email}: {e}")
         
         db.add(user)
         db.commit()
@@ -185,14 +185,12 @@ class SimpleAuthService:
         db.add(usage)
         db.commit()
 
-
 # Keycloak Configuration
 KEYCLOAK_SERVER_URL = os.getenv("KEYCLOAK_SERVER_URL", "http://localhost:8080")
 KEYCLOAK_REALM = os.getenv("KEYCLOAK_REALM", "ebl-realm")
 KEYCLOAK_CLIENT_ID = os.getenv("KEYCLOAK_CLIENT_ID", "ebl-app")
 
 security = HTTPBearer()
-
 
 def get_keycloak_public_key():
     """Get Keycloak public key for token validation"""
@@ -204,7 +202,6 @@ def get_keycloak_public_key():
     except Exception as e:
         logger.error(f"Failed to get Keycloak public key: {e}")
         return None
-
 
 def validate_keycloak_token(token: str):
     """
@@ -243,7 +240,6 @@ def validate_keycloak_token(token: str):
     except Exception as e:
         logger.error(f"Error validating Keycloak token: {e}")
         return None
-
 
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),

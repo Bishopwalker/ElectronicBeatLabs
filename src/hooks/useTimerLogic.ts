@@ -36,7 +36,7 @@ interface TimerOnlyState {
  */
 interface UseTimerLogicProps {
   audioEngine?: AnyAudioEngine;
-  audioState: AudioState;  // 🔥 NEW: Use centralized AudioState instead of local state
+  audioState: AudioState;  // Centralized audio state type
   updateAudioState: {
     updateFrequencies: (left: number, right: number) => void;
     setPlaying: (playing: boolean) => void;
@@ -96,7 +96,6 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
   // Handle timer-specific WebSocket messages
   useEffect(() => {
     if (lastMessage && lastMessage.type === 'timer_response') {
-      console.log('⏰ Timer response from backend:', lastMessage.data);
       // Handle timer-specific responses here if needed
     }
   }, [lastMessage]);
@@ -115,7 +114,6 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
       stability: 0.8 + (Math.min(40, transition.frequency_hz) / 200)
     };
 
-    console.log('🎨 Timer: Updating electromagnetic state for visualizer:', electromagnetic);
     if (onElectromagneticUpdate) {
       onElectromagneticUpdate(electromagnetic);
     }
@@ -124,7 +122,6 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
   useEffect(() => {
     if (selectedPresetId) {
       localStorage.setItem('ebl_selected_preset', selectedPresetId);
-      console.log('💾 Saved preset to localStorage:', selectedPresetId);
     }
   }, [selectedPresetId]);
 
@@ -142,7 +139,6 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
             const seenIds = new Set();
             const cleanPresets = presets.filter((preset: any) => {
               if (seenIds.has(preset.id)) {
-                console.log('🗑️ Removing duplicate preset:', preset.id);
                 return false;
               }
               seenIds.add(preset.id);
@@ -150,11 +146,9 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
             });
             if (cleanPresets.length !== presets.length) {
               localStorage.setItem('ebl-custom-presets', JSON.stringify(cleanPresets));
-              console.log('🧹 Cleaned up duplicate presets');
             }
           }
         } catch (err) {
-          console.error('Error cleaning duplicates:', err);
         }
       };
 
@@ -165,10 +159,8 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
       const allPresets = [...ALL_TIMER_PRESETS, ...savedCustomPresets];
       setPresets(allPresets);
 
-      console.log('✅ ALL PRESETS LOADED:', allPresets);
     } catch (err) {
       setError('Error loading presets');
-      console.error('Error loading presets:', err);
     } finally {
       setLoading(false);
     }
@@ -234,14 +226,9 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
         }, 0);
     const totalTimeRemainingMinutes = totalTimeRemainingSeconds / 60;
 
-
-
     if (audioEngine && currentTransition && currentTransitionIndexRef.current !== currentTransitionIndex) {
-      console.log(`🚨 TIMER TRANSITION ${currentTransitionIndex + 1}/${timerState.transitions.length}: ${currentTransition.left_ear_hz}Hz / ${currentTransition.right_ear_hz}Hz`);
-      console.log(`🎯 ${currentTransition.description} - ${currentTransition.frequency_hz}Hz ${currentTransition.frequency_type} for ${currentTransition.duration_minutes} minutes`);
 
       // 🔥 NEW: Update centralized AudioState instead of calling audioEngine directly
-      console.log('🎛️ Timer: Updating AudioState with left:', currentTransition.left_ear_hz, 'right:', currentTransition.right_ear_hz);
       updateAudioState.updateFrequencies(currentTransition.left_ear_hz, currentTransition.right_ear_hz);
 
       // Send timer update via WebSocket if connected
@@ -295,20 +282,15 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
 
       if (selectedPresetId.startsWith('custom-')) {
         const customTransitions = customPresetTransitions[selectedPresetId];
-        console.log('🔥 Custom preset transitions lookup:', selectedPresetId, customTransitions);
-        console.log('🔥 Available custom presets:', Object.keys(customPresetTransitions));
         if (customTransitions && customTransitions.length > 0) {
           mockTransitions.push(...customTransitions);
-          console.log('✅ Custom transitions loaded:', mockTransitions.length);
         } else {
-          console.error('❌ No custom transitions found for preset:', selectedPresetId);
           setError('No transitions found for this custom preset');
           return;
         }
       } else {
         const presetTransitions = getPresetTransitions(selectedPresetId);
         mockTransitions.push(...presetTransitions);
-        console.log('✅ Built-in transitions loaded:', mockTransitions.length);
       }
 
       const timer: TimerOnlyState = {
@@ -327,7 +309,6 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
         const firstTransition = mockTransitions[0];
 
         // 🔥 NEW: Update AudioState with initial frequencies
-        console.log('🎛️ Timer: Updating AudioState with first transition:', firstTransition.left_ear_hz, 'Hz /', firstTransition.right_ear_hz, 'Hz');
         updateAudioState.updateFrequencies(firstTransition.left_ear_hz, firstTransition.right_ear_hz);
 
         // Calculate base/beat for audio engine config
@@ -337,22 +318,17 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
         const config = {
           base_frequency: baseFreq,
           beat_frequency: beatFreq,
-          amplitude: DEFAULT_VOLUME,
+          volume: DEFAULT_VOLUME,
           waveform: 'sine' as const,
         };
-
-        console.log('🔥 Timer: Starting audio engine with config:', config);
 
         // CRITICAL: Initialize audio context first (requires user gesture)
         if ((audioEngine as any).initializeAudio) {
           try {
-            console.log('🎵 Timer: Initializing audio context...');
             const audioContext = await (audioEngine as any).initializeAudio();
             if (audioContext) {
-              console.log('✅ Timer: Audio context initialized:', audioContext.state);
             }
           } catch (error) {
-            console.warn('⚠️ Timer: Audio context initialization failed:', error);
           }
         }
 
@@ -376,7 +352,6 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
           const patternId = (currentPreset ).pattern_id;
           const realPattern = WAVE_PATTERNS.find(p => p.id === patternId);
           if (realPattern) {
-            console.log('🎨 Timer: Setting REAL pattern for visualizer:', realPattern.name);
             patterns8DControl.setActivePattern(realPattern);
           }
         }
@@ -389,7 +364,6 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
 
     } catch (err) {
       setError('Error starting timer');
-      console.error('Error starting timer:', err);
     } finally {
       setLoading(false);
     }
@@ -414,7 +388,6 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
 
         // Clear visualizer pattern
         if (patterns8DControl) {
-          console.log('🎨 Timer: Clearing active pattern from visualizer');
           patterns8DControl.clearActivePattern();
         }
 
@@ -475,7 +448,6 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
       }
 
     } catch (err) {
-      console.error(`Error ${action} timer:`, err);
     } finally {
       if (action !== 'restart') {
         setLoading(false);
@@ -484,7 +456,6 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
   };
 
   const saveCustomPreset = (customPreset: CustomPresetForm) => {
-    console.log('🔥 ATTEMPTING TO SAVE PRESET:', customPreset.name);
 
     if (!customPreset.name.trim()) {
       setError('Please enter a preset name');
@@ -524,11 +495,9 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
     setSelectedPresetId(newPreset.id);
     setError(null);
 
-    console.log('🎉 PRESET SAVE COMPLETED SUCCESSFULLY!');
   };
 
   const updateCustomPreset = (presetId: string, updatedPreset: CustomPresetForm) => {
-    console.log('🔄 ATTEMPTING TO UPDATE PRESET:', presetId);
 
     if (!updatedPreset.name.trim()) {
       setError('Please enter a preset name');
@@ -566,7 +535,6 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
       ));
 
       setError(null);
-      console.log('🎉 PRESET UPDATE COMPLETED SUCCESSFULLY!');
       return true;
     } else {
       setError('Failed to update preset');
@@ -575,7 +543,6 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
   };
 
   const deleteCustomPreset = (presetId: string) => {
-    console.log('🗑️ ATTEMPTING TO DELETE PRESET:', presetId);
 
     if (!isCustomPreset(presetId)) {
       setError('Cannot delete built-in presets');
@@ -598,7 +565,6 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
       }
 
       setError(null);
-      console.log('🎉 PRESET DELETE COMPLETED SUCCESSFULLY!');
       return true;
     } else {
       setError('Failed to delete preset');
@@ -612,7 +578,6 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
       // Check if selected preset exists in available presets
       const presetExists = presets.some(p => p.id === selectedPresetId);
       if (!presetExists) {
-        console.warn(`⚠️ Selected preset "${selectedPresetId}" no longer exists, resetting to empty`);
         setSelectedPresetId('');
         localStorage.removeItem('ebl_selected_preset');
       }
@@ -668,7 +633,6 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
     }
 
     if (targetIndex === currentTransitionIndex) {
-      console.log('⏩ Already at boundary transition');
       return;
     }
 
@@ -685,8 +649,6 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
       ...timerState,
       startTime: newStartTime
     });
-
-    console.log(`⏩ Jumped to transition ${targetIndex + 1}/${timerState.transitions.length}`);
 
     // Send update via WebSocket
     sendTimerUpdate({
@@ -731,8 +693,6 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
       ...timerState,
       startTime: newStartTime
     });
-
-    console.log(`🔄 Restarted transition ${currentTransitionIndex + 1}/${timerState.transitions.length}`);
 
     // Send update via WebSocket
     sendTimerUpdate({

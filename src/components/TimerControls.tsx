@@ -23,12 +23,18 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import type {AudioEngine, ElectromagneticFieldState, PatternConfig} from '../types';
+import type {AudioEngine, ElectromagneticField, PatternConfig} from '../types';
+import type { AudioState } from '../hooks/useAudioState';
+import {
+    DEFAULT_LEFT_FREQUENCY,
+    DEFAULT_RIGHT_FREQUENCY,
+    DEFAULT_VOLUME,
+    DEFAULT_WAVEFORM
+} from '../constants/audio.constants';
 import type {CustomPresetForm, TimerStatus} from '../data/timer';
 import {formatTime} from '../helpers/timer/timerUtils';
 import {useTimerLogic} from '../hooks/useTimerLogic';
 import CustomPresetDialog from './timer/CustomPresetDialog';
-
 
 interface TimerControlsProps {
     audioEngine?:AudioEngine;
@@ -37,10 +43,9 @@ interface TimerControlsProps {
         setActivePattern: (pattern: PatternConfig) => void;
         clearActivePattern: () => void;
     },
-    onElectromagneticUpdate?: (electromagnetic: ElectromagneticFieldState) => void,
+    onElectromagneticUpdate?: (electromagnetic: ElectromagneticField) => void,
 
 }
-
 
 const TimerControls: React.FC<TimerControlsProps> = ({
                                                          audioEngine,
@@ -49,11 +54,39 @@ const TimerControls: React.FC<TimerControlsProps> = ({
                                                          onTimerStatusUpdate
                                                      }) => {
     // const { user } = useAuth();
+    // Track computed timer status emitted by the hook
+    const [timerStatus, setTimerStatus] = useState<TimerStatus | null>(null);
+
+    // Minimal audio state and updaters to satisfy useTimerLogic API
+    const defaultAudioState: AudioState = {
+        isPlaying: false,
+        currentEngine: 'frontend',
+        leftFreq: DEFAULT_LEFT_FREQUENCY,
+        rightFreq: DEFAULT_RIGHT_FREQUENCY,
+        baseFreq: Math.min(DEFAULT_LEFT_FREQUENCY, DEFAULT_RIGHT_FREQUENCY),
+        beatFreq: Math.abs(DEFAULT_RIGHT_FREQUENCY - DEFAULT_LEFT_FREQUENCY),
+        volume: DEFAULT_VOLUME,
+        waveform: DEFAULT_WAVEFORM as AudioState['waveform'],
+        backendConnected: false,
+        sessionId: null,
+        spatialEnabled: false,
+        spatialMode: 'off'
+    };
+
+    const updateAudioState = {
+        updateFrequencies: (left: number, right: number) => {
+            audioEngine?.updateFrequency(left, right);
+        },
+        setPlaying: (_playing: boolean) => {
+            // No direct control available here; audio engine manages playback
+        }
+    };
+
     const {
         presets,
         selectedPresetId,
         setSelectedPresetId,
-        localTimer,
+        timerState,
         loading,
         error,
         hideSession,
@@ -66,11 +99,15 @@ const TimerControls: React.FC<TimerControlsProps> = ({
         customPresetTransitions
     } = useTimerLogic({
         audioEngine,
-        patterns8D,
+        // Fallback to defaults; parents using TimerTab should provide richer state
+        audioState: defaultAudioState,
+        updateAudioState,
+        patterns8DControl: patterns8D,
         onElectromagneticUpdate,
-        onTimerStatusUpdate
-
-
+        onTimerStatusUpdate: (status) => {
+            setTimerStatus(status);
+            onTimerStatusUpdate?.(status || null);
+        }
     });
     const [showCreateDialog, setShowCreateDialog] = useState(false);
     const [showEditDialog, setShowEditDialog] = useState(false);
@@ -220,7 +257,6 @@ const TimerControls: React.FC<TimerControlsProps> = ({
                             value={selectedPresetId}
                             label="Choose Preset"
                             onChange={(e) => {
-                                console.log('🔄 Timer preset selected:', e.target.value);
                                 setSelectedPresetId(e.target.value);
                             }}
                             disabled={false}
@@ -280,7 +316,7 @@ const TimerControls: React.FC<TimerControlsProps> = ({
                                 startIcon={<EditIcon/>}
                                 onClick={() => handleEditPreset(selectedPresetId)}
 
-                                disabled={loading || localTimer?.session?.is_active}
+                                disabled={loading || !!timerStatus?.session?.is_active}
                                 sx={{color: '#00bfff'}}
                             >
                                 Edit
@@ -289,7 +325,7 @@ const TimerControls: React.FC<TimerControlsProps> = ({
                                 size="small"
                                 startIcon={<DeleteIcon/>}
                                 onClick={() => handleDeletePreset(selectedPresetId)}
-                                disabled={loading || localTimer?.session?.is_active}
+                                disabled={loading || !!timerStatus?.session?.is_active}
                                 sx={{color: '#ff6b6b'}}
                             >
                                 Delete
@@ -301,9 +337,9 @@ const TimerControls: React.FC<TimerControlsProps> = ({
                     <FormControlLabel
                         control={
                             <Checkbox
-                                checked={loopEnabled || (localTimer?.session?.preset?.loop_enabled || false)}
+                                checked={loopEnabled || (timerStatus?.session?.preset?.loop_enabled || false)}
                                 onChange={(e) => setLoopEnabled(e.target.checked)}
-                                disabled={loading || localTimer?.session?.is_active}
+                                disabled={loading || !!timerStatus?.session?.is_active}
                                 sx={{
                                     color: '#00bfff',
                                     '&.Mui-checked': {color: '#00bfff'}
@@ -313,7 +349,7 @@ const TimerControls: React.FC<TimerControlsProps> = ({
                         label={
                             <Typography variant="body2" sx={{color: '#00bfff'}}>
                                 🔄 Enable Loop for this session
-                                {localTimer?.session?.is_active && (loopEnabled || (localTimer?.session?.preset?.loop_enabled || false)) && (
+                                {timerStatus?.session?.is_active && (loopEnabled || (timerStatus?.session?.preset?.loop_enabled || false)) && (
                                     <Box component="span" sx={{color: '#00ff88', ml: 1, fontWeight: 'bold'}}>
                                         (ACTIVE)
                                     </Box>
@@ -327,9 +363,7 @@ const TimerControls: React.FC<TimerControlsProps> = ({
                         variant="contained"
                         fullWidth
                         onClick={() => {
-                            console.log('🚀 Start Timer clicked! Selected preset:', selectedPresetId, 'Loop enabled:', loopEnabled);
                             if (!selectedPresetId) {
-                                console.log('❌ No preset selected');
                                 return;
                             }
                             startTimer(loopEnabled);
@@ -345,7 +379,7 @@ const TimerControls: React.FC<TimerControlsProps> = ({
                         fullWidth
                         startIcon={<AddIcon/>}
                         onClick={() => setShowCreateDialog(true)}
-                        disabled={loading || localTimer?.session?.is_active}
+                        disabled={loading || !!timerStatus?.session?.is_active}
                     >
                         Create Custom Preset
                     </Button>
@@ -353,57 +387,57 @@ const TimerControls: React.FC<TimerControlsProps> = ({
             </Card>
 
             {/* Active Session */}
-            {localTimer?.session && (
+            {timerStatus?.session && (
                 <Card sx={{bgcolor: 'rgba(0,0,0,0.3)'}}>
                     <CardContent>
                         <Typography variant="h6" gutterBottom color="primary">
                             Active Session
                         </Typography>
 
-                        {!hideSession && localTimer.session.current_transition && (
+                        {!hideSession && timerStatus.current_transition && (
                             <Box mb={3}>
                                 <Typography variant="subtitle1" gutterBottom sx={{color: '#00ff88'}}>
-                                    🎧 ACTIVE: {localTimer.current_transition.description}
+                                    🎧 ACTIVE: {timerStatus.current_transition.description}
                                 </Typography>
                                 <Typography variant="body2" color="textSecondary" gutterBottom>
                                     <Box component="span" sx={{color: '#ff6b00', fontWeight: 'bold'}}>
-                                        {localTimer.current_transition.frequency_hz}Hz
+                                        {timerStatus.current_transition.frequency_hz}Hz
                                     </Box> •
-                                    {localTimer.current_transition.frequency_type} waves •
+                                    {timerStatus.current_transition.frequency_type} waves •
                                     <Box component="span" sx={{color: '#00bfff'}}>
-                                        {localTimer.current_transition.left_ear_hz}Hz L
-                                        / {localTimer.current_transition.right_ear_hz}Hz R
+                                        {timerStatus.current_transition.left_ear_hz}Hz L
+                                        / {timerStatus.current_transition.right_ear_hz}Hz R
                                     </Box>
-                                    {'spatial_settings' in localTimer.current_transition &&
-                                        localTimer.current_transition.spatial_settings && (
+                                    {'spatial_settings' in (timerStatus.current_transition as any) &&
+                                        (timerStatus.current_transition as any).spatial_settings && (
                                             <Box component="span" sx={{color: '#ff69b4', ml: 1}}>
-                                                • 8D Spatial: {(localTimer.current_transition.spatial_settings).pattern}
+                                                • 8D Spatial: {((timerStatus.current_transition as any).spatial_settings).pattern}
                                             </Box>
                                         )}
-                                    {'pattern' in localTimer.current_transition && (
+                                    {'pattern' in (timerStatus.current_transition as any) && (
                                         <Box component="span" sx={{color: '#9932cc', ml: 1}}>
-                                            • Pattern: {(localTimer.current_transition).pattern}
+                                            • Pattern: {((timerStatus.current_transition as any).pattern)}
                                         </Box>
                                     )}
                                 </Typography>
                                 <Typography variant="caption" sx={{color: '#ffd700', fontStyle: 'italic'}}>
                                     ⚡ Timer is automatically controlling your binaural beat frequencies
-                                    {localTimer.session?.preset?.loop_enabled && (
+                                    {timerStatus.session?.preset?.loop_enabled && (
                                         <Box component="span" sx={{color: '#00bfff', ml: 1}}>
                                             🔄
-                                            Loop: {localTimer.session.preset.loop_count === 0 ? 'Infinite' : `${localTimer.session.preset.loop_count}x`}
+                                            Loop: {timerStatus.session.preset.loop_count === 0 ? 'Infinite' : `${timerStatus.session.preset.loop_count}x`}
                                         </Box>
                                     )}
                                 </Typography>
 
                                 <Box mb={2}>
                                     <Typography variant="caption">
-                                        Time Remaining: {formatTime(localTimer.time_remaining_current)}
+                                        Time Remaining: {formatTime(timerStatus.time_remaining_current || 0)}
                                     </Typography>
                                     <LinearProgress
                                         variant="determinate"
                                         value={Math.max(0, Math.min(100,
-                                            (1 - localTimer.time_remaining_current / localTimer.current_transition.duration_minutes) * 100
+                                            (1 - ( (timerStatus.time_remaining_current || 0) / (timerStatus.current_transition?.duration_minutes || 1) )) * 100
                                         ))}
                                         sx={{mt: 1}}
                                     />
@@ -411,21 +445,21 @@ const TimerControls: React.FC<TimerControlsProps> = ({
                             </Box>
                         )}
 
-                        {!hideSession && localTimer.next_transition && (
+                        {!hideSession && timerStatus.next_transition && (
                             <Box mb={2}>
                                 <Typography variant="body2" color="textSecondary">
-                                    Next: {localTimer.next_transition.description}
+                                    Next: {timerStatus.next_transition.description}
                                 </Typography>
                             </Box>
                         )}
 
                         {!hideSession && (
                             <Typography variant="body2" gutterBottom>
-                                Total Time Remaining: {formatTime(localTimer.time_remaining_total)}
+                                Total Time Remaining: {formatTime(timerStatus.time_remaining_total || 0)}
                             </Typography>
                         )}
                         <Box mt={2} display="flex" gap={2} flexWrap="wrap">
-                            {localTimer.session.is_paused ? (
+                            {timerStatus.session?.isPaused ? (
                                 <Button
                                     variant="contained"
                                     color="success"
@@ -488,7 +522,7 @@ const TimerControls: React.FC<TimerControlsProps> = ({
             )}
 
             {/* Loading state for presets */}
-            {loading && !localTimer && (
+            {loading && !timerStatus && (
                 <Box display="flex" justifyContent="center" mt={3}>
                     <CircularProgress/>
                 </Box>

@@ -341,6 +341,5 @@ class StripeService:
         # You might want to send an email notification here
         # or update the user's subscription status
 
-
 # Global service instance
 stripe_service = StripeService()

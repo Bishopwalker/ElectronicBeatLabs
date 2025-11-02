@@ -122,7 +122,7 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
     // Combine all factors: base freq * max deviation * EM strength * pattern shape * coherence
     const modulation = baseFreq * maxDeviation * (emField.strength || 0) * patternModifier * (emField.coherence || 1);
 
-    console.log('🌀 EM Modulation:', {
+    if ((import.meta as any).env?.DEV) import.meta && (import.meta as any).env?.DEV && console.log('🌀 EM Modulation:', {
       baseFreq,
       beatFreq,
       maxDev: maxDeviation,
@@ -185,38 +185,35 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
   // Update local state when base_frequency/beat_frequency changes
   useEffect(() => {
     const newLeftFreq =  base_frequency;
-    console.log('🎛️ BinauralGenerator: Base frequency changed, left freq:', newLeftFreq);
+    import.meta && (import.meta as any).env?.DEV && console.log('🎛️ BinauralGenerator: Base frequency changed, left freq:', newLeftFreq);
     setLeftInput(newLeftFreq);
   }, [base_frequency]);
 
   useEffect(() => {
     const newRightFreq = calculateRightFreq(base_frequency, beat_frequency);
-    console.log('🎛️ BinauralGenerator: Beat frequency changed, right freq:', newRightFreq);
+    import.meta && (import.meta as any).env?.DEV && console.log('🎛️ BinauralGenerator: Beat frequency changed, right freq:', newRightFreq);
     setRightInput(newRightFreq);
   }, [base_frequency, beat_frequency]);
 
   const handleLeftChange = (value: number) => {
-    console.log('🎛️ Left Hz input changed:', value);
+    import.meta && (import.meta as any).env?.DEV && console.log('🎛️ Left Hz input changed:', value);
     setLeftInput(value);
 
     const leftNum = parseFloat(value.toString());
     if (!isNaN(leftNum)) {
       // Convert left freq back to base_frequency, keep current beat_frequency
       const newBaseFreq = leftNum; // left = base
-      console.log('🎛️ Calling onFrequencyChange with base_frequency:', newBaseFreq, 'beat_frequency:', beat_frequency);
+      import.meta && (import.meta as any).env?.DEV && console.log('🎛️ Calling onFrequencyChange with base_frequency:', newBaseFreq, 'beat_frequency:', beat_frequency);
       onFrequencyChange(newBaseFreq, beat_frequency);
     }
   };
 
   const handleRightChange = (value: string) => {
-    console.log('🎛️ Right Hz input changed:', value);
+    import.meta && (import.meta as any).env?.DEV && console.log('🎛️ Right Hz input changed:', value);
     setRightInput(parseFloat(value));
 
     const rightNum = parseFloat(value);
     if (!isNaN(rightNum)) {
-      // Convert right freq to beat_frequency: beat = right - left (right - base)
-     // const newBeatFreq = calculateBeatFrequency(leftFreq, rightNum);
-    //  console.log('🎛️ Calling onFrequencyChange with base_frequency:', base_frequency, 'beat_frequency:', newBeatFreq);
       onFrequencyChange(base_frequency, beat_frequency);
     }
   };
@@ -238,9 +235,10 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
   return (
     <Card sx={{ 
       minHeight: 'fit-content',
-      maxHeight: '400PX',
-      overflowX: 'hidden',
-       background: 'rgba(0, 191, 255, 0.05)',
+      height: '250px',
+      maxHeight: '250px',
+      overflowY: 'auto',
+      background: 'rgba(0, 191, 255, 0.05)',
       borderColor: 'rgba(0, 191, 255, 0.3)',
       '&::-webkit-scrollbar': {
         width: '8px',
@@ -336,7 +334,7 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
             <ToggleButtonGroup
               value={waveform}
               exclusive
-              onChange={(e)=>handleWaveformChange(e.target as HTMLButtonElement,waveform)}
+              onChange={(e, value)=>handleWaveformChange(e as React.MouseEvent<HTMLElement>, value as WaveForm)}
               size="small"
               fullWidth
               sx={{
@@ -506,139 +504,7 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
             </Stack>
           </Paper>
 
-          {/* Electromagnetic Field Analyzer */}
-          <Paper
-            elevation={0}
-            sx={{
-              p: 0.75,
-              background: 'rgba(0, 255, 136, 0.05)',
-              border: '1px solid rgba(0, 255, 136, 0.3)',
-            }}
-          >
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
-              ⚡ Electromagnetic Field Analysis
-            </Typography>
-            <Grid container spacing={1}>
-              <Grid size={6}>
-                <Typography variant="caption" sx={{ fontSize: '0.65rem', color: 'text.secondary' }}>
-                  Field Strength
-                </Typography>
-                <LinearProgress
-                  variant="determinate"
-                  value={electromagneticStrength * 100}
-                  sx={{
-                    height: 8,
-                    borderRadius: 1,
-                    backgroundColor: 'rgba(0, 255, 136, 0.1)',
-                    '& .MuiLinearProgress-bar': {
-                      backgroundColor: '#00ff88'
-                    }
-                  }}
-                />
-                <Typography variant="caption" sx={{ fontSize: '0.7rem', color: '#00ff88', fontWeight: 600 }}>
-                  {(electromagneticStrength * 100).toFixed(0)}%
-                </Typography>
-              </Grid>
-
-              <Grid size={6}>
-                <Typography variant="caption" sx={{ fontSize: '0.65rem', color: 'text.secondary' }}>
-                  State
-                </Typography>
-                <Typography variant="body2" sx={{ fontSize: '0.75rem', color: '#00ff88', fontWeight: 700 }}>
-                  {electromagneticState}
-                </Typography>
-              </Grid>
-            </Grid>
-          </Paper>
-          {/* Frequency Analyzer */}
-          {visualizationData && (
-            <Paper
-              elevation={0}
-              sx={{
-                p: 0.75,
-                background: 'rgba(255, 107, 0, 0.05)',
-                border: '1px solid rgba(255, 107, 0, 0.3)',
-              }}
-            >
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
-                📊 Real-time Frequency Analysis
-              </Typography>
-              <Grid container spacing={1}>
-                <Grid size={4}>
-                  <Typography variant="caption" sx={{ fontSize: '0.6rem', color: 'text.secondary' }}>
-                    SNR
-                  </Typography>
-                  <Typography variant="body2" sx={{ fontSize: '0.75rem', color: '#ff6b00', fontWeight: 600 }}>
-                    {visualizationData.signalQuality.snr.toFixed(1)} dB
-                  </Typography>
-                </Grid>
-                <Grid size={4}>
-                  <Typography variant="caption" sx={{ fontSize: '0.6rem', color: 'text.secondary' }}>
-                    Clarity
-                  </Typography>
-                  <Typography variant="body2" sx={{ fontSize: '0.75rem', color: '#ff6b00', fontWeight: 600 }}>
-                    {(visualizationData.signalQuality.clarity * 100).toFixed(0)}%
-                  </Typography>
-                </Grid>
-                <Grid size={4}>
-                  <Typography variant="caption" sx={{ fontSize: '0.6rem', color: 'text.secondary' }}>
-                    Quality
-                  </Typography>
-                  <Chip
-                    label={stats.dataQuality.toUpperCase()}
-                    size="small"
-                    sx={{
-                      fontSize: '0.55rem',
-                      height: '16px',
-                      backgroundColor:
-                        stats.dataQuality === 'excellent' ? 'rgba(76, 175, 80, 0.2)' :
-                        stats.dataQuality === 'good' ? 'rgba(255, 193, 7, 0.2)' :
-                        stats.dataQuality === 'fair' ? 'rgba(255, 152, 0, 0.2)' :
-                        'rgba(244, 67, 54, 0.2)',
-                      color:
-                        stats.dataQuality === 'excellent' ? '#4caf50' :
-                        stats.dataQuality === 'good' ? '#ffc107' :
-                        stats.dataQuality === 'fair' ? '#ff9800' :
-                        '#f44336',
-                    }}
-                  />
-                </Grid>
-              </Grid>
-              {visualizationData.peakFrequencies.length > 0 && (
-                <Box sx={{ mt: 0.5 }}>
-                  <Typography variant="caption" sx={{ fontSize: '0.6rem', color: 'text.secondary' }}>
-                    Detected Peaks: {visualizationData.peakFrequencies.slice(0, 2).map(p => `${p.frequency.toFixed(1)}Hz`).join(', ')}
-                  </Typography>
-                </Box>
-              )}
-            </Paper>
-          )}
-
-          <Stack direction="row" spacing={0.5} justifyContent="center">
-            <IconButton
-              onClick={handleReset}
-              color="default"
-              size="small"
-              sx={{
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                '&:hover': {
-                  background: 'rgba(255, 255, 255, 0.05)',
-                }
-              }}
-            >
-              <RefreshIcon />
-            </IconButton>
-          </Stack>
-
-          <Stack direction="row" spacing={0.5} justifyContent="center">
-            <Chip label={`Viz: ${stats.averageFps} FPS`} size="small" sx={{ fontSize: '0.65rem' }} />
-            <Chip
-              label={isVisualizing ? 'ANALYZING' : 'READY'}
-              color={isVisualizing ? 'success' : 'default'}
-              size="small"
-              sx={{ fontSize: '0.65rem' }}
-            />
-          </Stack>
+     
           <Stack direction="row" spacing={0.5} justifyContent="center">
            <MainControlsMUI
                isPlaying={isPlaying}

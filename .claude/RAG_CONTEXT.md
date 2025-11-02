@@ -43,11 +43,11 @@ src/
 ### Backend Structure
 ```
 backend/
-├── routers/                # FastAPI Route Handlers
-│   ├── audio.py                # Audio processing endpoints
-│   ├── auth.py                 # Authentication routes
-│   ├── patterns.py             # Pattern management
-│   └── websocket.py            # WebSocket endpoints
+├── routes/                 # FastAPI Route Handlers
+│   ├── audio_websocket.py      # WebSocket endpoints
+│   ├── simple_routes.py        # Basic REST endpoints
+│   ├── timer.py                # Timer routes
+│   └── rag_routes.py           # RAG search + error-context
 ├── services/               # Business Logic Layer
 │   ├── audio_service.py        # Audio generation logic
 │   ├── pattern_service.py      # Pattern processing
@@ -87,8 +87,8 @@ backend/models/audio_models.py        # Backend audio data models
 ### **WebSocket Communication**
 ```bash
 # WebSocket implementation
-src/hooks/useWebSocket.ts             # Frontend WebSocket hook
-backend/routers/websocket.py          # Backend WebSocket routes
+src/hooks/useWebsocketContext.ts      # Frontend WebSocket context
+backend/routes/audio_websocket.py     # Backend WebSocket routes
 backend/utils/websocket_manager.py    # Connection management
 
 # WebSocket message types
@@ -163,11 +163,11 @@ export type { AudioConfig, PatternMode, WebSocketMessage };
 backend/main.py                      # Main FastAPI app
 
 # Router includes should look like:
-app.include_router(audio.router, prefix="/api/audio", tags=["audio"])
-app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
+from routes.rag_routes import router as rag_router
+app.include_router(rag_router)
 
 # Check individual routes in:
-backend/routers/*.py                 # Individual route files
+backend/routes/*.py                  # Individual route files
 ```
 
 ### **WebSocket Connection Issues**

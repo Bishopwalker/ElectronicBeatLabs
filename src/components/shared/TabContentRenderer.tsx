@@ -23,7 +23,7 @@ interface TabContentRendererProps {
   patterns8D: any;
   onStateChange: (partialState: Partial<AppState>) => void;
   onPatternSelect: (patternId: string) => void;
-  onFrequencyChange: (frequency: number) => void;
+  onFrequencyChange: (base_frequency: number, beat_frequency?: number) => void;
 }
 
 const TabContentRenderer: React.FC<TabContentRendererProps> = ({

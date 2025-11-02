@@ -20,7 +20,6 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 
-
 @dataclass
 class SearchResult:
     """Enhanced search result with multiple scoring methods"""
@@ -32,7 +31,6 @@ class SearchResult:
     keyword_score: float
     audio_boost: float
     final_score: float
-
 
 class AudioDomainQueryExpander:
     """Expands queries with audio domain terminology"""
@@ -83,7 +81,6 @@ class AudioDomainQueryExpander:
 
         return unique_terms
 
-
 class EnhancedRAGRetrieval:
     """
     Enhanced RAG retrieval with multiple fine-tuning optimizations
@@ -111,9 +108,6 @@ class EnhancedRAGRetrieval:
         # Initialize query expander
         self.query_expander = AudioDomainQueryExpander()
 
-        print(f"Enhanced RAG initialized with {len(self.chunks)} chunks")
-        print(f"Using embedding model: {embedding_model}")
-
     def _load_chunks(self):
         """Load and process chunks"""
         if not self.chunks_file.exists():
@@ -124,25 +118,20 @@ class EnhancedRAGRetrieval:
 
         self.chunks = data.get('chunks', [])
         self.chunk_texts = [chunk['content'] for chunk in self.chunks]
-        print(f"Loaded {len(self.chunks)} chunks")
 
     def _build_embedder(self):
         """Initialize the enhanced embedding model"""
-        print(f"Loading embedding model: {self.embedding_model_name}")
         self.embedder = SentenceTransformer(self.embedding_model_name)
 
         # Generate embeddings for all chunks (this might take a while)
-        print("Generating embeddings for all chunks...")
         self.chunk_embeddings = self.embedder.encode(
             self.chunk_texts,
             convert_to_tensor=False,
             show_progress_bar=True
         )
-        print(f"Generated {len(self.chunk_embeddings)} embeddings")
 
     def _build_keyword_index(self):
         """Build TF-IDF index for keyword search"""
-        print("Building TF-IDF keyword index...")
 
         # Custom tokenization for code
         def code_tokenizer(text):
@@ -160,7 +149,6 @@ class EnhancedRAGRetrieval:
         )
 
         self.tfidf_matrix = self.tfidf_vectorizer.fit_transform(self.chunk_texts)
-        print(f"Built TF-IDF index with {self.tfidf_matrix.shape[1]} features")
 
     def _build_audio_scorer(self):
         """Build audio domain scoring system"""
@@ -274,7 +262,6 @@ class EnhancedRAGRetrieval:
 
         return explanation
 
-
 def benchmark_models():
     """Compare embedding models on EBL-specific queries"""
     test_queries = [
@@ -293,30 +280,24 @@ def benchmark_models():
         "all-mpnet-base-v2"   # Better (768-dim, slower but higher quality)
     ]
 
-    print("Benchmarking embedding models...")
-
     for model_name in models_to_test:
-        print(f"\nTesting model: {model_name}")
 
         try:
             retrieval = EnhancedRAGRetrieval(embedding_model=model_name)
 
             for query in test_queries:
                 results = retrieval.hybrid_search(query, n_results=3)
-                print(f"  Query: '{query}' -> {len(results)} results")
 
                 # Show top result score
                 if results:
-                    print(f"    Top score: {results[0].final_score:.3f}")
+                    pass  # Placeholder for result processing
 
         except Exception as e:
-            print(f"  Error with {model_name}: {e}")
-
+            pass  # Placeholder for error handling
 
 if __name__ == "__main__":
     # Test the enhanced retrieval system
     try:
-        print("Testing Enhanced RAG Retrieval...")
 
         # Initialize with better model
         retrieval = EnhancedRAGRetrieval(embedding_model="all-mpnet-base-v2")
@@ -330,11 +311,8 @@ if __name__ == "__main__":
         ]
 
         for query in test_queries:
-            print(f"\n{'='*50}")
             results = retrieval.hybrid_search(query, n_results=3)
             explanation = retrieval.explain_search(query, results)
-            print(explanation)
 
     except Exception as e:
-        print(f"Error during testing: {e}")
-        print("Note: Install sentence-transformers with: pip install sentence-transformers scikit-learn")
+        pass  # Placeholder for error handling

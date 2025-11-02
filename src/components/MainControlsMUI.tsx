@@ -20,7 +20,6 @@ import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import BoltIcon from '@mui/icons-material/Bolt';
 import type { MainControlsProps } from '../types';
 
-
 interface ExtendedMainControlsProps extends MainControlsProps {
   compact?: boolean;
 }
@@ -40,7 +39,6 @@ const MainControlsMUI: React.FC<ExtendedMainControlsProps> = ({
   const handleVolumeChange = (_: Event, value: number | number[]) => {
     const numValue = value as number;
     const safeValue = isNaN(numValue) ? 0.5 : Math.max(0, Math.min(maxVolume, numValue));
-    console.log('🎚️ MainControlsMUI volume change:', { raw: numValue, safe: safeValue, boostMode, maxVolume });
     onVolumeChange(safeValue);
   };
 
@@ -156,8 +154,6 @@ const MainControlsMUI: React.FC<ExtendedMainControlsProps> = ({
   return (
     <Card sx={{ 
       minHeight: 'fit-content',
-height: '100%',
-        maxHeight: '40vh',
       borderRadius: 4,
       background: 'rgba(138, 43, 226, 0.05)',
       borderColor: 'rgba(138, 43, 226, 0.3)',
@@ -173,7 +169,7 @@ height: '100%',
         borderRadius: '4px',
       },
     }}>
-      <CardContent height={'30vh'} sx={{ p: .5 }}>
+      <CardContent sx={{ p: .5 }}>
         <Typography variant="h4" align="center" color="secondary" gutterBottom>
           Master Controls
         </Typography>

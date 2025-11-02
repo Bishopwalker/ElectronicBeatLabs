@@ -320,7 +320,6 @@ export const getPresetTransitions = (presetId: string): ({
           },
         },
 
-
         {
           duration_minutes: 15,
           frequency_hz: 4,

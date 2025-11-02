@@ -21,7 +21,6 @@ class ContextInitializer {
   }
 
   async initialize() {
-    console.log('🚀 CONTEXT INITIALIZATION STARTING...\n');
     
     let contextData = {
       timestamp: new Date().toISOString(),
@@ -33,10 +32,7 @@ class ContextInitializer {
     for (let i = 0; i < this.requiredFiles.length; i++) {
       const fileInfo = this.requiredFiles[i];
       const filePath = path.join(this.projectRoot, fileInfo.path);
-      
-      console.log(`📖 Reading ${i + 1}/5: ${fileInfo.name}`);
-      console.log(`   Path: ${fileInfo.path}`);
-      
+
       try {
         if (fs.existsSync(filePath)) {
           const content = fs.readFileSync(filePath, 'utf8');
@@ -51,10 +47,8 @@ class ContextInitializer {
           // Extract key summary info
           contextData.summary[fileInfo.path] = this.extractSummary(fileInfo.path, content);
           
-          console.log(`   ✅ Loaded (${content.length} chars, ${content.split('\n').length} lines)`);
         } else {
           const error = `❌ FILE NOT FOUND: ${fileInfo.path}`;
-          console.log(`   ${error}`);
           contextData.errors.push(error);
           
           if (fileInfo.required) {
@@ -63,11 +57,9 @@ class ContextInitializer {
         }
       } catch (error) {
         const errorMsg = `Error reading ${fileInfo.path}: ${error.message}`;
-        console.log(`   ❌ ${errorMsg}`);
         contextData.errors.push(errorMsg);
       }
       
-      console.log(''); // Empty line for readability
     }
 
     // Generate context summary
@@ -76,10 +68,7 @@ class ContextInitializer {
     // Save context snapshot for debugging
     const contextFile = path.join(this.projectRoot, '.claude', 'last-context-init.json');
     fs.writeFileSync(contextFile, JSON.stringify(contextData, null, 2));
-    
-    console.log('✅ CONTEXT INITIALIZATION COMPLETE\n');
-    console.log('📋 CONTEXT READY - PROCEED WITH DEVELOPMENT\n');
-    
+
     return contextData;
   }
 
@@ -127,23 +116,16 @@ class ContextInitializer {
   }
 
   generateContextSummary(contextData) {
-    console.log('📊 CONTEXT SUMMARY:');
-    console.log(`   Files loaded: ${Object.keys(contextData.files).length}/5`);
-    console.log(`   Errors: ${contextData.errors.length}`);
-    console.log(`   Total content: ${Object.values(contextData.files).reduce((sum, file) => sum + file.length, 0)} chars`);
     
     if (contextData.errors.length > 0) {
-      console.log('\n⚠️  ERRORS DETECTED:');
       contextData.errors.forEach(error => console.log(`   ${error}`));
     }
     
     // Show current tasks
     if (contextData.summary['TASK.md'] && contextData.summary['TASK.md'].tasks.length > 0) {
-      console.log('\n📋 CURRENT TASKS:');
       contextData.summary['TASK.md'].tasks.forEach(task => console.log(`   ${task.trim()}`));
     }
     
-    console.log('');
   }
 }
 
@@ -153,7 +135,6 @@ if (require.main === module) {
   initializer.initialize()
     .then(() => process.exit(0))
     .catch(error => {
-      console.error('❌ Context initialization failed:', error.message);
       process.exit(1);
     });
 }

@@ -40,12 +40,10 @@ export const AudioContextProvider: React.FC<AudioContextProviderProps> = ({ chil
    */
   const initializeAudio = async () => {
     if (audioContext && audioContext.state === 'running') {
-      console.log('✅ AudioContext already initialized and running');
       return;
     }
 
     try {
-      console.log('🎵 Initializing ONE AudioContext for entire app...');
       
       // Create or resume context
       let context = audioContext;
@@ -56,7 +54,6 @@ export const AudioContextProvider: React.FC<AudioContextProviderProps> = ({ chil
 
       // Resume if suspended
       if (context.state === 'suspended') {
-        console.log('📢 Resuming suspended AudioContext...');
         await context.resume();
       }
 
@@ -66,13 +63,10 @@ export const AudioContextProvider: React.FC<AudioContextProviderProps> = ({ chil
         analyser.fftSize = 2048;
         analyser.smoothingTimeConstant = 0.8;
         setAnalyserNode(analyser);
-        console.log('📊 Created single AnalyserNode for app-wide visualization');
       }
 
       setIsInitialized(true);
-      console.log('✅ AudioContext initialized successfully, state:', context.state);
     } catch (error) {
-      console.error('❌ Failed to initialize AudioContext:', error);
       throw error;
     }
   };
@@ -81,7 +75,6 @@ export const AudioContextProvider: React.FC<AudioContextProviderProps> = ({ chil
   useEffect(() => {
     return () => {
       if (audioContext && audioContext.state !== 'closed') {
-        console.log('🧹 Closing AudioContext...');
         audioContext.close();
       }
     };
@@ -92,7 +85,6 @@ export const AudioContextProvider: React.FC<AudioContextProviderProps> = ({ chil
     if (!audioContext) return;
 
     const handleStateChange = () => {
-      console.log('🔄 AudioContext state changed:', audioContext.state);
     };
 
     audioContext.addEventListener('statechange', handleStateChange);

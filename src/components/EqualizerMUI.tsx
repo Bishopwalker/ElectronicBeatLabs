@@ -33,8 +33,6 @@ import ThreeDRotationIcon from '@mui/icons-material/ThreeDRotation';
 import { useEqualizer, EQ_PRESETS } from '../hooks/useEqualizer';
 import type { EqualizerBand, ModulatorType, SpatialEffectMode } from '../types';
 
-
-
 interface EqualizerMUIProps {
   audioContext?: AudioContext | null;
   analyserNode?: AnalyserNode | null;
@@ -82,7 +80,6 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
     if (audioContext && !initializedRef.current) {
       setShowAudioWarning(false);
 
-      console.log('🎚️ Initializing equalizer with audio context');
       const nodes = initializeEqualizer();
       audioContext.resume();
       if (nodes) {
@@ -130,7 +127,6 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
     value: number | number[]
   ) => {
     const gainValue = Array.isArray(value) ? value[0] : value;
-    console.log(`🎚️ EQ Slider moved - Band: ${bandId}, New Value: ${gainValue}dB`);
     updateBandGain(bandId, gainValue);
   }, [updateBandGain]);
 
@@ -253,7 +249,7 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
 
   const eqContent = (
     <Box sx={{
-      height: '50%',
+      // Let parent control height
       display: 'flex',
       flexDirection: 'column',
       width: '98%',  // ✅ INCREASED: from 95% for even better visibility
@@ -373,9 +369,8 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
       <Box sx={{ 
         display: 'flex', 
         gap: eqFullscreen ? 3 : 0.5,
-         flex: 1,
-        minHeight: 0,
-          maxHeight:400
+        flex: 1,
+        minHeight: 0
       }}>
         
         {/* Frequency sliders */}

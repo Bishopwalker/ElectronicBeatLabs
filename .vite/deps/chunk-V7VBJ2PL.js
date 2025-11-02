@@ -23,7 +23,6 @@ import {
 // node_modules/@mui/material/esm/styles/adaptV4Theme.js
 function adaptV4Theme(inputTheme) {
   if (true) {
-    console.warn(["MUI: adaptV4Theme() is deprecated.", "Follow the upgrade guide on https://mui.com/r/migration-v4#theme."].join("\n"));
   }
   const {
     defaultProps = {},
@@ -105,7 +104,6 @@ function createMuiStrictModeTheme(options, ...args) {
 var warnedOnce = false;
 function createStyles(styles) {
   if (!warnedOnce) {
-    console.warn(["MUI: createStyles from @mui/material/styles is deprecated.", "Please use @mui/styles/createStyles"].join("\n"));
     warnedOnce = true;
   }
   return styles;
@@ -402,7 +400,6 @@ var warnedOnce2 = false;
 function Experimental_CssVarsProvider(props) {
   if (true) {
     if (!warnedOnce2) {
-      console.warn(["MUI: The Experimental_CssVarsProvider component has been ported into ThemeProvider.", "", "You should use `import { ThemeProvider } from '@mui/material/styles'` instead.", "For more details, check out https://mui.com/material-ui/customization/css-theme-variables/usage/"].join("\n"));
       warnedOnce2 = true;
     }
   }
@@ -413,7 +410,6 @@ function Experimental_CssVarsProvider(props) {
 var warnedInitScriptOnce = false;
 var getInitColorSchemeScript = (params) => {
   if (!warnedInitScriptOnce) {
-    console.warn(["MUI: The getInitColorSchemeScript function has been deprecated.", "", "You should use `import InitColorSchemeScript from '@mui/material/InitColorSchemeScript'`", "and replace the function call with `<InitColorSchemeScript />` instead."].join("\n"));
     warnedInitScriptOnce = true;
   }
   return deprecatedGetInitColorSchemeScript(params);
@@ -473,7 +469,6 @@ function withTheme() {
 var warnedOnce3 = false;
 function deprecatedExtendTheme(...args) {
   if (!warnedOnce3) {
-    console.warn(["MUI: The `experimental_extendTheme` has been stabilized.", "", "You should use `import { extendTheme } from '@mui/material/styles'`"].join("\n"));
     warnedOnce3 = true;
   }
   return createThemeWithVars(...args);

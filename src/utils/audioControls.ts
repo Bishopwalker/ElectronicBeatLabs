@@ -20,7 +20,6 @@ export interface AudioControlConfig {
   base_frequency?: number;
   beat_frequency?: number;
   volume?: number;
-  volume?: number; // Alias for volume
   waveform?: 'sine' | 'square' | 'sawtooth' | 'triangle';
   spatial?: {
     enabled?: boolean;
@@ -67,34 +66,27 @@ export async function startBinauralAudio(
   audioEngine: AudioEngineInterface,
   config: AudioControlConfig = {}
 ): Promise<boolean> {
-  console.log('▶️ [AudioControl] Starting binaural audio...', config);
 
   // STEP 1: Validate audio engine
   if (!audioEngine || !audioEngine.startBinauralBeat) {
-    console.error('❌ [AudioControl] Invalid audio engine - missing startBinauralBeat method');
     return false;
   }
 
   // STEP 2: Build config with defaults
-  const volume = config.volume ?? config.volume ?? DEFAULT_VOLUME;
+  const volume = config.volume ?? DEFAULT_VOLUME;
   const binauralConfig: BinauralBeatConfig = {
     base_frequency: config.base_frequency ?? DEFAULT_BASE_FREQUENCY,
     beat_frequency: config.beat_frequency ?? DEFAULT_BEAT_FREQUENCY,
     volume: volume,
     waveform: config.waveform ?? 'sine',
-    // Include spatial config if provided
-    ...(config.spatial && { spatial: config.spatial })
+    // omit spatial here to avoid partial type mismatch; engines can add spatial
   };
-
-  console.log('🎛️ [AudioControl] Final config:', binauralConfig);
 
   // STEP 3: Start audio
   try {
     await audioEngine.startBinauralBeat(binauralConfig);
-    console.log('✅ [AudioControl] Audio started successfully');
     return true;
   } catch (error) {
-    console.error('❌ [AudioControl] Failed to start audio:', error);
     return false;
   }
 }
@@ -117,32 +109,26 @@ export async function stopBinauralAudio(
   audioEngine: AudioEngineInterface,
   timerControl?: TimerControlInterface
 ): Promise<boolean> {
-  console.log('🛑 [AudioControl] Stopping binaural audio...');
 
   // STEP 1: Stop timer if provided and active
   if (timerControl && timerControl.stopTimer) {
-    console.log('⏰ [AudioControl] Stopping timer...');
     try {
       timerControl.stopTimer();
     } catch (error) {
-      console.warn('⚠️ [AudioControl] Failed to stop timer (non-critical):', error);
       // Continue with audio stop even if timer fails
     }
   }
 
   // STEP 2: Validate audio engine
   if (!audioEngine || !audioEngine.stopBinauralBeat) {
-    console.error('❌ [AudioControl] Invalid audio engine - missing stopBinauralBeat method');
     return false;
   }
 
   // STEP 3: Stop audio
   try {
     await audioEngine.stopBinauralBeat();
-    console.log('✅ [AudioControl] Audio stopped successfully');
     return true;
   } catch (error) {
-    console.error('❌ [AudioControl] Failed to stop audio:', error);
     return false;
   }
 }

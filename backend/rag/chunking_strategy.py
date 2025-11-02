@@ -71,7 +71,6 @@ class EBLChunkingStrategy:
                 with open(file_path, 'r', encoding='latin-1') as f:
                     content = f.read()
             except Exception:
-                print(f"Skipping file due to encoding issues: {file_path}")
                 return []
 
         lines = content.splitlines()
@@ -167,7 +166,6 @@ class EBLChunkingStrategy:
                 with open(file_path, 'r', encoding='latin-1') as f:
                     content = f.read()
             except Exception:
-                print(f"Skipping file due to encoding issues: {file_path}")
                 return []
 
         lines = content.splitlines()
@@ -387,25 +385,24 @@ class EBLChunkingStrategy:
         scored_chunks.sort(key=lambda x: x[0], reverse=True)
         return [chunk for _, chunk in scored_chunks[:top_k]]
 
-
 # Example usage
 if __name__ == "__main__":
     # Initialize the chunking strategy
     chunker = EBLChunkingStrategy(project_root="C:/Users/bisho/ideaprojects/ebl")
     
     # Chunk the entire project
-    print("Chunking EBL project...")
     chunks = chunker.chunk_project()
-    print(f"Created {len(chunks)} chunks")
     
     # Save chunks to file
     chunker.save_chunks("ebl_chunks.json")
-    print("Chunks saved to ebl_chunks.json")
     
     # Example: Find relevant chunks for a query
     query = "audio engine frequency"
     relevant = chunker.get_relevant_chunks(query, top_k=5)
     
-    print(f"\nTop {len(relevant)} chunks for query '{query}':")
-    for chunk in relevant:
-        print(f"  - {chunk.file_path} ({chunk.chunk_type}): {chunk.metadata}")
+    for chunk in relevant:print(f"Chunk ID: {chunk.id}")
+    print(f"File: {chunk.file_path}")
+    print(f"Type: {chunk.chunk_type}")
+    print(f"Lines: {chunk.start_line}-{chunk.end_line}")
+    print(f"Content preview: {chunk.content[:100]}...")
+    print("---")

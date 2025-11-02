@@ -4,7 +4,7 @@
 
 import React, { useCallback, useEffect, useState, useRef, useMemo } from 'react';
 import { Box, Chip, Grid, IconButton, Paper, Typography } from '@mui/material';
-import type { ElectromagneticBeatLabProps } from '../../types';
+import type { ElectromagneticBeatLabProps, PatternConfig } from '../../types';
 
 // Constants
 import { DEFAULT_BASE_FREQUENCY, DEFAULT_BEAT_FREQUENCY, DEFAULT_VOLUME } from '../../constants/audio.constants';
@@ -27,7 +27,7 @@ import SpatialVisualizer from '../SpatialVisualizer';
 import PatternSelectorMUI from '../PatternSelectorMUI';
 import ElectromagneticStatus from '../ElectromagneticStatus';
 import MainControlsMUI from '../MainControlsMUI';
-import ControlTabs from '../ControlTabs';
+import ControlTabs from '../shared/ControlTabs';
 import BinauralGeneratorMUI from '../BinauralGeneratorMUI';
 import QuickStart from '../QuickStart';
 import TimerTab from '../tabs/TimerTab';
@@ -65,7 +65,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
     toggleDarkScreen,
     updateAppState,
     updateElectromagneticState
-  } = useElectromagneticLabState(initialPattern , autoStart);
+  } = useElectromagneticLabState(initialPattern?.id , autoStart);
 
   // SINGLE AUDIO ENGINE: Hybrid engine manages both frontend + backend internally
   // This ensures ONE audio context, ONE WebSocket connection, seamless failover
@@ -76,9 +76,6 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
   const backendEngine = hybridEngine.backendEngine;
   const frontendEngine = hybridEngine.frontendEngine;
 
-  // CRITICAL: Active engine is ALWAYS the hybrid engine (manages both internally)
-  // It provides audioContext and analyserNode from frontend engine for visualizations
-  // while managing backend connection and crossfading automatically
   const activeAudioEngine = hybridEngine;
 
   // Session ID tracking from hybrid engine's backend connection
@@ -112,8 +109,8 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
   // Current preset tracking
   const { currentPreset } = useCurrentPresetTracker({
     timerStatus,
-    activePattern: appState.currentPattern?.id,
-    audioState: backendEngine.audioState
+    activePattern: appState.currentPattern || undefined,
+    audioState: frontendEngine.audioState
   });
 
   // 🔥 NEW: Initialize audio context on first user interaction
@@ -125,13 +122,10 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
   useEffect(() => {
     const initAudioOnInteraction = async () => {
       if (!audioInitialized && !hybridEngine.audioContext) {
-        console.log('👆 User interaction detected, initializing audio...');
         try {
           await hybridEngine.initializeAudio();
           setAudioInitialized(true);
-          console.log('✅ Audio initialized on user interaction');
         } catch (error) {
-          console.log('⚠️ Audio initialization failed, will retry:', error);
         }
       }
     };
@@ -204,7 +198,6 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
     // This syncs SpatialVisualizer animations with real audio
     // Guard prevents infinite loop by checking if value actually changed
     if (frequencies.beat !== appState.electromagnetic.frequency) {
-      console.log('🔄 Syncing electromagnetic field with audio frequency:', frequencies.beat);
       updateAppState({
         electromagnetic: {
           ...appState.electromagnetic,
@@ -229,7 +222,6 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
 
   // Force re-render when backend connection state changes
   useEffect(() => {
-    console.log('🔄 Backend connection state changed:', backendEngine.backendConnected);
   }, [backendEngine.backendConnected, backendEngine.sessionId]);
 
   // Auto-enable spatial audio ONCE when backend connects AND audio is playing
@@ -240,12 +232,10 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
     
     // Only run this once when backend first connects AND audio is playing
     if (backendEngine.backendConnected && backendEngine.sessionId && !hasAutoEnabledRef.current && isAudioPlaying) {
-      console.log('✅ Backend connected AND audio playing! Auto-enabling required audio systems...');
       hasAutoEnabledRef.current = true;
 
       // Auto-enable spatial audio when backend connects during playback
       if (!appState.spatialAudio?.enabled) {
-        console.log('🎧 Auto-enabling spatial audio for active backend connection...');
         updateAppState({
           spatialAudio: {
             ...appState.spatialAudio,
@@ -254,9 +244,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
         });
       }
 
-      console.log('🎯 All required audio systems enabled for backend operation');
     } else if (backendEngine.backendConnected && backendEngine.sessionId && !isAudioPlaying) {
-      console.log('⏸️ Backend connected but audio NOT playing - skipping auto-enable');
     }
 
     // Reset the flag when backend disconnects or audio stops
@@ -279,11 +267,6 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
 
   // Calculate electromagnetic field strength from beat frequency
   const calculateElectromagneticStrength = (beatFreq: number): number => {
-    // Reason: Map beat frequency to electromagnetic field strength (0-1 range)
-    // Delta (0.5-4Hz): High strength for deep relaxation
-    // Theta (4-8Hz): Medium-high strength for creativity
-    // Alpha (8-13Hz): Medium strength for relaxed focus
-    // Beta (13-30Hz): Lower strength for active focus
     if (beatFreq <= 4) return 0.333; // Delta - Low field
     if (beatFreq <= 8) return 0.444; // Theta - medium field
     if (beatFreq <= 13) return 0.666; // Alpha - medium field
@@ -298,65 +281,73 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
               audioConfig.beatFreq <= 13 ? 'FOCUSED CALM' :
                   audioConfig.beatFreq <= 30 ? 'ACTIVE FOCUS' : 'HIGH ALERT') : 'INACTIVE';
 
-  // Simple one-time backend connection attempt on startup
-  // Guard against React 18 StrictMode double-mount using a module-level flag on window
-  // Toggle with VITE_BACKEND_AUTOCONNECT (default true)
+  // 🔥 FIXED: Smart backend connection with retry logic and duplicate prevention
+  const connectionAttemptedRef = useRef(false);
   useEffect(() => {
     const autoConnect = (import.meta as any).env?.VITE_BACKEND_AUTOCONNECT !== 'false';
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    if (typeof (window as any).__ebl_backend_connect_attempted === 'undefined') {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      (window as any).__ebl_backend_connect_attempted = false;
+    
+    // Prevent duplicate connection attempts
+    if (connectionAttemptedRef.current) {
+      console.log('🚫 Backend connection already attempted, skipping duplicate');
+      return;
     }
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    const alreadyAttempted = (window as any).__ebl_backend_connect_attempted === true;
-
-    if (autoConnect && !alreadyAttempted && !backendEngine.backendConnected && backendEngine.connectBackend) {
-      console.log('🔌 One-time backend connection attempt on startup...');
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      (window as any).__ebl_backend_connect_attempted = true;
-      backendEngine.connectBackend().catch((error) => {
-        console.log('⚠️ Backend connection failed (expected if backend not running):', error.message);
-        // Keep the global flag true to avoid StrictMode double-attempt; user can click to retry
-      });
+    
+    if (autoConnect && !backendEngine.backendConnected && backendEngine.connectBackend) {
+      connectionAttemptedRef.current = true; // Mark as attempted BEFORE async call
+      console.log('🔌 Attempting backend connection with retry logic...');
+      
+      // Retry logic: wait for backend to be ready
+      const attemptConnection = async (attempt = 1, maxAttempts = 5) => {
+        try {
+          console.log(`⏳ Connection attempt ${attempt}/${maxAttempts}...`);
+          await backendEngine.connectBackend();
+          console.log('✅ Backend connected successfully!');
+        } catch (error) {
+          console.log(`❌ Connection attempt ${attempt} failed:`, error);
+          
+          if (attempt < maxAttempts) {
+            const delayMs = Math.min(2000 * attempt, 10000); // Exponential backoff, max 10s
+            console.log(`⏰ Waiting ${delayMs}ms before retry ${attempt + 1}...`);
+            setTimeout(() => attemptConnection(attempt + 1, maxAttempts), delayMs);
+          } else {
+            console.log('❌ Max connection attempts reached. User can manually retry via status chip.');
+            connectionAttemptedRef.current = false; // Allow manual retry later
+          }
+        }
+      };
+      
+      attemptConnection();
     }
-  }, [backendEngine.backendConnected, backendEngine.connectBackend]);
+  }, []); // Empty deps - only run once on mount
 
   // Bound handler functions with context
   // 🔥 FIXED: Stable closure with proper dependencies
   const handlePatternSelectBound = useCallback((patternId: string) => {
     const patternsInterface = {
-      setActivePattern: (pattern: { name: any; }) => {
-        console.log('🎨 Setting active pattern for visualizer:', pattern.name);
+      setActivePattern: (pattern: PatternConfig) => {
         updateAppState({ currentPattern: pattern });
       },
       clearActivePattern: () => {
-        console.log('🎨 Clearing active pattern from visualizer');
         updateAppState({ currentPattern: null });
       }
     };
-    handlePatternSelect(patternId, hybridEngine, patternsInterface);
+    handlePatternSelect(patternId, hybridEngine as any, patternsInterface as any);
   }, [handlePatternSelect, hybridEngine, updateAppState]); // 🔥 FIXED: Proper dependencies
 
   const handleModeChangeBound = useCallback((mode: any) => {
-    handleModeChange(mode, activeAudioEngine);
+    handleModeChange(mode, activeAudioEngine as any);
   }, [handleModeChange, activeAudioEngine]);
 
-  const handleFrequencyChangeBound = useCallback((frequency: number) => {
-    handleFrequencyChange(frequency, activeAudioEngine);
+  const handleFrequencyChangeBound = useCallback((base_frequency: number, beat_frequency: number) => {
+    handleFrequencyChange(base_frequency, beat_frequency, activeAudioEngine as any);
   }, [handleFrequencyChange, activeAudioEngine]);
 
   const handleVolumeChangeBound = useCallback((volume: number) => {
-    handleVolumeChange(volume, activeAudioEngine);
+    handleVolumeChange(volume, activeAudioEngine as any);
   }, [handleVolumeChange, activeAudioEngine]);
 
   const handlePlayBound = useCallback(async () => {
     // 🔥 FIXED: Use memoized audioConfig instead of recreating
-    console.log('🎵 Play with bulletproof config:', audioConfig);
     
     const success = await startBinauralAudio(hybridEngine, {
       base_frequency: audioConfig.baseFreq,
@@ -366,12 +357,9 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
     });
 
     // Audio state updated by hybrid engine automatically
-    console.log(success ? '✅ Audio started' : '❌ Audio start failed');
   }, [hybridEngine, audioConfig]);
 
   const handleStop = useCallback(async () => {
-    console.log('🛑 App: Stop button clicked');
-    console.log('🛑 App: Hybrid audioState BEFORE:', hybridEngine.audioState);
 
     try {
       // Use centralized audio control utility with timer control
@@ -381,34 +369,28 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
       );
 
       if (success) {
-        console.log('✅ Audio stopped successfully');
         
         // 🔥 CRITICAL FIX: Force state update to ensure UI reflects stopped state
-        updateAppState(prev => ({
-          ...prev,
+        updateAppState({
           electromagnetic: {
-            ...prev.electromagnetic,
+            ...appState.electromagnetic,
             state: 'INACTIVE' as const,
             strength: 0
           }
-        }));
+        });
         
-        console.log('🛑 App: Hybrid audioState AFTER:', hybridEngine.audioState);
       } else {
-        console.error('❌ Audio stop failed');
       }
     } catch (error) {
-      console.error('❌ Error stopping audio:', error);
     }
   }, [hybridEngine, timerStatus, updateAppState]);
 
   const handleToggleAdvancedControls = useCallback(() => {
-    toggleAdvancedControls(backendEngine);
-  }, [toggleAdvancedControls, backendEngine]);
+    toggleAdvancedControls();
+  }, [toggleAdvancedControls]);
 
   // Handle engine toggle changes
   const handleEngineToggle = useCallback(async (engineType: 'binaural' | 'backend' | 'spatial' | 'frontend', enabled: boolean) => {
-    console.log(`🔄 Engine Toggle: ${engineType} -> ${enabled}`);
 
     try {
       switch (engineType) {
@@ -416,10 +398,8 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
         case 'frontend':
           // FRONTEND ENGINE - explicit fallback only
           if (enabled) {
-            console.log('▶️ Starting frontend binaural engine (explicit fallback)...');
             // First stop backend if it's running
             if (backendEngine.backendConnected) {
-              console.log('⏹️ Stopping backend to switch to frontend...');
               await backendEngine.stopBackendSession();
               if (backendEngine.disconnectBackend) {
                 await backendEngine.disconnectBackend();
@@ -427,7 +407,6 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
             }
             // Start frontend engine WITHOUT setting a pattern
             // 🔥 FIXED: Use memoized audioConfig
-            console.log('🎵 Frontend start with bulletproof config:', audioConfig);
             
             await frontendEngine.startBinauralBeat({
               base_frequency: audioConfig.baseFreq,
@@ -437,7 +416,6 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
             });
             // Audio state updated by hybrid engine automatically - no updateAppState needed
           } else {
-            console.log('⏹️ Stopping frontend binaural engine...');
            frontendEngine.stopBinauralBeat();
             // Audio state updated by hybrid engine automatically - no updateAppState needed
           }
@@ -448,18 +426,14 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
           if (enabled) {
             // First stop frontend if it's running
             if (frontendEngine.audioState.isPlaying) {
-              console.log('⏹️ Stopping frontend to switch to backend...');
               frontendEngine.stopBinauralBeat();
             }
             // Connect to backend and start session
             if (!backendEngine.backendConnected && backendEngine.connectBackend) {
-              console.log('🔌 Connecting to backend (main binaural engine)...');
               await backendEngine.connectBackend();
 
               // Auto-start backend session with default binaural config
-              console.log('🎧 Starting backend binaural session...');
               // 🔥 FIXED: Use memoized audioConfig
-              console.log('🎵 Backend start with bulletproof config:', audioConfig);
               
               const defaultConfig = {
                 base_frequency: audioConfig.baseFreq,
@@ -474,7 +448,6 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
           } else {
             // Stop backend session and disconnect
             if (backendEngine.backendConnected) {
-              console.log('⏹️ Stopping backend binaural engine...');
               await backendEngine.stopBackendSession();
               if (backendEngine.disconnectBackend) {
                 await backendEngine.disconnectBackend();
@@ -485,7 +458,6 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
 
         case 'spatial':
           // Update spatial audio settings in app state
-          console.log('🎧 Toggling spatial audio:', enabled);
           updateAppState({
             spatialAudio: {
               ...appState.spatialAudio,
@@ -495,13 +467,11 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
 
           // If enabling spatial audio but backend isn't connected, auto-connect
           if (enabled && !backendEngine.backendConnected && backendEngine.connectBackend) {
-            console.log('🔌 Auto-connecting backend for spatial audio...');
             await backendEngine.connectBackend();
           }
           break;
       }
     } catch (error) {
-      console.error(`❌ Error toggling ${engineType} engine:`, error);
     }
   }, [frontendEngine, backendEngine, appState, updateAppState, audioConfig]);
 
@@ -606,7 +576,6 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
               onTabChange={handleTabChange}
             />
 
-
             {/* DEBUG: Show timer status */}
             {timerStatus && (
               <Box sx={{ mb: 1, p: 0.5, bgcolor: 'rgba(255,0,0,0.1)', fontSize: '0.7rem' }}>
@@ -620,7 +589,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
           <Box sx={ElectromagneticLabStyles.tabContent}>
             <TabContentRenderer
               appState={appState}
-              audioEngine={activeAudioEngine}
+              audioEngine={activeAudioEngine as any}
               backendEngine={backendEngine}
               frontendEngine={frontendEngine}
               patterns8D={appState.patterns8D} // ✅ FIXED: Use converted Pattern8D[] from appState
@@ -747,7 +716,6 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
           </Box>
         </Box>
 
-
         {/* Compact Status Overview - Show when Master Controls is closed */}
         {closedSections.includes('masterControls') && (
           <Box sx={ElectromagneticLabStyles.compactStatusOverview}>
@@ -764,8 +732,8 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
 
             <SystemStatusChips
               appState={appState}
-              audioEngine={activeAudioEngine}
-              patterns8D={appState.patterns8D} //
+              audioEngine={activeAudioEngine as any}
+              patterns8D={appState.patterns8D}
               onStateChange={updateAppState}
               onToggleEngine={handleEngineToggle}
             />
@@ -773,281 +741,234 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
         )}
       </Paper>
 
-      {/* Timer Countdown Display - Positioned above layout */}
-      {timerStatus && (
-        <Box sx={{
-          p: { xs: '10px', sm: '15px', md: '20px' },
-          pt: 3,
-          pb: 3
-        }}>
-          <TimerCountdownDisplay
-            timerStatus={timerStatus}
-            isVisible={true}
-            appState={appState}
-            onJumpToTransition={timerNavigationRef.current.jumpToTransition}
-            onRestartTransition={timerNavigationRef.current.restartCurrentTransition}
-            onPauseTimer={timerControlRef.current.pauseTimer}
-            onResumeTimer={timerControlRef.current.resumeTimer}
-            onRepeatSession={timerControlRef.current.restartTimer}
-            audioContext={activeAudioEngine.audioContext}
-            analyserNode={activeAudioEngine.analyserNode}
-            hybridEngine={hybridEngine}
-          />
-        </Box>
-      )}
-
-      {/* Dynamic Grid Layout - Tight, fills all space */}
-      <Grid container spacing={{ xs: 1, sm: 1.5, md: 2, lg: 2 }} sx={{
-        p: { xs: '4px', sm: '6px', md: '6px', lg: '6px' },
-        width: '100%',
-        maxWidth: '100vw',
-        overflowX: 'hidden',
-        overflowY: 'auto',
-        m: 0,
-        // Tighter grid - no minimum heights, just content-based
-        '& > .MuiGrid-item': {
-          display: 'flex',
-          flexDirection: 'column'
-        }
-      }}>
-        {/* ROW 1: Equalizer, Master Controls, Patterns */}
-        {/* Patterns - SAME HEIGHT, Internal Scroll */}
-        {!closedSections.includes('patternID') && (
-            <Grid item size={{ xs: 12, sm: 6, md: 4, lg: 4, xl: 3 }} sx={{
-              display: 'flex',
-              flex: '1 1 auto',
-              maxHeight: { xs: '400px', sm: '380px', md: '550px', lg: '775px' },
-              minHeight: { xs: '400px', sm: '380px', md: '550px', lg: '650px' }
-            }}>
-              <CollapsibleSection id="patternID" title="Patterns" icon="🌀" defaultOpen={true} onClose={handleSectionClose}>
-                <PatternSelectorMUI
-                    patterns={WAVE_PATTERNS}
-                    selected={appState.currentPattern?.id || null}
-                    mode={appState.mode}
-                    onSelect={handlePatternSelectBound}
-                    onModeChange={handleModeChangeBound}
-                    activePattern={appState.currentPattern?.id || null}
-                />
-              </CollapsibleSection>
-            </Grid>
-        )}
-        {/* Frequency Visualizer - SAME HEIGHT */}
-        {!closedSections.includes('frequencyVisualizer') && (
-            <Grid item size={{ xs: 12, sm: 12, md: 8, lg: 6, xl: 6 }} sx={{
-              display: 'flex',
-              flex: '2 1 auto',
-              overflowY: 'auto',
-              maxHeight: { xs: '500px', sm: '450px', md: 'fit-content', lg: 'fit-content' }
-            }}>
-              <CollapsibleSection id="frequencyVisualizer" title="Frequency Visualizer" icon="📊" defaultOpen={true} onClose={handleSectionClose}>
-                <FrequencyVisualizer
-                    state={frequencyVisualizerState}
-                    audioContext={activeAudioEngine.audioContext}
-                    analyserNode={activeAudioEngine.analyserNode}
-                    title="Binaural Beat Frequency Visualizer"
-                    showSpectrum={true}
-                    showFrequencies={true}
-                    showMetrics={true}
-                />
-              </CollapsibleSection>
-            </Grid>
-        )}
-
-        {/* Binaural Beat Generator - SAME HEIGHT, Internal Scroll */}
-        {!closedSections.includes('binauralBeats') && (
-            <Grid item size={{ xs: 12, sm: 6, md: 4, lg: 4, xl: 3 }} sx={{
-              display: 'flex',
-              flex: '2 1 auto',
-              maxHeight: { xs: '500px', sm: '450px', md: 'fit-content', lg: 'fit-content' }
-            }}>
-              <CollapsibleSection id="binauralBeats" title="Binaural Beat Generator" icon="🎧" defaultOpen={true} onClose={handleSectionClose}>
-                <Box sx={{ height: '100%', overflowY: 'auto', overflowX: 'hidden' }}>
-                  <BinauralGeneratorMUI
-                      base_frequency={audioConfig.baseFreq}
-                      beat_frequency={audioConfig.beatFreq}
-                      waveform={activeAudioEngine?.audioState?.waveform || 'sine'}
-                      isPlaying={hybridEngine.audioState.isPlaying}
-                      volume={audioConfig.volume}
-                      appState={appState}
-                      onFrequencyChange={(base_frequency, beat_frequency) => {
-                        console.log('🎛️ Parent received frequency change - base_frequency:', base_frequency, 'beat_frequency:', beat_frequency);
-
-                        // Handle both backend and frontend engines
-                        if (activeAudioEngine.updateSettings) {
-                          // Backend engine - use new pattern
-                          activeAudioEngine.updateSettings({
-                            base_frequency: base_frequency,
-                            beat_frequency: beat_frequency
-                          });
-                        } else if (activeAudioEngine.updateFrequency) {
-                          // Frontend engine - convert to old pattern
-                          const leftFreq = base_frequency; // left = base
-                          const rightFreq = base_frequency + beat_frequency; // right = base + beat
-                          console.log('🎛️ Converting to frontend format - left:', leftFreq, 'right:', rightFreq);
-                          activeAudioEngine.updateFrequency(leftFreq, rightFreq);
-                        }
-                      }}
-                      onWaveformChange={(waveform) => {
-                        console.log('🎵 Waveform changed to:', waveform);
-                        if (activeAudioEngine.updateWaveform) {
-                          activeAudioEngine.updateWaveform(waveform);
-                        }
-                      }}
-                      onVolumeChange={(volume) => {
-                        console.log('🎚️ Volume change received in parent:', volume);
-                        hybridEngine.updateVolume(volume);
-                      }}
-                      onPlay={() => {
-                        console.log('▶️ Play button clicked - starting audio with hybridEngine');
-                        const config = {
-                          base_frequency: audioConfig.baseFreq,
-                          beat_frequency: audioConfig.beatFreq,
-                          volume: audioConfig.volume,
-                          waveform: (activeAudioEngine?.audioState?.waveform || 'sine') as 'sine' | 'square' | 'triangle' | 'sawtooth'
-                        };
-                        hybridEngine.startBinauralBeat(config);
-                      }}
-                      onStop={() => {
-                        console.log('⏹️ Stop button clicked - stopping audio with hybridEngine');
-                        hybridEngine.stopBinauralBeat();
-                      }}
-                      currentPreset={currentPreset}
-                  />
-
-                </Box>
-              </CollapsibleSection>
-            </Grid>
-        )}
-        {/* Timer & Sessions - Wider for better usability */}
-        {!closedSections.includes('timerPanel') && (
-            <Grid item size={{ xs: 12, sm: 6, md: 4, lg: 3, xl: 3 }} sx={{
-              display: 'flex',
-              flex: '1 1 auto',
-              maxHeight: { xs: '500px', sm: '450px', md: '550px', lg: '550px' }
-            }}>
-              <CollapsibleSection id="timerPanel" title="Timer & Sessions" icon="⏰" defaultOpen={true} onClose={handleSectionClose}>
-                <Box sx={{ height: 'fit-content', minHeight: '100%', maxHeight: '500px', overflowY: 'auto', width: '500px', overflowX: 'hidden' }}>
-                  <TimerTab
-                      appState={appState}
-                      audioEngine={hybridEngine}
-                      patterns8D={appState.patterns8D} // ✅ FIXED: Use converted Pattern8D[] from appState
-                      patterns8DEngine={{
-                        setActivePattern: (pattern) => {
-                          console.log('🎨 Setting active pattern for visualizer:', pattern.name);
-                          updateAppState({ currentPattern: pattern });
-                        },
-                        clearActivePattern: () => {
-                          console.log('🎨 Clearing active pattern from visualizer');
-                          updateAppState({ currentPattern: null });
-                        }
-                      }}
-                      onStateChange={updateAppState}
-                      onTimerStatusUpdate={setTimerStatus}
-                      onTransitionNavigation={timerNavigationRef.current}
-                      onTimerControl={timerControlRef.current}
-                  />
-                </Box>
-              </CollapsibleSection>
-            </Grid>
-        )}
-        {/* Equalizer - SAME HEIGHT */}
-        {!closedSections.includes('equalizer') && (
-          <Grid item size={{ xs: 12, sm: 6, md: 4, lg: 4, xl: 3 }} sx={{
-            display: 'flex',
-            flex: '1 1 auto'
-          }}>
-            <CollapsibleSection id="equalizer" title="Equalizer" icon="🎚️" defaultOpen={true} onClose={handleSectionClose}>
-              <EqualizerMUI
-                audioContext={activeAudioEngine.audioContext || null}
-                analyserNode={activeAudioEngine.analyserNode || null}
-                isPlaying={hybridEngine.audioState.isPlaying}
-                onEqualizerChange={(inputNode, outputNode) => {
-                  activeAudioEngine?.setEqualizerNodes(inputNode, outputNode);
-                }}
-              />
-            </CollapsibleSection>
- </Grid>
- )}
-
-        {/* Master Controls - SAME HEIGHT */}
-        {!closedSections.includes('masterControls') && (
-          <Grid item size={{ xs: 12, sm: 6, md: 4, lg: 4, xl: 3 }} sx={{
-            display: 'flex',
-            flex: '1 1 auto',
-            maxHeight: { xs: '400px', sm: '380px', md: '350px', lg: '350px' }
-          }}>
-            <CollapsibleSection id="masterControls" title="Master Controls" icon="🎛️" defaultOpen={true} onClose={handleSectionClose}>
-              <QuickStart
-                activeStatus={{
-                  binauralEngine: frontendEngine.audioState.isPlaying,
-                  backendEngine: backendEngine.audioState.isPlaying,
-                  spatialAudio: backendEngine.backendConnected,
-                  patterns: !!appState.currentPattern,
-                  testTones: false
-                }}
-                frequencies={{
-                  // 🔥 FIXED: Use memoized audioConfig
-                  left: audioConfig.baseFreq,
-                  right: audioConfig.baseFreq + audioConfig.beatFreq,
-                  beat: audioConfig.beatFreq
-                }}
-                volume={hybridEngine.audioState.volume || DEFAULT_VOLUME}
-                audioEngine={backendEngine}
-                onToggleEngine={handleEngineToggle}
-                appState={appState}
-              />
-            </CollapsibleSection>
- </Grid>
- )}
-
-        {/* ROW 2: Binaural Beat Generator, Timer Sessions, Spatial Visualizer */}
-
-
-        {/* Spatial Visualizer - Same width as Frequency Visualizer */}
-        {!closedSections.includes('visualizeID') && (
-          <Grid item size={{ xs: 12, sm: 12, md: 8, lg: 6, xl: 6 }} sx={{
-            display: 'flex',
-            minWidth: { xs: '25%', sm: '25%', md: '25%', lg: '25%' },
-            maxHeight: { xs: '500px', sm: '500px', md: '450px', lg: '550px' }
-          }}>
-            <CollapsibleSection
-              id="visualizeID"
-              title="Visualization"
-              icon="🎨"
-              defaultOpen={false}
-              onClose={handleSectionClose}
-              onFullscreen={(id) => {
-                console.log('📺 Fullscreen requested for:', id);
-                // TODO: Implement fullscreen logic
-              }}
+      {/* Content Area (85vh): Timer + Two Rows */}
+      <Box sx={{ gridRow: 2, height: '85vh', display: 'grid', gridTemplateRows: 'auto 1fr', overflowX: 'hidden', overflowY: 'auto', pt: 2 }}>
+        {/* Timer Countdown Display - inside content area */}
+        {timerStatus && !closedSections.includes('timerDisplay') && (
+          <Box sx={{ position: 'relative', p: { xs: '6px', sm: '10px', md: '12px' }, pt: 2, pb: 2 }}>
+            <IconButton
+              size="small"
+              onClick={() => handleSectionClose('timerDisplay')}
+              sx={{ position: 'absolute', top: 6, right: 6, color: '#ccc' }}
+              title="Hide timer display"
             >
-              <Box sx={{ position: 'relative', height: '100%' }}>
-                <Paper elevation={3} sx={ElectromagneticLabStyles.visualizationPaper}>
-                  <SpatialVisualizer
-                    pattern={
-                      // 🔥 FIXED: Find matching Pattern8D from pre-generated patterns8D array
-                      appState.currentPattern
-                        ? appState.patterns8D.find(p => p.id === appState.currentPattern?.id) || appState.patterns8D[0]
-                        : appState.patterns8D[0] // Default to first pattern
-                    }
-                    electromagnetic={appState.electromagnetic}
-                    size={300}
-                    audioContext={activeAudioEngine.audioContext}
-                    analyserNode={activeAudioEngine.analyserNode}
-                    isPlaying={hybridEngine.audioState.isPlaying}
+              ✕
+            </IconButton>
+            <TimerCountdownDisplay
+              timerStatus={timerStatus}
+              isVisible={true}
+              appState={appState}
+              onJumpToTransition={timerNavigationRef.current.jumpToTransition}
+              onRestartTransition={timerNavigationRef.current.restartCurrentTransition}
+              onPauseTimer={timerControlRef.current.pauseTimer}
+              onResumeTimer={timerControlRef.current.resumeTimer}
+              onRepeatSession={timerControlRef.current.restartTimer}
+              audioContext={activeAudioEngine.audioContext}
+              analyserNode={activeAudioEngine.analyserNode}
+              hybridEngine={hybridEngine}
+            />
+          </Box>
+        )}
+
+        {/* Two-Row Layout: exact 50/50 split within 85vh */}
+        <Box sx={{
+          display: 'grid',
+          gridTemplateRows: '1fr 1fr',
+          gap: { xs: 2, sm: 2, md: 2.5, lg: 3 },
+          p: { xs: 1.5, sm: 2, md: 2, lg: 2.5 },
+          width: '100%',
+          maxWidth: '100vw',
+          height: '100%',
+          overflowY: 'auto'
+        }}>
+        {/* ROW 1: Timer Presets + Patterns + Frequency Visualizer */}
+        <Grid container spacing={{ xs: 1, sm: 1.5, md: 2, lg: 2 }} sx={{
+          minHeight: 0,
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          '& > .MuiGrid-item': {
+            display: 'flex',
+            flexDirection: 'column',
+            flexGrow: 1,
+            flexShrink: 1,
+            minHeight: 0
+          }
+        }}>
+          {/* Timer Presets (Timer & Sessions) */}
+          {!closedSections.includes('timerPanel') && (
+            <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4, xl: 4 }} sx={ElectromagneticLabStyles.panelFlex}>
+              <CollapsibleSection compact={true} id="timerPanel" title="Timer & Sessions" icon="⏰" defaultOpen={true} onClose={handleSectionClose}>
+                <Box sx={{ overflow: 'visible' }}>
+                  <TimerTab
+                    appState={appState}
+                    audioEngine={hybridEngine as any}
+                    patterns8D={appState.patterns8D}
+                    patterns8DEngine={{
+                      setActivePattern: (pattern) => updateAppState({ currentPattern: pattern }),
+                      clearActivePattern: () => updateAppState({ currentPattern: null })
+                    }}
+                    onStateChange={updateAppState}
+                    onTimerStatusUpdate={setTimerStatus}
+                    onTransitionNavigation={timerNavigationRef.current}
+                    onTimerControl={timerControlRef.current}
                   />
-                </Paper>
-              </Box>
-            </CollapsibleSection>
- </Grid>
- )}
+                </Box>
+              </CollapsibleSection>
+            </Grid>
+          )}
 
+          {!closedSections.includes('patternID') && (
+            <Grid size={{ xs: 12, sm: 6, md: 3, lg: 3, xl: 3 }} sx={ElectromagneticLabStyles.doubleHeightPanelFlex}>
+              <CollapsibleSection compact={true} id="patternID" title="Patterns" icon="🌀" defaultOpen={true} onClose={handleSectionClose}>
+                <PatternSelectorMUI
+                  patterns={WAVE_PATTERNS}
+                  selected={appState.currentPattern?.id || null}
+                  mode={appState.mode}
+                  onSelect={handlePatternSelectBound}
+                  onModeChange={handleModeChangeBound}
+                  activePattern={appState.currentPattern?.id || null}
+                />
+              </CollapsibleSection>
+            </Grid>
+          )}
+          {!closedSections.includes('frequencyVisualizer') && (
+            <Grid size={{ xs: 12, sm: 12, md: 5, lg: 5, xl: 5 }} sx={ElectromagneticLabStyles.widePanelFlex}>
+              <CollapsibleSection compact={true} id="frequencyVisualizer" title="Frequency Visualizer" icon="📊" defaultOpen={true} onClose={handleSectionClose}>
+                <FrequencyVisualizer
+                  state={frequencyVisualizerState}
+                  audioContext={activeAudioEngine.audioContext}
+                  analyserNode={activeAudioEngine.analyserNode}
+                  title="Binaural Beat Frequency Visualizer"
+                  showSpectrum={true}
+                  showFrequencies={true}
+                  showMetrics={true}
+                />
+              </CollapsibleSection>
+            </Grid>
+          )}
+        </Grid>
 
+        {/* ROW 2: Binaural + Master Controls (side by side) + Equalizer + Spatial Visualizer */}
+        <Grid container spacing={{ xs: 1, sm: 1.5, md: 2, lg: 2 }} sx={{
+          minHeight: 0,
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          '& > .MuiGrid-item': {
+            display: 'flex',
+            flexDirection: 'column',
+            flexGrow: 1,
+            flexShrink: 1,
+            minHeight: 0
+          }
+        }}>
+          {/* Binaural Beat Generator - Left Side - WIDENED */}
+          {!closedSections.includes('binauralBeats') && (
+            <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4, xl: 4 }} sx={ElectromagneticLabStyles.panelFlex}>
+              <CollapsibleSection id="binauralBeats" title="Binaural Beat Generator" icon="🎧" defaultOpen={true} onClose={handleSectionClose}>
+                <Box sx={{ overflow: 'visible' }}>
+                  <BinauralGeneratorMUI
+                    base_frequency={audioConfig.baseFreq}
+                    beat_frequency={audioConfig.beatFreq}
+                    waveform={activeAudioEngine?.audioState?.waveform || 'sine'}
+                    isPlaying={hybridEngine.audioState.isPlaying}
+                    volume={audioConfig.volume}
+                    appState={appState}
+                    onFrequencyChange={(base_frequency, beat_frequency) => {
+                      if (import.meta.env.DEV) console.log('Parent frequency change:', base_frequency, beat_frequency);
+                      if (activeAudioEngine.updateSettings) {
+                        activeAudioEngine.updateSettings({ base_frequency, beat_frequency });
+                      } else if (activeAudioEngine.updateFrequency) {
+                        const leftFreq = base_frequency;
+                        const rightFreq = base_frequency + beat_frequency;
+                        activeAudioEngine.updateFrequency(leftFreq, rightFreq);
+                      }
+                    }}
+                    onWaveformChange={(waveform) => {
+                      if (activeAudioEngine.updateWaveform) {
+                        activeAudioEngine.updateWaveform(waveform);
+                      }
+                    }}
+                    onVolumeChange={(volume) => {
+                      hybridEngine.updateVolume(volume);
+                    }}
+                    onPlay={() => {
+                      const config = {
+                        base_frequency: audioConfig.baseFreq,
+                        beat_frequency: audioConfig.beatFreq,
+                        volume: audioConfig.volume,
+                        waveform: (activeAudioEngine?.audioState?.waveform || 'sine') as 'sine' | 'square' | 'triangle' | 'sawtooth'
+                      };
+                      hybridEngine.startBinauralBeat(config);
+                    }}
+                    onStop={() => {
+                      hybridEngine.stopBinauralBeat();
+                    }}
+                    currentPreset={currentPreset}
+                  />
+                </Box>
+              </CollapsibleSection>
+            </Grid>
+          )}
+          {/* Master Controls - Right of Generator */}
+          {!closedSections.includes('masterControls') && (
+            <Grid size={{ xs: 12, sm: 6, md: 2, lg: 2, xl: 2 }} sx={ElectromagneticLabStyles.doubleHeightPanelFlex}>
+              <CollapsibleSection id="masterControls" title="Master Controls" icon="🎛️" defaultOpen={true} onClose={handleSectionClose}>
+                <QuickStart
+                  activeStatus={{
+                    binauralEngine: frontendEngine.audioState.isPlaying,
+                    backendEngine: backendEngine.audioState.isPlaying,
+                    spatialAudio: backendEngine.backendConnected,
+                    patterns: !!appState.currentPattern,
+                    testTones: false
+                  }}
+                  frequencies={{
+                    left: audioConfig.baseFreq,
+                    right: audioConfig.baseFreq + audioConfig.beatFreq,
+                    beat: audioConfig.beatFreq
+                  }}
+                  volume={hybridEngine.audioState.volume || DEFAULT_VOLUME}
+                  audioEngine={backendEngine}
+                  onToggleEngine={handleEngineToggle}
+                  appState={appState}
+                />
+              </CollapsibleSection>
+            </Grid>
+          )}
+          {/* Equalizer - Middle - ADJUSTED */}
+          {!closedSections.includes('equalizer') && (
+            <Grid size={{ xs: 12, sm: 6, md: 3, lg: 3, xl: 3 }} sx={ElectromagneticLabStyles.panelFlex}>
+              <CollapsibleSection id="equalizer" title="Equalizer" icon="🎚️" defaultOpen={true} onClose={handleSectionClose}>
+                <EqualizerMUI
+                  audioContext={activeAudioEngine.audioContext || null}
+                  analyserNode={activeAudioEngine.analyserNode || null}
+                  isPlaying={hybridEngine.audioState.isPlaying}
+                  onEqualizerChange={(inputNode, outputNode) => {
+                    activeAudioEngine?.setEqualizerNodes(inputNode, outputNode);
+                  }}
+                />
+              </CollapsibleSection>
+            </Grid>
+          )}
+          {/* Spatial Visualizer - Far Right */}
+          {!closedSections.includes('spatialVisualizer') && (
+            <Grid size={{ xs: 12, sm: 6, md: 3, lg: 3, xl: 3 }} sx={ElectromagneticLabStyles.panelFlex}>
+              <CollapsibleSection id="spatialVisualizer" title="3D Spatial Visualizer" icon="🌀" defaultOpen={true} onClose={handleSectionClose}>
+                <SpatialVisualizer
+                  pattern={appState.currentPattern}
+                  electromagnetic={appState.electromagnetic}
+                  size={400}
+                  audioContext={activeAudioEngine.audioContext}
+                  analyserNode={activeAudioEngine.analyserNode}
+                  isPlaying={hybridEngine.audioState.isPlaying}
+                />
+              </CollapsibleSection>
+            </Grid>
+          )}
+        </Grid>
+        </Box>
+      </Box>
 
-
- </Grid>
-
- {/* Dark Screen Overlay */}
+      {/* Dark Screen Overlay */}
       {darkScreen && (
         <Box sx={ElectromagneticLabStyles.darkScreenOverlay} onClick={toggleDarkScreen}>
           <Typography

@@ -119,7 +119,6 @@ export interface SpatialAudioConfig {
 // CONVERSION FUNCTIONS - USE THESE EVERYWHERE
 // ============================================
 
-
 /**
  * FREQUENCY CALCULATION FUNCTIONS FOR UI DISPLAY ONLY
  * Binaural beats formula: Right = Left + Beat
@@ -130,10 +129,6 @@ export interface SpatialAudioConfig {
 //export const calculateLeftFreq = (base_frequency: number): number => base_frequency;
 //export const calculateRightFreq = (base_frequency: number, beat_frequency: number): number => base_frequency + beat_frequency;
 
-
 /**
  * Calculate beat frequency from left and right
  */
-//export const calculateBeatFrequency = (leftFreq: number, rightFreq: number): number => {
-//    return Math.abs(leftFreq - rightFreq);
-//};

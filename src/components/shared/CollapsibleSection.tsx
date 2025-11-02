@@ -165,7 +165,6 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
             size="small" 
             onClick={(e) => {
               e.stopPropagation();
-              console.log('🚫 Closing section:', id);  // Debug
               handleSectionClose(e);
             }} 
             sx={{ 
@@ -194,8 +193,10 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
           display: 'flex', 
           flexDirection: 'column',
           minHeight: 0,  // ✅ Allow flex shrinking
-          overflow: 'auto',  // ✅ SCROLL HERE if content overflows
-          overflowX: 'hidden',  // ✅ NO horizontal scroll
+          // Only Pattern section should scroll vertically; others clamp and avoid inner scroll
+          overflowY: id === 'patternID' ? 'auto' : 'hidden',
+          maxHeight: id === 'patternID' ? '42.5vh' : '100%',
+          overflowX: 'hidden',
           // ✅ Custom scrollbar styling
           '&::-webkit-scrollbar': {
             width: '8px'

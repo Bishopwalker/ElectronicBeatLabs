@@ -2,7 +2,7 @@
 // Extracted from main component to reduce clutter
 
 import React, {useEffect, useState} from 'react';
-import { Box, Chip, Typography } from '@mui/material';
+import { Box, Chip, Typography, Tooltip } from '@mui/material';
 import type {AppState, AudioEngine, Pattern8D} from '../../types';
 import { ElectromagneticLabStyles } from '../styles/ElectromagneticLabStyles';
 
@@ -32,6 +32,7 @@ const SystemStatusChips: React.FC<SystemStatusChipsProps> = ({
     });
     const [backendRetryCount, setBackendRetryCount] = useState(0);
     const [isCheckingBackend, setIsCheckingBackend] = useState(false);
+    const [spatialHintOpen, setSpatialHintOpen] = useState(false);
     // Simple state sync based on prop changes (no polling!)
     useEffect(() => {
         const isNowConnected = audioEngine.backendConnected || false;
@@ -71,43 +72,42 @@ const SystemStatusChips: React.FC<SystemStatusChipsProps> = ({
       {/* Binaural Engine = Backend Engine - show connection + playing status */}
       <Chip
         label={
-          audioEngine.backendConnected && audioEngine.audioState?.isPlaying
+          backendConnected && audioEngine.audioState?.isPlaying
             ? "🎧 Binaural PLAYING"
-            : audioEngine.backendConnected
+            : backendConnected
               ? "🎧 Binaural CONNECTED"
-              : isCheckingBackend && backendRetryCount > 0
-                ? `🔍 Connecting (${backendRetryCount}/20)`
+              : websocketState.connecting
+                ? "🔍 Connecting…"
                 : "🎧 Binaural OFF"
         }
         size="small"
         color={
-          audioEngine.backendConnected && audioEngine.audioState?.isPlaying
+          backendConnected && audioEngine.audioState?.isPlaying
             ? "success"
-            : audioEngine.backendConnected
+            : backendConnected
               ? "info"
-              : isCheckingBackend
+              : websocketState.connecting
                 ? "warning"
                 : "default"
         }
-        variant={audioEngine.backendConnected ? "filled" : "outlined"}
+        variant={backendConnected ? "filled" : "outlined"}
         onClick={onToggleEngine ? () => {
-          console.log(`🔄 SystemStatusChips: Toggling binaural (backend) engine:`, !audioEngine.backendConnected);
-          onToggleEngine('backend', !audioEngine.backendConnected);
+          onToggleEngine('backend', !backendConnected);
         } : undefined}
         sx={{
-          ...ElectromagneticLabStyles.statusChip(!!audioEngine.backendConnected),
-          ...(audioEngine.backendConnected && audioEngine.audioState?.isPlaying && {
+          ...ElectromagneticLabStyles.statusChip(!!backendConnected),
+          ...(backendConnected && audioEngine.audioState?.isPlaying && {
             background: 'linear-gradient(45deg, #00ff00, #00dd00) !important',
             fontWeight: 'bold',
             boxShadow: '0 0 10px rgba(0, 255, 0, 0.5)',
             animation: 'pulse 2s infinite'
           }),
-          ...(audioEngine.backendConnected && !audioEngine.audioState?.isPlaying && {
+          ...(backendConnected && !audioEngine.audioState?.isPlaying && {
             background: 'linear-gradient(45deg, #0066ff, #0044dd) !important',
             fontWeight: 'bold',
             boxShadow: '0 0 8px rgba(0, 102, 255, 0.4)'
           }),
-          ...(isCheckingBackend && !audioEngine.backendConnected && {
+          ...(websocketState.connecting && !backendConnected && {
             background: 'linear-gradient(45deg, #ff6b00, #dd5500) !important',
             fontWeight: 'bold',
             boxShadow: '0 0 8px rgba(255, 107, 0, 0.4)',
@@ -125,13 +125,13 @@ const SystemStatusChips: React.FC<SystemStatusChipsProps> = ({
 
       {/* Backend Engine Status - separate from binaural */}
       <Chip
-        label={audioEngine.backendConnected ? "🔗 Backend ON" : "⚠️ Backend OFF"}
+        label={backendConnected ? "🔗 Backend ON" : "⚠️ Backend OFF"}
         size="small"
-        color={audioEngine.backendConnected ? "success" : "error"}
+        color={backendConnected ? "success" : "error"}
         variant="filled"
         sx={{
-          ...ElectromagneticLabStyles.statusChip(!!audioEngine.backendConnected),
-          ...(audioEngine.backendConnected && {
+          ...ElectromagneticLabStyles.statusChip(!!backendConnected),
+          ...(backendConnected && {
             background: 'linear-gradient(45deg, #00ff00, #00dd00) !important'
           })
         }}
@@ -144,10 +144,9 @@ const SystemStatusChips: React.FC<SystemStatusChipsProps> = ({
         color={!audioEngine.backendConnected ? "success" : "default"}
         variant={!audioEngine.backendConnected ? "filled" : "outlined"}
         onClick={onToggleEngine ? () => {
-          console.log(`🔄 SystemStatusChips: Toggling frontend engine - currently backend connected:`, audioEngine.backendConnected);
           // If backend is connected, enable frontend (switch to frontend)
           // If backend is not connected, we're already using frontend so this would disable it
-          onToggleEngine('frontend', !audioEngine.backendConnected);
+          onToggleEngine('binaural', !audioEngine.backendConnected);
         } : undefined}
         sx={{
           ...ElectromagneticLabStyles.statusChip(!audioEngine.backendConnected),
@@ -167,42 +166,53 @@ const SystemStatusChips: React.FC<SystemStatusChipsProps> = ({
       />
 
       {/* Spatial Audio */}
-      <Chip
-        label={appState.spatialAudio?.enabled ? "🎧 Spatial ON" : "🎧 Spatial OFF"}
-        size="small"
-        color={
-          appState.spatialAudio?.enabled
-            ? (audioEngine.backendConnected ? "success" : "warning")
-            : "default"
-        }
-        variant={appState.spatialAudio?.enabled ? "filled" : "outlined"}
-        onClick={onToggleEngine ? () => {
-          console.log(`🔄 SystemStatusChips: Toggling spatial audio:`, !appState.spatialAudio?.enabled);
-          onToggleEngine('spatial', !appState.spatialAudio?.enabled);
-        } : undefined}
-        sx={{
-          ...ElectromagneticLabStyles.statusChip(!!appState.spatialAudio?.enabled),
-          // Special styling for spatial audio enabled but backend not connected
-          ...(appState.spatialAudio?.enabled && !audioEngine.backendConnected && {
-            background: 'linear-gradient(45deg, #ff8533, #ffaa00) !important',
-            fontWeight: 'bold',
-            boxShadow: '0 0 8px rgba(255, 133, 51, 0.4)'
-          }),
-          // Special styling for spatial audio enabled and backend connected
-          ...(appState.spatialAudio?.enabled && audioEngine.backendConnected && {
-            background: 'linear-gradient(45deg, #00ff00, #00dd00) !important',
-            fontWeight: 'bold',
-            boxShadow: '0 0 10px rgba(0, 255, 0, 0.5)'
-          }),
-          ...(onToggleEngine && {
-            cursor: 'pointer',
-            '&:hover': {
-              transform: 'scale(1.02)',
-            },
-            transition: 'all 0.2s ease-in-out'
-          })
-        }}
-      />
+      <Tooltip
+        open={spatialHintOpen}
+        placement="top"
+        title={<Typography variant="caption">Spatial requires Backend or Hybrid mode.</Typography>}
+      >
+        <Chip
+          label={appState.spatialAudio?.enabled ? "🎧 Spatial ON" : "🎧 Spatial OFF"}
+          size="small"
+          color={
+            appState.spatialAudio?.enabled
+              ? (audioEngine.backendConnected ? "success" : "warning")
+              : "default"
+          }
+          variant={appState.spatialAudio?.enabled ? "filled" : "outlined"}
+          onClick={onToggleEngine ? () => {
+            const wantsEnable = !appState.spatialAudio?.enabled;
+            if (wantsEnable && !audioEngine.backendConnected) {
+              setSpatialHintOpen(true);
+              setTimeout(() => setSpatialHintOpen(false), 1800);
+              return;
+            }
+            onToggleEngine('spatial', wantsEnable);
+          } : undefined}
+          sx={{
+            ...ElectromagneticLabStyles.statusChip(!!appState.spatialAudio?.enabled),
+            // Special styling for spatial audio enabled but backend not connected
+            ...(appState.spatialAudio?.enabled && !audioEngine.backendConnected && {
+              background: 'linear-gradient(45deg, #ff8533, #ffaa00) !important',
+              fontWeight: 'bold',
+              boxShadow: '0 0 8px rgba(255, 133, 51, 0.4)'
+            }),
+            // Special styling for spatial audio enabled and backend connected
+            ...(appState.spatialAudio?.enabled && audioEngine.backendConnected && {
+              background: 'linear-gradient(45deg, #00ff00, #00dd00) !important',
+              fontWeight: 'bold',
+              boxShadow: '0 0 10px rgba(0, 255, 0, 0.5)'
+            }),
+            ...(onToggleEngine && {
+              cursor: 'pointer',
+              '&:hover': {
+                transform: 'scale(1.02)',
+              },
+              transition: 'all 0.2s ease-in-out'
+            })
+          }}
+        />
+      </Tooltip>
     </Box>
   );
 };

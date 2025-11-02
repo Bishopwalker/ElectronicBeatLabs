@@ -295,7 +295,6 @@ var require_react_dom_client_development = __commonJS({
       }
       function copyWithRename(obj, oldPath, newPath) {
         if (oldPath.length !== newPath.length)
-          console.warn("copyWithRename() expects paths of the same length");
         else {
           for (var i = 0; i < newPath.length - 1; i++)
             if (oldPath[i] !== newPath[i]) {
@@ -726,7 +725,6 @@ var require_react_dom_client_development = __commonJS({
         try {
           rendererID = hook.inject(internals), injectedHook = hook;
         } catch (err) {
-          console.error("React instrumentation encountered an error: %s.", err);
         }
         return hook.checkDCE ? true : false;
       }
@@ -1115,7 +1113,6 @@ var require_react_dom_client_development = __commonJS({
         if (VALID_ATTRIBUTE_NAME_REGEX.test(attributeName))
           return validatedAttributeNameCache[attributeName] = true;
         illegalAttributeNameCache[attributeName] = true;
-        console.error("Invalid attribute name: `%s`", attributeName);
         return false;
       }
       function getValueForAttributeOnCustomComponent(node, name, expected) {
@@ -5366,7 +5363,6 @@ var require_react_dom_client_development = __commonJS({
         if (isRenderPhaseUpdate(fiber)) {
           if (throwIfDuringRender)
             throw Error("Cannot update optimistic state while rendering.");
-          console.error("Cannot call startTransition while rendering.");
         } else
           throwIfDuringRender = enqueueConcurrentHookUpdate(
             fiber,
@@ -17583,7 +17579,6 @@ var require_react_dom_client_development = __commonJS({
           process.emit("uncaughtException", error);
           return;
         }
-        console.error(error);
       }, componentName = null, errorBoundaryName = null, SelectiveHydrationException = Error(
         "This is not a real error. It's an implementation detail of React's selective hydration feature. If this leaks into userspace, it's a bug in React. Please file an issue."
       ), didReceiveUpdate = false;

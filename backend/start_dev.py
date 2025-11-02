@@ -18,14 +18,7 @@ def main():
     
     # Set environment for development
     os.environ['EBL_ENV'] = 'development'
-    
-    print("🎵 Starting Electromagnetic Beat Lab Backend")
-    print("🔧 Development Mode - Enhanced Logging Enabled")
-    print("📊 Metrics available at: http://localhost:8000/metrics")
-    print("🏥 Health check at: http://localhost:8000/health")
-    print("📝 WebSocket endpoint: ws://localhost:8000/ws/{session_id}")
-    print("-" * 60)
-    
+
     # Start uvicorn with development settings
     uvicorn.run(
         "main:app",

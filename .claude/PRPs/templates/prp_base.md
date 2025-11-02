@@ -100,7 +100,6 @@ Task N:
 
 ```
 
-
 ### Per task pseudocode as needed added to each task
 ```python
 

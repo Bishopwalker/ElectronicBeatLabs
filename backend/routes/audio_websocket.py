@@ -165,7 +165,11 @@ async def stream_audio_frames(websocket: WebSocket, session_id: str, use_binary:
 
 @router.websocket("/ws/audio/{session_id}")
 async def websocket_audio_endpoint(websocket: WebSocket, session_id: str):
-    """WebSocket endpoint for real-time audio streaming"""
+    """
+    WebSocket endpoint for real-time audio streaming
+    
+    🔥 FIX: Frequencies come from WebSocket messages, NOT URL params!
+    """
     logger.info(f"🔌 WebSocket connection attempt for session: {session_id}")
     await manager.connect(websocket, session_id)
     logger.info(f" WebSocket connected successfully for session: {session_id}")
@@ -183,9 +187,13 @@ async def websocket_audio_endpoint(websocket: WebSocket, session_id: str):
                 audio_task = await handle_websocket_message(message, session_id, websocket, audio_task)
             except asyncio.TimeoutError:
                 continue
+            except json.JSONDecodeError as e:
+                # Frontend sent malformed JSON (e.g., ping) - skip it and continue
+                logger.warning(f"Received malformed JSON (possibly ping): {e}")
+                continue
             except Exception as e:
-                logger.error(f"Error processing message: {e}")
-                break
+                logger.error(f"Error processing message: {e}", exc_info=True)
+                continue  # 🔥 FIXED: Continue instead of break to keep receiving messages
 
     except WebSocketDisconnect:
         logger.info(f"Client {session_id} disconnected")
@@ -219,20 +227,43 @@ async def handle_websocket_message(message: dict, session_id: str, websocket: We
             # Format 1: {"data": {"base_frequency": 144, ...}}  ← New format
             # Format 2: {"data": {"settings": {"base_frequency": 144, ...}}}  ← Old format
             # Format 3: {"settings": {"base_frequency": 144, ...}}  ← Alternative format
-            message_data = message.get("data", {})
-            if "settings" in message_data:
-                # Old nested format
-                settings = message_data["settings"]
-            elif message_data and ("base_frequency" in message_data or "beat_frequency" in message_data):
-                # New direct format - data contains settings directly
-                settings = message_data
-            else:
-                # Fallback to root-level settings
-                settings = message.get("settings", {})
 
+            # 🔥 DEBUG: Log the entire incoming message
+            logger.info(f"[WEBSOCKET DEBUG] Full message received: {message}")
+
+            message_data = message.get("data", {})
+            logger.info(f"[WEBSOCKET DEBUG] Extracted message_data: {message_data}")
+
+            # 🔥 CRITICAL FIX: Properly extract settings from any format
+            if isinstance(message_data, dict):
+                if "settings" in message_data:
+                    # Old nested format: {"data": {"settings": {...}}}
+                    settings = message_data["settings"]
+                    logger.info(f"[WEBSOCKET DEBUG] Using nested format settings from message_data['settings']")
+                elif "base_frequency" in message_data or "beat_frequency" in message_data:
+                    # New direct format: {"data": {"base_frequency": 144, ...}}
+                    settings = message_data
+                    logger.info(f"[WEBSOCKET DEBUG] Using direct format settings from message_data")
+                else:
+                    # Fallback to root-level settings or empty dict
+                    settings = message.get("settings", {})
+                    logger.info(f"[WEBSOCKET DEBUG] Using fallback format settings from message['settings']")
+            else:
+                # Fallback for non-dict data
+                settings = message.get("settings", {})
+                logger.info(f"[WEBSOCKET DEBUG] Data is not a dict, using fallback settings")
+            
+            # 🔥 ENSURE DEFAULTS: If frequency params are missing, add defaults
+            if "base_frequency" not in settings:
+                settings["base_frequency"] = 140
+                logger.warning(f"[WEBSOCKET DEBUG] base_frequency missing, using default: 140")
+            if "beat_frequency" not in settings:
+                settings["beat_frequency"] = 4
+                logger.warning(f"[WEBSOCKET DEBUG] beat_frequency missing, using default: 4")
+
+            logger.info(f"[FREQUENCY SYNC] RAW settings extracted: {settings}")
             validated_settings = audio_engine.validate_frequencies(settings)
-            logger.info(f"[FREQUENCY SYNC] Received settings: {settings}")
-            logger.info(f"[FREQUENCY SYNC] Validated settings: {validated_settings}")
+            logger.info(f"[FREQUENCY SYNC] VALIDATED settings after validation: {validated_settings}")
             audio_engine_session_id = audio_engine.start_session(validated_settings)
 
             # Store the mapping between WebSocket session ID and audio engine session ID
@@ -272,7 +303,19 @@ async def handle_websocket_message(message: dict, session_id: str, websocket: We
         
         elif message_type == "update_settings":
             # Update session settings
-            settings = message.get("settings", {})
+            # 🔥 FIX: Handle both direct and nested settings formats
+            message_data = message.get("data", {})
+            if isinstance(message_data, dict) and ("base_frequency" in message_data or "beat_frequency" in message_data):
+                # Settings are in data directly
+                settings = message_data
+            elif "settings" in message:
+                # Settings at root level
+                settings = message["settings"]
+            else:
+                # Default empty settings
+                settings = {}
+            
+            logger.info(f"[UPDATE_SETTINGS] Extracted settings: {settings}")
             validated_settings = audio_engine.validate_frequencies(settings)
 
             # Use audio engine session ID if mapped
@@ -348,6 +391,12 @@ async def handle_websocket_message(message: dict, session_id: str, websocket: We
                 "type": "configured",
                 "settings": validated_settings
             }, session_id)
+
+        elif message_type == "timer_update":
+            # Timer updates from frontend - just acknowledge, no action needed
+            logger.debug(f"Timer update received for session {session_id}")
+            # Optionally send acknowledgment
+            # await manager.send_personal_message({"type": "timer_ack"}, session_id)
 
         else:
             logger.warning(f"Unknown message type: {message_type}")

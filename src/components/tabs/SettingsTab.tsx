@@ -8,7 +8,7 @@ import TimerCountdownDisplay from "../TimerCountdownDisplay.tsx";
 import type {TimerStatus} from "../../data/timer";
 
 interface SettingsTabProps {
-  timerStatus: TimerStatus;
+  timerStatus?: TimerStatus;
   appState: AppState;
   audioEngine: AudioEngine;
   patterns8D: Pattern8D[];
@@ -81,15 +81,12 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
   useEffect(() => {
     const tryInitializeAudioContext = async () => {
       if (audioContextState === 'closed' && audioContextEngine?.initializeAudio) {
-        console.log('🎵 SettingsTab: Attempting to initialize audio context...');
         try {
           const context = await audioContextEngine.initializeAudio();
           if (context) {
-            console.log('✅ SettingsTab: Audio context initialized successfully');
             setAudioContextState(context.state);
           }
         } catch (error) {
-          console.error('❌ SettingsTab: Failed to initialize audio context:', error);
         }
       }
     };
@@ -129,7 +126,6 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
 
   // Handler for WebSocket reconnection
   const handleWebSocketReconnect = () => {
-    console.log('🔄 Manually reconnecting WebSocket...');
     if (connectionEngine?.connectBackend && connectionEngine?.disconnectBackend) {
       // Disconnect first, then reconnect
       connectionEngine.disconnectBackend();
@@ -137,13 +133,11 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
         connectionEngine.connectBackend();
       }, 1000);
     } else {
-      console.warn('⚠️ No backend connection methods available');
     }
   };
 
   // Handler for AudioContext resume
   const handleAudioContextResume = async () => {
-    console.log('▶️ Resuming AudioContext...');
     if (audioContextEngine?.audioState?.context) {
       try {
         await audioContextEngine.audioState.context.resume();
@@ -155,14 +149,12 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
           lastUpdate: Date.now()
         });
       } catch (error) {
-        console.error('Failed to resume AudioContext:', error);
       }
     }
   };
 
   // Handler for AudioContext reset
   const handleAudioContextReset = async () => {
-    console.log('🔄 Resetting AudioContext...');
     try {
       if (audioContextEngine?.resetAudioContext) {
         await audioContextEngine.resetAudioContext();
@@ -185,13 +177,11 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
         lastUpdate: Date.now()
       });
     } catch (error) {
-      console.error('Failed to reset AudioContext:', error);
     }
   };
 
   // Handler for AudioContext initialization (user gesture)
   const handleAudioContextInit = async () => {
-    console.log('🎵 Manually initializing AudioContext...');
     try {
       if (audioContextEngine?.initializeAudio) {
         const context = await audioContextEngine.initializeAudio();
@@ -204,15 +194,11 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
             }));
           }
           setAudioContextState(context.state);
-          console.log('✅ Audio context initialized with user gesture:', context.state);
         }
       }
     } catch (error) {
-      console.error('Failed to initialize AudioContext:', error);
     }
   };
-
-
 
   return (
     <Box
@@ -510,7 +496,76 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
           <Typography component="div" sx={{ mb: 1 }}>
             Web Audio Support: {audioContextEngine?.isSupported ? '✅ Supported' : '❌ Not supported'}
           </Typography>
-          
+            {/* Electromagnetic Field Analyzer */}
+            <Paper
+                elevation={0}
+                sx={{
+                    p: 0.75,
+                    background: 'rgba(0, 255, 136, 0.05)',
+                    border: '1px solid rgba(0, 255, 136, 0.3)',
+                }}
+            >
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                    ⚡ Electromagnetic Field Analysis
+                </Typography>
+                <Grid container spacing={1}>
+                    <Grid size={6}>
+                        <Typography variant="caption" sx={{ fontSize: '0.65rem', color: 'text.secondary' }}>
+                            Field Strength
+                        </Typography>
+                        <LinearProgress
+                            variant="determinate"
+                            value={electromagneticStrength * 100}
+                            sx={{
+                                height: 8,
+                                borderRadius: 1,
+                                backgroundColor: 'rgba(0, 255, 136, 0.1)',
+                                '& .MuiLinearProgress-bar': {
+                                    backgroundColor: '#00ff88'
+                                }
+                            }}
+                        />
+                        <Typography variant="caption" sx={{ fontSize: '0.7rem', color: '#00ff88', fontWeight: 600 }}>
+                            {(electromagneticStrength * 100).toFixed(2)}%
+                        </Typography>
+                    </Grid>
+
+                    <Grid size={6}>
+                        <Typography variant="caption" sx={{ fontSize: '0.65rem', color: 'text.secondary' }}>
+                            State
+                        </Typography>
+                        <Typography variant="body2" sx={{ fontSize: '0.75rem', color: '#00ff88', fontWeight: 700 }}>
+                            {electromagneticState}
+                        </Typography>
+                    </Grid>
+                </Grid>
+            </Paper>
+
+            <Stack direction="row" spacing={0.5} justifyContent="center">
+                <IconButton
+                    onClick={handleReset}
+                    color="default"
+                    size="small"
+                    sx={{
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        '&:hover': {
+                            background: 'rgba(255, 255, 255, 0.05)',
+                        }
+                    }}
+                >
+                    <RefreshIcon />
+                </IconButton>
+            </Stack>
+
+            <Stack direction="row" spacing={0.5} justifyContent="center">
+                <Chip label={`Viz: ${stats.averageFps} FPS`} size="small" sx={{ fontSize: '0.65rem' }} />
+                <Chip
+                    label={isVisualizing ? 'ANALYZING' : 'READY'}
+                    color={isVisualizing ? 'success' : 'default'}
+                    size="small"
+                    sx={{ fontSize: '0.65rem' }}
+                />
+            </Stack>
           {/* AudioContext Control Buttons */}
           <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
             {audioContextState === 'closed' && (
@@ -576,7 +631,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
           <Typography component="div">Electromagnetic State: {appState.electromagnetic?.state || 'INACTIVE'}</Typography>
           <Typography component="div">Field Strength: {((appState.electromagnetic?.strength || 0) * 100).toFixed(1)}%</Typography>
           <Typography component="div">Coherence: {((appState.electromagnetic?.coherence || 0) * 100).toFixed(1)}%</Typography>
-          <Typography component="div">Beat Frequency: {appState.frequency?.toFixed(2) || '0.00'} Hz</Typography>
+          <Typography component="div">Beat Frequency: {(appState.frequency?.current ?? 0).toFixed(2)} Hz</Typography>
         </Box>
       </Paper>
     </Box>

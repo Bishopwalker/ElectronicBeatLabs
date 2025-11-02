@@ -73,8 +73,6 @@ export const PRESET_CATEGORIES = {
 // USAGE STATISTICS AND RECOMMENDATIONS
 // ==================================================================
 
-
-
 export const BEGINNER_RECOMMENDATIONS = [
   'test-quick-1min',
   'meditation-20min', 

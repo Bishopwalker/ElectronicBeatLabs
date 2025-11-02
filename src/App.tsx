@@ -19,6 +19,7 @@ import React from 'react';
 import { WebSocketProvider } from './hooks/useWebsocketContext';
 import { DEFAULT_BASE_FREQUENCY, DEFAULT_BEAT_FREQUENCY, DEFAULT_VOLUME } from './constants/audio.constants';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { DEFAULT_APP_STATE } from './components/config/ElectromagneticLabConfig';
 
 // Styled Components theme configuration
 const styledTheme = {
@@ -151,6 +152,8 @@ const AppContent = () => {
         display: 'flex',
         flexDirection: 'column',
         minHeight: '100vh',
+        height: 'auto',
+        overflowY: 'auto',
         bgcolor: 'background.default'
       }}>
         <Box sx={{
@@ -219,84 +222,7 @@ const AppContent = () => {
           {activeTab === 1 && (
             <Box sx={{ p: 2, pb: 4, height: 'auto', overflow: 'visible' }}>
               <TimerTab 
-                appState={{
-                  mode: 'AUTO',
-                  currentPattern: null,
-                  frequency: 4.0,
-                  isPlaying: false,
-                  volume: 0.3,
-                  electromagnetic: {
-                    strength: 0,
-                    frequency: 0,
-                    phase: 0,
-                    coherence: 0,
-                    resonance: 0,
-                    state: 'INACTIVE',
-                    stability: 0
-                  },
-                  patterns8D: [],
-                  systemStatus: {
-                    electromagnetic: {
-                      strength: 0,
-                      frequency: 0,
-                      phase: 0,
-                      coherence: 0,
-                      resonance: 0,
-                      state: 'INACTIVE',
-                      stability: 0
-                    },
-                    audio: {
-                      latency: 0,
-                      sampleRate: 44100,
-                      bufferSize: 512,
-                      quality: 'HIGH'
-                    },
-                    performance: {
-                      fps: 60,
-                      cpuUsage: 0,
-                      memoryUsage: 0
-                    },
-                    state: ''
-                  },
-                  visualizations: {
-                    starField: {
-                      density: 100,
-                      speed: 1,
-                      color: '#ffffff',
-                      twinkle: true
-                    },
-                    spatial: {
-                      gridSize: 50,
-                      opacity: 0.3,
-                      color: '#00ff88',
-                      animation: true
-                    },
-                    frequency: {
-                      bars: 64,
-                      sensitivity: 1,
-                      color: '#ff6b00',
-                      glow: true
-                    }
-                  },
-                  spatialAudio: {
-                    enabled: true,
-                    hrtf: false,
-                    roomSize: 1,
-                    reverbAmount: 0.2,
-                    spatialWidth: 1,
-                    elevation: 0,
-                    azimuth: 0
-                  },
-                  youtube: {
-                    videoId: '',
-                    timestamp: 0,
-                    syncMode: 'audio',
-                    pythonScript: '',
-                    enabled: false
-                  },
-                  adhd: null,
-                  activeTab: 'timer'
-                }}
+                appState={{ ...DEFAULT_APP_STATE, activeTab: 'timer' }}
                 audioEngine={hybridEngine}
                 patterns8D={[]}
                 onStateChange={() => {}}

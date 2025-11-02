@@ -37,8 +37,6 @@ export const useSimplifiedHybridAudio = () => {
       return;
     }
 
-    console.log('🚀 Initializing STEREO hybrid audio system...');
-
     try {
       // Create mixer
       const audioMixer = new AudioMixer(audioContext);
@@ -59,9 +57,7 @@ export const useSimplifiedHybridAudio = () => {
       setBackendEngine(backend);
 
       isEnginesInitialized.current = true;
-      console.log('✅ STEREO hybrid audio system initialized');
     } catch (error) {
-      console.error('❌ Failed to initialize engines:', error);
     }
   }, [audioContext, analyserNode]);
 
@@ -80,7 +76,6 @@ export const useSimplifiedHybridAudio = () => {
   const start = useCallback(async (config?: BinauralBeatConfig) => {
     // Initialize audio context if needed
     if (!isInitialized) {
-      console.log('🎵 Initializing audio context (user gesture)...');
       await initializeAudio();
     }
 
@@ -90,7 +85,6 @@ export const useSimplifiedHybridAudio = () => {
     }
 
     if (!frontendEngine || !mixer) {
-      console.error('❌ Engines not initialized');
       return;
     }
 
@@ -103,11 +97,6 @@ export const useSimplifiedHybridAudio = () => {
       : audioState.state.rightFreq;
     const volume = config?.volume ?? audioState.state.volume;
     const waveform = config?.waveform ?? audioState.state.waveform;
-
-    console.log(`🎵 Starting STEREO hybrid audio:`);
-    console.log(`   LEFT ear: ${leftFreq}Hz`);
-    console.log(`   RIGHT ear: ${rightFreq}Hz`);
-    console.log(`   Beat: ${Math.abs(rightFreq - leftFreq)}Hz`);
 
     // Update state
     audioState.updateFrequencies(leftFreq, rightFreq);
@@ -123,20 +112,17 @@ export const useSimplifiedHybridAudio = () => {
     if (backendEngine && !audioState.state.backendConnected) {
       backendEngine.connect()
         .then(() => {
-          console.log('🔌 Backend connected, starting STEREO session...');
           audioState.setBackendStatus(true);
           
           // Start backend STEREO session
           return backendEngine.startSession(leftFreq, rightFreq, volume);
         })
         .then(() => {
-          console.log('🔄 Crossfading to backend...');
           mixer.crossfadeToBackend(2.0);
           audioState.setCurrentEngine('backend');
           audioState.setBackendStatus(true, backendEngine.getSessionId());
         })
         .catch(err => {
-          console.warn('⚠️ Backend unavailable, continuing with frontend:', err);
         });
     }
   }, [
@@ -153,7 +139,6 @@ export const useSimplifiedHybridAudio = () => {
    * Stop all audio
    */
   const stop = useCallback(() => {
-    console.log('🛑 Stopping all audio...');
 
     if (frontendEngine) {
       frontendEngine.stop();
@@ -170,7 +155,6 @@ export const useSimplifiedHybridAudio = () => {
    * Update STEREO frequencies in BOTH engines
    */
   const updateFrequencies = useCallback((leftFreq: number, rightFreq: number) => {
-    console.log(`🎛️ Updating STEREO frequencies: L=${leftFreq}Hz, R=${rightFreq}Hz`);
 
     // Update state
     audioState.updateFrequencies(leftFreq, rightFreq);
@@ -221,7 +205,6 @@ export const useSimplifiedHybridAudio = () => {
     if (audioState.state.backendConnected && 
         audioState.state.sessionId && 
         audioState.state.currentEngine === 'frontend') {
-      console.log('🔄 Backend ready, crossfading...');
       mixer.crossfadeToBackend(2.0);
       audioState.setCurrentEngine('backend');
     }
@@ -229,7 +212,6 @@ export const useSimplifiedHybridAudio = () => {
     // Backend disconnected - instant failover
     if (!audioState.state.backendConnected && 
         audioState.state.currentEngine === 'backend') {
-      console.log('🚨 Backend lost, instant failover to frontend!');
       mixer.failoverToFrontend();
       audioState.setCurrentEngine('frontend');
     }

@@ -74,7 +74,6 @@ export const useAudioState = () => {
    * BOTH engines will use BOTH frequencies
    */
   const updateFrequencies = useCallback((leftFreq: number, rightFreq: number) => {
-    console.log(`🎵 Updating STEREO frequencies: L=${leftFreq}Hz, R=${rightFreq}Hz`);
     
     setState(prev => ({
       ...prev,
@@ -92,7 +91,6 @@ export const useAudioState = () => {
     const leftFreq = baseFreq;
     const rightFreq = baseFreq + beatFreq;
     
-    console.log(`🎵 Converting base/beat to STEREO: base=${baseFreq}, beat=${beatFreq} → L=${leftFreq}, R=${rightFreq}`);
     updateFrequencies(leftFreq, rightFreq);
   }, [updateFrequencies]);
 
@@ -101,7 +99,6 @@ export const useAudioState = () => {
    */
   const updateVolume = useCallback((volume: number) => {
     const safeVolume = Math.max(0, Math.min(2, volume));
-    console.log(`🔊 Volume updated: ${safeVolume.toFixed(2)}`);
     
     setState(prev => ({
       ...prev,
@@ -113,7 +110,6 @@ export const useAudioState = () => {
    * Update waveform
    */
   const updateWaveform = useCallback((waveform: AudioState['waveform']) => {
-    console.log(`🌊 Waveform updated: ${waveform}`);
     
     setState(prev => ({
       ...prev,
@@ -125,7 +121,6 @@ export const useAudioState = () => {
    * Set playing state
    */
   const setPlaying = useCallback((isPlaying: boolean) => {
-    console.log(`▶️ Playing state: ${isPlaying}`);
     
     setState(prev => ({
       ...prev,
@@ -137,7 +132,6 @@ export const useAudioState = () => {
    * Set current engine
    */
   const setCurrentEngine = useCallback((engine: AudioState['currentEngine']) => {
-    console.log(`🔄 Current engine: ${engine}`);
     
     setState(prev => ({
       ...prev,
@@ -149,7 +143,6 @@ export const useAudioState = () => {
    * Update backend connection status
    */
   const setBackendStatus = useCallback((connected: boolean, sessionId: string | null = null) => {
-    console.log(`🔌 Backend status: connected=${connected}, session=${sessionId}`);
     
     setState(prev => ({
       ...prev,
@@ -162,7 +155,6 @@ export const useAudioState = () => {
    * Update spatial audio settings
    */
   const setSpatialAudio = useCallback((enabled: boolean, mode: AudioState['spatialMode'] = '3d') => {
-    console.log(`🎧 Spatial audio: enabled=${enabled}, mode=${mode}`);
     
     setState(prev => ({
       ...prev,
@@ -175,7 +167,6 @@ export const useAudioState = () => {
    * Reset to defaults
    */
   const reset = useCallback(() => {
-    console.log('🔄 Resetting audio state to defaults');
     
     setState({
       isPlaying: false,

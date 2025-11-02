@@ -46,12 +46,9 @@ const PatternSelectorMUI: React.FC<PatternSelectorPropsExtended> = ({
   return (
     <Card sx={{
       height: '100%',
-      maxHeight: '100%',
       display: 'flex',
-      overflowY:'auto',
       flexDirection: 'column',
-      background: 'rgba(255, 107, 0, 0.05)',
-      borderColor: 'rgba(255, 107, 0, 0.3)',
+      overflow: 'hidden'
     }}>
       <CardContent sx={{ p: 1.5, pb: 0, flexShrink: 0 }}>
         <Typography variant="h4" align="center" color="primary" gutterBottom>
@@ -87,9 +84,8 @@ const PatternSelectorMUI: React.FC<PatternSelectorPropsExtended> = ({
       </CardContent>
 
       <Box sx={{
-        fle: '1 1',
-        overflow: 'auto',
-        minHeight: 0,
+        flex: '1 1 auto',
+        overflow: 'visible',
         px: 1.5,
         pb: 1.5,
         '&::-webkit-scrollbar': {

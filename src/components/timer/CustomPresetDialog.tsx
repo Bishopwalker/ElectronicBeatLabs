@@ -263,8 +263,6 @@ const CustomPresetDialog: React.FC<CustomPresetDialogProps> = ({
                 <Button onClick={onClose}>Cancel</Button>
                 <Button
                     onClick={() => {
-                        console.log('🚀 SAVE BUTTON CLICKED');
-                        console.log('🚀 CURRENT PRESET DATA:', customPreset);
                         onSave();
                     }}
                     variant="contained"

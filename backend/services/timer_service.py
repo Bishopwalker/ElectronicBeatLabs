@@ -19,7 +19,6 @@ from schemas.timer_schemas import (
 
 logger = logging.getLogger(__name__)
 
-
 class TimerService:
     """
     Service for managing timer sessions and frequency transitions.
@@ -360,7 +359,6 @@ class TimerService:
             if session.user_id == user_id and session.is_active:
                 return self.get_session_status(session_id)
         return None
-
 
 # Global timer service instance
 timer_service = TimerService()

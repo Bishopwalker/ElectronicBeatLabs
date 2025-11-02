@@ -8,7 +8,6 @@ import random
 from typing import List, Tuple, Dict
 from pathlib import Path
 
-
 class AudioDomainTrainingGenerator:
     """Generate training data for audio domain embedding fine-tuning"""
 
@@ -194,9 +193,6 @@ class AudioDomainTrainingGenerator:
         positive_pairs = self.generate_positive_pairs()
         negative_pairs = self.generate_negative_pairs()
 
-        print(f"Generated {len(positive_pairs)} positive pairs")
-        print(f"Generated {len(negative_pairs)} negative pairs")
-
         # Format for sentence-transformers training
         training_data = []
 
@@ -226,8 +222,6 @@ class AudioDomainTrainingGenerator:
         with open(output_path, 'w', encoding='utf-8') as f:
             for item in training_data:
                 f.write(json.dumps(item) + '\n')
-
-        print(f"Saved {len(training_data)} training examples to {output_path}")
 
         # Generate evaluation queries
         self._generate_evaluation_queries(output_path.parent / "evaluation_queries.json")
@@ -267,9 +261,6 @@ class AudioDomainTrainingGenerator:
         with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(eval_queries, f, indent=2)
 
-        print(f"Saved evaluation queries to {output_file}")
-
-
 class EmbeddingFineTuner:
     """Fine-tune embeddings on audio domain data"""
 
@@ -292,8 +283,6 @@ class EmbeddingFineTuner:
             from torch.utils.data import DataLoader
             import torch
 
-            print(f"Fine-tuning {self.base_model} on audio domain data...")
-
             # Load base model
             model = SentenceTransformer(self.base_model)
 
@@ -307,8 +296,6 @@ class EmbeddingFineTuner:
                         texts=[data['sentence1'], data['sentence2']],
                         label=score
                     ))
-
-            print(f"Loaded {len(train_examples)} training examples")
 
             # Create DataLoader
             train_dataloader = DataLoader(train_examples, shuffle=True, batch_size=batch_size)
@@ -324,23 +311,15 @@ class EmbeddingFineTuner:
                 output_path=output_model_path
             )
 
-            print(f"Fine-tuned model saved to {output_model_path}")
             return output_model_path
 
         except ImportError:
-            print("Fine-tuning requires: pip install sentence-transformers torch")
-            print("Skipping fine-tuning for now...")
             return None
-
 
 if __name__ == "__main__":
     # Generate training data
     generator = AudioDomainTrainingGenerator()
     training_file = generator.generate_training_dataset()
-
-    print("\nTraining dataset generated successfully!")
-    print("To fine-tune embeddings, run:")
-    print("python -c \"from backend.rag.audio_domain_training import EmbeddingFineTuner; ft = EmbeddingFineTuner(); ft.fine_tune('backend/rag/audio_training_data.jsonl')\"")
 
     # Note: Actual fine-tuning would require additional setup
     # For now, we focus on the enhanced retrieval with better base models

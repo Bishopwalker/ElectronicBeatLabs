@@ -148,30 +148,44 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
     ]);
 
     return (
-        <Box sx={{ width: '100%', mb: 2 }}>
+        <Box sx={{ 
+            width: '100%', 
+            mb: 1,
+            maxHeight: '220px', // 🔥 CRITICAL: Fixed max height
+            overflow: 'hidden',
+            position: 'sticky',
+            top: 0,
+            zIndex: 100,
+            background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)',
+            borderRadius: 1,
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)'
+        }}>
             <CollapsibleSection
                 id="timerPanel"
                 title={preset?.name || 'Timer Session'}
                 icon="⏰"
                 onClose={onClose}
                 defaultOpen={true}
-                compact={false}
+                compact={true} // 🔥 CHANGED: Made compact
             >
-                {/* 🔥 FIXED: Compact 50/50 Horizontal Layout */}
+                {/* 🔥 FIXED: Ultra-Compact Horizontal Layout */}
                 <Box sx={{
                     display: 'flex',
-                    gap: 2,  // Gap between timer and visualizer
+                    gap: 1.5,
                     alignItems: 'stretch',
                     width: '100%',
-                    minHeight: '280px',
-                    height: 'auto',
+                    height: '180px', // 🔥 FIXED: Exact height
+                    overflow: 'hidden'
                 }}>
                     {/* LEFT SIDE: Timer Section - 50% Width */}
                     <Box sx={{
                         flex: '1 1 50%',
                         display: 'flex',
                         flexDirection: 'column',
-                        justifyContent: 'space-between'
+                        justifyContent: 'space-between',
+                        overflowY: 'auto', // 🔥 Allow scroll if needed
+                        overflowX: 'hidden',
+                        pr: 1 // Padding for scrollbar
                     }}>
                     {/* Header */}
                     <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5}}>
@@ -226,51 +240,53 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
                         />
                     </Box>
 
-                    {/* Time Display */}
-                    <Box sx={{display: 'flex', justifyContent: 'space-around', alignItems: 'center', mb: 1}}>
+                    {/* Time Display - COMPACT */}
+                    <Box sx={{display: 'flex', justifyContent: 'space-around', alignItems: 'center', mb: 0.5}}>
                         <Box sx={{textAlign: 'center'}}>
-                            <Typography variant="h4" sx={{
+                            <Typography variant="h5" sx={{
                                 fontFamily: 'monospace',
                                 fontWeight: 'bold',
                                 color: '#ff6b00',
-                                fontSize: '2rem',
-                                textShadow: '0 0 10px rgba(255, 107, 0, 0.5)'
+                                fontSize: '1.5rem', // 🔥 REDUCED from 2rem
+                                textShadow: '0 0 10px rgba(255, 107, 0, 0.5)',
+                                lineHeight: 1
                             }}>
                                 {formatTime(timeRemainingCurrent)}
                             </Typography>
-                            <Typography variant="caption" color="text.secondary" sx={{fontSize: '0.7rem'}}>
+                            <Typography variant="caption" color="text.secondary" sx={{fontSize: '0.65rem', lineHeight: 1}}>
                                 Current Step
                             </Typography>
                         </Box>
 
                         <Box sx={{textAlign: 'center'}}>
-                            <Typography variant="h5" sx={{
+                            <Typography variant="h6" sx={{
                                 fontFamily: 'monospace',
                                 fontWeight: 'bold',
                                 color: '#8a2be2',
-                                fontSize: '1.5rem'
+                                fontSize: '1.2rem', // 🔥 REDUCED from 1.5rem
+                                lineHeight: 1
                             }}>
                                 {formatTime(timeRemainingTotal)}
                             </Typography>
-                            <Typography variant="caption" color="text.secondary" sx={{fontSize: '0.7rem'}}>
+                            <Typography variant="caption" color="text.secondary" sx={{fontSize: '0.65rem', lineHeight: 1}}>
                                 Total Remaining
                             </Typography>
                         </Box>
                     </Box>
 
-                    {/* Next Transition Preview */}
+                    {/* Next Transition Preview - ULTRA COMPACT */}
                     {timerStatus.next_transition && (
                         <Box sx={{
-                            mb: 1,  // ✅ REDUCED: from 2 to 1
-                            p: 0.75,  // ✅ REDUCED: from 1 to 0.75
+                            mb: 0.5,  // 🔥 REDUCED further
+                            p: 0.5,   // 🔥 REDUCED further
                             background: 'rgba(138, 43, 226, 0.15)',
-                            borderRadius: 1,
+                            borderRadius: 0.5,
                             border: '1px solid rgba(138, 43, 226, 0.3)'
                         }}>
-                            <Typography variant="caption" sx={{fontSize: '0.7rem', color: '#8a2be2', fontWeight: 'bold'}}>
+                            <Typography variant="caption" sx={{fontSize: '0.65rem', color: '#8a2be2', fontWeight: 'bold', lineHeight: 1}}>
                                 Up Next:
                             </Typography>
-                            <Typography variant="caption" sx={{display: 'block', fontSize: '0.7rem', color: 'text.secondary'}}>
+                            <Typography variant="caption" sx={{display: 'block', fontSize: '0.65rem', color: 'text.secondary', lineHeight: 1.2}}>
                                 {timerStatus.next_transition.description} • {timerStatus.next_transition.frequency_hz}Hz • {timerStatus.next_transition.duration_minutes}min
                             </Typography>
                         </Box>
@@ -280,19 +296,19 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
                     <Box sx={{display: 'flex', justifyContent: 'center', gap: 1, flexWrap: 'wrap'}}>
                         {/* First Row - Transport Controls */}
                         <Box sx={{display: 'flex', gap: 1}}>
-                            <Tooltip title={timerStatus.session?.is_paused ? "Resume Timer" : "Pause Timer"}>
+                            <Tooltip title={timerStatus.session?.isPaused ? "Resume Timer" : "Pause Timer"}>
                                 <IconButton
                                     size="small"
-                                    onClick={() => timerStatus.session?.is_paused ? onResumeTimer?.() : onPauseTimer?.()}
+                                    onClick={() => timerStatus.session?.isPaused ? onResumeTimer?.() : onPauseTimer?.()}
                                     disabled={!onPauseTimer || !onResumeTimer}
                                     sx={{
-                                        bgcolor: timerStatus.session?.is_paused ? 'rgba(0, 255, 136, 0.2)' : 'rgba(255, 193, 7, 0.2)',
+                                        bgcolor: timerStatus.session?.isPaused ? 'rgba(0, 255, 136, 0.2)' : 'rgba(255, 193, 7, 0.2)',
                                         '&:hover': {
-                                            bgcolor: timerStatus.session?.is_paused ? 'rgba(0, 255, 136, 0.3)' : 'rgba(255, 193, 7, 0.3)'
+                                            bgcolor: timerStatus.session?.isPaused ? 'rgba(0, 255, 136, 0.3)' : 'rgba(255, 193, 7, 0.3)'
                                         }
                                     }}
                                 >
-                                    {timerStatus.session?.is_paused ?
+                                    {timerStatus.session?.isPaused ?
                                         <PlayArrowIcon sx={{fontSize: '1.2rem', color: '#00ff88'}} /> :
                                         <PauseIcon sx={{fontSize: '1.2rem', color: '#ffc107'}} />
                                     }
@@ -337,7 +353,7 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
                                 <IconButton
                                     size="small"
                                     onClick={() => onRestartTransition?.()}
-                                    disabled={!onRestartTransition}
+                                   disabled={!onRestartTransition}
                                     sx={{
                                         bgcolor: 'rgba(138, 43, 226, 0.2)',
                                         '&:hover': {bgcolor: 'rgba(138, 43, 226, 0.3)'}
@@ -373,23 +389,25 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
                     flexDirection: 'column',
                     justifyContent: 'center',
                     alignItems: 'center',
-                    minHeight: '280px',
+                    height: '180px', // 🔥 FIXED: Match container height
                     bgcolor: 'rgba(0, 255, 136, 0.03)',
                     borderRadius: 1,
                     border: '1px solid rgba(0, 255, 136, 0.2)',
-                    p: 1
+                    p: 0.5, // 🔥 REDUCED padding
+                    overflow: 'hidden'
                 }}>
                     <Typography variant="caption" sx={{
                         color: '#00ff88',
                         fontWeight: 'bold',
-                        mb: 1,
-                        fontSize: '0.8rem'
+                        mb: 0.5, // 🔥 REDUCED
+                        fontSize: '0.7rem', // 🔥 REDUCED
+                        lineHeight: 1
                     }}>
                         🎵 Live Frequency Analysis
                     </Typography>
                     {audioContext && analyserNode ? (
                         <FrequencyVisualizer
-                            state={visualizerState as AppState}
+                            state={visualizerState}
                             audioContext={audioContext}
                             analyserNode={analyserNode}
                             audioWorkletStatus={hybridEngine?.audioWorkletStatus}

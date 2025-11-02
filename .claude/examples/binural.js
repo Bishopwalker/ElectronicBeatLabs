@@ -32,12 +32,10 @@ var oscOn = function(freq1, freq2){
     // gainNode.connect(context.destination,0,1);
     gainNode.connect(merger,0,0);
 
-
     gainNode.gain.value = .1;
     oscillator2.start ? oscillator2.start(0) : oscillator2.noteOn(0)
 
     merger.connect(context.destination);
-
 
 };
 
@@ -46,7 +44,6 @@ function start() {
     if (typeof oscillator2 != 'undefined') oscillator2.disconnect();
     oscOn(parseFloat(document.getElementById("freq").value),parseFloat(document.getElementById("freq2").value));
 }
-
 
 function stop() {
     oscillator1.disconnect();

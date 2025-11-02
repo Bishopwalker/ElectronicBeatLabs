@@ -17,7 +17,6 @@
     "allowJs": true, // To allow testing of JS files if required
     "jsx": "react-jsx",
 
-
     /* Linting */
     "strict": false,
     "noUnusedLocals": false,

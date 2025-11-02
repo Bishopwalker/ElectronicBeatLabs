@@ -104,9 +104,7 @@ export const useElectromagneticLabState = (initialPattern?: string, autoStart: b
         }
       }));
 
-      console.log('🎨 Visualizer updated for pattern:', state.appState.currentPattern.name, 'Frequency:', frequency);
     } else {
-      console.warn('⚠️ Cannot update electromagnetic for pattern - pattern or frequencies missing');
     }
   }, [
     state.appState.currentPattern?.id,
@@ -125,8 +123,8 @@ export const useElectromagneticLabState = (initialPattern?: string, autoStart: b
     handleModeChange: (mode: PatternMode, masterAudio: any) =>
       manager.handleModeChange(mode, masterAudio),
     
-    handleFrequencyChange: (frequency: number, audioEngine: AudioEngine) =>
-      manager.handleFrequencyChange(frequency, audioEngine),
+    handleFrequencyChange: (base_frequency: number, beat_frequency: number, audioEngine: AudioEngine) =>
+      manager.handleFrequencyChange(base_frequency, beat_frequency, audioEngine),
     
     handleVolumeChange: (volume: number, audioEngine: AudioEngine) =>
       manager.handleVolumeChange(volume, audioEngine),

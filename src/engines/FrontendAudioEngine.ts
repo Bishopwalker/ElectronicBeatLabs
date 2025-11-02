@@ -27,7 +27,6 @@ export class FrontendAudioEngine {
     this.audioContext = audioContext;
     this.outputNode = outputNode;
     
-    console.log('🎵 FrontendAudioEngine initialized (STEREO mode)');
   }
 
   /**
@@ -44,13 +43,8 @@ export class FrontendAudioEngine {
     waveform: OscillatorType = 'sine'
   ): void {
     if (this.isPlaying) {
-      console.warn('⚠️ FrontendEngine: Already playing, stopping first...');
       this.stop();
     }
-
-    console.log(`🎵 FrontendEngine: Starting STEREO binaural beat`);
-    console.log(`   Left ear: ${leftFreq}Hz, Right ear: ${rightFreq}Hz`);
-    console.log(`   Beat frequency: ${Math.abs(rightFreq - leftFreq)}Hz`);
 
     try {
       // Create STEREO oscillators
@@ -92,9 +86,7 @@ export class FrontendAudioEngine {
       this.oscillatorR.start(now);
       
       this.isPlaying = true;
-      console.log('✅ FrontendEngine: STEREO binaural beat started');
     } catch (error) {
-      console.error('❌ FrontendEngine: Failed to start:', error);
       this.cleanup();
       throw error;
     }
@@ -105,12 +97,9 @@ export class FrontendAudioEngine {
    */
   stop(): void {
     if (!this.isPlaying) {
-      console.log('⚠️ FrontendEngine: Not playing, nothing to stop');
       return;
     }
 
-    console.log('🛑 FrontendEngine: Stopping STEREO playback...');
-    
     try {
       const now = this.audioContext.currentTime;
       const fadeTime = 0.05; // 50ms fade to prevent clicks
@@ -137,9 +126,7 @@ export class FrontendAudioEngine {
       setTimeout(() => this.cleanup(), fadeTime * 1000 + 50);
       
       this.isPlaying = false;
-      console.log('✅ FrontendEngine: Stopped');
     } catch (error) {
-      console.error('❌ FrontendEngine: Error stopping:', error);
       this.cleanup();
     }
   }
@@ -150,7 +137,6 @@ export class FrontendAudioEngine {
    */
   updateFrequencies(leftFreq: number, rightFreq: number): void {
     if (!this.isPlaying || !this.oscillatorL || !this.oscillatorR) {
-      console.warn('⚠️ FrontendEngine: Cannot update - not playing');
       return;
     }
 
@@ -164,7 +150,6 @@ export class FrontendAudioEngine {
     this.oscillatorR.frequency.setValueAtTime(this.oscillatorR.frequency.value, now);
     this.oscillatorR.frequency.exponentialRampToValueAtTime(rightFreq, now + rampTime);
     
-    console.log(`🎛️ FrontendEngine: Updated STEREO frequencies - L:${leftFreq}Hz, R:${rightFreq}Hz`);
   }
 
   /**
@@ -172,7 +157,6 @@ export class FrontendAudioEngine {
    */
   updateVolume(volume: number): void {
     if (!this.gainL || !this.gainR) {
-      console.warn('⚠️ FrontendEngine: Cannot update volume - not playing');
       return;
     }
 
@@ -182,7 +166,6 @@ export class FrontendAudioEngine {
     this.gainL.gain.setValueAtTime(safeVolume, now);
     this.gainR.gain.setValueAtTime(safeVolume, now);
     
-    console.log(`🔊 FrontendEngine: Volume set to ${safeVolume.toFixed(2)}`);
   }
 
   /**
@@ -190,7 +173,6 @@ export class FrontendAudioEngine {
    */
   updateWaveform(waveform: OscillatorType): void {
     if (!this.oscillatorL || !this.oscillatorR) {
-      console.warn('⚠️ FrontendEngine: Cannot update waveform - not playing');
       return;
     }
 
@@ -198,7 +180,6 @@ export class FrontendAudioEngine {
     this.oscillatorL.type = waveform;
     this.oscillatorR.type = waveform;
     
-    console.log(`🌊 FrontendEngine: Waveform changed to ${waveform}`);
   }
 
   /**
@@ -239,7 +220,6 @@ export class FrontendAudioEngine {
    * Destroy engine
    */
   destroy(): void {
-    console.log('🧹 FrontendEngine: Destroying...');
     this.stop();
     this.cleanup();
   }

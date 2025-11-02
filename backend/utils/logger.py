@@ -45,7 +45,6 @@ class JSONFormatter(logging.Formatter):
             
         return json.dumps(log_data)
 
-
 def setup_logger(
     name: str = "ebl",
     level: str = "DEBUG",
@@ -109,7 +108,6 @@ def setup_logger(
     
     return logger
 
-
 class RequestLogger:
     """Middleware for logging HTTP requests"""
     
@@ -130,7 +128,6 @@ class RequestLogger:
                 }
             }
         )
-
 
 class AudioLogger:
     """Specialized logger for audio processing events"""
@@ -174,7 +171,6 @@ class AudioLogger:
                 'session_id': session_id
             }
         )
-
 
 # Create default logger
 logger = setup_logger(env="development")

@@ -89,43 +89,55 @@ export const useBinauralVisualization = (config: Partial<VisualizationConfig> = 
   const frameCount = useRef<number>(0);
   const startTime = useRef<number>(Date.now());
 
-  // Initialize audio context
+  // Initialize audio context (READ-ONLY for visualization)
+  // Prefer existing shared/global context instead of creating a new one
   const initializeAudioContext = useCallback(async (): Promise<AudioContext | null> => {
     try {
-      if (!audioState.context) {
-        const context = new (window.AudioContext || (window as any).webkitAudioContext)();
-        setAudioState(prev => ({ ...prev, context }));
-
-        if (context.state === 'suspended') {
-          await context.resume();
+      // Prefer global/shared context if available (set by frontend engine)
+      const globalCtx = (window as any).__EBL_AUDIO_CONTEXT__ as AudioContext | undefined;
+      if (globalCtx) {
+        if (globalCtx.state === 'suspended') {
+          await globalCtx.resume();
         }
-
-        return context;
+        if (audioState.context !== globalCtx) {
+          setAudioState(prev => ({ ...prev, context: globalCtx }));
+        }
+        return globalCtx;
       }
 
-      if (audioState.context.state === 'suspended') {
-        await audioState.context.resume();
+      // Fallback to existing state context (if previously set)
+      if (audioState.context) {
+        if (audioState.context.state === 'suspended') {
+          await audioState.context.resume();
+        }
+        return audioState.context;
       }
 
-      return audioState.context;
-    } catch (error) {
-      console.error('❌ BinauralVisualization: Failed to initialize audio context:', error);
+      // As a last resort, do NOT create a brand new context here.
+      // This hook is analysis-only; wait until the main engine initializes audio.
+      return null;
+    } catch {
       return null;
     }
   }, [audioState.context]);
 
   // Create analyser node
   const createAnalyser = useCallback((context: AudioContext) => {
-    const analyserNode = context.createAnalyser();
-    analyserNode.fftSize = 2048;
-    analyserNode.smoothingTimeConstant = 0.8;
-    analyserNode.minDecibels = -90;
-    analyserNode.maxDecibels = -10;
+    // Prefer existing shared analyser if present (from AudioMixer/frontend engine)
+    const sharedAnalyser = (window as any).__EBL_ANALYSER_NODE__ as AnalyserNode | undefined;
+    const analyserNode = sharedAnalyser ?? context.createAnalyser();
+    
+    // Configure only if we created it locally
+    if (!sharedAnalyser) {
+      analyserNode.fftSize = 2048;
+      analyserNode.smoothingTimeConstant = 0.8;
+      analyserNode.minDecibels = -90;
+      analyserNode.maxDecibels = -10;
+    }
 
     const bufferLength = analyserNode.frequencyBinCount;
     dataArray.current = new Uint8Array(bufferLength);
 
-    console.log('✅ BinauralVisualization: AnalyserNode created with', bufferLength, 'frequency bins');
     return analyserNode;
   }, []);
 
@@ -312,7 +324,6 @@ export const useBinauralVisualization = (config: Partial<VisualizationConfig> = 
       frameCount.current = 0;
       lastUpdateTime.current = 0;
       animationFrame.current = requestAnimationFrame(updateVisualization);
-      console.log('✅ BinauralVisualization: Started at', defaultConfig.updateRate, 'FPS');
     }
   }, [updateVisualization, defaultConfig.updateRate]);
 
@@ -320,7 +331,6 @@ export const useBinauralVisualization = (config: Partial<VisualizationConfig> = 
     if (animationFrame.current) {
       cancelAnimationFrame(animationFrame.current);
       animationFrame.current = null;
-      console.log('✅ BinauralVisualization: Stopped');
     }
   }, []);
 
@@ -407,7 +417,6 @@ export const useBinauralVisualization = (config: Partial<VisualizationConfig> = 
 
       return true;
     } catch (error) {
-      console.error('❌ BinauralVisualization: Failed to create binaural beats:', error);
       return false;
     }
   }, [initializeAudioContext, createAnalyser, startVisualization]);
@@ -440,15 +449,12 @@ export const useBinauralVisualization = (config: Partial<VisualizationConfig> = 
         oscillatorL: null,
         oscillatorR: null,
 
-
       }));
 
       // Stop visualization
       stopVisualization();
 
-      console.log('✅ BinauralVisualization: Stopped and cleaned up');
     } catch (error) {
-      console.error('❌ BinauralVisualization: Error during cleanup:', error);
     }
   }, [ stopVisualization]);
 

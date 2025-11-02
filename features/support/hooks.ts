@@ -3,7 +3,6 @@ import { CustomWorld } from './world';
 
 BeforeAll(async function() {
   // Global setup before all scenarios
-  console.log('🚀 Starting Electromagnetic Beat Lab E2E Tests');
   
   // Setup global test environment
   process.env.NODE_ENV = 'test';
@@ -14,7 +13,6 @@ BeforeAll(async function() {
 
 Before(async function(this: CustomWorld) {
   // Setup before each scenario
-  console.log(`🧪 Starting scenario: ${this.pickle?.name}`);
   
   // Reset all mocks to clean state
   jest.clearAllMocks();
@@ -55,7 +53,6 @@ Before(async function(this: CustomWorld) {
 
 After(async function(this: CustomWorld, testCase) {
   // Cleanup after each scenario
-  console.log(`✅ Completed scenario: ${this.pickle?.name} - ${testCase.result?.status}`);
   
   // Cleanup component if it was rendered
   if (this.component) {
@@ -74,16 +71,13 @@ After(async function(this: CustomWorld, testCase) {
   
   // Log test results for debugging
   if (testCase.result?.status === 'FAILED') {
-    console.error(`❌ Scenario failed: ${this.pickle?.name}`);
     if (testCase.result?.message) {
-      console.error(`Error: ${testCase.result.message}`);
     }
   }
 });
 
 AfterAll(async function() {
   // Global cleanup after all scenarios
-  console.log('🏁 Completed Electromagnetic Beat Lab E2E Tests');
   
   // Perform any global cleanup
   jest.restoreAllMocks();

@@ -7,7 +7,6 @@ import json
 import time
 from pathlib import Path
 
-
 def test_rag_improvements():
     """Test the RAG improvements we've implemented"""
     print("=== RAG FINE-TUNING IMPROVEMENTS SUMMARY ===")
@@ -88,7 +87,6 @@ def test_rag_improvements():
     print("RAG FINE-TUNING IMPLEMENTATION COMPLETE!")
     print("System is ready for enhanced audio domain retrieval.")
     print(f"{'='*60}")
-
 
 if __name__ == "__main__":
     test_rag_improvements()
