@@ -34,8 +34,8 @@ import {
   DEFAULT_BEAT_FREQUENCY,
   DEFAULT_BASE_FREQUENCY
 } from '../constants/audio.constants';
-import { debugLog, debugDecision, debugBreakpoint } from '../utils/audioDebugger';
- export const useHybridAudioEngine = () => {
+
+export const useHybridAudioEngine = () => {
   // Initialize both engines (will be routed through mixer after mixer is created)
   const frontendEngine = useAudioEngine();
   const backendEngine = useBackendAudioEngine();
@@ -47,9 +47,6 @@ import { debugLog, debugDecision, debugBreakpoint } from '../utils/audioDebugger
 
   // Track backend connection state for auto-crossfade
   const previousBackendConnected = useRef(backendEngine.backendConnected);
-
-  // 🔥 FIX: Track initialization attempts to prevent React StrictMode double-mounting issues
-  const initAttemptedRef = useRef(false);
 
   /**
    * Initialize audio mixer and connect both engines
@@ -164,28 +161,22 @@ import { debugLog, debugDecision, debugBreakpoint } from '../utils/audioDebugger
    * 3. Auto-crossfade to backend when ready
    */
   const startBinauralBeat = useCallback(async (config: BinauralBeatConfig) => {
-    // 🔍 DEBUG LOGGING: Track start parameters
-    debugLog('HYBRID_START', 'Starting binaural beat', {
-      base_frequency: config.base_frequency,
-      beat_frequency: config.beat_frequency,
-      volume: config.volume ?? DEFAULT_VOLUME,
-      waveform: config.waveform
-    });
-
-    // 🔍 BREAKPOINT: Set conditional breakpoint for debugging
-    debugBreakpoint(!mixerRef.current, 'Mixer not initialized at start', { config });
-
     // Initialize mixer if not ready
-    debugDecision('Mixer initialization check', !mixerRef.current, 'Initialize mixer');
     if (!mixerRef.current) {
       await initializeMixer();
     }
 
     try {
       // STEP 1: Start frontend immediately (instant audio)
-      debugLog('HYBRID_START', 'Starting FRONTEND engine (instant audio)');
       await frontendEngine.startBinauralBeat(config);
-      
+
+      // Ensure mixer is initialized AFTER frontend context exists.
+      // The first initialize attempt may occur before the frontend created its AudioContext.
+      // Calling again here guarantees setExternalNodes() runs before backend connects.
+      if (!mixerRef.current) {
+        await initializeMixer();
+      }
+
       // 🔥 FIXED: Properly update frontend engine state
       if (frontendEngine.setAudioState) {
         frontendEngine.setAudioState((prev: any) => ({
@@ -193,38 +184,25 @@ import { debugLog, debugDecision, debugBreakpoint } from '../utils/audioDebugger
           isPlaying: true
         }));
       }
-      
+
       setCurrentEngine('frontend');
 
-      // STEP 2: Connect backend in background with proper sequencing
+      // STEP 2: Start backend session in background
+      // 🔥 CRITICAL FIX: Remove redundant connectBackend() call!
+      // startBackendSession() already handles WebSocket connection internally
+      // Calling connectBackend() first creates MULTIPLE WebSocket connections with different session IDs
+      // This causes ERR_CONNECTION_REFUSED and prevents audio streaming
 
-      // 🔥 CRITICAL FIX: Properly sequence backend connection and session start
-      // This prevents race condition where session starts before WebSocket is connected
-      if (!backendEngine.backendConnected) {
-        // Connect backend first, THEN start session (proper chaining)
-        backendEngine.connectBackend()
-          .then(async () => {
-            // Only start session after connection succeeds
-            return backendEngine.startBackendSession(config);
-          })
-          .then(() => {
-            if (backendEngine.audioState) {
-              backendEngine.audioState.isPlaying = true;
-            }
-          })
-          .catch(err => {
-          });
-      } else {
-        // Already connected, just start session
-        backendEngine.startBackendSession(config)
-          .then(() => {
-            if (backendEngine.audioState) {
-              backendEngine.audioState.isPlaying = true;
-            }
-          })
-          .catch(err => {
-          });
-      }
+      backendEngine.startBackendSession(config)
+        .then(() => {
+          if (backendEngine.audioState) {
+            backendEngine.audioState.isPlaying = true;
+          }
+        })
+        .catch(err => {
+          // Backend connection failed - frontend audio continues playing
+          console.warn('⚠️ Backend session failed, continuing with frontend audio:', err);
+        });
 
     } catch (error) {
       throw error;
@@ -278,13 +256,6 @@ import { debugLog, debugDecision, debugBreakpoint } from '../utils/audioDebugger
     const beatFreq = Math.abs(rightFreq - leftFreq);
     const baseFreq = Math.min(leftFreq, rightFreq);
 
-    console.log('🎛️ Hybrid Engine: Syncing frequency to BOTH engines -', {
-      leftFreq,
-      rightFreq,
-      baseFreq,
-      beatFreq
-    });
-
     // 🔥 FIXED: Update FRONTEND engine (uses leftFreq/rightFreq format)
     frontendEngine.updateFrequency(leftFreq, rightFreq);
 
@@ -309,7 +280,7 @@ import { debugLog, debugDecision, debugBreakpoint } from '../utils/audioDebugger
     // Update FRONTEND engine (convert to leftFreq/rightFreq format)
     if (settings.base_frequency !== undefined && settings.beat_frequency !== undefined) {
       const leftFreq = settings.base_frequency;
-      const rightFreq =  settings.beat_frequency;
+      const rightFreq = settings.base_frequency + settings.beat_frequency;  // 🔥 FIXED: rightFreq = base + beat, not just beat!
       frontendEngine.updateFrequency(leftFreq, rightFreq);
     }
   }, [frontendEngine, backendEngine]);
@@ -319,20 +290,16 @@ import { debugLog, debugDecision, debugBreakpoint } from '../utils/audioDebugger
    * 🔥 FIXED: Only update mixer volume - engines are routed through mixer, so no duplicate setting
    */
   const updateVolume = useCallback((volume: number) => {
-    const safeVolume = DEFAULT_VOLUME || Math.max(0, Math.min(2, volume));
-
-    // 🔍 DEBUG LOGGING: Track volume updates (Phase 1)
+    // 🔥 FIXED: Use fallback only when volume is NaN, not truthy OR
+    const safeVolume = isNaN(volume) ? DEFAULT_VOLUME : Math.max(0, Math.min(2, volume));
 
     // Update mixer master volume - this controls both engines since they're routed through it
     if (mixerRef.current) {
       mixerRef.current.setMasterVolume(safeVolume);
-    } else {
     }
 
     // 🔥 REMOVED: Individual engine volume updates - caused duplicate volume setting
     // Both engines are routed through mixer, so mixer volume is the single source of truth
-    // frontendEngine.updateVolume(safeVolume); // ❌ DUPLICATE
-    // backendEngine.updateVolume(safeVolume);  // ❌ DUPLICATE
   }, []);
 
   /**
@@ -344,13 +311,23 @@ import { debugLog, debugDecision, debugBreakpoint } from '../utils/audioDebugger
 
   /**
    * Update spatial settings (backend only feature)
+   * 🔥 CRITICAL FIX: Include current frequency to keep both engines in sync
    */
   const updateSpatialSettings = useCallback((spatialSettings: Record<string, unknown>) => {
     if (backendEngine.backendConnected) {
-      backendEngine.updateSpatialSettings(spatialSettings);
+      // Get current frequency from engine states directly (avoids TDZ issue)
+      const baseFreq = frontendEngine.audioState.leftFreq || backendEngine.audioState.config?.base_frequency || DEFAULT_BASE_FREQUENCY;
+      const beatFreq = frontendEngine.audioState.beat_frequency || backendEngine.audioState.config?.beat_frequency || DEFAULT_BEAT_FREQUENCY;
+
+      // Send BOTH spatial settings AND current frequency to backend
+      backendEngine.updateSettings({
+        spatial_settings: spatialSettings,
+        base_frequency: baseFreq,
+        beat_frequency: beatFreq
+      });
     } else {
     }
-  }, [backendEngine]);
+  }, [backendEngine, frontendEngine.audioState.leftFreq, frontendEngine.audioState.beat_frequency]);
 
   /**
    * Load pattern (hybrid approach)
@@ -361,9 +338,6 @@ import { debugLog, debugDecision, debugBreakpoint } from '../utils/audioDebugger
       beat_frequency: pattern.frequencies.beat,
       waveform: 'sine', // PatternConfig doesn't have waveform property, default to sine
       volume: DEFAULT_VOLUME
-    };
-    const appstate:AppState ={
-
     }
 
     await startBinauralBeat(config);
@@ -439,20 +413,12 @@ import { debugLog, debugDecision, debugBreakpoint } from '../utils/audioDebugger
   }, [frontendEngine, initializeMixer]);
 
   /**
-   * Proactively initialize audio context on mount (like SettingsTab does)
-   * 🔥 FIXED: Prevent duplicate AudioContext creation by using stable dependencies
+   * Proactively initialize audio context on mount
    */
   useEffect(() => {
     const autoInitialize = async () => {
-      // 🔥 FIX: Skip if already attempted during this mount cycle (React StrictMode safeguard)
-      if (initAttemptedRef.current) {
-        return;
-      }
-
-      // 🔥 CRITICAL FIX: Only run on initial mount when context is null
-      // This prevents duplicate context creation when frontendEngine object changes
+      // Only run on initial mount when context is null
       if (!frontendEngine.audioContext) {
-        initAttemptedRef.current = true; // Mark as attempted
         try {
           // Create a simple user interaction to trigger audio context
           // This ensures analyser node exists for visualizers
@@ -461,8 +427,7 @@ import { debugLog, debugDecision, debugBreakpoint } from '../utils/audioDebugger
             // Mixer will be initialized by the other useEffect when context is ready
           }
         } catch (error) {
-          // Reset flag on error so user can retry
-          initAttemptedRef.current = false;
+          // User can retry manually
         }
       } else if (frontendEngine.audioContext && !mixerRef.current) {
         // Context exists but mixer doesn't - initialize mixer
@@ -471,8 +436,7 @@ import { debugLog, debugDecision, debugBreakpoint } from '../utils/audioDebugger
     };
 
     autoInitialize();
-    // 🔥 ONLY run when audioContext presence changes (null -> object or object -> null)
-    // Using !! converts to boolean for stable comparison
+    // Only run when audioContext presence changes (null -> object or object -> null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [!!frontendEngine.audioContext]);
 
