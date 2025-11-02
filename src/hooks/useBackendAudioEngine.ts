@@ -90,6 +90,8 @@ export const useBackendAudioEngine = () => {
   const [waitingForConnection, setWaitingForConnection] = useState(false);
   const [startingSession, setStartingSession] = useState(false);
   const connectionPromiseRef = useRef<((value: boolean) => void) | null>(null);
+  // Queue settings made before WebSocket/session are ready
+  const pendingSettingsRef = useRef<Record<string, unknown> | null>(null);
 
   const audioContext = useRef<AudioContext | null>(null);
   const gainNode = useRef<GainNode | null>(null);
@@ -136,6 +138,7 @@ export const useBackendAudioEngine = () => {
       return audioContext.current;
 
     } catch (error) {
+      console.error('❌ Backend Engine: Failed to initialize audio context:', error);
       return null;
     }
   }, []);
@@ -407,10 +410,18 @@ export const useBackendAudioEngine = () => {
           case 'session_started': {
             const context = await initializeAudio();
             if (!context) throw new Error('Failed to initialize audio context');
-            await initializePersistentAudio();
-            setBackendConnected(true);
-            break;
+          await initializePersistentAudio();
+          setBackendConnected(true);
+          // Apply pending settings if any
+          if (pendingSettingsRef.current && websocket.isConnected) {
+            websocket.sendMessage({
+              type: 'update_settings',
+              settings: pendingSettingsRef.current
+            } as any);
+            pendingSettingsRef.current = null;
           }
+          break;
+        }
 
           case 'session_stopped':
             setAudioState(prevState => ({
@@ -431,34 +442,45 @@ export const useBackendAudioEngine = () => {
 
   // Connect to backend with auto WebSocket connection
   const connectBackend = useCallback(async () => {
+    console.log('🔌 Backend Engine: connectBackend() called');
+    
     // Prevent multiple simultaneous connection attempts
     if (backendConnected) {
+      console.log('✅ Backend already connected, skipping');
       return;
     }
 
     if (websocket.isConnecting) {
+      console.log('⏳ WebSocket already connecting, waiting...');
       return;
     }
 
     try {
-      // First check backend health with direct fetch
-      const healthResponse = await fetch('http://localhost:8000/health');
-      if (!healthResponse.ok) {
-        throw new Error('Backend health check failed');
-      }
+      // Best-effort health touch (non-blocking)
+      try {
+        const httpProtocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+        const host = window.location.hostname;
+        const port = (import.meta as any).env?.DEV ? '8000' : (window.location.port || (httpProtocol === 'https:' ? '443' : '80'));
+        const healthUrl = `${httpProtocol}//${host}:${port}/health`;
+        console.log('🩺 Checking backend health:', healthUrl);
+        await fetch(healthUrl, { mode: 'no-cors' }).catch(() => undefined);
+      } catch {}
 
-      // Auto-connect WebSocket when backend connects
+      // Attempt WebSocket connection
       if (!websocket.isConnected && !websocket.isConnecting) {
-        websocket.connect(144, 4); // Default frequencies for initial connection
+        console.log('🔌 Initiating WebSocket connection...');
+        websocket.connect(); // 🔥 FIX: No frequency params - they come from messages
 
         // Wait for WebSocket connection with timeout
         const wsConnected = await new Promise<boolean>((resolve) => {
           const timeout = setTimeout(() => {
+            console.log('❌ WebSocket connection TIMEOUT (5s)');
             resolve(false);
           }, 5000); // 5 seconds timeout for WebSocket connection
 
           const checkConnection = () => {
             if (websocket.isConnected) {
+              console.log('✅ WebSocket connected!');
               clearTimeout(timeout);
               resolve(true);
             } else {
@@ -473,25 +495,40 @@ export const useBackendAudioEngine = () => {
         });
 
         if (!wsConnected) {
+          console.error('❌ Backend connection FAILED - WebSocket did not connect');
+          setBackendConnected(false);
+          throw new Error('WebSocket connection failed - backend may not be ready yet');
         }
       }
 
-      setBackendConnected(true);
+      // 🔥 CRITICAL FIX: Only set backendConnected=true if WebSocket is ACTUALLY connected
+      const actuallyConnected = websocket.isConnected;
+      setBackendConnected(actuallyConnected);
 
       // Update session ID from WebSocket if available
       if (websocket.sessionId && !sessionId) {
         setSessionId(websocket.sessionId);
       }
 
-      console.log('✅ Backend Engine: Connected successfully with WebSocket state:', {
-        connected: websocket.isConnected,
-        connecting: websocket.isConnecting,
-        backendConnected: true,
-        sessionId: websocket.sessionId
-      });
+      if (actuallyConnected) {
+        console.log('✅ Backend Engine: Connection SUCCESSFUL!', {
+          connected: websocket.isConnected,
+          connecting: websocket.isConnecting,
+          backendConnected: actuallyConnected,
+          sessionId: websocket.sessionId
+        });
+      } else {
+        console.error('❌ Backend Engine: Connection FAILED!', {
+          connected: websocket.isConnected,
+          connecting: websocket.isConnecting,
+          backendConnected: actuallyConnected,
+          sessionId: websocket.sessionId
+        });
+        throw new Error('Backend connection failed - WebSocket not connected');
+      }
 
-      // Force a re-render by updating a timestamp
     } catch (error) {
+      console.error('❌ Backend connection error:', error);
       setBackendConnected(false);
       throw error;
     }
@@ -595,7 +632,7 @@ export const useBackendAudioEngine = () => {
       if (!websocket.isConnected && !websocket.isConnecting) {
         
         if (typeof websocket.connect === 'function') {
-          websocket.connect(sessionConfig.base_frequency, sessionConfig.beat_frequency);
+          websocket.connect(); // 🔥 FIX: No params - frequencies from messages
         } else {
         }
 
@@ -666,7 +703,7 @@ export const useBackendAudioEngine = () => {
         // Already connected, proceed immediately
       } else {
         // This shouldn't happen but let's handle it gracefully
-        websocket.connect(sessionConfig.base_frequency, sessionConfig.beat_frequency);
+        websocket.connect(); // 🔥 FIX: No params - frequencies from messages
         
         // Wait for connection
         setWaitingForConnection(true);
@@ -750,6 +787,15 @@ export const useBackendAudioEngine = () => {
           rightFreq: computedRight,
           beat_frequency: sessionConfig.beat_frequency
         }));
+
+        // Apply any queued settings after session starts
+        if (pendingSettingsRef.current) {
+          websocket.sendMessage({
+            type: 'update_settings',
+            settings: pendingSettingsRef.current
+          } as any);
+          pendingSettingsRef.current = null;
+        }
       }
       
       // Reset the flag on successful completion
@@ -762,13 +808,19 @@ export const useBackendAudioEngine = () => {
 
   // Update settings in real-time
   const updateSettings = useCallback((settings: Record<string, unknown>) => {
-    if (websocket.isConnected) {
+    if (websocket.isConnected && sessionId) {
       websocket.sendMessage({
         type: 'update_settings',
-        data: { settings }
-      });
+        settings
+      } as any);
+    } else {
+      // Cache for application when session comes up
+      pendingSettingsRef.current = {
+        ...(pendingSettingsRef.current || {}),
+        ...settings
+      };
     }
-  }, [websocket]);
+  }, [websocket, sessionId]);
 
   // Load pattern with backend integration
   const loadPattern = useCallback(async (pattern: PatternConfig) => {

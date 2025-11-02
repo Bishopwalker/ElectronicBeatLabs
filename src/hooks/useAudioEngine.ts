@@ -17,6 +17,15 @@ import {
   DEFAULT_RIGHT_FREQUENCY
 } from '../constants/audio.constants';
 
+// 🔥 GLOBAL SINGLETON TO PREVENT MULTIPLE AUDIO CONTEXTS
+declare global {
+  interface Window {
+    __EBL_AUDIO_CONTEXT__?: AudioContext;
+    __EBL_ANALYSER_NODE__?: AnalyserNode;
+    __EBL_INIT_LOCK__?: boolean;
+  }
+}
+
 /**
  * Frontend Audio Engine Hook
  */
@@ -32,9 +41,6 @@ export const useAudioEngine = () => {
 
   // 🔥 CRITICAL FIX: Stop lock to prevent auto-restart race conditions
   const stopLockRef = useRef<boolean>(false);
-
-  // 🔥 NEW: Initialization lock to prevent duplicate AudioContext creation
-  const initializingRef = useRef<boolean>(false);
   
   const [audioState, setAudioState] = useState<FrontendAudioEngineState>({
     isPlaying: false,
@@ -49,7 +55,6 @@ export const useAudioEngine = () => {
     oscillatorR: null,
     context: null
   });
-
 
   const [electromagnetic, setElectromagnetic] = useState<ElectromagneticField>({
     strength: 0,
@@ -67,62 +72,85 @@ export const useAudioEngine = () => {
   // Initialize Web Audio API with user gesture handling (persistent context)
   const initializeAudio = useCallback(async (): Promise<AudioContext | null> => {
     try {
-      // 🔥 SAFEGUARD 1: Return existing context if already initialized and running
-      if (audioContextRef.current && audioContextRef.current.state === 'running') {
-        console.log('✅ [SAFEGUARD] Using existing audio context:', audioContextRef.current.state);
-        return audioContextRef.current;
+      // 🔥 GLOBAL SINGLETON CHECK FIRST
+      if (window.__EBL_AUDIO_CONTEXT__) {
+        if (window.__EBL_AUDIO_CONTEXT__.state === 'running') {
+          if (import.meta && (import.meta as any).env?.DEV) console.log('✅ [GLOBAL] Using existing global audio context');
+          audioContextRef.current = window.__EBL_AUDIO_CONTEXT__;
+          analyserNodeRef.current = window.__EBL_ANALYSER_NODE__ || null;
+          return window.__EBL_AUDIO_CONTEXT__;
+        } else if (window.__EBL_AUDIO_CONTEXT__.state === 'suspended') {
+          if (import.meta && (import.meta as any).env?.DEV) console.log('🎵 [GLOBAL] Resuming suspended global context');
+          await window.__EBL_AUDIO_CONTEXT__.resume();
+          audioContextRef.current = window.__EBL_AUDIO_CONTEXT__;
+          analyserNodeRef.current = window.__EBL_ANALYSER_NODE__ || null;
+          return window.__EBL_AUDIO_CONTEXT__;
+        }
       }
 
-      // 🔥 SAFEGUARD 2: Prevent concurrent initialization attempts
-      if (initializingRef.current) {
-        console.warn('⚠️ [SAFEGUARD] AudioContext initialization already in progress, waiting...');
-        // Wait for existing initialization to complete (max 2 seconds)
+      // 🔥 GLOBAL LOCK CHECK
+      if (window.__EBL_INIT_LOCK__) {
+        if (import.meta && (import.meta as any).env?.DEV) console.warn('⚠️ [GLOBAL LOCK] Another initialization in progress');
+        // Wait for it to complete
         let attempts = 0;
-        while (initializingRef.current && attempts < 20) {
+        while (window.__EBL_INIT_LOCK__ && attempts < 20) {
           await new Promise(resolve => setTimeout(resolve, 100));
           attempts++;
         }
-        // Return the context that was created by the other initialization
-        if (audioContextRef.current) {
-          console.log('✅ [SAFEGUARD] Returning context created by parallel initialization');
-          return audioContextRef.current;
+        // Check if context was created
+        if (window.__EBL_AUDIO_CONTEXT__) {
+          audioContextRef.current = window.__EBL_AUDIO_CONTEXT__;
+          analyserNodeRef.current = window.__EBL_ANALYSER_NODE__ || null;
+          return window.__EBL_AUDIO_CONTEXT__;
         }
+      }
+
+      // 🔥 LOCAL REF CHECK
+      if (audioContextRef.current && audioContextRef.current.state === 'running') {
+        if (import.meta && (import.meta as any).env?.DEV) console.log('✅ [LOCAL] Using existing local audio context');
+        return audioContextRef.current;
       }
 
       // Resume existing context if suspended
       if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
-        console.log('🎵 Resuming suspended audio context...');
+        if (import.meta && (import.meta as any).env?.DEV) console.log('🎵 [LOCAL] Resuming suspended local context');
         await audioContextRef.current.resume();
-        console.log('🎵 Audio context resumed, new state:', audioContextRef.current.state);
         return audioContextRef.current;
       }
 
-      // 🔥 SAFEGUARD 3: Set initialization lock
-      initializingRef.current = true;
-      console.log('🔒 [SAFEGUARD] Initialization lock acquired');
+      // 🔥 SET GLOBAL INITIALIZATION LOCK
+      window.__EBL_INIT_LOCK__ = true;
+      if (import.meta && (import.meta as any).env?.DEV) console.log('🔒 [GLOBAL LOCK] Acquired for new context creation');
 
       // Create new context only if none exists
-      console.log('🎵 Creating new persistent audio context...');
+      if (import.meta && (import.meta as any).env?.DEV) console.log('🎵 Creating new GLOBAL audio context...');
       const context = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
-      console.log('🎵 Audio context created, state:', context.state);
+      
+      // 🔥 CREATE GLOBAL ANALYSER NODE
+      const analyser = context.createAnalyser();
+      analyser.fftSize = 2048;
+      analyser.smoothingTimeConstant = 0.8;
+      
+      // 🔥 STORE GLOBALLY
+      window.__EBL_AUDIO_CONTEXT__ = context;
+      window.__EBL_ANALYSER_NODE__ = analyser;
+      
+      if (import.meta && (import.meta as any).env?.DEV) console.log('🎵 Global audio context created, state:', context.state);
 
       // Resume if suspended (required for user gesture)
       if (context.state === 'suspended') {
-        console.log('🎵 Audio context suspended, attempting to resume...');
+        if (import.meta && (import.meta as any).env?.DEV) console.log('🎵 Audio context suspended, attempting to resume...');
         try {
           await context.resume();
-          console.log('✅ Audio context resumed successfully, new state:', context.state);
+          if (import.meta && (import.meta as any).env?.DEV) console.log('✅ Audio context resumed successfully, new state:', context.state);
         } catch (error) {
           // 🔥 FIX: Browser autoplay policy blocks AudioContext.resume() without user gesture
           // This is EXPECTED on page load - context will resume when user clicks "start"
-          console.log('⏸️ AudioContext requires user gesture to resume (expected on page load)');
-          console.log('💡 Context will auto-resume when user starts audio playback');
           // Don't throw error - just leave context suspended until user interaction
         }
       }
 
       if (context.state !== 'running') {
-        console.log('⏸️ Audio context not running yet (state:', context.state, ') - will resume on user interaction');
         // Don't try to force-start with dummy oscillator - this also requires user gesture
         // Context will resume automatically when user clicks "start" button
       }
@@ -132,8 +160,9 @@ export const useAudioEngine = () => {
         state:'ACTIVE'
       }));
 
-      // Store the persistent context
+      // Store the persistent context locally too
       audioContextRef.current = context;
+      analyserNodeRef.current = analyser;
 
       // Update state to trigger re-render with new context
       setAudioState(prev => ({
@@ -141,19 +170,17 @@ export const useAudioEngine = () => {
         context: context
       }));
 
-      console.log('✅ Persistent audio context initialized successfully');
+      if (import.meta && (import.meta as any).env?.DEV) console.log('✅ Global audio context initialized successfully');
 
-      // 🔥 SAFEGUARD 4: Release initialization lock
-      initializingRef.current = false;
-      console.log('🔓 [SAFEGUARD] Initialization lock released');
+      // 🔥 RELEASE GLOBAL LOCK
+      window.__EBL_INIT_LOCK__ = false;
+      if (import.meta && (import.meta as any).env?.DEV) console.log('🔓 [GLOBAL LOCK] Released');
 
       return context;
     } catch (error) {
-      console.error('❌ Failed to initialize audio context:', error);
-
-      // 🔥 SAFEGUARD 5: Release lock on error
-      initializingRef.current = false;
-      console.log('🔓 [SAFEGUARD] Initialization lock released (error path)');
+      // 🔥 RELEASE GLOBAL LOCK ON ERROR
+      window.__EBL_INIT_LOCK__ = false;
+      if (import.meta && (import.meta as any).env?.DEV) console.log('🔓 [GLOBAL LOCK] Released (error path)');
 
       return null;
     }
@@ -163,7 +190,7 @@ export const useAudioEngine = () => {
 
     const initAudioContextOnMount = async () => {
       if (!audioState.context) {
-        console.log('🎵 Frontend Engine: Initializing audio context on mount...');
+        if (import.meta && (import.meta as any).env?.DEV) console.log('🎵 Frontend Engine: Initializing audio context on mount...');
         try {
           const context = await initializeAudio();
           if (context) {
@@ -171,10 +198,10 @@ export const useAudioEngine = () => {
               ...prev,
               context
             }));
-            console.log('✅ Frontend Engine: Audio context initialized and stored in state, state:', context.state);
+            if (import.meta && (import.meta as any).env?.DEV) console.log('✅ Frontend Engine: Audio context initialized and stored in state, state:', context.state);
           }
         } catch (error) {
-          console.log('⚠️ Frontend Engine: Audio context initialization requires user gesture:', error);
+          if (import.meta && (import.meta as any).env?.DEV) console.log('⚠️ Frontend Engine: Audio context initialization requires user gesture:', error);
         }
       }
     };
@@ -238,16 +265,13 @@ export const useAudioEngine = () => {
 
   // Start binaural beat playback
   const startBinauralBeat = useCallback(async (config: BinauralBeatConfig) => {
-    console.log('🎵 Frontend Engine: startBinauralBeat called with config:', config);
     
     // 🔥 FIXED: Clear stop lock FIRST to allow restart
     stopLockRef.current = false;
-    console.log('🔓 Frontend Engine: Stop lock CLEARED (allowing audio start)');
     
     try {
       // Stop any existing audio first
       if (audioState.isPlaying) {
-        console.log('🛑 Frontend Engine: Stopping existing audio...');
         // Inline stop logic to avoid circular dependency
         if (audioState.oscillatorL) {
           audioState.oscillatorL.stop();
@@ -262,19 +286,14 @@ export const useAudioEngine = () => {
       }
 
       // Use persistent context or initialize if needed
-      console.log('🎵 Frontend Engine: Initializing audio context...');
       const context = audioContextRef.current || await initializeAudio();
       if (!context) {
-        console.error('❌ Frontend Engine: Failed to initialize audio context');
         return;
       }
-      console.log('✅ Frontend Engine: Audio context ready, state:', context.state);
 
       // Ensure context is running
       if (context.state === 'suspended') {
-        console.log('⏸️ Frontend Engine: Audio context suspended, resuming...');
         await context.resume();
-        console.log('▶️ Frontend Engine: Audio context resumed, new state:', context.state);
       }
 
       // Calculate actual frequencies from config
@@ -293,17 +312,17 @@ export const useAudioEngine = () => {
       // Create channel merger for proper stereo separation
       const merger = context.createChannelMerger(2);
 
-      // Use external analyser if provided (for AudioMixer integration), otherwise create/reuse local one
-      const analyser = externalAnalyserRef.current || analyserNodeRef.current;
+      // Use external analyser if provided (for AudioMixer integration), otherwise use global one
+      const analyser = externalAnalyserRef.current || window.__EBL_ANALYSER_NODE__ || analyserNodeRef.current;
       if (!analyser) {
-        analyserNodeRef.current = context.createAnalyser();
-        analyserNodeRef.current.fftSize = 2048;
-        analyserNodeRef.current.smoothingTimeConstant = 0.8;
-        console.log('✅ Created local AnalyserNode for visualization');
-      } else if (externalAnalyserRef.current) {
-        // Use external analyser but keep local reference for compatibility
-        analyserNodeRef.current = externalAnalyserRef.current;
-        console.log('✅ Using external AnalyserNode from AudioMixer');
+        // This shouldn't happen anymore since we create it globally
+        const newAnalyser = context.createAnalyser();
+        newAnalyser.fftSize = 2048;
+        newAnalyser.smoothingTimeConstant = 0.8;
+        analyserNodeRef.current = newAnalyser;
+        window.__EBL_ANALYSER_NODE__ = newAnalyser;
+      } else {
+        analyserNodeRef.current = analyser;
       }
 
       // Connect left oscillator to left channel only
@@ -318,30 +337,23 @@ export const useAudioEngine = () => {
       // This ensures the mixer can control frontend engine volume
       const outputNode = externalOutputNodeRef.current;
       if (outputNode) {
-        console.log('🎚️ Frontend Engine: Routing through external gain node (AudioMixer mode)');
 
         // Route: merger → equalizer (if exists) → external gain node
         if (equalizerInputRef.current && equalizerOutputRef.current) {
-          console.log('🎵 With equalizer: merger → equalizer → mixerGain');
           merger.connect(equalizerInputRef.current);
           equalizerOutputRef.current.connect(outputNode);
         } else {
-          console.log('🎵 Direct: merger → mixerGain');
           merger.connect(outputNode);
         }
 
         // Analyser already connected by mixer, no need to connect here
-        console.log('✅ Frontend Engine: Audio routed through AudioMixer successfully');
       } else {
         // Standalone mode: route directly to analyser → destination
-        console.log('🎵 Frontend Engine: Standalone mode - routing to destination');
 
         if (equalizerInputRef.current && equalizerOutputRef.current) {
-          console.log('🎚️ With equalizer: merger → equalizer → analyser → destination');
           merger.connect(equalizerInputRef.current);
           equalizerOutputRef.current.connect(analyserNodeRef.current!);
         } else {
-          console.log('🎵 Direct: merger → analyser → destination');
           merger.connect(analyserNodeRef.current!);
         }
 
@@ -350,18 +362,15 @@ export const useAudioEngine = () => {
 
       // Add error handling for oscillators
       oscL.addEventListener('ended', () => {
-        console.log('Left oscillator ended');
       });
       
       oscR.addEventListener('ended', () => {
-        console.log('Right oscillator ended');
       });
 
       // Start oscillators
       oscL.start(context.currentTime);
       oscR.start(context.currentTime);
 
-      console.log(`Starting binaural beat: ${leftFreq}Hz (L) / ${rightFreq}Hz (R) = ${config.beat_frequency}Hz beat`);
       calculateElectromagneticField(leftFreq,rightFreq, config.beat_frequency,context.currentTime);
       // Update state with persistent context
       setAudioState(prev => ({
@@ -378,7 +387,6 @@ export const useAudioEngine = () => {
         context: audioContextRef.current // Always use the persistent context
       }));
     } catch (error) {
-      console.error('Error starting binaural beat:', error);
     }
 
     // Don't start animation for frontend engine when backend is being used
@@ -388,11 +396,9 @@ export const useAudioEngine = () => {
 
   // Stop binaural beat playback
   const stopBinauralBeat = useCallback(() => {
-    console.log('🛑 Frontend Engine: stopBinauralBeat called');
     
     // 🔥 CRITICAL FIX: Set stop lock to prevent auto-restart
     stopLockRef.current = true;
-    console.log('🔒 Frontend Engine: Stop lock ENABLED');
     
     try {
       if (audioState.oscillatorL) {
@@ -429,7 +435,6 @@ export const useAudioEngine = () => {
         stability: 0
       });
     } catch (error) {
-      console.error('Error stopping binaural beat:', error);
     }
   }, [audioState.oscillatorL, audioState.oscillatorR]);
 
@@ -470,7 +475,6 @@ export const useAudioEngine = () => {
   const updateVolume = useCallback((volume: number) => {
     // Protect against NaN and invalid values
     const safeVolume = isNaN(volume) ? DEFAULT_VOLUME : Math.max(0, Math.min(2, volume));
-    console.log('🎶 Frontend updateVolume:', { original: volume, safe: safeVolume });
 
     if (audioState.gainL && audioState.gainR && audioState.context) {
       const now = audioState.context.currentTime;
@@ -567,26 +571,19 @@ export const useAudioEngine = () => {
 
   // Update spatial settings (frontend engine doesn't support this)
   const updateSpatialSettings = useCallback((spatialSettings: Record<string, unknown>) => {
-    console.warn('🎧 Spatial audio (8D effects) requires Backend Engine connection');
-    console.warn('Current settings ignored:', spatialSettings);
-    console.warn('To use spatial audio, connect to the Python backend server');
   }, []);
 
   // Set equalizer nodes for audio chain routing
   const setEqualizerNodes = useCallback((inputNode: GainNode | null, outputNode: GainNode | null) => {
-    console.log('🎚️ Setting equalizer nodes:', { inputNode, outputNode });
     equalizerInputRef.current = inputNode;
     equalizerOutputRef.current = outputNode;
 
     // If audio is currently playing, we need to reconnect the audio chain
     if (audioState.isPlaying && audioContextRef.current) {
-      console.log('🔄 Reconnecting audio chain with equalizer changes');
       // The audio will automatically route through the equalizer on next start
       // For now, just log that equalizer is ready
       if (inputNode && outputNode) {
-        console.log('✅ Equalizer enabled and ready for audio routing');
       } else {
-        console.log('❌ Equalizer disabled, audio will route directly');
       }
     }
   }, [audioState.isPlaying]);
@@ -597,16 +594,13 @@ export const useAudioEngine = () => {
    * 🔥 CRITICAL FIX: Now accepts audioContext parameter (even though frontend doesn't use it)
    */
   const setExternalNodes = useCallback((outputGainNode: GainNode | null, analyserNode: AnalyserNode | null, audioContext?: AudioContext | null) => {
-    console.log('🎚️ Frontend Engine: Setting external mixer nodes:', { outputGainNode, analyserNode, audioContext });
     externalOutputNodeRef.current = outputGainNode;
     externalAnalyserRef.current = analyserNode;
     // Frontend uses persistent audioContextRef, ignores external context parameter
 
     // If audio is currently playing, warn that restart is needed
     if (audioState.isPlaying) {
-      console.warn('⚠️ Frontend Engine: External nodes changed while playing. Restart audio for changes to take effect.');
     } else {
-      console.log('✅ Frontend Engine: External nodes set successfully, will be used on next audio start');
     }
   }, [audioState.isPlaying]);
 
