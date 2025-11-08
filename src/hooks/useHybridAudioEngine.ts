@@ -52,12 +52,13 @@ export const useHybridAudioEngine = () => {
    * Initialize audio mixer and connect both engines
    */
   const initializeMixer = useCallback(async () => {
-    if (mixerRef.current || !frontendEngine.audioContext) {
+    // Only skip if mixer already exists; allow creating the audio context here if missing
+    if (mixerRef.current) {
       return;
     }
 
     try {
-      // Ensure frontend audio context is ready
+      // Ensure frontend audio context is ready (may require user gesture; safe to await)
       if (!frontendEngine.audioContext) {
         await frontendEngine.initializeAudio();
       }
@@ -470,13 +471,11 @@ export const useHybridAudioEngine = () => {
     ? { ...defaultElectromagnetic, ...backendEngine.electromagnetic }
     : { ...defaultElectromagnetic, ...frontendEngine.electromagnetic };
 
-  // 🔥 CRITICAL FIX: Return the CORRECT analyserNode based on what's actually playing
-  // - If backend is active, use mixer's analyserNode (has backend audio data)
-  // - If frontend is active, use frontend's analyserNode (has frontend audio data)
-  // - This ensures FrequencyVisualizer always gets audio data
-  const activeAnalyserNode = currentEngine === 'backend' && mixerRef.current
-    ? mixerRef.current.analyserNode  // Backend → use mixer analyser
-    : frontendEngine.analyserNode;    // Frontend → use frontend analyser
+  // 🔥 CRITICAL FIX: ALWAYS use mixer analyser (gets signal from BOTH engines)
+  // Mixer analyser receives full-strength audio from both frontend AND backend (lines 76-78 in AudioMixer)
+  // This ensures FrequencyVisualizer ALWAYS has audio data regardless of which engine is active
+  // Fixes intermittent visualizer bug where analyser reference kept changing on multiple play presses
+  const activeAnalyserNode = mixerRef.current?.analyserNode || frontendEngine.analyserNode;
 
   // 🔥 PERFORMANCE FIX: Memoize audioState to prevent wasteful recalculation on every render
   // Only recalculates when dependencies actually change
