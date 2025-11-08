@@ -20,7 +20,7 @@ import { WebSocketProvider } from './hooks/useWebsocketContext';
 import { DEFAULT_BASE_FREQUENCY, DEFAULT_BEAT_FREQUENCY, DEFAULT_VOLUME } from './constants/audio.constants';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { DEFAULT_APP_STATE } from './components/config/ElectromagneticLabConfig';
-
+import CollapsibleSection from './components/shared/CollapsibleSection'
 // Styled Components theme configuration
 const styledTheme = {
   colors: {
@@ -49,7 +49,7 @@ const AppContent = () => {
   const [showUsageAlert, setShowUsageAlert] = React.useState(true);
 
   // Get timer state from context
-  const { timerStatus, timerNavigationRef, timerControlRef } = useTimerContext();
+  const { timerStatus, setTimerStatus, timerNavigationRef, timerControlRef } = useTimerContext();
 
   // Get hybrid audio engine from context
   const hybridEngine = useAudioEngineContext();
@@ -189,22 +189,31 @@ const AppContent = () => {
 
         {/* CRITICAL: Timer Countdown Display - Rendered ABOVE tabs so it shows everywhere */}
         {timerStatus && (
-          <Box sx={{
-            p: { xs: '3px', sm: '5px', md: '8px' },  // ✅ REDUCED: was 5/8/10, now 3/5/8
+            <CollapsibleSection compact={true} id="timerPanel" title="Timer & Sessions" icon="⏰" defaultOpen={true} onClose={handleSectionClose}>
+
+            <Box sx={{
+            p: { xs: '3px', sm: '5px', md: '8px' },
             bgcolor: 'rgba(0,0,0,0.5)',
-            borderBottom: '1px solid rgba(255, 107, 0, 0.2)'
+            borderBottom: '1px solid rgba(255, 107, 0, 0.2)',
+            overflowY: 'scroll'
+
           }}>
+
             <TimerCountdownDisplay
               timerStatus={timerStatus}
               isVisible={true}
               appState={appState as any}
               onJumpToTransition={timerNavigationRef.current.jumpToTransition}
               onRestartTransition={timerNavigationRef.current.restartCurrentTransition}
+              onPauseTimer={timerControlRef.current.pauseTimer}
+              onResumeTimer={timerControlRef.current.resumeTimer}
+              onRepeatSession={timerControlRef.current.restartTimer}
               audioContext={hybridEngine.audioContext}
               analyserNode={hybridEngine.analyserNode}
               hybridEngine={hybridEngine}
             />
           </Box>
+            </CollapsibleSection>
         )}
 
         <Box sx={{
@@ -226,6 +235,17 @@ const AppContent = () => {
                 audioEngine={hybridEngine}
                 patterns8D={[]}
                 onStateChange={() => {}}
+                onTimerStatusUpdate={(status) => setTimerStatus(status)}
+                onSetTimerNavigation={(nav) => {
+                  timerNavigationRef.current.jumpToTransition = nav.jumpToTransition;
+                  timerNavigationRef.current.restartCurrentTransition = nav.restartCurrentTransition;
+                }}
+                onSetTimerControl={(control) => {
+                  timerControlRef.current.stopTimer = control.stopTimer;
+                  timerControlRef.current.pauseTimer = control.pauseTimer;
+                  timerControlRef.current.resumeTimer = control.resumeTimer;
+                  timerControlRef.current.restartTimer = control.restartTimer;
+                }}
               />
             </Box>
           )}
@@ -245,6 +265,7 @@ const AppContent = () => {
 function App() {
   return (
     <ThemeProvider theme={muiTheme}>
+      <ErrorBoundary>
       <StyledThemeProvider theme={styledTheme}>
         <CssBaseline />
         <GlobalStyles />
@@ -260,6 +281,7 @@ function App() {
           </WebSocketProvider>
         </AuthProvider>
       </StyledThemeProvider>
+        </ErrorBoundary>
     </ThemeProvider>
   );
 }

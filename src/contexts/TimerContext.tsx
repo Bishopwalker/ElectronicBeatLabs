@@ -4,7 +4,7 @@
  */
 
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import type { TimerStatus } from '../data/timer';
+import type { TimerStatus } from '../types';
 
 interface TimerContextType {
   timerStatus: TimerStatus | null;
@@ -15,6 +15,9 @@ interface TimerContextType {
   }>;
   timerControlRef: React.MutableRefObject<{
     stopTimer: () => void;
+    pauseTimer: () => void;
+    resumeTimer: () => void;
+    restartTimer: () => void;
   }>;
 }
 
@@ -35,8 +38,14 @@ export const TimerProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   // Control functions ref (populated by TimerTab)
   const timerControlRef = React.useRef<{
     stopTimer: () => void;
+    pauseTimer: () => void;
+    resumeTimer: () => void;
+    restartTimer: () => void;
   }>({
-    stopTimer: () => console.warn('Timer control not initialized')
+    stopTimer: () => console.warn('Timer control not initialized'),
+    pauseTimer: () => console.warn('Timer control not initialized'),
+    resumeTimer: () => console.warn('Timer control not initialized'),
+    restartTimer: () => console.warn('Timer control not initialized')
   });
 
   const value = {
