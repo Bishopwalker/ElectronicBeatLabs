@@ -8,12 +8,21 @@ echo [1/4] Stopping any existing containers...
 docker-compose -f docker-compose.dev.yml down 2>nul
 echo.
 
-echo [2/4] Checking for port conflicts...
-netstat -ano | findstr ":5173 :8000" >nul 2>&1
-if %errorlevel% equ 0 (
-    echo WARNING: Ports 5173 or 8000 may be in use by non-Docker processes
-    echo Attempting to continue anyway...
+echo [2/4] Cleaning up non-Docker processes on ports...
+REM Kill all frontend servers on ports 5173-5180
+for /L %%p in (5173,1,5180) do (
+    for /f "tokens=5" %%a in ('netstat -ano ^| findstr :%%p ^| findstr LISTENING 2^>nul') do (
+        taskkill /F /PID %%a >nul 2>&1
+    )
 )
+
+REM Kill all backend servers on ports 8000-8005
+for /L %%p in (8000,1,8005) do (
+    for /f "tokens=5" %%a in ('netstat -ano ^| findstr :%%p ^| findstr LISTENING 2^>nul') do (
+        taskkill /F /PID %%a >nul 2>&1
+    )
+)
+echo Cleanup complete!
 echo.
 
 echo [3/4] Starting Docker containers...

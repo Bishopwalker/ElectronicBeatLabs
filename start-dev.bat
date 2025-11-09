@@ -2,10 +2,27 @@
 echo 🚀 Starting EBL Development Environment (Optimized)
 echo.
 
-REM Kill any existing servers silently
-for /f "tokens=5" %%a in ('netstat -ano ^| findstr :5173 ^| findstr LISTENING 2^>nul') do taskkill /F /PID %%a >nul 2>&1
-for /f "tokens=5" %%a in ('netstat -ano ^| findstr :8000 ^| findstr LISTENING 2^>nul') do taskkill /F /PID %%a >nul 2>&1
+REM Kill any existing servers silently - COMPREHENSIVE CLEANUP
+echo 🧹 Cleaning up any existing servers...
+
+REM Kill all frontend servers on ports 5173-5180
+for /L %%p in (5173,1,5180) do (
+    for /f "tokens=5" %%a in ('netstat -ano ^| findstr :%%p ^| findstr LISTENING 2^>nul') do (
+        taskkill /F /PID %%a >nul 2>&1
+    )
+)
+
+REM Kill all backend servers on ports 8000-8005
+for /L %%p in (8000,1,8005) do (
+    for /f "tokens=5" %%a in ('netstat -ano ^| findstr :%%p ^| findstr LISTENING 2^>nul') do (
+        taskkill /F /PID %%a >nul 2>&1
+    )
+)
+
+REM Kill HMR port
 for /f "tokens=5" %%a in ('netstat -ano ^| findstr :24678 ^| findstr LISTENING 2^>nul') do taskkill /F /PID %%a >nul 2>&1
+
+echo ✅ Cleanup complete - ready for fresh start!
 
 echo ✅ Starting servers in parallel (Python 3.11 venv)...
 echo.
