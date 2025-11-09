@@ -21,8 +21,8 @@ interface AppState {
 let appState: AppState = {
   appLoaded: false,
   audioInitialized: false,
-  leftFrequency: 440,
-  rightFrequency: 444,
+  leftFrequency: 140,
+  rightFrequency: 144,
   isPlaying: false,
   volume: 50,
   waveform: 'sine',
@@ -32,6 +32,7 @@ let appState: AppState = {
 };
 
 // Helper functions
+// Only for user UI the backend properly does this math so this would only alter frequency
 function calculateBeatFrequency(): number {
   return Math.abs(appState.rightFrequency - appState.leftFrequency);
 }

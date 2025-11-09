@@ -59,6 +59,17 @@ interface TimerTabProps {
         resumeTimer: () => void;
         restartTimer: () => void;
     };
+    // New setter props for proper state updates
+    onSetTimerNavigation?: (nav: {
+        jumpToTransition: (direction: 'next' | 'previous') => void;
+        restartCurrentTransition: () => void;
+    }) => void;
+    onSetTimerControl?: (control: {
+        stopTimer: () => void;
+        pauseTimer: () => void;
+        resumeTimer: () => void;
+        restartTimer: () => void;
+    }) => void;
     audioEngine?: AnyAudioEngine;
     patterns8DEngine?: {
         setActivePattern: (pattern: PatternConfig) => void;
@@ -74,7 +85,9 @@ const TimerTab: React.FC<TimerTabProps> = ({
     onTimerStatusUpdate,
     onElectromagneticUpdate,
     onTransitionNavigation,
-    onTimerControl
+    onTimerControl,
+    onSetTimerNavigation,
+    onSetTimerControl
 }) => {
     // Extract audioState from the audio engine
     const audioState: CoreAudioState = React.useMemo(() => {
@@ -137,31 +150,27 @@ const TimerTab: React.FC<TimerTabProps> = ({
         onTimerStatusUpdate // 🔥 FIXED: Pass callback to hook
     });
 
-    // Expose navigation functions to parent via callback
+    // Expose navigation functions to parent via setter callback
     React.useEffect(() => {
-        if (onTransitionNavigation) {
-            onTransitionNavigation.jumpToTransition = jumpToTransition;
-            onTransitionNavigation.restartCurrentTransition = restartCurrentTransition;
+        if (onSetTimerNavigation) {
+            onSetTimerNavigation({
+                jumpToTransition,
+                restartCurrentTransition
+            });
         }
-    }, [jumpToTransition, restartCurrentTransition, onTransitionNavigation]);
+    }, [jumpToTransition, restartCurrentTransition, onSetTimerNavigation]);
 
-    // Expose control functions to parent via callback
+    // Expose control functions to parent via setter callback
     React.useEffect(() => {
-        if (onTimerControl) {
-            onTimerControl.stopTimer = () => {
-                controlTimer('stop');
-            };
-            onTimerControl.pauseTimer = () => {
-                controlTimer('pause');
-            };
-            onTimerControl.resumeTimer = () => {
-                controlTimer('resume');
-            };
-            onTimerControl.restartTimer = () => {
-                controlTimer('restart');
-            };
+        if (onSetTimerControl) {
+            onSetTimerControl({
+                stopTimer: () => controlTimer('stop'),
+                pauseTimer: () => controlTimer('pause'),
+                resumeTimer: () => controlTimer('resume'),
+                restartTimer: () => controlTimer('restart')
+            });
         }
-    }, [controlTimer, onTimerControl]);
+    }, [controlTimer, onSetTimerControl]);
 
     // Local state for dialogs and custom presets
     const [showCreateDialog, setShowCreateDialog] = useState(false);

@@ -7,8 +7,8 @@ setDefaultTimeout(60 * 1000);
 let appState = {
   appLoaded: false,
   audioInitialized: false,
-  leftFrequency: 440,
-  rightFrequency: 444,
+  leftFrequency: 140,
+  rightFrequency: 144,
   isPlaying: false,
   volume: 50,
   waveform: 'sine',

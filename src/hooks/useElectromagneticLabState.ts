@@ -1,7 +1,7 @@
 // Custom hook for Electromagnetic Beat Lab state management
 // Extracted complex state logic from main component
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import type {AppState, AudioEngine, BackendAudioConfig, PatternMode} from '../types';
 import { WAVE_PATTERNS } from '../data/patterns';
 import { DEFAULT_APP_STATE, DEFAULT_CLOSED_SECTIONS } from '../components/config/ElectromagneticLabConfig';
@@ -112,41 +112,42 @@ export const useElectromagneticLabState = (initialPattern?: string, autoStart: b
     manager
   ]);
 
-  return {
+  // 🔥 FIXED: Memoize return object to prevent infinite loops from unstable function references
+  return useMemo(() => ({
     // State
     ...state,
-    
+
     // Manager methods
     handlePatternSelect: (patternId: string, audioEngine: AudioEngine, patterns8D: PatternMode) =>
       manager.handlePatternSelect(patternId, audioEngine, patterns8D),
-    
+
     handleModeChange: (mode: PatternMode, masterAudio: any) =>
       manager.handleModeChange(mode, masterAudio),
-    
+
     handleFrequencyChange: (base_frequency: number, beat_frequency: number, audioEngine: AudioEngine) =>
       manager.handleFrequencyChange(base_frequency, beat_frequency, audioEngine),
-    
+
     handleVolumeChange: (volume: number, audioEngine: AudioEngine) =>
       manager.handleVolumeChange(volume, audioEngine),
-    
+
     handlePlay: (audioEngine: AudioEngine, backendEngine: BackendAudioConfig, patterns8D: PatternMode) =>
       manager.handlePlay(audioEngine, backendEngine, patterns8D),
-    
+
     handleTabChange: (tabId: string) => manager.handleTabChange(tabId),
-    
+
     handleSectionClose: (id: string) => manager.handleSectionClose(id),
-    
+
     handleSectionRestore: (id: string) => manager.handleSectionRestore(id),
-    
+
     toggleAdvancedControls: (backendEngine?: BackendAudioConfig) => manager.toggleAdvancedControls(backendEngine),
-    
+
     toggleDarkScreen: () => manager.toggleDarkScreen(),
-    
+
     // State update methods
     updateAppState: (partialState: Partial<AppState>) => manager.updateAppState(partialState),
-    
+
     updateElectromagneticState,
-    
+
     updateElectromagneticForPattern
-  };
+  }), [state, manager, updateElectromagneticState, updateElectromagneticForPattern]); // Only recreate when state or callbacks change
 };

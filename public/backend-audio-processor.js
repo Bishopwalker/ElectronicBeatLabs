@@ -28,11 +28,11 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
     this.framesPerSecond = 60;
 
     // ULTRA-STABLE buffer thresholds for 48kHz/800 samples per frame - MAXIMUM RELIABILITY
-    // 🔥 FIXED: Massively increased thresholds to handle 400-600ms WebSocket processing delays
-    this.minBufferSize = this.frameSamples * 80; // ~80 frames minimum (1333ms) - handles 600ms WebSocket delays
-    this.targetBufferSize = this.frameSamples * 120; // ~120 frames target (2000ms) - 2 second buffer for rock-solid stability
+    // 🔥 OPTIMIZED: Tuned thresholds for better underrun recovery while maintaining stability
+    this.minBufferSize = this.frameSamples * 120; // ~120 frames minimum (2000ms) - matches backend min_buffer_size
+    this.targetBufferSize = this.frameSamples * 180; // ~180 frames target (3000ms) - 3 second buffer for rock-solid stability
     this.maxBufferSize = this.frameSamples * 300; // ~300 frames max (5000ms) - 5 second max buffering for network spikes
-    this.restartThreshold = this.frameSamples * 40; // ~40 frames (667ms) - increased restart threshold with hysteresis
+    this.restartThreshold = this.frameSamples * 20; // ~20 frames (333ms) - lower threshold for more tolerance
 
     // Playback state management
     this.isPlaying = false;
@@ -375,11 +375,11 @@ class BackendAudioProcessor extends AudioWorkletProcessor {
       }
     }
 
-    // 🔥 FIXED: Restart playback when buffer recovers AND has been stable for ~500ms (prevent rapid cycling)
+    // 🔥 OPTIMIZED: Restart playback faster when buffer recovers (prevent long dead air)
     if (!this.isPlaying && this.isPrimed && !this.fadingOut && availableSamples >= this.targetBufferSize) {
       this.underrunRecoveryFrames++;
-      // Require buffer to stay full for at least 30 frames (~500ms at 128 samples/frame) before restarting
-      if (this.underrunRecoveryFrames > 30) {
+      // Require buffer to stay full for at least 10 frames (~167ms at 128 samples/frame) before restarting
+      if (this.underrunRecoveryFrames > 10) {
         this.isPlaying = true;
         this.fadingIn = true;
         this.currentFade = 0;

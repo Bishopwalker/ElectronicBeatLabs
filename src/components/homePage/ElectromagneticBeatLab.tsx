@@ -84,8 +84,8 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
   // Timer status for preset tracking
   const [timerStatus, setTimerStatus] = useState<TimerStatus | undefined>(undefined);
 
-  // Timer navigation callback ref
-  const timerNavigationRef = useRef<{
+  // Timer navigation callbacks using state for proper React updates
+  const [timerNavigation, setTimerNavigation] = useState<{
     jumpToTransition: (direction: 'next' | 'previous') => void;
     restartCurrentTransition: () => void;
   }>({
@@ -93,8 +93,8 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
     restartCurrentTransition: () => console.warn('Timer navigation not initialized')
   });
 
-  // Timer control callback ref for controlling timer (stop, pause, resume, restart)
-  const timerControlRef = useRef<{
+  // Timer control callbacks using state for proper React updates
+  const [timerControl, setTimerControl] = useState<{
     stopTimer: () => void;
     pauseTimer: () => void;
     resumeTimer: () => void;
@@ -147,7 +147,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
       document.removeEventListener('click', handleInteraction);
       document.removeEventListener('keydown', handleInteraction);
     };
-  }, [audioInitialized, hybridEngine]);
+  }, [audioInitialized, hybridEngine.audioContext, hybridEngine.initializeAudio]); // 🔥 FIXED: Only depend on specific properties, not entire object
   // 🔥 PERFORMANCE FIX: Memoize audio config to prevent wasteful recalculation
   // This replaces the scattered constant creation throughout the component
   const audioConfig = useMemo(() => {
@@ -229,7 +229,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
   const hasAutoEnabledRef = useRef(false);
   useEffect(() => {
     const isAudioPlaying = hybridEngine.audioState.isPlaying;
-    
+
     // Only run this once when backend first connects AND audio is playing
     if (backendEngine.backendConnected && backendEngine.sessionId && !hasAutoEnabledRef.current && isAudioPlaying) {
       hasAutoEnabledRef.current = true;
@@ -251,7 +251,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
     if (!backendEngine.backendConnected || !isAudioPlaying) {
       hasAutoEnabledRef.current = false;
     }
-  }, [backendEngine.backendConnected, backendEngine.sessionId, hybridEngine.audioState.isPlaying, appState.spatialAudio?.enabled, updateAppState]);
+  }, [backendEngine.backendConnected, backendEngine.sessionId, hybridEngine.audioState.isPlaying, appState.spatialAudio?.enabled]); // 🔥 FIXED: Removed updateAppState from deps to prevent infinite loop
 
   // NOTE: FrequencyVisualizer auto-open/close REMOVED - stays in Advanced Controls tab for more space
   // User can manually open/close it as needed
@@ -353,7 +353,9 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
       base_frequency: audioConfig.baseFreq,
       beat_frequency: audioConfig.beatFreq,
       volume: audioConfig.volume,
-      waveform: 'sine'
+      waveform: 'sine',
+
+
     });
 
     // Audio state updated by hybrid engine automatically
@@ -365,7 +367,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
       // Use centralized audio control utility with timer control
       const success = await stopBinauralAudio(
         hybridEngine,
-        timerStatus?.session?.is_active ? timerControlRef.current : undefined
+        timerStatus?.session?.is_active ? timerControl : undefined
       );
 
       if (success) {
@@ -602,7 +604,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
       )}
 
       {/* Header */}
-      <Paper elevation={0} sx={ElectromagneticLabStyles.headerPaper}>
+      <Paper elevation={0} sx={{ ...ElectromagneticLabStyles.headerPaper, mb: { xs: 2, sm: 2.5, md: 3 } }}>  {/* ✅ ADDED: Bottom margin for separation from content */}
         <Box sx={ElectromagneticLabStyles.titleStatusRow}>
           <Box sx={{ flex: 1 }}>
             {/* TIMER REPLACES MAIN TITLE when active */}
@@ -742,7 +744,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
       </Paper>
 
       {/* Content Area (85vh): Timer + Two Rows */}
-      <Box sx={{ gridRow: 2, height: '85vh', display: 'grid', gridTemplateRows: 'auto 1fr', overflowX: 'hidden', overflowY: 'auto', pt: 2 }}>
+      <Box sx={{ p: { xs: '6px', sm: '10px', md: '12px' }, gridRow: 2, height: '85vh', display: 'grid', gridTemplateRows: 'auto 1fr', overflowX: 'hidden', overflowY: 'auto', pt: 2 }}>
         {/* Timer Countdown Display - inside content area */}
         {timerStatus && !closedSections.includes('timerDisplay') && (
           <Box sx={{ position: 'relative', p: { xs: '6px', sm: '10px', md: '12px' }, pt: 2, pb: 2 }}>
@@ -758,11 +760,11 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
               timerStatus={timerStatus}
               isVisible={true}
               appState={appState}
-              onJumpToTransition={timerNavigationRef.current.jumpToTransition}
-              onRestartTransition={timerNavigationRef.current.restartCurrentTransition}
-              onPauseTimer={timerControlRef.current.pauseTimer}
-              onResumeTimer={timerControlRef.current.resumeTimer}
-              onRepeatSession={timerControlRef.current.restartTimer}
+              onJumpToTransition={timerNavigation.jumpToTransition}
+              onRestartTransition={timerNavigation.restartCurrentTransition}
+              onPauseTimer={timerControl.pauseTimer}
+              onResumeTimer={timerControl.resumeTimer}
+              onRepeatSession={timerControl.restartTimer}
               audioContext={activeAudioEngine.audioContext}
               analyserNode={activeAudioEngine.analyserNode}
               hybridEngine={hybridEngine}
@@ -797,7 +799,6 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
           {/* Timer Presets (Timer & Sessions) */}
           {!closedSections.includes('timerPanel') && (
             <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4, xl: 4 }} sx={ElectromagneticLabStyles.panelFlex}>
-              <CollapsibleSection compact={true} id="timerPanel" title="Timer & Sessions" icon="⏰" defaultOpen={true} onClose={handleSectionClose}>
                 <Box sx={{ overflow: 'visible' }}>
                   <TimerTab
                     appState={appState}
@@ -809,11 +810,12 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                     }}
                     onStateChange={updateAppState}
                     onTimerStatusUpdate={setTimerStatus}
-                    onTransitionNavigation={timerNavigationRef.current}
-                    onTimerControl={timerControlRef.current}
+                    onTransitionNavigation={timerNavigation}
+                    onTimerControl={timerControl}
+                    onSetTimerNavigation={setTimerNavigation}
+                    onSetTimerControl={setTimerControl}
                   />
                 </Box>
-              </CollapsibleSection>
             </Grid>
           )}
 
@@ -861,9 +863,9 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
             minHeight: 0
           }
         }}>
-          {/* Binaural Beat Generator - Left Side - WIDENED */}
+          {/* Binaural Beat Generator - Left Side (reduced to make room for wide EQ) */}
           {!closedSections.includes('binauralBeats') && (
-            <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4, xl: 4 }} sx={ElectromagneticLabStyles.panelFlex}>
+            <Grid size={{ xs: 12, sm: 6, md: 3, lg: 3, xl: 3 }} sx={ElectromagneticLabStyles.panelFlex}>
               <CollapsibleSection id="binauralBeats" title="Binaural Beat Generator" icon="🎧" defaultOpen={true} onClose={handleSectionClose}>
                 <Box sx={{ overflow: 'visible' }}>
                   <BinauralGeneratorMUI
@@ -934,9 +936,9 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
               </CollapsibleSection>
             </Grid>
           )}
-          {/* Equalizer - Middle - ADJUSTED */}
+          {/* Equalizer - Middle (double wide) */}
           {!closedSections.includes('equalizer') && (
-            <Grid size={{ xs: 12, sm: 6, md: 3, lg: 3, xl: 3 }} sx={ElectromagneticLabStyles.panelFlex}>
+            <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4, xl: 4 }} sx={ElectromagneticLabStyles.widePanelFlex}>
               <CollapsibleSection id="equalizer" title="Equalizer" icon="🎚️" defaultOpen={true} onClose={handleSectionClose}>
                 <EqualizerMUI
                   audioContext={activeAudioEngine.audioContext || null}

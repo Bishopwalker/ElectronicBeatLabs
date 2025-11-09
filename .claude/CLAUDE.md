@@ -12,7 +12,7 @@
 - **Check `TASK.md`** before starting a new task. If the task isn't listed, add it with a brief description and today's date.
 - **Reference `INITIAL.md`** for comprehensive technical documentation links when needing API references, testing frameworks, or implementation guidance.
 - **Use consistent naming conventions, file structure, and architecture patterns** as described in `PLANNING.md`.
-- **Use venv_linux** (the virtual environment) wheany executing Python commands, including for unit tests.
+- **Use backend\venv** (the virtual environment) when executing Python commands, including for unit tests.
 
 ### 🧱 Code Structure & Modularity
 - **Never create a file longer than 500 lines of code.** If a file approaches this limit, refactor by splitting it into modules or helper files.

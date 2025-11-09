@@ -130,7 +130,7 @@ export const useBinauralVisualization = (config: Partial<VisualizationConfig> = 
     // Configure only if we created it locally
     if (!sharedAnalyser) {
       analyserNode.fftSize = 2048;
-      analyserNode.smoothingTimeConstant = 0.8;
+      analyserNode.smoothingTimeConstant = 0.9;
       analyserNode.minDecibels = -90;
       analyserNode.maxDecibels = -10;
     }
@@ -191,9 +191,10 @@ export const useBinauralVisualization = (config: Partial<VisualizationConfig> = 
     const { spectrumData, volumes } = data;
 
     // Calculate noise floor (average of low-volume bins)
-    const noiseFloor = spectrumData
-      .filter(volume => volume < 20)
-      .reduce((sum, amp) => sum + amp, 0) / spectrumData.length;
+    const lowVolumeData = spectrumData.filter(volume => volume < 20);
+    const noiseFloor = lowVolumeData.length > 0
+      ? lowVolumeData.reduce((sum, amp) => sum + amp, 0) / lowVolumeData.length
+      : 0; // Default to 0 if no low-volume data
 
     // Signal strength is the average of left and right volumes
     const signalStrength = (volumes.left + volumes.right) / 2;
@@ -253,8 +254,8 @@ export const useBinauralVisualization = (config: Partial<VisualizationConfig> = 
       peakFrequencies,
       currentBeatFreq: audioState.beat_frequency,
       volumes: {
-        left: dataArray.current[leftBin] || 0,
-        right: dataArray.current[rightBin] || 0
+        left: (leftBin < dataArray.current.length) ? dataArray.current[leftBin] : 0,
+        right: (rightBin < dataArray.current.length) ? dataArray.current[rightBin] : 0
       },
       targetFrequencies: {
         left: audioState.leftFreq,
@@ -341,6 +342,9 @@ export const useBinauralVisualization = (config: Partial<VisualizationConfig> = 
 
     try {
       // Stop any existing audio
+      if (audioState.isPlaying) {
+        stopBinauralBeats();
+      }
 
       setAudioState(prev => ({
         ...prev,
@@ -417,20 +421,31 @@ export const useBinauralVisualization = (config: Partial<VisualizationConfig> = 
 
       return true;
     } catch (error) {
+      console.error('❌ BinauralVisualization: Failed to create beats:', error);
       return false;
     }
-  }, [initializeAudioContext, createAnalyser, startVisualization]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initializeAudioContext, createAnalyser, startVisualization, audioState.isPlaying]);
+  // Note: stopBinauralBeats omitted from deps to avoid circular dependency (it's stable)
 
-  // // Stop binaural beats
+  // Stop binaural beats
   const stopBinauralBeats = useCallback(() => {
     try {
       // Stop oscillators
       if (audioState.oscillatorL) {
-        audioState.oscillatorL.stop();
+        try {
+          audioState.oscillatorL.stop();
+        } catch (error) {
+          // Oscillator already stopped - ignore
+        }
         audioState.oscillatorL.disconnect();
       }
       if (audioState.oscillatorR) {
-        audioState.oscillatorR.stop();
+        try {
+          audioState.oscillatorR.stop();
+        } catch (error) {
+          // Oscillator already stopped - ignore
+        }
         audioState.oscillatorR.disconnect();
       }
 
@@ -455,8 +470,9 @@ export const useBinauralVisualization = (config: Partial<VisualizationConfig> = 
       stopVisualization();
 
     } catch (error) {
+      console.error('❌ BinauralVisualization: Error stopping beats:', error);
     }
-  }, [ stopVisualization]);
+  }, [audioState, stopVisualization]);
 
   // Update frequencies using BinauralBeatConfig pattern
   const updateFrequencies = useCallback((base_frequency: number, beat_frequency: number) => {
@@ -495,13 +511,13 @@ export const useBinauralVisualization = (config: Partial<VisualizationConfig> = 
     }
   }, [audioState]);
 
-  // // Cleanup on unmount
-  // useEffect(() => {
-  //   return () => {
-  //     stopBinauralBeats();
-  //   };
-  
-   // }, [stopBinauralBeats]);
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      stopBinauralBeats();
+      stopVisualization();
+    };
+  }, []); // Empty deps - run only on unmount
 
   // Auto-start visualization when enabled
   useEffect(() => {

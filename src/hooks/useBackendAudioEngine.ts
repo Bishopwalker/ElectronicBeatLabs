@@ -133,6 +133,7 @@ export const useBackendAudioEngine = () => {
       setElectromagnetic((prev) => ({
         ...prev,
         state: 'ACTIVE'
+
       }));
 
       return audioContext.current;
@@ -169,8 +170,9 @@ export const useBackendAudioEngine = () => {
       // Load AudioWorklet processor if not already loaded
       if (!workletLoaded.current) {
         try {
-          await audioContext.current.audioWorklet.addModule(`/backend-audio-processor.js?v=${Date.now()}`);
+          await audioContext.current.audioWorklet.addModule(`/backend-audio-processor.js?v=${audioContext.current.getOutputTimestamp()}`);
           workletLoaded.current = true;
+
         } catch (error) {
           initializingWorklet.current = false; // Release lock
           return;
@@ -213,7 +215,7 @@ export const useBackendAudioEngine = () => {
             numberOfOutputs: 1,
             outputChannelCount: [2],
             processorOptions: {
-              volume: audioState.config?.volume ?? DEFAULT_VOLUME
+              volume: audioState.config?.volume ?? audioState.context
             }
           }
       );
@@ -222,33 +224,63 @@ export const useBackendAudioEngine = () => {
       audioWorkletNode.current.port.onmessage = (event: MessageEvent) => {
         const message = event.data;
         switch (message.type) {
-          case 'bufferExhausted':
+          case 'frameProcessed':
+            // Optional: Log buffer health warnings
+            if (message.data?.bufferHealth === 'critical') {
+              console.warn('⚠️ Backend buffer critical:', message.data);
+            }
             break;
+
+          case 'bufferStatus':
+            // Optional: Could update UI with buffer health indicator
+            break;
+
+          case 'metrics':
+            // Handle metrics data for electromagnetic field visualization
+            setElectromagnetic((prev) => ({
+              ...prev,
+              ...message.data
+            }));
+            break;
+
           case 'processingError':
+            console.error('❌ AudioWorklet processing error:', message.error);
+            // Could trigger fallback to frontend engine here
+            break;
+
+          default:
+            // Ignore unknown messages
             break;
         }
       };
 
-// 🔥 CRITICAL FIX: Connect AudioWorklet → AnalyserNode → Output
-// AnalyserNode MUST be in the signal path to receive audio data
+// 🔥 CRITICAL FIX: Split signal for independent volume control
+// AudioWorklet connects to BOTH analyser (full strength) AND gain (volume controlled)
+// This allows visualizer to stay strong even when volume is low
       if (outputNode) {
-        // AudioMixer mode: AudioWorklet → AnalyserNode → Mixer's backend gain
+        // AudioMixer mode: AudioWorklet splits to both analyser and output
 
         if (analyserNode.current) {
+          // Connect analyser directly to AudioWorklet (full strength signal!)
           audioWorkletNode.current.connect(analyserNode.current);
-          analyserNode.current.connect(outputNode);
-        } else {
-          audioWorkletNode.current.connect(outputNode);
+          // AnalyserNode is passive (doesn't pass audio), so no output connection needed
         }
+
+        // Connect AudioWorklet to output for volume-controlled playback
+        audioWorkletNode.current.connect(outputNode);
+
       } else if (gainNode.current) {
-        // Standalone mode: AudioWorklet → AnalyserNode → GainNode → Destination
+        // Standalone mode: AudioWorklet splits to both analyser and gain
 
         if (analyserNode.current) {
+          // Connect analyser directly to AudioWorklet (full strength signal!)
           audioWorkletNode.current.connect(analyserNode.current);
-          // AnalyserNode should already be connected to gainNode from earlier setup
-        } else {
-          audioWorkletNode.current.connect(gainNode.current);
+          // AnalyserNode is passive (doesn't pass audio), so no output connection needed
         }
+
+        // Connect AudioWorklet to gain for volume-controlled playback
+        audioWorkletNode.current.connect(gainNode.current);
+
       } else {
         // Fallback: Direct connection (shouldn't happen)
       }
@@ -258,6 +290,20 @@ export const useBackendAudioEngine = () => {
       initializingWorklet.current = false; // Always release lock
     }
   }, [audioState]);
+
+  // ✅ FIXED: Set volume ONLY when it changes - moved outside processAudioFrame
+  useEffect(() => {
+    if (!audioWorkletNode.current || !audioContext.current) return;
+    
+    const volumeParam = audioWorkletNode.current.parameters.get('volume');
+    if (volumeParam && audioState.config?.volume !== undefined) {
+      volumeParam.setValueAtTime(
+        audioState.config.volume,
+        audioContext.current.currentTime
+      );
+    }
+  }, [audioState.config?.volume]); // 👈 Only runs when volume changes
+
   // Process backend audio frame (send to AudioWorklet)
   const processAudioFrame = useCallback((frame: BackendAudioFrame | ArrayBuffer) => {
     if (!audioContext.current || !audioWorkletNode.current) return;
@@ -283,16 +329,7 @@ export const useBackendAudioEngine = () => {
         }
       });
 
-      // Update volume parameter on AudioWorklet
-      const volumeParam = audioWorkletNode.current.parameters.get('volume');
-      if (volumeParam) {
-        volumeParam.setValueAtTime(
-            audioState.config?.volume,
-            audioContext.current.currentTime
-        );
-      }
-
-      // Update frequency state
+      // Update frequency state (no volume updates here!)
       setAudioState(prev => ({
         ...prev,
         config: {
@@ -304,6 +341,7 @@ export const useBackendAudioEngine = () => {
         }
       }));
     } catch (error) {
+      console.error('❌ Error processing audio frame:', error);
     }
   }, [audioState.config?.volume]);
 
@@ -342,10 +380,6 @@ export const useBackendAudioEngine = () => {
       setSessionId(websocket.sessionId);
     }
   }, [websocket.sessionId, sessionId]);
-
-  // 🔥 REMOVED: Early audio initialization causing AudioContext mismatch
-  // Audio pipeline is now initialized ONLY when needed (startBackendSession/startBinauralBeat)
-  // This ensures external context from mixer is used instead of creating a new one
 
   // Register frame handler to receive audio frames from WebSocket
   useEffect(() => {
@@ -414,9 +448,10 @@ export const useBackendAudioEngine = () => {
           setBackendConnected(true);
           // Apply pending settings if any
           if (pendingSettingsRef.current && websocket.isConnected) {
+            // 🔥 FIX: Use 'data' field for consistency
             websocket.sendMessage({
               type: 'update_settings',
-              settings: pendingSettingsRef.current
+              data: pendingSettingsRef.current  // 🔥 FIXED: Changed from 'settings' to 'data'
             } as any);
             pendingSettingsRef.current = null;
           }
@@ -455,6 +490,19 @@ export const useBackendAudioEngine = () => {
       return;
     }
 
+    // Short-circuit if the underlying socket is already OPEN
+    const isOpenNow = (typeof (websocket as any).isOpenSync === 'function'
+      ? (websocket as any).isOpenSync()
+      : websocket.isConnected);
+    if (isOpenNow) {
+      setBackendConnected(true);
+      if (websocket.sessionId && !sessionId) {
+        setSessionId(websocket.sessionId);
+      }
+      console.log('✅ Backend Engine: WebSocket already open; marking connected.');
+      return;
+    }
+
     try {
       // Best-effort health touch (non-blocking)
       try {
@@ -467,7 +515,7 @@ export const useBackendAudioEngine = () => {
       } catch {}
 
       // Attempt WebSocket connection
-      if (!websocket.isConnected && !websocket.isConnecting) {
+      if (!isOpenNow && !websocket.isConnecting) {
         console.log('🔌 Initiating WebSocket connection...');
         websocket.connect(); // 🔥 FIX: No frequency params - they come from messages
 
@@ -479,7 +527,8 @@ export const useBackendAudioEngine = () => {
           }, 5000); // 5 seconds timeout for WebSocket connection
 
           const checkConnection = () => {
-            if (websocket.isConnected) {
+            // Prefer synchronous readyState from provider to avoid stale React state in closures
+            if (typeof (websocket as any).isOpenSync === 'function' ? (websocket as any).isOpenSync() : websocket.isConnected) {
               console.log('✅ WebSocket connected!');
               clearTimeout(timeout);
               resolve(true);
@@ -502,7 +551,11 @@ export const useBackendAudioEngine = () => {
       }
 
       // 🔥 CRITICAL FIX: Only set backendConnected=true if WebSocket is ACTUALLY connected
-      const actuallyConnected = websocket.isConnected;
+      // Use provider's synchronous readyState check to avoid stale React state
+      const actuallyConnected =
+        (typeof (websocket as any).isOpenSync === 'function'
+          ? (websocket as any).isOpenSync()
+          : websocket.isConnected);
       setBackendConnected(actuallyConnected);
 
       // Update session ID from WebSocket if available
@@ -655,8 +708,10 @@ export const useBackendAudioEngine = () => {
             }
           }, 10000);
           
-          // Check if already connected
-          if (websocket.isConnected) {
+          // Check if already connected (prefer synchronous readyState)
+          if (typeof (websocket as any).isOpenSync === 'function'
+                ? (websocket as any).isOpenSync()
+                : websocket.isConnected) {
             clearTimeout(timeout);
             resolve(true);
             connectionPromiseRef.current = null;
@@ -687,8 +742,10 @@ export const useBackendAudioEngine = () => {
             }
           }, 10000);
           
-          // Check if already connected (race condition where it connected between checks)
-          if (websocket.isConnected) {
+          // Check if already connected (prefer synchronous readyState)
+          if (typeof (websocket as any).isOpenSync === 'function'
+                ? (websocket as any).isOpenSync()
+                : websocket.isConnected) {
             clearTimeout(timeout);
             resolve(true);
             connectionPromiseRef.current = null;
@@ -718,7 +775,9 @@ export const useBackendAudioEngine = () => {
             }
           }, 10000);
           
-          if (websocket.isConnected) {
+          if (typeof (websocket as any).isOpenSync === 'function'
+                ? (websocket as any).isOpenSync()
+                : websocket.isConnected) {
             clearTimeout(timeout);
             resolve(true);
             connectionPromiseRef.current = null;
@@ -732,7 +791,9 @@ export const useBackendAudioEngine = () => {
       }
 
       // Only proceed if WebSocket is connected
-      if (websocket.isConnected) {
+      if ((typeof (websocket as any).isOpenSync === 'function'
+            ? (websocket as any).isOpenSync()
+            : websocket.isConnected)) {
         // Use the WebSocket's session ID or generate one
         const wsSessionId = websocket.sessionId;
         const newSessionId = wsSessionId || `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -790,9 +851,10 @@ export const useBackendAudioEngine = () => {
 
         // Apply any queued settings after session starts
         if (pendingSettingsRef.current) {
+          // 🔥 FIX: Use 'data' field for consistency
           websocket.sendMessage({
             type: 'update_settings',
-            settings: pendingSettingsRef.current
+            data: pendingSettingsRef.current  // 🔥 FIXED: Changed from 'settings' to 'data'
           } as any);
           pendingSettingsRef.current = null;
         }
@@ -808,10 +870,15 @@ export const useBackendAudioEngine = () => {
 
   // Update settings in real-time
   const updateSettings = useCallback((settings: Record<string, unknown>) => {
-    if (websocket.isConnected && sessionId) {
+    const isOpen = (typeof (websocket as any).isOpenSync === 'function'
+      ? (websocket as any).isOpenSync()
+      : websocket.isConnected);
+    if (isOpen && sessionId) {
+      // 🔥 FIX: Send settings in 'data' field as backend expects
+      console.log('🎛️ Sending frequency update to backend:', settings);
       websocket.sendMessage({
         type: 'update_settings',
-        settings
+        data: settings  // 🔥 FIXED: Changed from 'settings' to 'data'
       } as any);
     } else {
       // Cache for application when session comes up
@@ -846,10 +913,20 @@ export const useBackendAudioEngine = () => {
 
   // Update frequency
   const updateFrequency = useCallback((base_frequency: number, beat_frequency: number) => {
-    updateSettings({
+    // 🔥 FIX: Log what we're sending for debugging
+    console.log('🎛️ updateFrequency called:', { base_frequency, beat_frequency });
+    
+    // 🔥 CRITICAL: Include ALL required fields to prevent backend defaults
+    const frequencyUpdate = {
       base_frequency: base_frequency,
-      beat_frequency: beat_frequency
-    });
+      beat_frequency: beat_frequency,
+      volume: audioState.config?.volume ?? DEFAULT_VOLUME, // Include current volume
+      spatial_enabled: audioState.config?.spatial?.enabled || false,
+      spatial_settings: audioState.config?.spatial || {}
+    };
+    
+    console.log('📡 Sending complete frequency update to backend:', frequencyUpdate);
+    updateSettings(frequencyUpdate);
 
     setAudioState(prev => ({
       ...prev,
@@ -863,7 +940,7 @@ export const useBackendAudioEngine = () => {
       rightFreq: base_frequency + beat_frequency,
       beat_frequency: beat_frequency
     }));
-  }, [updateSettings]);
+  }, [updateSettings, audioState.config]);
 
   // Update volume
   const updateVolume = useCallback((volume: number) => {
@@ -906,7 +983,9 @@ export const useBackendAudioEngine = () => {
     }
 
     // Disconnect WebSocket
-    if (websocket.isConnected) {
+    if ((typeof (websocket as any).isOpenSync === 'function'
+      ? (websocket as any).isOpenSync()
+      : websocket.isConnected)) {
       websocket.disconnect();
     }
 
@@ -1009,7 +1088,10 @@ export const useBackendAudioEngine = () => {
 
   const frequencySweep = useCallback(async (startFreq: number, endFreq: number, duration: number) => {
 
-    if (!sessionId || !websocket.isConnected) {
+    const isOpen = (typeof (websocket as any).isOpenSync === 'function'
+      ? (websocket as any).isOpenSync()
+      : websocket.isConnected);
+    if (!sessionId || !isOpen) {
       return;
     }
 

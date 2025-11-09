@@ -460,7 +460,7 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
               color="info"
               sx={{ fontFamily: 'monospace', fontWeight: 700 }}
             >
-              {beat_frequency.toFixed(1)} Hz
+              {beat_frequency.toFixed(2)} Hz
             </Typography>
           </Paper>
 

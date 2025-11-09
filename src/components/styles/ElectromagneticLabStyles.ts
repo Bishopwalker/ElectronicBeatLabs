@@ -8,7 +8,8 @@ export const ElectromagneticLabStyles = {
   mainContainer: {
     width: '100vw',
     height: '100vh',
-    overflow: 'hidden',
+    overflowX: 'hidden',
+    overflowY: 'auto',
     display: 'grid',
     gridTemplateRows: '15vh 85vh'
   } as SxProps<Theme>,
@@ -147,6 +148,7 @@ export const ElectromagneticLabStyles = {
       xs: 1,
       md: 0
     }
+
   } as SxProps<Theme>,
 
   // Main title
@@ -222,14 +224,31 @@ export const ElectromagneticLabStyles = {
   // Grid uses 6 columns (allows 1x, 1.5x, 2x sizing) and 4 rows (allows 1x, 1.5x, 2x height)
   customGridLayout: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(6, 1fr)', // 6 columns for fractional sizing
-    gridTemplateRows: 'repeat(4, 1fr)', // 4 rows for fractional sizing
+    gridTemplateColumns: {
+      xss: 'repeat(1,auto)',
+      sm: 'repeat(6, 1fr)',
+      md: 'repeat(10, 1fr)',
+      lg: 'repeat(10, 1fr)',
+      xl: '1fr, 2fr, 1fr',
+      xxl:'1fr, 2fr, 1fr',
+    }, // 6 columns for fractional sizing
+    gridTemplateRows: {
+        xs: 'repeat(4, 1fr)',
+        sm: 'repeat(4, 1fr)',
+        md: 'auto 1fr',
+        lg: 'auto',
+        xl: '1fr, 2fr, 1fr',
+        xxl: '1fr, 2fr, 1fr',
+    }, // 4 rows for fractional sizing
     gap: 2,
     width: '100%',
     height: '100%',
     p: 2,
     overflowX: 'hidden',
-    overflowY: 'auto'
+    overflowY: 'auto',
+    flexGrow: 1,
+    flexShrink: 1,
+    minHeight: 0
   } as SxProps<Theme>,
 
   // Standard panel (1x1) - takes 2 columns, 1 row

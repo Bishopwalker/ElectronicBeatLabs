@@ -16,6 +16,9 @@ interface WebSocketContextType {
     connect: () => void;
     disconnect: () => void;
     registerFrameHandler: (handler: (message: any) => void) => void;
+    // Synchronous state check that reads the underlying WebSocket readyState
+    // Useful for polling without relying on React state updates
+    isOpenSync: () => boolean;
 }
 
 const WebSocketContext = createContext<WebSocketContextType | null>(null);
@@ -278,6 +281,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
         connect,
         disconnect,
         registerFrameHandler,
+        isOpenSync: () => wsRef.current?.readyState === WebSocket.OPEN,
     };
 
     return React.createElement(

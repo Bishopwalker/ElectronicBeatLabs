@@ -1,180 +1,151 @@
 """
-Frame Buffer - Audio frame buffering for WebSocket streaming
-PRODUCTION IMPLEMENTATION - Generates real audio frames
+Frame Buffer for Zero-Lag Audio Streaming
+Generates and buffers audio frames ahead of time for smooth playback
 """
 
-import logging
 import asyncio
-from typing import Optional, Deque
+import logging
 from collections import deque
+from typing import Optional
+import time
 
 logger = logging.getLogger(__name__)
 
+
 class FrameBuffer:
     """
-    Frame buffer for managing audio frame delivery to WebSocket clients
-    Provides zero-lag buffering and smooth frame delivery at 60 FPS
+    Pre-generates and buffers audio frames for zero-lag streaming
+    Maintains a buffer of frames to handle network jitter and timing variations
     """
-
-    def __init__(self, audio_engine, session_id: str, target_buffer_size: int = 120):
+    
+    def __init__(self, audio_engine, session_id: str, target_buffer_size: int = 180):
         """
         Initialize frame buffer
 
         Args:
-            audio_engine: AudioEngine instance providing audio data
-            session_id: Unique session identifier
-            target_buffer_size: Target buffer size in frames (default 120 = 2 seconds at 60 FPS)
+            audio_engine: AudioEngine instance for frame generation
+            session_id: Audio session ID
+            target_buffer_size: Target number of frames to keep buffered (default 180 = 3 seconds at 60 FPS)
         """
         self.audio_engine = audio_engine
         self.session_id = session_id
         self.target_buffer_size = target_buffer_size
+        self.min_buffer_size = 120  # Start streaming at 2 seconds (improved from 1/3 full)
+        self.max_buffer_size = target_buffer_size * 2  # Maximum buffer to prevent memory issues
+        
+        self.buffer = deque(maxlen=self.max_buffer_size)
         self.is_running = False
+        self.generation_task = None
         
-        # Frame buffer - thread-safe deque
-        self.buffer: Deque[bytes] = deque(maxlen=target_buffer_size * 2)  # Allow overflow headroom
-        
-        # Background task for generating frames
-        self.generator_task: Optional[asyncio.Task] = None
-        
-        # Performance tracking
+        # Statistics
         self.frames_generated = 0
         self.frames_delivered = 0
-        self.underruns = 0
-
-        logger.info(f"📦 FrameBuffer initialized for session {session_id[:8]} (buffer size: {target_buffer_size} frames)")
-
+        self.buffer_underruns = 0
+        self.last_generation_time = 0
+        
     async def start(self):
-        """
-        Start the frame buffer processing
-        Launches background task to generate frames ahead of time
-        """
-        self.is_running = True
-        
-        # Start background frame generator
-        self.generator_task = asyncio.create_task(self._generate_frames())
-        
-        logger.info(f"▶️ FrameBuffer started for session {self.session_id[:8]}")
-
+        """Start the frame generation task"""
+        if not self.is_running:
+            self.is_running = True
+            self.generation_task = asyncio.create_task(self._generate_frames())
+            logger.info(f"🎬 FrameBuffer started for session {self.session_id[:8]}...")
+            
     async def stop(self):
-        """
-        Stop the frame buffer processing
-        """
+        """Stop the frame generation task"""
         self.is_running = False
-        
-        # Cancel generator task
-        if self.generator_task and not self.generator_task.done():
-            self.generator_task.cancel()
+        if self.generation_task:
+            self.generation_task.cancel()
             try:
-                await self.generator_task
+                await self.generation_task
             except asyncio.CancelledError:
                 pass
+        logger.info(f"🛑 FrameBuffer stopped for session {self.session_id[:8]}...")
         
-        # Clear buffer
-        self.buffer.clear()
-        
-        logger.info(f"⏹️ FrameBuffer stopped for session {self.session_id[:8]}")
-
     async def _generate_frames(self):
-        """
-        Background task: Generate frames ahead of time to maintain buffer
-        Runs at 120 FPS to stay ahead of 60 FPS consumption
-        """
-        target_generation_rate = 120  # Generate at 2x consumption rate
-        frame_duration = 1.0 / target_generation_rate
-        
-        import time
-        next_frame_time = time.perf_counter()
-        
-        logger.info(f"🎬 Frame generator started for session {self.session_id[:8]} at {target_generation_rate} FPS")
+        """Background task that continuously generates frames"""
+        frame_duration = 1.0 / 60  # 60 FPS
         
         try:
             while self.is_running:
-                current_time = time.perf_counter()
+                start_time = time.perf_counter()
                 
-                # Only generate if buffer has room
+                # Check buffer size
                 current_buffer_size = len(self.buffer)
                 
+                # Only generate if buffer is below target
                 if current_buffer_size < self.target_buffer_size:
-                    # Generate frame using AudioEngine
-                    try:
-                        frame = await self.audio_engine.generate_frame(
-                            self.session_id,
-                            binary_mode=True
-                        )
+                    # Generate frame (binary mode for efficiency)
+                    frame = await self.audio_engine.generate_frame(self.session_id, binary_mode=True)
+                    
+                    if frame and frame != b'':
+                        self.buffer.append(frame)
+                        self.frames_generated += 1
                         
-                        if frame and len(frame) > 0:
-                            self.buffer.append(frame)
-                            self.frames_generated += 1
-                            
-                            # Log every 5 seconds
-                            if self.frames_generated % 600 == 0:
-                                logger.info(
-                                    f"🎵 Generator [{self.session_id[:8]}]: "
-                                    f"Generated={self.frames_generated}, "
-                                    f"Delivered={self.frames_delivered}, "
-                                    f"BufferSize={current_buffer_size}/{self.target_buffer_size}, "
-                                    f"Underruns={self.underruns}"
-                                )
-                    except Exception as e:
-                        logger.error(f"❌ Frame generation error: {e}", exc_info=True)
+                        # Log every 300 frames (5 seconds)
+                        if self.frames_generated % 300 == 0:
+                            logger.debug(
+                                f"📊 FrameBuffer [{self.session_id[:8]}]: "
+                                f"Generated={self.frames_generated}, "
+                                f"Buffer={len(self.buffer)}/{self.target_buffer_size}, "
+                                f"Underruns={self.buffer_underruns}"
+                            )
                 
-                # Maintain generation rate
-                next_frame_time += frame_duration
-                sleep_time = next_frame_time - time.perf_counter()
+                # Calculate sleep time to maintain generation rate
+                generation_time = time.perf_counter() - start_time
+                self.last_generation_time = generation_time
+                
+                # Adjust sleep based on buffer fullness
+                if current_buffer_size < self.min_buffer_size:
+                    # Buffer is critically low, generate MUCH faster (4x speed)
+                    sleep_time = max(0, frame_duration / 4 - generation_time)
+                elif current_buffer_size > self.target_buffer_size:
+                    # Buffer is full, slow down
+                    sleep_time = frame_duration * 2
+                else:
+                    # Normal rate
+                    sleep_time = max(0, frame_duration - generation_time)
                 
                 if sleep_time > 0:
                     await asyncio.sleep(sleep_time)
-                else:
-                    # Behind schedule - skip sleep and catch up
-                    next_frame_time = time.perf_counter()
                     
         except asyncio.CancelledError:
-            logger.info(f"🛑 Frame generator cancelled for session {self.session_id[:8]}")
+            logger.info(f"Frame generation cancelled for session {self.session_id[:8]}...")
             raise
         except Exception as e:
-            logger.error(f"❌ Frame generator crashed: {e}", exc_info=True)
-
+            logger.error(f"Error in frame generation for session {self.session_id[:8]}...: {e}", exc_info=True)
+            self.is_running = False
+            
     def get_frame(self) -> Optional[bytes]:
         """
-        Get the next audio frame from the buffer
-        NON-BLOCKING - returns immediately
-
+        Get the next frame from the buffer (non-blocking)
+        
         Returns:
-            Audio frame data as bytes, or None if buffer empty
+            bytes: Next audio frame or None if buffer is empty
         """
-        try:
+        if self.buffer:
             frame = self.buffer.popleft()
             self.frames_delivered += 1
             return frame
-        except IndexError:
-            # Buffer underrun - no frames available
-            self.underruns += 1
-            
-            # Log underruns (but not too frequently)
-            if self.underruns % 10 == 1:
+        else:
+            self.buffer_underruns += 1
+            if self.buffer_underruns % 10 == 1:  # Log every 10th underrun
                 logger.warning(
-                    f"⚠️ Buffer underrun #{self.underruns} for session {self.session_id[:8]} "
-                    f"(generated={self.frames_generated}, delivered={self.frames_delivered})"
+                    f"⚠️ Buffer underrun #{self.buffer_underruns} for session {self.session_id[:8]}... "
+                    f"(Generated={self.frames_generated}, Delivered={self.frames_delivered})"
                 )
-            
             return None
-
+            
     def get_buffer_status(self) -> dict:
-        """
-        Get the current buffer status
-
-        Returns:
-            Dictionary with buffer statistics
-        """
-        current_size = len(self.buffer)
-        buffer_percent = (current_size / self.target_buffer_size * 100) if self.target_buffer_size > 0 else 0
-        
+        """Get current buffer statistics"""
         return {
-            "buffer_size": current_size,
+            "buffer_size": len(self.buffer),
             "target_size": self.target_buffer_size,
-            "buffer_percent": buffer_percent,
-            "is_running": self.is_running,
+            "min_size": self.min_buffer_size,
+            "max_size": self.max_buffer_size,
+            "buffer_percent": (len(self.buffer) / self.target_buffer_size) * 100,
             "frames_generated": self.frames_generated,
             "frames_delivered": self.frames_delivered,
-            "underruns": self.underruns
+            "buffer_underruns": self.buffer_underruns,
+            "last_generation_time_ms": self.last_generation_time * 1000,
+            "is_running": self.is_running
         }

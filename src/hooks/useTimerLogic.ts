@@ -81,6 +81,8 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
   const [customPresetTransitions, setCustomPresetTransitions] = useState<{[key: string]: FrequencyTransition[]}>({});
 
   const currentTransitionIndexRef = useRef<number | null>(null);
+  // 🔥 CRITICAL FIX: Store latest loadTimerStatus to prevent interval thrashing
+  const loadTimerStatusRef = useRef<() => void>();
 
   // Function to send timer updates via WebSocket
   const sendTimerUpdate = useCallback((data: Record<string, any>) => {
@@ -588,20 +590,28 @@ export const useTimerLogic = (props: UseTimerLogicProps) => {
     loadPresets();
   }, []);
 
+  // 🔥 CRITICAL FIX: Keep ref updated with latest loadTimerStatus
+  useEffect(() => {
+    loadTimerStatusRef.current = loadTimerStatus;
+  }, [loadTimerStatus]);
+
+  // 🔥 CRITICAL FIX: Interval with stable dependencies - no loadTimerStatus in deps!
+  // This prevents the interval from being destroyed/recreated on every render
   useEffect(() => {
     let interval: NodeJS.Timeout;
 
     if (timerState?.isActive && !timerState?.isPaused) {
       // Update every second for countdown display
       interval = setInterval(() => {
-        loadTimerStatus();
+        // Call via ref to always get latest version
+        loadTimerStatusRef.current?.();
       }, 1000);
     }
 
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [timerState?.isActive, timerState?.isPaused, loadTimerStatus]);
+  }, [timerState?.isActive, timerState?.isPaused]); // 🔥 REMOVED loadTimerStatus from deps!
 
   // Navigation functions for timer transitions
   const jumpToTransition = async (direction: 'next' | 'previous') => {

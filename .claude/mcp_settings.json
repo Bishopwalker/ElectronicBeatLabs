@@ -34,6 +34,15 @@
         "GITLAB_API_URL": "https://gitlab.com/api/v4"
       },
       "description": "GitLab integration for EBL repository"
+    },
+    "openapi_ebl": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-openapi",
+        "http://localhost:8000/openapi.json"
+      ],
+      "description": "OpenAPI access to EBL backend (RAG endpoints)"
     }
   },
   "debug": false,

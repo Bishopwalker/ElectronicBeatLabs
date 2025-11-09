@@ -44,11 +44,11 @@ body {
   min-height: 100vh;
 }
 
-/* Custom cursor - DARK THEME - bright cyan with dark outline to stand out */
+/* Custom cursor - HIGH CONTRAST - bright white/orange with dark outline for maximum visibility */
 * {
-  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Ccircle cx='12' cy='12' r='11' fill='%23000000' opacity='0.9'/%3E%3Ccircle cx='12' cy='12' r='9' fill='%2300ffff'/%3E%3Ccircle cx='12' cy='12' r='5' fill='%23ffffff'/%3E%3C/svg%3E") 12 12, auto !important;
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Ccircle cx='12' cy='12' r='11' fill='%23000000' opacity='0.95'/%3E%3Ccircle cx='12' cy='12' r='9' fill='%23ff6b00'/%3E%3Ccircle cx='12' cy='12' r='5' fill='%23ffffff'/%3E%3C/svg%3E") 12 12, auto !important;
 }
-/* Pointer cursor for clickable elements - DARK THEME - brighter cyan */
+/* Pointer cursor for clickable elements - HIGH CONTRAST - brighter orange (matches primary theme) */
 button,
 a,
 [role="button"],
@@ -59,7 +59,7 @@ a,
 input,
 textarea,
 select {
-  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28'%3E%3Ccircle cx='14' cy='14' r='13' fill='%23000000' opacity='0.9'/%3E%3Ccircle cx='14' cy='14' r='11' fill='%2300ffff'/%3E%3Ccircle cx='14' cy='14' r='6' fill='%23ffffff'/%3E%3C/svg%3E") 14 14, pointer !important;
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28'%3E%3Ccircle cx='14' cy='14' r='13' fill='%23000000' opacity='0.95'/%3E%3Ccircle cx='14' cy='14' r='11' fill='%23ff8533'/%3E%3Ccircle cx='14' cy='14' r='6' fill='%23ffffff'/%3E%3C/svg%3E") 14 14, pointer !important;
 }
 
 h1 {
@@ -86,34 +86,7 @@ button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
-
-  /* Custom cursor - LIGHT THEME - dark purple/blue with light outline */
-  * {
-    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Ccircle cx='12' cy='12' r='11' fill='%23ffffff' opacity='0.9'/%3E%3Ccircle cx='12' cy='12' r='9' fill='%235a2be2'/%3E%3Ccircle cx='12' cy='12' r='5' fill='%23000000'/%3E%3C/svg%3E") 12 12, auto !important;
-  }
-
-  /* Pointer cursor for clickable elements - LIGHT THEME - brighter purple */
-  button,
-  a,
-  [role="button"],
-  .MuiButtonBase-root,
-  .MuiButton-root,
-  .MuiIconButton-root,
-  .MuiChip-root,
-  input,
-  textarea,
-  select {
-    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28'%3E%3Ccircle cx='14' cy='14' r='13' fill='%23ffffff' opacity='0.9'/%3E%3Ccircle cx='14' cy='14' r='11' fill='%238a2be2'/%3E%3Ccircle cx='14' cy='14' r='6' fill='%23000000'/%3E%3C/svg%3E") 14 14, pointer !important;
-  }
-}
+/* REMOVED: OS preference media query no longer controls cursor colors
+   App is always in dark mode, so cursor should always be optimized for dark backgrounds.
+   If light theme is added in future, use body class .light-mode instead of OS preference.
+*/

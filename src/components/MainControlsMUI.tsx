@@ -18,10 +18,13 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import StopIcon from '@mui/icons-material/Stop';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import BoltIcon from '@mui/icons-material/Bolt';
+import RestartAltIcon from '@mui/icons-material/RestartAlt';
+
 import type { MainControlsProps } from '../types';
 
 interface ExtendedMainControlsProps extends MainControlsProps {
   compact?: boolean;
+  onReset?: ()=>void;
 }
 
 const MainControlsMUI: React.FC<ExtendedMainControlsProps> = ({
@@ -32,6 +35,7 @@ const MainControlsMUI: React.FC<ExtendedMainControlsProps> = ({
   onVolumeChange,
   boostMode = false,
   onBoostModeToggle,
+  onReset,
   compact = false
 }) => {
   const maxVolume = boostMode ? 2.0 : 1.0;  // 200% in boost mode, 100% normal
@@ -40,6 +44,17 @@ const MainControlsMUI: React.FC<ExtendedMainControlsProps> = ({
     const numValue = value as number;
     const safeValue = isNaN(numValue) ? 0.5 : Math.max(0, Math.min(maxVolume, numValue));
     onVolumeChange(safeValue);
+  };
+
+  const handleBoostToggle = (checked: boolean) => {
+    if (onBoostModeToggle) {
+      onBoostModeToggle(checked);
+
+      // If turning OFF boost mode and volume > 1.0, clamp it to 1.0
+      if (!checked && volume > 1.0) {
+        onVolumeChange(1.0);
+      }
+    }
   };
 
   // Compact horizontal layout for header
@@ -55,7 +70,7 @@ const MainControlsMUI: React.FC<ExtendedMainControlsProps> = ({
         borderRadius: 2,
         border: '1px solid rgba(138, 43, 226, 0.3)',
       }}>
-        {/* Play/Stop buttons */}
+        {/* Play/Stop/Reset buttons */}
         <Stack direction="row" spacing={1}>
           <Button
             variant="contained"
@@ -63,8 +78,8 @@ const MainControlsMUI: React.FC<ExtendedMainControlsProps> = ({
             onClick={onPlay}
             startIcon={<PlayArrowIcon />}
             size="small"
-            sx={{ 
-              minWidth: '80px',
+            sx={{
+              minWidth: '70px',
               background: 'linear-gradient(45deg, #00ff88, #8a2be2)',
               '&:hover': {
                 background: 'linear-gradient(45deg, #33ffaa, #9944d9)',
@@ -73,15 +88,15 @@ const MainControlsMUI: React.FC<ExtendedMainControlsProps> = ({
           >
             Play
           </Button>
-          
+
           <Button
             variant="contained"
             color="error"
             onClick={onStop}
             startIcon={<StopIcon />}
             size="small"
-            sx={{ 
-              minWidth: '80px',
+            sx={{
+              minWidth: '70px',
               background: 'linear-gradient(45deg, #ff0066, #ff6b00)',
               '&:hover': {
                 background: 'linear-gradient(45deg, #ff3388, #ff8533)',
@@ -90,6 +105,27 @@ const MainControlsMUI: React.FC<ExtendedMainControlsProps> = ({
           >
             Stop
           </Button>
+
+          {onReset && (
+            <Button
+              variant="outlined"
+              color="warning"
+              onClick={onReset}
+              startIcon={<RestartAltIcon />}
+              size="small"
+              sx={{
+                minWidth: '70px',
+                borderColor: 'rgba(255, 193, 7, 0.5)',
+                color: '#ffc107',
+                '&:hover': {
+                  borderColor: '#ffc107',
+                  background: 'rgba(255, 193, 7, 0.1)',
+                }
+              }}
+            >
+              Reset
+            </Button>
+          )}
         </Stack>
         
         {/* Volume control */}
@@ -175,15 +211,15 @@ const MainControlsMUI: React.FC<ExtendedMainControlsProps> = ({
         </Typography>
         
         <Stack spacing={2} alignItems="center">
-          {/* Play and Stop Buttons - Separate buttons */}
-          <Stack direction="row" spacing={1} sx={{ width: '100%', maxWidth: 250 }}>
+          {/* Play, Stop, and Reset Buttons */}
+          <Stack direction="row" spacing={1} sx={{ width: '100%', maxWidth: 300 }}>
             <Button
               variant="contained"
               color="primary"
               onClick={onPlay}
               startIcon={<PlayArrowIcon />}
               fullWidth
-              sx={{ 
+              sx={{
                 py: 1,
                 background: 'linear-gradient(45deg, #00ff88, #8a2be2)',
                 '&:hover': {
@@ -193,14 +229,14 @@ const MainControlsMUI: React.FC<ExtendedMainControlsProps> = ({
             >
               Play
             </Button>
-            
+
             <Button
               variant="contained"
               color="error"
               onClick={onStop}
               startIcon={<StopIcon />}
               fullWidth
-              sx={{ 
+              sx={{
                 py: 1,
                 background: 'linear-gradient(45deg, #ff0066, #ff6b00)',
                 '&:hover': {
@@ -210,6 +246,27 @@ const MainControlsMUI: React.FC<ExtendedMainControlsProps> = ({
             >
               Stop
             </Button>
+
+            {onReset && (
+              <Button
+                variant="outlined"
+                color="warning"
+                onClick={onReset}
+                startIcon={<RestartAltIcon />}
+                sx={{
+                  py: 1,
+                  minWidth: '100px',
+                  borderColor: 'rgba(255, 193, 7, 0.5)',
+                  color: '#ffc107',
+                  '&:hover': {
+                    borderColor: '#ffc107',
+                    background: 'rgba(255, 193, 7, 0.1)',
+                  }
+                }}
+              >
+                Reset
+              </Button>
+            )}
           </Stack>
           
           <Box sx={{ width: '100%' }}>
@@ -225,7 +282,7 @@ const MainControlsMUI: React.FC<ExtendedMainControlsProps> = ({
                   control={
                     <Switch
                       checked={boostMode}
-                      onChange={(e) => onBoostModeToggle(e.target.checked)}
+                      onChange={(e) => handleBoostToggle(e.target.checked)}
                       size="small"
                       sx={{
                         '& .MuiSwitch-switchBase.Mui-checked': {

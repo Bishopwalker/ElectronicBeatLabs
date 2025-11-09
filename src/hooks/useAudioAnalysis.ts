@@ -2,7 +2,7 @@
 // Analyzes existing audio from the browser's audio output
 // Does NOT create or control audio playback
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 // Visualization data interface
 export interface AudioAnalysisData {
@@ -39,11 +39,12 @@ interface AudioAnalysisConfig {
  * @param config.analyserNode - Optional external AnalyserNode (connects to existing audio graph)
  */
 export const useAudioAnalysis = (config: Partial<AudioAnalysisConfig> = {}) => {
-  const defaultConfig: AudioAnalysisConfig = {
+  // 🔥 FIXED: Memoize config to prevent infinite loop from object recreation
+  const defaultConfig: AudioAnalysisConfig = useMemo(() => ({
     updateRate: 20,
     enabled: true,
     ...config
-  };
+  }), [config.updateRate, config.enabled, config.audioContext, config.analyserNode]);
 
   const [analysisData, setAnalysisData] = useState<AudioAnalysisData | null>(null);
   const [stats, setStats] = useState<AudioAnalysisStats>({

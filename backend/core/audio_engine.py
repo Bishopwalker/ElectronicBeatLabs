@@ -13,12 +13,10 @@ Handles real-time audio synthesis and streaming with:
 import numpy as np
 import asyncio
 import struct
-import logging
 from typing import Dict, Optional, TYPE_CHECKING, Union, List
 import uuid
 from datetime import datetime
 
-logger = logging.getLogger(__name__)
 
 class AudioEngine:
     """Enhanced audio engine for binaural beat generation"""
@@ -28,14 +26,14 @@ class AudioEngine:
         self.sessions: Dict[str, dict] = {}
         self.running = False
         self.spatial_processor: Optional['SpatialAudioProcessor'] = None
-        
+
     def is_running(self) -> bool:
         return self.running
-    
+
     def set_spatial_processor(self, spatial_processor: 'SpatialAudioProcessor'):
         """Set the spatial audio processor"""
         self.spatial_processor = spatial_processor
-    
+
     def start_session(self, settings: dict) -> str:
         """Start a new audio generation session"""
         session_id = str(uuid.uuid4())
@@ -48,7 +46,7 @@ class AudioEngine:
         }
         self.running = True
         return session_id
-    
+
     def stop_session(self, session_id: str):
         """Stop an active session"""
         if session_id in self.sessions:
@@ -56,7 +54,7 @@ class AudioEngine:
             del self.sessions[session_id]
         if not self.sessions:
             self.running = False
-    
+
     def configure(self, session_id: str, settings: dict):
         """Configure session settings"""
         if session_id not in self.sessions:
@@ -67,18 +65,24 @@ class AudioEngine:
                 "active": True
             }
         else:
-            # 🔥 FIX: Deep update settings to ensure frequencies are updated
-            current_settings = self.sessions[session_id]["settings"]
-            current_settings.update(settings)
-            self.sessions[session_id]["settings"] = current_settings
-            logger.info(f"[CONFIGURE] Updated settings for {session_id}: base={current_settings.get('base_frequency')}, beat={current_settings.get('beat_frequency')}")
-    
+            self.sessions[session_id]["settings"].update(settings)
+
     def update_settings(self, session_id: str, settings: dict):
         """Update live settings for a session"""
+        import logging
+        logger = logging.getLogger(__name__)
+        
         if session_id in self.sessions:
+            old_settings = self.sessions[session_id]["settings"].copy()
             self.sessions[session_id]["settings"].update(settings)
-            logger.info(f"[UPDATE_SETTINGS] Updated {session_id}: base={settings.get('base_frequency')}, beat={settings.get('beat_frequency')}")
-    
+            new_settings = self.sessions[session_id]["settings"]
+            
+            logger.info(f"[🔥 SETTINGS UPDATE] Session {session_id[:8]}...")
+            logger.info(f"   OLD: base={old_settings.get('base_frequency', 'N/A')}Hz, beat={old_settings.get('beat_frequency', 'N/A')}Hz")
+            logger.info(f"   NEW: base={new_settings.get('base_frequency', 'N/A')}Hz, beat={new_settings.get('beat_frequency', 'N/A')}Hz")
+        else:
+            logger.error(f"[🔥 SETTINGS UPDATE] Session {session_id[:8]}... NOT FOUND!")
+
     async def generate_frame(self, session_id: str, binary_mode: bool = True) -> Union[dict, bytes]:
         """Generate a single audio frame with professional audio standards
 
@@ -91,6 +95,7 @@ class AudioEngine:
             dict: JSON-compatible frame data (if binary_mode=False)
         """
         if session_id not in self.sessions:
+            print(f"ERROR: Session {session_id} not found in sessions: {list(self.sessions.keys())}")
             return {"error": "Session not found"} if not binary_mode else b''
 
         # PERFORMANCE: Removed debug logging in hot path
@@ -99,24 +104,27 @@ class AudioEngine:
 
         # 🔥 FIX: Ensure we have frequency values with proper defaults
         # This handles cases where settings might be missing keys
-        base_frequency = settings.get("base_frequency", 140)
-        beat_frequency = settings.get("beat_frequency", 4)
+
         
         # Apply frequency limits after getting values
-        base_frequency = max(5, min(20000, base_frequency))
-        beat_frequency = max(0.01, min(100, beat_frequency))
+        base_frequency = max(5, min(20000, settings["base_frequency"]))
+        beat_frequency = max(0.01, min(100, settings["beat_frequency"]))
 
         # 🔧 PHASE 2 FIX: Separate amplitude (wave generation) from volume (loudness control)
         # amplitude is ALWAYS 1.0 for clean wave generation (prevents PCM clipping)
         # volume is applied AFTER wave generation for loudness control
         amplitude = 1.0  # FIXED: Always generate clean waves at unity amplitude
-        volume = max(0.0, min(2.0, settings.get("volume", 0.5)))  # Volume control (default 50%)
+        volume = max(0.0, min(1.0, settings.get("volume")))  # Volume control (default 50%)
 
         # DEBUG LOGGING: Track volume and wave generation (Phase 1)
         if not hasattr(session, 'frame_count'):
             session['frame_count'] = 0
         if session['frame_count'] % 300 == 0:  # Every 5 seconds at 60 FPS
-            pass  # TODO: Add debug logging here
+            print(f"[BACKEND DEBUG] Session {session_id[:8]}:")
+            print(f"   amplitude={amplitude:.3f} (FIXED at 1.0 - clean wave generation)")
+            print(f"   volume={volume:.3f} (loudness control, default 0.5)")
+            print(f"   base_freq={base_frequency:.1f}Hz, beat_freq={beat_frequency:.2f}Hz")
+            print(f"   frame_count={session['frame_count']}")
         session['frame_count'] += 1
 
         # Calculate left and right frequencies for binaural beats
@@ -176,10 +184,13 @@ class AudioEngine:
             wave_max_left = float(np.max(left_wave))
             wave_min_right = float(np.min(right_wave))
             wave_max_right = float(np.max(right_wave))
+            print(f"[WAVE DEBUG] Before PCM:")
+            print(f"   left_wave range: [{wave_min_left:.4f}, {wave_max_left:.4f}]")
+            print(f"   right_wave range: [{wave_min_right:.4f}, {wave_max_right:.4f}]")
             if abs(wave_min_left) > 1.0 or abs(wave_max_left) > 1.0:
-                pass  # TODO: Log wave clipping warning
+                print(f"   WARNING: LEFT WAVE WILL CLIP! (amplitude too high)")
             if abs(wave_min_right) > 1.0 or abs(wave_max_right) > 1.0:
-                pass  # TODO: Log wave clipping warning
+                print(f"   WARNING: RIGHT WAVE WILL CLIP! (amplitude too high)")
 
         # PERFORMANCE: Direct conversion to PCM (removed intermediate anti-aliasing)
         # Anti-aliasing only needed for very high frequencies (>19.2kHz at 48kHz sample rate)
@@ -200,7 +211,10 @@ class AudioEngine:
             clipped_left = np.sum(np.abs(left_pcm_raw) > 32767)
             clipped_right = np.sum(np.abs(right_pcm_raw) > 32767)
             if clipped_left > 0 or clipped_right > 0:
-                pass  # TODO: Log PCM clipping warning
+                print(f"WARNING: [PCM CLIPPING DETECTED!]")
+                print(f"   Left samples clipped: {clipped_left}/{frame_size}")
+                print(f"   Right samples clipped: {clipped_right}/{frame_size}")
+                print(f"   CAUSE: amplitude={amplitude} is too high (should be <=1.0)")
 
         # Binary mode: Return compact binary format for WebSocket transmission
         if binary_mode:
@@ -226,11 +240,11 @@ class AudioEngine:
             },
             "timestamp": datetime.now().isoformat()
         }
-    
+
     def _create_envelope(self, frame_size: int, settings: dict) -> np.ndarray:
         """Create amplitude envelope for smooth transitions"""
         envelope_type = settings.get("envelope_type", "constant")
-        
+
         if envelope_type == "constant":
             return np.ones(frame_size)
         elif envelope_type == "fade_in":
@@ -250,13 +264,13 @@ class AudioEngine:
             decay = int(settings.get("decay_time", 0.1) * self.sample_rate)
             sustain_level = settings.get("sustain_level", 0.8)
             release = int(settings.get("release_time", 0.5) * self.sample_rate)
-            
+
             envelope = np.ones(frame_size) * sustain_level
-            
+
             # Attack phase
             if frame_size > attack:
                 envelope[:attack] = np.linspace(0, 1, attack) ** 2
-            
+
             # Decay phase
             if frame_size > attack + decay:
                 decay_end = min(attack + decay, frame_size)
@@ -284,7 +298,7 @@ class AudioEngine:
         if "base_frequency" not in settings:
             logger.error(f"[VALIDATE ERROR] base_frequency MISSING from settings: {settings}")
             # Use 140 as emergency fallback but log the error
-            base_frequency = 140
+            base_frequency = 140  # 🔥 FIXED: Uncommented emergency fallback
         else:
             base_frequency = settings["base_frequency"]
             logger.info(f"[VALIDATE] base_frequency extracted: {base_frequency}")
@@ -306,11 +320,11 @@ class AudioEngine:
         # Volume controls loudness (default 0.5 = 50%)
         # Amplitude is always 1.0 internally for clean wave generation
         volume = settings.get("volume", 0.5)
-        validated["volume"] = max(0.0, min(2.0, volume))  # Allow up to 200% for boost mode
+        validated["volume"] = max(0.0, min(1.0, volume))  # Allow up to 200% for boost mode
 
         # BACKWARD COMPATIBILITY: If old "amplitude" param is provided, treat it as "volume"
         if "amplitude" in settings and "volume" not in settings:
-            validated["volume"] = max(0.0, min(2.0, settings["amplitude"]))
+            validated["volume"] = max(0.0, min(1.0, settings["amplitude"]))
 
         # Ensure frequencies don't exceed Nyquist limit
         max_freq = validated["base_frequency"] + validated["beat_frequency"]
@@ -327,7 +341,7 @@ class AudioEngine:
         
         session = self.sessions[session_id]
         settings = session["settings"]
-        
+
         return {
             "session_id": session_id,
             "active": session["active"],
@@ -362,26 +376,23 @@ class AudioEngine:
                 "description": "SMR training for attention and focus"
             },
             "calm": {
-                "base_frequency": 140,  # FIXED: Changed from 144 to 140 for consistency
+                "base_frequency": 144,
                 "beat_frequency": 8,  # Alpha range
-                "volume": 0.5,  # 🔧 FIXED: Changed from amplitude=1.2 to volume=0.5
-                "duration": 15 * 60,
+                 "duration": 15 * 60,
                 "envelope_type": "fade_in",
                 "description": "Alpha waves for relaxation and calm focus"
             },
             "deep_focus": {
-                "base_frequency": 140,  # FIXED: Changed from 144 to 140 for consistency
+                "base_frequency": 144,
                 "beat_frequency": 40,  # Gamma range
-                "volume": 0.5,  # 🔧 FIXED: Changed from amplitude=1.6 to volume=0.5
-                "duration": 25 * 60,
+                 "duration": 25 * 60,
                 "envelope_type": "pulse",
                 "pulse_frequency": 0.1,
                 "description": "Gamma waves for deep concentration"
             },
             "meditation": {
-                "base_frequency": 140,  # FIXED: Changed from 144 to 140 for consistency
+                "base_frequency": 144,
                 "beat_frequency": 6,  # Theta range
-                "volume": 0.5,  # 🔧 FIXED: Changed from amplitude=1.0 to volume=0.5
                 "duration": 30 * 60,
                 "envelope_type": "constant",
                 "description": "Theta waves for meditation and creativity"

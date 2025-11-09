@@ -46,9 +46,16 @@ const PatternSelectorMUI: React.FC<PatternSelectorPropsExtended> = ({
   return (
     <Card sx={{
       height: '100%',
+      margin: 'auto',
       display: 'flex',
+      paddingBlockEnd: '6',
       flexDirection: 'column',
-      overflow: 'hidden'
+      overflowX: 'hidden',
+      overflowY: 'scroll',
+      borderRadius: '8px',
+      minWidth: '20vw',
+      width: '25vw',
+      boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
     }}>
       <CardContent sx={{ p: 1.5, pb: 0, flexShrink: 0 }}>
         <Typography variant="h4" align="center" color="primary" gutterBottom>

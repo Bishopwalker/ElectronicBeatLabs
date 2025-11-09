@@ -308,12 +308,15 @@ async def handle_websocket_message(message: dict, session_id: str, websocket: We
             if isinstance(message_data, dict) and ("base_frequency" in message_data or "beat_frequency" in message_data):
                 # Settings are in data directly
                 settings = message_data
+                logger.info(f"[🔥 FREQUENCY UPDATE] Settings found in 'data': {settings}")
             elif "settings" in message:
                 # Settings at root level
                 settings = message["settings"]
+                logger.info(f"[🔥 FREQUENCY UPDATE] Settings found at root: {settings}")
             else:
                 # Default empty settings
                 settings = {}
+                logger.warning(f"[🔥 FREQUENCY UPDATE] No settings found in message: {message}")
             
             logger.info(f"[UPDATE_SETTINGS] Extracted settings: {settings}")
             validated_settings = audio_engine.validate_frequencies(settings)

@@ -1,0 +1,19 @@
+{
+  "maps": [
+    {
+      "id": "enforcer_rag_1762578118974",
+      "path": ".claude\\ENFORCER_RAG_MAP.json",
+      "generated_at": "2025-11-08T05:01:58.892Z",
+      "kinds": [
+        "inheritance",
+        "types",
+        "state",
+        "redux",
+        "imports",
+        "configs",
+        "packages",
+        "backend"
+      ]
+    }
+  ]
+}
