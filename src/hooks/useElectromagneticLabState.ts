@@ -1,7 +1,7 @@
 // Custom hook for Electromagnetic Beat Lab state management
 // Extracted complex state logic from main component
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import type {AppState, AudioEngine, BackendAudioConfig, PatternMode} from '../types';
 import { WAVE_PATTERNS } from '../data/patterns';
 import { DEFAULT_APP_STATE, DEFAULT_CLOSED_SECTIONS } from '../components/config/ElectromagneticLabConfig';
@@ -18,13 +18,20 @@ export const useElectromagneticLabState = (initialPattern?: string, autoStart: b
 
   // State manager instance (memoized but updated with current state)
   const managerRef = useRef<ElectromagneticLabManager | null>(null);
+
+  // 🔥 FIX: Only initialize manager once, update via useEffect
   if (!managerRef.current) {
     managerRef.current = new ElectromagneticLabManager(state, setState);
-  } else {
-    // Update the manager with current state and setState
-    managerRef.current.state = state;
-    managerRef.current.setState = setState;
   }
+
+  // 🔥 FIX: Update manager state/setState in useEffect to avoid render-phase mutations
+  useEffect(() => {
+    if (managerRef.current) {
+      managerRef.current.state = state;
+      managerRef.current.setState = setState;
+    }
+  });
+
   const manager = managerRef.current;
 
   // Refs for preventing infinite loops
@@ -81,7 +88,7 @@ export const useElectromagneticLabState = (initialPattern?: string, autoStart: b
         }
       }));
     }
-  }, [manager]);
+  }, []); // 🔥 FIX: Empty deps - manager is stable (useRef)
 
   // Force electromagnetic field update when pattern changes
   // 🔥 NOTE: isPlaying and volume now come from HybridEngine, passed by caller
@@ -107,9 +114,10 @@ export const useElectromagneticLabState = (initialPattern?: string, autoStart: b
     } else {
     }
   }, [
+    // 🔥 FIX: Use stable values to prevent infinite loops
     state.appState.currentPattern?.id,
-    state.appState.currentPattern?.frequencies?.beat,
-    manager
+    state.appState.currentPattern?.frequencies?.beat
+    // Removed 'manager' - it's stable (useRef)
   ]);
 
   return {
