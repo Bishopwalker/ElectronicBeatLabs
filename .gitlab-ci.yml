@@ -250,10 +250,24 @@ docker-build:
     DOCKER_BUILDKIT: 1
   script:
     - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
-    - docker build --security-opt no-new-privileges -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA .
-    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
-    - docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE:latest
-    - docker push $CI_REGISTRY_IMAGE:latest
+    # Build backend with git tracking
+    - docker build --security-opt no-new-privileges
+      --build-arg GIT_COMMIT=$CI_COMMIT_SHA
+      --build-arg BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+      -f Dockerfile.backend
+      -t $CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHA .
+    - docker push $CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHA
+    - docker tag $CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE/backend:latest
+    - docker push $CI_REGISTRY_IMAGE/backend:latest
+    # Build frontend with git tracking
+    - docker build --security-opt no-new-privileges
+      --build-arg GIT_COMMIT=$CI_COMMIT_SHA
+      --build-arg BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+      -f Dockerfile.frontend
+      -t $CI_REGISTRY_IMAGE/frontend:$CI_COMMIT_SHA .
+    - docker push $CI_REGISTRY_IMAGE/frontend:$CI_COMMIT_SHA
+    - docker tag $CI_REGISTRY_IMAGE/frontend:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE/frontend:latest
+    - docker push $CI_REGISTRY_IMAGE/frontend:latest
   only:
     - gang-gang
     - develop
