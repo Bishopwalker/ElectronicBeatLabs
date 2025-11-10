@@ -38,6 +38,10 @@ __pycache__/
 *.so
 .venv/
 .venv.old/
+backend/venv/
+backend/.venv/
+venv/
+env/
 # Test coverage
 coverage/
 .coverage
