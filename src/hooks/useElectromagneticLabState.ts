@@ -1,7 +1,7 @@
 // Custom hook for Electromagnetic Beat Lab state management
 // Extracted complex state logic from main component
 
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import type {AppState, AudioEngine, BackendAudioConfig, PatternMode} from '../types';
 import { WAVE_PATTERNS } from '../data/patterns';
 import { DEFAULT_APP_STATE, DEFAULT_CLOSED_SECTIONS } from '../components/config/ElectromagneticLabConfig';
@@ -18,20 +18,13 @@ export const useElectromagneticLabState = (initialPattern?: string, autoStart: b
 
   // State manager instance (memoized but updated with current state)
   const managerRef = useRef<ElectromagneticLabManager | null>(null);
-
-  // 🔥 FIX: Only initialize manager once, update via useEffect
   if (!managerRef.current) {
     managerRef.current = new ElectromagneticLabManager(state, setState);
+  } else {
+    // Update the manager with current state and setState
+    managerRef.current.state = state;
+    managerRef.current.setState = setState;
   }
-
-  // 🔥 FIX: Update manager state/setState in useEffect to avoid render-phase mutations
-  useEffect(() => {
-    if (managerRef.current) {
-      managerRef.current.state = state;
-      managerRef.current.setState = setState;
-    }
-  });
-
   const manager = managerRef.current;
 
   // Refs for preventing infinite loops
@@ -43,15 +36,15 @@ export const useElectromagneticLabState = (initialPattern?: string, autoStart: b
     if (initialPattern) {
       const pattern = WAVE_PATTERNS.find(p => p.id === initialPattern);
       if (pattern) {
-        setState(prev => ({ 
-          ...prev, 
+        setState(prev => ({
+          ...prev,
           appState: { ...prev.appState, currentPattern: pattern }
         }));
       }
     } else if (!state.appState.currentPattern) {
       const defaultPattern = WAVE_PATTERNS[0];
-      setState(prev => ({ 
-        ...prev, 
+      setState(prev => ({
+        ...prev,
         appState: { ...prev.appState, currentPattern: defaultPattern }
       }));
     }
@@ -62,7 +55,7 @@ export const useElectromagneticLabState = (initialPattern?: string, autoStart: b
     // Use the provided active engine (could be frontend or backend)
     const currentElectromagnetic = activeEngine.electromagnetic;
     const currentAudioState = activeEngine.audioState;
-    
+
     if (
       currentElectromagnetic !== lastElectromagneticRef.current ||
       currentAudioState !== lastAudioStateRef.current ||
@@ -72,12 +65,12 @@ export const useElectromagneticLabState = (initialPattern?: string, autoStart: b
     ) {
       lastElectromagneticRef.current = currentElectromagnetic;
       lastAudioStateRef.current = currentAudioState;
-      
+
       const enhancedElectromagnetic = manager.calculateEnhancedElectromagnetic(
-        currentElectromagnetic, 
+        currentElectromagnetic,
         currentAudioState
       );
-      
+
       setState(prev => ({
         ...prev,
         appState: {
@@ -88,7 +81,7 @@ export const useElectromagneticLabState = (initialPattern?: string, autoStart: b
         }
       }));
     }
-  }, []); // 🔥 FIX: Empty deps - manager is stable (useRef)
+  }, [manager]);
 
   // Force electromagnetic field update when pattern changes
   // 🔥 NOTE: isPlaying and volume now come from HybridEngine, passed by caller
@@ -111,50 +104,51 @@ export const useElectromagneticLabState = (initialPattern?: string, autoStart: b
         }
       }));
 
+      console.log('🎨 Visualizer updated for pattern:', state.appState.currentPattern.name, 'Frequency:', frequency);
     } else {
+      console.warn('⚠️ Cannot update electromagnetic for pattern - pattern or frequencies missing');
     }
   }, [
-    // 🔥 FIX: Use stable values to prevent infinite loops
     state.appState.currentPattern?.id,
-    state.appState.currentPattern?.frequencies?.beat
-    // Removed 'manager' - it's stable (useRef)
+    state.appState.currentPattern?.frequencies?.beat,
+    manager
   ]);
 
   return {
     // State
     ...state,
-    
+
     // Manager methods
     handlePatternSelect: (patternId: string, audioEngine: AudioEngine, patterns8D: PatternMode) =>
       manager.handlePatternSelect(patternId, audioEngine, patterns8D),
-    
+
     handleModeChange: (mode: PatternMode, masterAudio: any) =>
       manager.handleModeChange(mode, masterAudio),
-    
-    handleFrequencyChange: (base_frequency: number, beat_frequency: number, audioEngine: AudioEngine) =>
-      manager.handleFrequencyChange(base_frequency, beat_frequency, audioEngine),
-    
+
+    handleFrequencyChange: (frequency: number, audioEngine: AudioEngine) =>
+      manager.handleFrequencyChange(frequency, audioEngine),
+
     handleVolumeChange: (volume: number, audioEngine: AudioEngine) =>
       manager.handleVolumeChange(volume, audioEngine),
-    
+
     handlePlay: (audioEngine: AudioEngine, backendEngine: BackendAudioConfig, patterns8D: PatternMode) =>
       manager.handlePlay(audioEngine, backendEngine, patterns8D),
-    
+
     handleTabChange: (tabId: string) => manager.handleTabChange(tabId),
-    
+
     handleSectionClose: (id: string) => manager.handleSectionClose(id),
-    
+
     handleSectionRestore: (id: string) => manager.handleSectionRestore(id),
-    
+
     toggleAdvancedControls: (backendEngine?: BackendAudioConfig) => manager.toggleAdvancedControls(backendEngine),
-    
+
     toggleDarkScreen: () => manager.toggleDarkScreen(),
-    
+
     // State update methods
     updateAppState: (partialState: Partial<AppState>) => manager.updateAppState(partialState),
-    
+
     updateElectromagneticState,
-    
+
     updateElectromagneticForPattern
   };
 };

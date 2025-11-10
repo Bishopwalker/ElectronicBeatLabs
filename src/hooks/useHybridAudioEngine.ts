@@ -56,6 +56,8 @@ export const useHybridAudioEngine = () => {
       return;
     }
 
+    console.log('🎚️ Hybrid Engine: Initializing audio mixer...');
+
     try {
       // Ensure frontend audio context is ready
       if (!frontendEngine.audioContext) {
@@ -66,23 +68,7 @@ export const useHybridAudioEngine = () => {
         // Create mixer
         mixerRef.current = new AudioMixer(frontendEngine.audioContext);
 
-        // 🔥 CRITICAL FIX: Save current playing state and config BEFORE setting external nodes
-        const wasPlaying = frontendEngine.audioState.isPlaying;
-        const currentConfig = wasPlaying ? {
-          base_frequency: frontendEngine.audioState.leftFreq || DEFAULT_BASE_FREQUENCY,
-          beat_frequency: frontendEngine.audioState.beat_frequency || DEFAULT_BEAT_FREQUENCY,
-          volume: frontendEngine.audioState.volume || DEFAULT_VOLUME,
-          waveform: frontendEngine.audioState.waveform || 'sine'
-        } : null;
-
-        // 🔥 CRITICAL FIX: STOP audio before changing nodes to avoid disconnection issues
-        if (wasPlaying) {
-          frontendEngine.stopBinauralBeat();
-          // Wait for audio to fully stop
-          await new Promise(resolve => setTimeout(resolve, 100));
-        }
-
-        // Connect BOTH engines to mixer
+        // 🔥 CRITICAL FIX: Connect BOTH engines to mixer
         // This ensures both frontend and backend audio route through mixer for synchronized volume control
 
         // Connect frontend engine to mixer's frontend gain
@@ -100,59 +86,46 @@ export const useHybridAudioEngine = () => {
           frontendEngine.audioContext // 🔥 FIXED: Use frontend's context!
         );
 
-        // 🔥 CRITICAL FIX: RESTART audio if it was playing, now routing through mixer
-        if (wasPlaying && currentConfig) {
-          await frontendEngine.startBinauralBeat(currentConfig);
-        }
-
+        console.log('✅ Hybrid Engine: Audio mixer initialized and connected to BOTH engines');
         setIsInitialized(true);
       }
     } catch (error) {
+      console.error('❌ Hybrid Engine: Failed to initialize mixer:', error);
     }
   }, [frontendEngine, backendEngine]);
 
   /**
    * Initialize mixer when frontend context becomes available
-   * 🔥 FIXED: Use stable dependencies to prevent duplicate mixer creation
    */
   useEffect(() => {
     if (frontendEngine.audioContext && !mixerRef.current) {
       initializeMixer();
     }
-    // Only re-run when audioContext actually changes (null -> object)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [!!frontendEngine.audioContext]);
+  }, [frontendEngine.audioContext, initializeMixer]);
 
   /**
    * Monitor backend connection and auto-crossfade
-   * 🔥 CRITICAL FIX: Crossfade if audio playing OR backend has active session
    */
   useEffect(() => {
-    const backendNowConnected = backendEngine.backendConnected && backendEngine.sessionId?true:false;
+    const backendNowConnected = backendEngine.backendConnected && backendEngine.sessionId;
     const backendWasConnected = previousBackendConnected.current;
-    const isAudioPlaying = frontendEngine.audioState.isPlaying || backendEngine.audioState.isPlaying;
-    const hasActiveSession = !!backendEngine.sessionId; // Backend has session = will play soon
 
-    // Backend just connected - crossfade if audio playing OR has active session
+    // Backend just connected - crossfade to it
     if (backendNowConnected && !backendWasConnected && mixerRef.current) {
-      if (isAudioPlaying || hasActiveSession) {
-        mixerRef.current.crossfadeToBackend(2.0);
-        setCurrentEngine('backend');
-      } else {
-      }
+      console.log('🔄 Hybrid Engine: Backend connected, crossfading from frontend to backend...');
+      mixerRef.current.crossfadeToBackend(2.0);
+      setCurrentEngine('backend');
     }
 
-    // Backend just disconnected - instant failover ONLY IF AUDIO IS PLAYING
+    // Backend just disconnected - instant failover
     if (!backendNowConnected && backendWasConnected && mixerRef.current) {
-      if (isAudioPlaying) {
-        mixerRef.current.failoverToFrontend();
-        setCurrentEngine('frontend');
-      } else {
-      }
+      console.log('🚨 Hybrid Engine: Backend disconnected, instant failover to frontend!');
+      mixerRef.current.failoverToFrontend();
+      setCurrentEngine('frontend');
     }
 
-    previousBackendConnected.current = backendNowConnected;
-  }, [backendEngine.backendConnected, backendEngine.sessionId, frontendEngine.audioState.isPlaying, backendEngine.audioState.isPlaying]);
+    previousBackendConnected.current as unknown as String ;
+  }, [backendEngine.backendConnected, backendEngine.sessionId]);
 
   /**
    * Start binaural beat with hybrid approach
@@ -161,6 +134,8 @@ export const useHybridAudioEngine = () => {
    * 3. Auto-crossfade to backend when ready
    */
   const startBinauralBeat = useCallback(async (config: BinauralBeatConfig) => {
+    console.log('🎵 Hybrid Engine: Starting binaural beat with config:', config);
+
     // Initialize mixer if not ready
     if (!mixerRef.current) {
       await initializeMixer();
@@ -168,14 +143,8 @@ export const useHybridAudioEngine = () => {
 
     try {
       // STEP 1: Start frontend immediately (instant audio)
+      console.log('⚡ Hybrid Engine: Starting FRONTEND engine (instant)...');
       await frontendEngine.startBinauralBeat(config);
-
-      // Ensure mixer is initialized AFTER frontend context exists.
-      // The first initialize attempt may occur before the frontend created its AudioContext.
-      // Calling again here guarantees setExternalNodes() runs before backend connects.
-      if (!mixerRef.current) {
-        await initializeMixer();
-      }
 
       // 🔥 FIXED: Properly update frontend engine state
       if (frontendEngine.setAudioState) {
@@ -183,28 +152,33 @@ export const useHybridAudioEngine = () => {
           ...prev,
           isPlaying: true
         }));
+        console.log('✅ Frontend engine state updated: isPlaying = true');
       }
 
       setCurrentEngine('frontend');
 
-      // STEP 2: Start backend session in background
-      // 🔥 CRITICAL FIX: Remove redundant connectBackend() call!
-      // startBackendSession() already handles WebSocket connection internally
-      // Calling connectBackend() first creates MULTIPLE WebSocket connections with different session IDs
-      // This causes ERR_CONNECTION_REFUSED and prevents audio streaming
+      // STEP 2: Connect backend in background (no await - non-blocking)
+      console.log('🔌 Hybrid Engine: Connecting BACKEND engine (background)...');
 
-      backendEngine.startBackendSession(config)
-        .then(() => {
-          if (backendEngine.audioState) {
-            backendEngine.audioState.isPlaying = true;
-          }
-        })
-        .catch(err => {
-          // Backend connection failed - frontend audio continues playing
-          console.warn('⚠️ Backend session failed, continuing with frontend audio:', err);
+      // Try to connect backend without blocking
+      if (!backendEngine.backendConnected) {
+        backendEngine.connectBackend().catch(err => {
+          console.warn('⚠️ Hybrid Engine: Backend unavailable, continuing frontend-only:', err);
         });
+      }
 
+      // Start backend session
+      backendEngine.startBackendSession(config).then(() => {
+        console.log('✅ Hybrid Engine: Backend session started, crossfade will happen automatically');
+      }).catch(err => {
+        console.warn('⚠️ Hybrid Engine: Backend session failed, continuing frontend-only:', err);
+      });
+      if (backendEngine.audioState){
+        backendEngine.audioState.isPlaying = true;
+      }
+      console.log('✅ Hybrid Engine: Audio started (frontend playing, backend connecting)');
     } catch (error) {
+      console.error('❌ Hybrid Engine: Failed to start audio:', error);
       throw error;
     }
   }, [frontendEngine.audioState, backendEngine, initializeMixer]);
@@ -213,14 +187,18 @@ export const useHybridAudioEngine = () => {
    * Stop binaural beat (stops both engines)
    */
   const stopBinauralBeat = useCallback(async () => {
+    console.log('🛑 Hybrid Engine: stopBinauralBeat called');
+    console.log('🛑 Frontend isPlaying:', frontendEngine.audioState.isPlaying);
+    console.log('🛑 Backend isPlaying:', backendEngine.audioState.isPlaying);
 
     let stoppedSuccessfully = false;
 
     try {
       // Stop frontend
       if (frontendEngine.audioState) {
+        console.log('🛑 Stopping frontend engine...');
         frontendEngine.stopBinauralBeat();
-        
+
         // 🔥 FIXED: Properly update frontend state after stopping
         if (frontendEngine.setAudioState) {
           frontendEngine.setAudioState((prev: any) => ({
@@ -228,22 +206,30 @@ export const useHybridAudioEngine = () => {
             isPlaying: false
           }));
         }
+        console.log('✅ Frontend engine stopped and state updated');
         stoppedSuccessfully = true;
       } else {
+        console.log('⏭️ Frontend engine not playing, skipping');
       }
 
       // Stop backend
       if (backendEngine.audioState) {
+        console.log('🛑 Stopping backend engine...');
         await backendEngine.stopBinauralBeat();
         backendEngine.audioState.isPlaying = false;
+        console.log('✅ Backend engine stopped');
         stoppedSuccessfully = true;
       } else {
+        console.log('⏭️ Backend engine not playing, skipping');
       }
-      
+
       if (!stoppedSuccessfully) {
+        console.warn('⚠️ No engines were playing, nothing to stop');
       } else {
+        console.log('✅ Hybrid Engine: Both engines stopped successfully');
       }
     } catch (error) {
+      console.error('❌ Hybrid Engine: Failed to stop audio:', error);
       throw error; // 🔥 IMPORTANT: Throw error so caller knows it failed
     }
   }, [frontendEngine, backendEngine]);
@@ -255,6 +241,13 @@ export const useHybridAudioEngine = () => {
   const updateFrequency = useCallback((leftFreq: number, rightFreq: number) => {
     const beatFreq = Math.abs(rightFreq - leftFreq);
     const baseFreq = Math.min(leftFreq, rightFreq);
+
+    console.log('🎛️ Hybrid Engine: Syncing frequency to BOTH engines -', {
+      leftFreq,
+      rightFreq,
+      baseFreq,
+      beatFreq
+    });
 
     // 🔥 FIXED: Update FRONTEND engine (uses leftFreq/rightFreq format)
     frontendEngine.updateFrequency(leftFreq, rightFreq);
@@ -271,6 +264,7 @@ export const useHybridAudioEngine = () => {
    * 🔥 CRITICAL FIX: Syncs both engines with new frequency settings
    */
   const updateSettings = useCallback((settings: { base_frequency?: number; beat_frequency?: number }) => {
+    console.log('🎛️ Hybrid Engine: Syncing settings to BOTH engines -', settings);
 
     // Update BACKEND engine (native format)
     if (backendEngine.updateSettings) {
@@ -280,7 +274,7 @@ export const useHybridAudioEngine = () => {
     // Update FRONTEND engine (convert to leftFreq/rightFreq format)
     if (settings.base_frequency !== undefined && settings.beat_frequency !== undefined) {
       const leftFreq = settings.base_frequency;
-      const rightFreq = settings.base_frequency + settings.beat_frequency;  // 🔥 FIXED: rightFreq = base + beat, not just beat!
+      const rightFreq =  settings.beat_frequency;
       frontendEngine.updateFrequency(leftFreq, rightFreq);
     }
   }, [frontendEngine, backendEngine]);
@@ -290,16 +284,22 @@ export const useHybridAudioEngine = () => {
    * 🔥 FIXED: Only update mixer volume - engines are routed through mixer, so no duplicate setting
    */
   const updateVolume = useCallback((volume: number) => {
-    // 🔥 FIXED: Use fallback only when volume is NaN, not truthy OR
     const safeVolume = isNaN(volume) ? DEFAULT_VOLUME : Math.max(0, Math.min(2, volume));
+
+    console.log('🎚️ Hybrid Engine: Setting master volume to:', safeVolume);
 
     // Update mixer master volume - this controls both engines since they're routed through it
     if (mixerRef.current) {
       mixerRef.current.setMasterVolume(safeVolume);
+      console.log('✅ Hybrid Engine: Mixer master volume updated (controls both engines)');
+    } else {
+      console.warn('⚠️ Hybrid Engine: Mixer not initialized, volume update skipped');
     }
 
     // 🔥 REMOVED: Individual engine volume updates - caused duplicate volume setting
     // Both engines are routed through mixer, so mixer volume is the single source of truth
+    // frontendEngine.updateVolume(safeVolume); // ❌ DUPLICATE
+    // backendEngine.updateVolume(safeVolume);  // ❌ DUPLICATE
   }, []);
 
   /**
@@ -311,23 +311,14 @@ export const useHybridAudioEngine = () => {
 
   /**
    * Update spatial settings (backend only feature)
-   * 🔥 CRITICAL FIX: Include current frequency to keep both engines in sync
    */
   const updateSpatialSettings = useCallback((spatialSettings: Record<string, unknown>) => {
     if (backendEngine.backendConnected) {
-      // Get current frequency from engine states directly (avoids TDZ issue)
-      const baseFreq = frontendEngine.audioState.leftFreq || backendEngine.audioState.config?.base_frequency || DEFAULT_BASE_FREQUENCY;
-      const beatFreq = frontendEngine.audioState.beat_frequency || backendEngine.audioState.config?.beat_frequency || DEFAULT_BEAT_FREQUENCY;
-
-      // Send BOTH spatial settings AND current frequency to backend
-      backendEngine.updateSettings({
-        spatial_settings: spatialSettings,
-        base_frequency: baseFreq,
-        beat_frequency: beatFreq
-      });
+      backendEngine.updateSpatialSettings(spatialSettings);
     } else {
+      console.warn('🎧 Spatial audio requires backend connection');
     }
-  }, [backendEngine, frontendEngine.audioState.leftFreq, frontendEngine.audioState.beat_frequency]);
+  }, [backendEngine]);
 
   /**
    * Load pattern (hybrid approach)
@@ -336,9 +327,9 @@ export const useHybridAudioEngine = () => {
     const config: BinauralBeatConfig = {
       base_frequency: pattern.frequencies.carrier,
       beat_frequency: pattern.frequencies.beat,
-      waveform: 'sine', // PatternConfig doesn't have waveform property, default to sine
-      volume: DEFAULT_VOLUME
-    }
+      amplitude: 0.5,
+      waveform: 'sine'
+    };
 
     await startBinauralBeat(config);
   }, [startBinauralBeat]);
@@ -350,7 +341,7 @@ export const useHybridAudioEngine = () => {
     const config: BinauralBeatConfig = {
       base_frequency: leftFreq,
       beat_frequency: Math.abs(rightFreq - leftFreq),
-      volume: DEFAULT_VOLUME,
+      amplitude: DEFAULT_VOLUME,
       waveform: 'sine'
     };
 
@@ -389,6 +380,7 @@ export const useHybridAudioEngine = () => {
    * This is the CRITICAL method that SettingsTab uses
    */
   const initializeAudio = useCallback(async () => {
+    console.log('🎵 Hybrid Engine: Manual audio context initialization...');
     try {
       const context = await frontendEngine.initializeAudio();
       if (context) {
@@ -399,6 +391,7 @@ export const useHybridAudioEngine = () => {
             context
           }));
         }
+        console.log('✅ Hybrid Engine: Audio context initialized, state:', context.state);
 
         // Initialize mixer now that context is ready
         if (!mixerRef.current) {
@@ -408,37 +401,39 @@ export const useHybridAudioEngine = () => {
         return context;
       }
     } catch (error) {
+      console.error('❌ Hybrid Engine: Failed to initialize audio context:', error);
       throw error;
     }
   }, [frontendEngine, initializeMixer]);
 
   /**
-   * Proactively initialize audio context on mount
+   * Proactively initialize audio context on mount (like SettingsTab does)
    */
   useEffect(() => {
     const autoInitialize = async () => {
-      // Only run on initial mount when context is null
       if (!frontendEngine.audioContext) {
+        console.log('🎵 Hybrid Engine: Proactively initializing audio context on mount...');
         try {
           // Create a simple user interaction to trigger audio context
           // This ensures analyser node exists for visualizers
           const context = await frontendEngine.initializeAudio();
           if (context) {
-            // Mixer will be initialized by the other useEffect when context is ready
+            console.log('✅ Hybrid Engine: Audio context initialized proactively');
+            // Initialize mixer immediately after context is ready
+            await initializeMixer();
           }
         } catch (error) {
-          // User can retry manually
+          console.log('⚠️ Hybrid Engine: Auto-initialization requires user gesture, will retry on first interaction');
         }
-      } else if (frontendEngine.audioContext && !mixerRef.current) {
+      } else if (!mixerRef.current) {
         // Context exists but mixer doesn't - initialize mixer
+        console.log('🎵 Hybrid Engine: Audio context exists, initializing mixer...');
         await initializeMixer();
       }
     };
 
     autoInitialize();
-    // Only run when audioContext presence changes (null -> object or object -> null)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [!!frontendEngine.audioContext]);
+  }, [frontendEngine, initializeMixer]); // 🔥 FIXED: Run when frontendEngine or initializeMixer changes
 
   /**
    * Cleanup on unmount
@@ -446,6 +441,7 @@ export const useHybridAudioEngine = () => {
   useEffect(() => {
     return () => {
       if (mixerRef.current) {
+        console.log('🧹 Hybrid Engine: Cleaning up mixer...');
         mixerRef.current.destroy();
         mixerRef.current = null;
       }
@@ -454,7 +450,7 @@ export const useHybridAudioEngine = () => {
 
   // Determine which engine's state to show
   const isPlaying = frontendEngine.audioState.isPlaying || backendEngine.audioState.isPlaying;
-  
+
   // 🔥 FIXED: Ensure electromagnetic has defaults (no nulls)
   const defaultElectromagnetic = {
     strength: 0,
@@ -465,7 +461,7 @@ export const useHybridAudioEngine = () => {
     state: 'INACTIVE' as const,
     stability: 0
   };
-  
+
   const electromagnetic = currentEngine === 'backend'
     ? { ...defaultElectromagnetic, ...backendEngine.electromagnetic }
     : { ...defaultElectromagnetic, ...frontendEngine.electromagnetic };
@@ -485,12 +481,12 @@ export const useHybridAudioEngine = () => {
     const beatFreq = frontendEngine.audioState.beat_frequency || backendEngine.audioState.config?.beat_frequency || DEFAULT_BEAT_FREQUENCY;
     const leftFreq = baseFreq;
     const rightFreq = baseFreq + beatFreq;
-    const volume = frontendEngine.audioState.volume || backendEngine.audioState.config?.volume || DEFAULT_VOLUME;
+    const amplitude = frontendEngine.audioState.amplitude || backendEngine.audioState.config?.amplitude || DEFAULT_VOLUME;
     const waveform = frontendEngine.audioState.waveform || 'sine';
-    
+
     return {
       isPlaying, // Boolean - never null
-      volume, // Number - always has default
+      amplitude, // Number - always has default
       leftFreq, // Number - always has default
       rightFreq, // Number - always has default
       beat_frequency: beatFreq, // Number - always has default
@@ -498,7 +494,7 @@ export const useHybridAudioEngine = () => {
       config: {
         base_frequency: baseFreq, // Number - always has default
         beat_frequency: beatFreq, // Number - always has default
-        volume, // Number - always has default
+        amplitude, // Number - always has default
         waveform // String - always has default
       },
       // 🔥 NEW: Add context and nodes for compatibility
@@ -513,7 +509,7 @@ export const useHybridAudioEngine = () => {
     isPlaying,
     frontendEngine.audioState.leftFreq,
     frontendEngine.audioState.beat_frequency,
-    frontendEngine.audioState.volume,
+    frontendEngine.audioState.amplitude,
     frontendEngine.audioState.waveform,
     frontendEngine.audioContext,
     frontendEngine.audioState.gainL,
@@ -522,7 +518,7 @@ export const useHybridAudioEngine = () => {
     frontendEngine.audioState.oscillatorR,
     backendEngine.audioState.config?.base_frequency,
     backendEngine.audioState.config?.beat_frequency,
-    backendEngine.audioState.config?.volume
+    backendEngine.audioState.config?.amplitude
   ]);
 
   return {
@@ -546,7 +542,6 @@ export const useHybridAudioEngine = () => {
     // Audio context management (CRITICAL for SettingsTab compatibility)
     initializeAudio,
     setAudioState: frontendEngine.setAudioState, // Passthrough to frontend engine
-    setEqualizerNodes: frontendEngine.setEqualizerNodes, // 🔥 NEW: Passthrough for equalizer
 
     // 🔥 FIXED: Return correct analyserNode based on active engine
     audioContext: frontendEngine.audioContext,
@@ -566,9 +561,6 @@ export const useHybridAudioEngine = () => {
 
     // Browser support
     isSupported: frontendEngine.isSupported,
-
-    // 🔥 NEW: AudioWorklet status (for debugging and visibility)
-    audioWorkletStatus: backendEngine.audioWorkletStatus,
 
     // EXPOSED INTERNAL ENGINES (for legacy component compatibility)
     // These are the SAME engines managed internally by hybrid
