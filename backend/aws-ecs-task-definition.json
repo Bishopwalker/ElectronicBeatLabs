@@ -1,0 +1,74 @@
+{
+  "family": "ebl-websocket-service",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "1024",
+  "memory": "2048",
+  "executionRoleArn": "arn:aws:iam::{AWS_ACCOUNT_ID}:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::{AWS_ACCOUNT_ID}:role/ecsTaskRole",
+  "containerDefinitions": [
+    {
+      "name": "websocket-container",
+      "image": "{AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/ebl-websocket:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8000,
+          "protocol": "tcp",
+          "name": "websocket-8000-tcp",
+          "appProtocol": "http"
+        }
+      ],
+      "environment": [
+        {
+          "name": "ENVIRONMENT",
+          "value": "production"
+        },
+        {
+          "name": "LOG_LEVEL",
+          "value": "INFO"
+        },
+        {
+          "name": "CORS_ORIGINS",
+          "value": "*"
+        },
+        {
+          "name": "WEBSOCKET_ONLY",
+          "value": "true"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:{AWS_ACCOUNT_ID}:secret:ebl/database-url"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/ebl-websocket",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "websocket",
+          "awslogs-create-group": "true"
+        }
+      },
+      "healthCheck": {
+        "command": ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 60
+      },
+      "command": [
+        "uvicorn",
+        "websocket_main:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000",
+        "--workers",
+        "1"
+      ]
+    }
+  ]
+}

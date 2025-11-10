@@ -1,0 +1,34 @@
+# Lambda-specific requirements
+# These are installed in Lambda Layer for all functions
+
+# FastAPI and dependencies
+fastapi==0.115.6
+pydantic==2.10.5
+pydantic-settings==2.7.1
+
+# ASGI adapter for Lambda
+mangum==0.19.0
+
+# Database
+sqlalchemy==2.0.37
+alembic==1.14.1
+
+# Stripe payment processing
+stripe==11.5.0
+
+# HTTP client
+httpx==0.28.2
+
+# Security
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-multipart==0.0.20
+
+# Environment variables
+python-dotenv==1.0.1
+
+# Logging
+python-json-logger==3.2.1
+
+# AWS SDK (boto3 is already available in Lambda runtime)
+# boto3==1.35.92  # Commented out - use Lambda runtime version

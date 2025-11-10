@@ -1,0 +1,186 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Electronic Beat Labs - S3 + CloudFront Frontend Deployment'
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: ebl
+    Description: Project name for resource naming
+
+  Environment:
+    Type: String
+    Default: prod
+    AllowedValues:
+      - dev
+      - staging
+      - prod
+    Description: Environment name
+
+Resources:
+  # S3 Bucket for Frontend Static Files
+  FrontendBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub '${ProjectName}-frontend-${Environment}-${AWS::AccountId}'
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: index.html
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteOldVersions
+            Status: Enabled
+            NoncurrentVersionExpirationInDays: 30
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  # S3 Bucket Policy for CloudFront OAI
+  FrontendBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref FrontendBucket
+      PolicyDocument:
+        Statement:
+          - Sid: AllowCloudFrontOAI
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub '${FrontendBucket.Arn}/*'
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}'
+
+  # CloudFront Origin Access Control
+  CloudFrontOAC:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub '${ProjectName}-oac-${Environment}'
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  # CloudFront Distribution
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        HttpVersion: http2and3
+        Comment: !Sub '${ProjectName} Frontend ${Environment}'
+        DefaultRootObject: index.html
+        PriceClass: PriceClass_All
+
+        # S3 Origin
+        Origins:
+          - Id: S3Origin
+            DomainName: !GetAtt FrontendBucket.RegionalDomainName
+            OriginAccessControlId: !Ref CloudFrontOAC
+            S3OriginConfig:
+              OriginAccessIdentity: ''
+
+        # Default Cache Behavior
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+          CachedMethods:
+            - GET
+            - HEAD
+          Compress: true
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6  # Managed-CachingOptimized
+
+          # Response Headers Policy
+          ResponseHeadersPolicyId: !Ref SecurityHeadersPolicy
+
+        # Custom Error Responses (SPA routing support)
+        CustomErrorResponses:
+          - ErrorCode: 403
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+            ErrorCachingMinTTL: 0
+          - ErrorCode: 404
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+            ErrorCachingMinTTL: 0
+
+        # SSL Certificate (uses default CloudFront cert)
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: true
+          MinimumProtocolVersion: TLSv1.2_2021
+
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  # Security Headers Policy
+  SecurityHeadersPolicy:
+    Type: AWS::CloudFront::ResponseHeadersPolicy
+    Properties:
+      ResponseHeadersPolicyConfig:
+        Name: !Sub '${ProjectName}-security-headers-${Environment}'
+        Comment: Security headers for EBL frontend
+        SecurityHeadersConfig:
+          StrictTransportSecurity:
+            AccessControlMaxAgeSec: 31536000
+            IncludeSubdomains: true
+            Override: true
+          ContentTypeOptions:
+            Override: true
+          FrameOptions:
+            FrameOption: DENY
+            Override: true
+          XSSProtection:
+            ModeBlock: true
+            Protection: true
+            Override: true
+          ReferrerPolicy:
+            ReferrerPolicy: strict-origin-when-cross-origin
+            Override: true
+        CustomHeadersConfig:
+          Items:
+            - Header: Permissions-Policy
+              Value: 'geolocation=(), microphone=(), camera=()'
+              Override: true
+
+Outputs:
+  BucketName:
+    Description: S3 Bucket Name
+    Value: !Ref FrontendBucket
+    Export:
+      Name: !Sub '${ProjectName}-frontend-bucket-${Environment}'
+
+  BucketArn:
+    Description: S3 Bucket ARN
+    Value: !GetAtt FrontendBucket.Arn
+
+  CloudFrontDistributionId:
+    Description: CloudFront Distribution ID
+    Value: !Ref CloudFrontDistribution
+    Export:
+      Name: !Sub '${ProjectName}-cloudfront-distribution-${Environment}'
+
+  CloudFrontURL:
+    Description: CloudFront Distribution URL
+    Value: !GetAtt CloudFrontDistribution.DomainName
+    Export:
+      Name: !Sub '${ProjectName}-frontend-url-${Environment}'
+
+  CloudFrontDistributionArn:
+    Description: CloudFront Distribution ARN
+    Value: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}'

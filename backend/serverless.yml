@@ -1,0 +1,337 @@
+service: ebl-backend-lambda
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: python3.11
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'us-east-1'}
+  memorySize: 1024
+  timeout: 30
+
+  environment:
+    STAGE: ${self:provider.stage}
+    DATABASE_URL: ${env:DATABASE_URL}
+    STRIPE_SECRET_KEY: ${env:STRIPE_SECRET_KEY}
+    STRIPE_WEBHOOK_SECRET: ${env:STRIPE_WEBHOOK_SECRET}
+    CORS_ORIGINS: ${env:CORS_ORIGINS, '*'}
+
+  iam:
+    role:
+      statements:
+        # DynamoDB permissions (if migrating from SQLite to DynamoDB)
+        - Effect: Allow
+          Action:
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+          Resource:
+            - arn:aws:dynamodb:${self:provider.region}:*:table/ebl-users-${self:provider.stage}
+            - arn:aws:dynamodb:${self:provider.region}:*:table/ebl-usage-${self:provider.stage}
+            - arn:aws:dynamodb:${self:provider.region}:*:table/ebl-webhooks-${self:provider.stage}
+
+        # RDS permissions (if using Aurora Serverless)
+        - Effect: Allow
+          Action:
+            - rds-data:ExecuteStatement
+            - rds-data:BatchExecuteStatement
+          Resource: "*"
+
+        # Secrets Manager (for database credentials)
+        - Effect: Allow
+          Action:
+            - secretsmanager:GetSecretValue
+          Resource: "arn:aws:secretsmanager:${self:provider.region}:*:secret:ebl/*"
+
+  # VPC configuration (uncomment if using RDS in VPC)
+  # vpc:
+  #   securityGroupIds:
+  #     - sg-xxxxxxxx
+  #   subnetIds:
+  #     - subnet-xxxxxxxx
+  #     - subnet-yyyyyyyy
+
+# Lambda layers for shared dependencies
+layers:
+  dependencies:
+    path: layers/dependencies
+    name: ${self:provider.stage}-ebl-dependencies
+    description: Shared Python dependencies (FastAPI, SQLAlchemy, Stripe, etc)
+    compatibleRuntimes:
+      - python3.11
+    retain: false
+
+functions:
+  # ========================================
+  # Authentication & User Management
+  # ========================================
+
+  auth:
+    handler: lambda_handlers/auth.handler
+    description: OAuth authentication endpoints
+    layers:
+      - {Ref: DependenciesLambdaLayer}
+    events:
+      - httpApi:
+          path: /api/auth/oauth
+          method: POST
+    environment:
+      FUNCTION_NAME: auth
+
+  # ========================================
+  # Usage Tracking
+  # ========================================
+
+  usageCheck:
+    handler: lambda_handlers/usage.check_handler
+    description: Check usage limits (anonymous/user)
+    layers:
+      - {Ref: DependenciesLambdaLayer}
+    events:
+      - httpApi:
+          path: /api/usage/check
+          method: GET
+      - httpApi:
+          path: /api/usage/{email}
+          method: GET
+    environment:
+      FUNCTION_NAME: usageCheck
+
+  usageRecord:
+    handler: lambda_handlers/usage.record_handler
+    description: Record usage (anonymous/user)
+    layers:
+      - {Ref: DependenciesLambdaLayer}
+    events:
+      - httpApi:
+          path: /api/usage/anonymous
+          method: POST
+      - httpApi:
+          path: /api/usage/user
+          method: POST
+    environment:
+      FUNCTION_NAME: usageRecord
+
+  # ========================================
+  # Subscription & Payment Management
+  # ========================================
+
+  subscriptionPlans:
+    handler: lambda_handlers/subscription.plans_handler
+    description: Get available subscription plans
+    layers:
+      - {Ref: DependenciesLambdaLayer}
+    events:
+      - httpApi:
+          path: /api/subscription/plans
+          method: GET
+    environment:
+      FUNCTION_NAME: subscriptionPlans
+
+  subscriptionPayment:
+    handler: lambda_handlers/subscription.payment_handler
+    description: Create Stripe payment intent
+    layers:
+      - {Ref: DependenciesLambdaLayer}
+    events:
+      - httpApi:
+          path: /api/subscription/create-payment-intent
+          method: POST
+    environment:
+      FUNCTION_NAME: subscriptionPayment
+
+  subscriptionStatus:
+    handler: lambda_handlers/subscription.status_handler
+    description: Get user subscription status
+    layers:
+      - {Ref: DependenciesLambdaLayer}
+    events:
+      - httpApi:
+          path: /api/subscription/status/{email}
+          method: GET
+    environment:
+      FUNCTION_NAME: subscriptionStatus
+
+  # ========================================
+  # Stripe Webhooks
+  # ========================================
+
+  stripeWebhook:
+    handler: lambda_handlers/webhook.handler
+    description: Handle Stripe webhook events
+    layers:
+      - {Ref: DependenciesLambdaLayer}
+    timeout: 60
+    events:
+      - httpApi:
+          path: /api/subscription/webhook
+          method: POST
+    environment:
+      FUNCTION_NAME: stripeWebhook
+
+  # ========================================
+  # Timer Management
+  # ========================================
+
+  timer:
+    handler: lambda_handlers/timer.handler
+    description: Timer management endpoints
+    layers:
+      - {Ref: DependenciesLambdaLayer}
+    events:
+      - httpApi:
+          path: /api/timer/presets
+          method: GET
+      - httpApi:
+          path: /api/timer/presets
+          method: POST
+      - httpApi:
+          path: /api/timer/presets/{preset_id}
+          method: GET
+      - httpApi:
+          path: /api/timer/presets/{preset_id}
+          method: PUT
+      - httpApi:
+          path: /api/timer/presets/{preset_id}
+          method: DELETE
+    environment:
+      FUNCTION_NAME: timer
+
+  # ========================================
+  # Health & Metrics
+  # ========================================
+
+  health:
+    handler: lambda_handlers/health.handler
+    description: Health check endpoint
+    layers:
+      - {Ref: DependenciesLambdaLayer}
+    events:
+      - httpApi:
+          path: /health
+          method: GET
+    environment:
+      FUNCTION_NAME: health
+
+# Plugins
+plugins:
+  - serverless-python-requirements
+  - serverless-offline
+  - serverless-dotenv-plugin
+
+# Python requirements plugin config
+custom:
+  pythonRequirements:
+    layer: true
+    dockerizePip: true
+    zip: true
+    slim: true
+    strip: false
+    useStaticCache: true
+    useDownloadCache: true
+    cacheLocation: ".serverless/cache"
+    pipCmdExtraArgs:
+      - --compile
+    noDeploy:
+      - pytest
+      - pytest-cov
+      - black
+      - mypy
+
+  # Environment variables from .env file
+  dotenv:
+    path: .env
+    include:
+      - DATABASE_URL
+      - STRIPE_SECRET_KEY
+      - STRIPE_WEBHOOK_SECRET
+      - CORS_ORIGINS
+
+# Resources (DynamoDB tables, RDS, etc)
+resources:
+  Resources:
+    # DynamoDB Users Table
+    UsersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ebl-users-${self:provider.stage}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: email
+            AttributeType: S
+          - AttributeName: stripe_customer_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: email
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: stripe-customer-index
+            KeySchema:
+              - AttributeName: stripe_customer_id
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
+        TimeToLiveSpecification:
+          Enabled: false
+
+    # DynamoDB Usage Table
+    UsageTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ebl-usage-${self:provider.stage}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: identifier
+            AttributeType: S
+          - AttributeName: timestamp
+            AttributeType: N
+        KeySchema:
+          - AttributeName: identifier
+            KeyType: HASH
+          - AttributeName: timestamp
+            KeyType: RANGE
+        TimeToLiveSpecification:
+          Enabled: true
+          AttributeName: ttl
+
+    # DynamoDB Webhooks Table
+    WebhooksTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ebl-webhooks-${self:provider.stage}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: stripe_event_id
+            AttributeType: S
+          - AttributeName: created_at
+            AttributeType: N
+        KeySchema:
+          - AttributeName: stripe_event_id
+            KeyType: HASH
+        TimeToLiveSpecification:
+          Enabled: true
+          AttributeName: ttl
+
+  Outputs:
+    ApiUrl:
+      Description: HTTP API Gateway URL
+      Value:
+        Fn::Sub: https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com
+
+    UsersTableName:
+      Description: DynamoDB Users Table
+      Value: !Ref UsersTable
+
+    UsageTableName:
+      Description: DynamoDB Usage Table
+      Value: !Ref UsageTable
+
+    WebhooksTableName:
+      Description: DynamoDB Webhooks Table
+      Value: !Ref WebhooksTable

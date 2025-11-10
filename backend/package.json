@@ -1,0 +1,21 @@
+{
+  "name": "ebl-backend",
+  "version": "2.0.0",
+  "description": "Electronic Beat Labs Backend - Lambda + ECS Hybrid",
+  "private": true,
+  "scripts": {
+    "deploy:lambda": "serverless deploy --verbose",
+    "deploy:lambda:dev": "serverless deploy --stage dev --verbose",
+    "deploy:lambda:prod": "serverless deploy --stage prod --verbose",
+    "remove:lambda": "serverless remove",
+    "logs": "serverless logs -f auth --tail",
+    "invoke": "serverless invoke -f auth --log",
+    "offline": "serverless offline start"
+  },
+  "devDependencies": {
+    "serverless": "^3.39.0",
+    "serverless-python-requirements": "^6.1.0",
+    "serverless-offline": "^13.9.0",
+    "serverless-dotenv-plugin": "^6.0.0"
+  }
+}
