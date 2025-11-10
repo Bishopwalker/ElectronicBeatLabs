@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { Box, Typography, Paper, Chip, ToggleButtonGroup, ToggleButton, IconButton } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { useAudioAnalysis } from '../hooks/useAudioAnalysis';
-import type { Pattern8D, PatternConfig, ElectromagneticField, PatternMode, WaveForm } from '../types';
+import type { AppState } from '../types';
 import { DEFAULT_BASE_FREQUENCY, DEFAULT_BEAT_FREQUENCY } from '../constants/audio.constants';
 import WavesIcon from '@mui/icons-material/Waves';
 import BubbleChartIcon from '@mui/icons-material/BubbleChart';
@@ -11,181 +11,18 @@ import GridOnIcon from '@mui/icons-material/GridOn';
 import FullscreenIcon from '@mui/icons-material/Fullscreen';
 import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
 
-// ============================================================================
-// 🔥 AUDIO-REACTIVE HELPER FUNCTIONS - 100% LIVE FREQUENCY ANALYSIS
-// ============================================================================
-
-/**
- * Maps FFT bin index to HSL hue value based on frequency range
- * Bass (0-20% bins) → 0-30° (Red/Orange)
- * Mid (20-60% bins) → 120-180° (Green/Cyan)
- * Treble (60-100% bins) → 240-280° (Blue/Purple)
- */
-function mapFrequencyBinToColor(binIndex: number, totalBins: number): number {
-  const normalized = binIndex / totalBins; // 0 to 1
-  
-  if (normalized < 0.2 ) {
-    // Bass: Red to Orange
-    return normalized * 150; // 0° to 30°
-  } else if (normalized < 0.6) {
-    // Mid: Green to Cyan
-    return 120 + ((normalized - 0.2) * 150); // 120° to 180°
-  } else {
-    // Treble: Blue to Purple
-    return 240 + ((normalized - 0.6) * 100); // 240° to 280°
-  }
-}
-
-/**
- * Calculates dominant color based on frequency content energy distribution
- */
-function calculateFrequencyColor(frequencyData: Uint8Array): number {
-  const bassEnd = Math.floor(frequencyData.length * 1.2);
-  const midEnd = Math.floor(frequencyData.length * 1.6);
-  
-  let bassSum = 0, midSum = 0, trebleSum = 0;
-  
-  for (let i = 0; i < bassEnd; i++) bassSum += frequencyData[i];
-  for (let i = bassEnd; i < midEnd; i++) midSum += frequencyData[i];
-  for (let i = midEnd; i < frequencyData.length; i++) trebleSum += frequencyData[i];
-  
-  const bassAvg = bassSum / bassEnd;
-  const midAvg = midSum / (midEnd - bassEnd);
-  const trebleAvg = trebleSum / (frequencyData.length - midEnd);
-  
-  // Weight by energy, return dominant hue
-  if (bassAvg > midAvg && bassAvg > trebleAvg) return 15;    // Orange (bass)
-  if (midAvg > bassAvg && midAvg > trebleAvg) return 150;    // Green-Cyan (mid)
-  return 260; // Blue-Purple (treble)
-}
-
-/**
- * Gets frequency band energies and identifies dominant band
- */
-function getFrequencyBands(frequencyData: Uint8Array): {
-  bass: number;
-  mid: number;
-  treble: number;
-  overall: number;
-  dominant: 'bass' | 'mid' | 'treble';
-} {
-  const bassEnd = Math.floor(frequencyData.length * 0.2);
-  const midEnd = Math.floor(frequencyData.length * 0.6);
-
-  let bassSum = 0, midSum = 0, trebleSum = 0;
-
-  for (let i = 0; i < bassEnd; i++) bassSum += frequencyData[i];
-  for (let i = bassEnd; i < midEnd; i++) midSum += frequencyData[i];
-  for (let i = midEnd; i < frequencyData.length; i++) trebleSum += frequencyData[i];
-
-  const bass = bassSum / bassEnd / 255; // Normalize to 0-1
-  const mid = midSum / (midEnd - bassEnd) / 255;
-  const treble = trebleSum / (frequencyData.length - midEnd) / 255;
-  const overall = (bass + mid + treble) / 3;
-
-  let dominant: 'bass' | 'mid' | 'treble' = 'mid';
-  if (bass > mid && bass > treble) dominant = 'bass';
-  else if (treble > bass && treble > mid) dominant = 'treble';
-
-  return { bass, mid, treble, overall, dominant };
-}
-
-// ============================================================================
-// 🎵 WAVEFORM GENERATION FUNCTIONS - ACCURATE SHAPE RENDERING
-// ============================================================================
-
-/**
- * Generate sine wave value at normalized time t (0-1)
- */
-function generateSineWave(t: number): number {
-  return Math.sin(2 * Math.PI * t);
-}
-
-/**
- * Generate square wave value at normalized time t (0-1)
- * Creates sharp transitions between +1 and -1
- */
-function generateSquareWave(t: number): number {
-  return Math.sign(Math.sin(2 * Math.PI * t));
-}
-
-/**
- * Generate triangle wave value at normalized time t (0-1)
- * Creates linear ramp up and down
- */
-function generateTriangleWave(t: number): number {
-  const normalized = t - Math.floor(t); // Wrap to 0-1
-  return 2 * Math.abs(2 * normalized - 1) - 1;
-}
-
-/**
- * Generate sawtooth wave value at normalized time t (0-1)
- * Creates linear ramp from -1 to +1 then sharp drop
- */
-function generateSawtoothWave(t: number): number {
-  const normalized = t - Math.floor(t); // Wrap to 0-1
-  return 2 * normalized - 1;
-}
-
-/**
- * Generate waveform value based on waveform type
- * @param t Normalized time (0-1 represents one complete cycle)
- * @param waveform Type of waveform to generate
- */
-function generateWaveform(t: number, waveform: 'sine' | 'square' | 'triangle' | 'sawtooth'): number {
-  switch (waveform) {
-    case 'sine':
-      return generateSineWave(t);
-    case 'square':
-      return generateSquareWave(t);
-    case 'triangle':
-      return generateTriangleWave(t);
-    case 'sawtooth':
-      return generateSawtoothWave(t);
-    default:
-      return generateSineWave(t); // Fallback to sine
-  }
-}
-
-// ============================================================================
-// STYLED COMPONENTS
-// ============================================================================
-
-// 🔥 FIXED: Minimal interface - only requires what FrequencyVisualizer actually uses
-// No longer coupled to full AppState
-interface FrequencyVisualizerState {
-  // Audio engine reference (optional)
-  audio?: {
-    audioState?: {
-      isPlaying?: boolean;
-      waveform?: WaveForm;
-    };
-  };
-  
-  // Direct audio properties (fallback if audio engine not available)
-  isPlaying?: boolean;
-  base_frequency?: number;
-  beat_frequency?: number;
-  
-  // Config object (alternative source for frequencies)
-  config?: {
+// 🔥 FIXED: Extended state type to include audio engine reference
+// AppState doesn't have 'audio' property, but we need it for accessing hybrid engine
+interface FrequencyVisualizerProps {
+  state: AppState & {
+    audio?: any; // Hybrid audio engine reference
     base_frequency?: number;
     beat_frequency?: number;
-    waveform?: WaveForm;
+    config?: {
+      base_frequency?: number;
+      beat_frequency?: number;
+    };
   };
-  
-  // Optional pattern/EM data for advanced visualizations
-  patterns8D?: Pattern8D[];
-  currentPattern?: PatternConfig | null;
-  electromagnetic?: ElectromagneticField;
-  
-  // UI state
-  mode?: PatternMode;
-  activeTab?: string;
-}
-
-interface FrequencyVisualizerProps {
-  state: FrequencyVisualizerState;
   title?: string;
   showSpectrum?: boolean;
   showFrequencies?: boolean;
@@ -194,17 +31,14 @@ interface FrequencyVisualizerProps {
   width?: number;
   audioContext?: AudioContext;
   analyserNode?: AnalyserNode;
-  // 🔥 NEW: AudioWorklet status for debugging and visibility
-  audioWorkletStatus?: {
-    moduleLoaded: boolean;
-    nodeExists: boolean;
-    nodeReference: AudioWorkletNode | null;
-    isProcessing: boolean;
-  };
 }
 
 type VisualizationMode = 'waveform' | 'spiral2d' | 'spiral3d' | 'radial' | 'combined';
 
+// 🔥 FIXED: Made container flexible for embedding in TimerCountdownDisplay
+// minHeight: 200px - Small enough to fit in timer display (maxHeight: 300px)
+// height: 100% - Fills parent container completely
+// overflow: hidden - Prevents scroll issues when embedded in constrained spaces
 const VisualizerContainer = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(1),
   background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)',
@@ -250,11 +84,10 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
   showMetrics = true,
   audioContext,
   analyserNode,
-    // 🔥 NEW: AudioWorklet status for debugging and visibility
-  audioWorkletStatus,
 }) => {
-  // Early return if state is invalid
+  // 🔥 CRITICAL FIX: Early return if state is invalid
   if (!state || typeof state !== 'object') {
+    console.error('❌ FrequencyVisualizer: Invalid state provided', state);
     return (
       <Box sx={{ p: 2, color: 'error.main', textAlign: 'center' }}>
         <Typography>Frequency Visualizer: Invalid state</Typography>
@@ -262,7 +95,7 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
     );
   }
 
-  // Show initialization message if no analyser node
+  // 🔥 NEW: Show initialization message if no analyser node
   if (!analyserNode) {
     return (
       <VisualizerContainer elevation={10}>
@@ -297,28 +130,27 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
   const [fps, setFps] = useState(0);
   const [canvasDimensions, setCanvasDimensions] = useState({ width: 800, height: 300 });
   const dimensionsRef = useRef(canvasDimensions);
-  const [visualizationMode, setVisualizationMode] = useState<VisualizationMode>('combined');
+  const [visualizationMode, setVisualizationMode] = useState<VisualizationMode>('radial'); // 🔥 DEFAULT: Radial butterfly pattern
   const [isFullscreen, setIsFullscreen] = useState(false);
-   // Extract frequency values
+
+  // 🔥 BULLETPROOF: Multiple fallback paths for frequency reading
   const base_frequency =
-    state?.config?.base_frequency ??
-      state.base_frequency??
-       DEFAULT_BASE_FREQUENCY ;
-
-  const beat_frequency =
-    state?.config?.beat_frequency ??
-      state.base_frequency ??
-     DEFAULT_BEAT_FREQUENCY;
-
+    state?.config?.base_frequency ?? 
+    (state as any)?.base_frequency ?? 
+    (state as any)?.frequency ?? 
+    DEFAULT_BASE_FREQUENCY ?? 
+    140;
+  
+  const beat_frequency = 
+    state?.config?.beat_frequency ?? 
+    (state as any)?.beat_frequency ?? 
+    DEFAULT_BEAT_FREQUENCY ?? 
+    4;
+  
   const isPlaying =
-    state?.audio?.audioState?.isPlaying ??
+    state?.isPlaying ??
+    state?.audio?.audioState?.isPlaying ?? 
     false;
-
-  // 🔥 CRITICAL FIX: Extract waveform type from audio engine state
-  const waveform: 'sine' | 'square' | 'triangle' | 'sawtooth' =
-    state?.config?.waveform ??
-     state.audio?.audioState?.waveform ??
-    'sine'; // Default to sine if not specified
 
   const { 
     patterns8D = [],
@@ -327,16 +159,16 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
   } = state || {};
 
   // Calculate frequencies
-  const leftFreq = state.base_frequency;
+  const leftFreq = base_frequency;
   const rightFreq = base_frequency + beat_frequency;
   const beatFreq = beat_frequency;
 
-  // Match active pattern
+  // Match active pattern by currentPattern ID
   const activePattern = currentPattern && patterns8D
     ? patterns8D.find(p => p.id === currentPattern.id) || null
     : null;
 
-  // Audio analysis hook
+  // 🔥 USES EXTERNAL audioContext and analyserNode - NO NEW CONTEXTS CREATED!
   const { analysisData, stats, isAnalyzing } = useAudioAnalysis({
     enabled: isPlaying,
     updateRate: 60,
@@ -352,61 +184,36 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
       if (!document.fullscreenElement) {
         await visualizerContainerRef.current.requestFullscreen();
         setIsFullscreen(true);
+        console.log('✅ Entered fullscreen mode');
       } else {
         await document.exitFullscreen();
         setIsFullscreen(false);
+        console.log('✅ Exited fullscreen mode');
       }
     } catch (error) {
+      console.error('❌ Fullscreen toggle failed:', error);
     }
   };
-// 🔥 NEW: Enhanced AudioWorklet visibility debugging
-  // Run only once on mount to avoid interference
-  const debugLoggedRef = React.useRef(false);
-  React.useEffect(() => {
-    if (!audioContext && !analyserNode) return;
-    if (debugLoggedRef.current) return; // Only log once
-    debugLoggedRef.current = true;
 
-    // 🔥 REMOVED: Test AudioWorkletNode creation was interfering with audio playback!
-    // We already have audioWorkletStatus from the backend engine - no need to test here
-
-    // 🔥 NEW: Display AudioWorklet status if available
-    if (audioWorkletStatus) {
-
-      if (audioWorkletStatus.nodeReference) {
-      }
-    } else {
-    }
-
-    // 🔥 NEW: Listen for AudioWorklet metrics responses
-    if (audioWorkletStatus?.nodeReference) {
-      const handleWorkletMessage = (event: MessageEvent) => {
-        if (event.data.type === 'metrics') {
-        }
-      };
-
-      audioWorkletStatus.nodeReference.port.addEventListener('message', handleWorkletMessage);
-      return () => {
-        audioWorkletStatus.nodeReference?.port.removeEventListener('message', handleWorkletMessage);
-      };
-    }
-  }, [audioContext, analyserNode, audioWorkletStatus]);
-  // Fullscreen change listener
+  // Listen for fullscreen changes (ESC key, browser controls)
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
+      const isCurrentlyFullscreen = !!document.fullscreenElement;
+      setIsFullscreen(isCurrentlyFullscreen);
     };
 
     document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
   }, []);
 
-  // Update dimensions ref
+  // Update dimensionsRef when canvasDimensions changes
   useEffect(() => {
     dimensionsRef.current = canvasDimensions;
   }, [canvasDimensions]);
 
-  // FPS update
+  // Update FPS display from ref
   useEffect(() => {
     if (!isPlaying) return;
 
@@ -417,7 +224,7 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
     return () => clearInterval(fpsUpdateInterval);
   }, [isPlaying]);
 
-  // Canvas sizing
+  // Throttled responsive canvas sizing
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -455,9 +262,7 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
     };
   }, []);
 
-  // ============================================================================
-  // 🔥 MAIN VISUALIZATION LOOP - 100% AUDIO-REACTIVE
-  // ============================================================================
+  // Multi-mode visualization with FFT-driven spiral and radial bars
   useEffect(() => {
     if (!canvasRef.current || !isPlaying) {
       return;
@@ -500,95 +305,58 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
 
         const centerY = canvas.height / 2;
         const centerX = canvas.width / 2;
+        const time = timestamp * 0.001;
 
-        // 🔥 GET REAL-TIME FREQUENCY DATA
+        // Get real-time frequency data from analyser
         if (analyserNode) {
           analyserNode.getByteFrequencyData(frequencyData);
-        }
-
-        // 🔥 CALCULATE AUDIO BANDS FOR ALL RENDERS
-        const audioBands = getFrequencyBands(frequencyData);
-
-        // 🎨 DEBUG: Show audio levels on canvas for troubleshooting (every 10 seconds)
-        if (frameCount % 600 === 0) {
-          const freqSum = frequencyData.reduce((a, b) => a + b, 0);
-          console.log('🎵 FrequencyVisualizer Audio Levels:', {
-            bass: (audioBands.bass * 100).toFixed(1) + '%',
-            mid: (audioBands.mid * 100).toFixed(1) + '%',
-            treble: (audioBands.treble * 100).toFixed(1) + '%',
-            overall: (audioBands.overall * 100).toFixed(1) + '%',
-            dominant: audioBands.dominant,
-            analyserNode: !!analyserNode,
-            frequencyDataSum: freqSum
-          });
-
-          // 🔥 CRITICAL DEBUG: If no audio detected, diagnose why
-          if (freqSum === 0 && analyserNode) {
-console.log('🎵 FrequencyVisualizer Audio Worklet Status:', {
-  audioWorkletStatus
-});
-            // 🔥 Check if AudioWorklet is actually playing
-            if (audioWorkletStatus?.nodeReference) {
-console.log('Deez niggaz playing')
-              // Ask the worklet for metrics
-              try {
-                audioWorkletStatus.nodeReference.port.postMessage({ type: 'get_metrics' });
-              } catch (error) {
-              }
-            }
-
-          }
         }
 
         // Electromagnetic field modulation
         const fieldStrength = electromagnetic?.strength || 0;
         const fieldFrequency = electromagnetic?.frequency || beatFreq;
+        const fieldCoherence = electromagnetic?.coherence || 0;
 
         // Render based on mode
         switch (visualizationMode) {
           case 'waveform':
-            renderWaveform(ctx, canvas, centerX, centerY, fieldStrength, fieldFrequency, frequencyData, audioBands )
+            renderWaveform(ctx, canvas, centerX, centerY, time, frequencyData, fieldStrength, fieldFrequency);
             break;
           case 'spiral2d':
-            renderSpiral2D(ctx, canvas, centerX, centerY, fieldStrength, fieldFrequency, frequencyData, audioBands);
+            renderSpiral2D(ctx, canvas, centerX, centerY, time, frequencyData, fieldStrength, fieldCoherence);
             break;
           case 'spiral3d':
-            renderSpiral3D(ctx, canvas, centerX, centerY, fieldStrength, fieldFrequency,frequencyData, audioBands);
+            renderSpiral3D(ctx, canvas, centerX, centerY, time, frequencyData, fieldStrength, fieldCoherence);
             break;
           case 'radial':
-            renderRadialBars(ctx, canvas, centerX, centerY, fieldStrength, fieldFrequency,frequencyData, audioBands);
+            renderRadialBars(ctx, canvas, centerX, centerY, time, frequencyData, fieldStrength);
             break;
           case 'combined':
-            renderRadialBars(ctx, canvas, centerX, centerY, fieldStrength, fieldFrequency,frequencyData, audioBands);
-            renderSpiral2D(ctx, canvas, centerX, centerY, fieldStrength, fieldFrequency,frequencyData, audioBands);
+            renderRadialBars(ctx, canvas, centerX, centerY, time, frequencyData, fieldStrength);
+            renderSpiral2D(ctx, canvas, centerX, centerY, time, frequencyData, fieldStrength, fieldCoherence);
             break;
         }
 
-        // 🔥 FREQUENCY SPECTRUM - NOW 100% AUDIO-REACTIVE
+        // Draw frequency spectrum analysis at top (if enabled)
         if (analyserNode && frequencyData.length > 0 && showSpectrum) {
           const barWidth = canvas.width / 64;
           const maxBarHeight = canvas.height * 0.15;
 
           for (let i = 0; i < 64; i++) {
-            const dataIndex = Math.floor((i / 64) * frequencyData.length);
-            const freqValue = frequencyData[dataIndex] / 255;
-            const barHeight = freqValue * maxBarHeight;
+            const barHeight = (frequencyData[i] / 255) * maxBarHeight;
             const x = i * barWidth;
             const y = 10;
 
-            // 🔥 COLOR MAPPED TO FREQUENCY BIN
-            const hue = mapFrequencyBinToColor(i, 64);
-            const alpha = freqValue * 0.9; // Pure audio-based alpha
-
-            ctx.fillStyle = `hsla(${hue}, 90%, 65%, ${alpha})`;
+            const hue = (i / 64) * 240 + (fieldCoherence * 60);
+            const intensity = 0.4 + (fieldStrength * 0.4);
+            ctx.fillStyle = `hsla(${hue}, 80%, 60%, ${intensity})`;
             ctx.fillRect(x, y, barWidth - 2, barHeight);
           }
         }
 
-        // 8D pattern overlay (if active)
-        if (activePattern && activePattern.path.length > 0 && audioBands.overall > 0.1) {
-          // 🔥 PATTERN MOVEMENT DRIVEN BY AUDIO ENERGY
-          const patternProgress = (audioBands.overall * 10) % 1;
+        // Draw 8D pattern overlay if active
+        if (activePattern && activePattern.path.length > 0) {
+          const patternProgress = (timestamp * 0.0005 * activePattern.speed) % 1;
           const pathIndex = Math.floor(patternProgress * activePattern.path.length);
           const point = activePattern.path[pathIndex];
 
@@ -597,16 +365,13 @@ console.log('Deez niggaz playing')
             const x = centerX + point.x * scale;
             const y = centerY + point.y * scale;
 
-            // Size driven by audio
-            const glowSize = 4 + (audioBands.overall * 8);
-
             ctx.beginPath();
-            ctx.arc(x, y, glowSize, 0, 2 * Math.PI);
+            ctx.arc(x, y, 4, 0, 2 * Math.PI);
             ctx.fillStyle = activePattern.color;
             ctx.fill();
 
             ctx.beginPath();
-            ctx.arc(x, y, glowSize * 2, 0, 2 * Math.PI);
+            ctx.arc(x, y, 8, 0, 2 * Math.PI);
             ctx.strokeStyle = activePattern.color + '88';
             ctx.lineWidth = 2;
             ctx.stroke();
@@ -617,48 +382,39 @@ console.log('Deez niggaz playing')
       animationId = requestAnimationFrame(draw);
     };
 
-    // ========================================================================
-    // 🔥 PHASE 3: RENDER WAVEFORM - 100% AUDIO-REACTIVE + LIVE WAVEFORM TYPE
-    // ========================================================================
+    // Render functions for each mode
     function renderWaveform(
       ctx: CanvasRenderingContext2D,
       canvas: HTMLCanvasElement,
       centerX: number,
       centerY: number,
-      strength: number,
-      frequency: number,
+      time: number,
       frequencyData: Uint8Array,
-      audioBands: ReturnType<typeof getFrequencyBands>
+      fieldStrength: number,
+      fieldFrequency: number
     ) {
-      const dominantHue = calculateFrequencyColor(frequencyData);
-
       ctx.beginPath();
-      ctx.strokeStyle = activePattern?.color || `hsl(${dominantHue}, 90%, 65%)`;
-      ctx.lineWidth = 2 + (audioBands.overall * 3); // Audio-reactive thickness
-      ctx.shadowColor = ctx.strokeStyle;
-      ctx.shadowBlur = audioBands.overall * 20; // Audio-reactive glow
+      ctx.strokeStyle = activePattern?.color || '#00ff88';
+      ctx.lineWidth = 2;
+      ctx.shadowColor = activePattern?.color || '#00ff88';
+      ctx.shadowBlur = 10;
 
       const samples = 200;
       const cycles = 3;
+      const fieldModulation = Math.sin(2 * Math.PI * fieldFrequency * time) * fieldStrength;
 
       for (let i = 0; i < samples; i++) {
         const x = (i / samples) * canvas.width;
         const normalizedPos = i / samples;
         const visualT = normalizedPos * cycles;
 
-        // 🔥 CRITICAL FIX: Use actual waveform type from audio engine
-        // Generate left and right channel waveforms based on selected type
-        const leftWave = generateWaveform(visualT, waveform);
-        const rightWave = generateWaveform(
-          visualT + (beatFreq / leftFreq) * cycles, // Phase offset for binaural beat
-          waveform
-        );
+        const leftWave = Math.sin(2 * Math.PI * visualT);
+        const rightWave = Math.sin(2 * Math.PI * visualT + (beatFreq / leftFreq) * 2 * Math.PI * cycles);
+
         const binauralBeat = (leftWave + rightWave) / 2;
+        const amplitude = 40 + (beatFreq * 2) + (fieldModulation * 30);
 
-        // 🔥 AMPLITUDE DRIVEN BY AUDIO ENERGY (CRANKED UP 3X!)
-        const amplitude = audioBands.overall * 100 * 3.0 + 20; // Minimum 20px so it's always visible
-
-        const y = centerY + binauralBeat * amplitude;
+        const y = centerY + (binauralBeat + fieldModulation * 0.3) * amplitude;
 
         if (i === 0) {
           ctx.moveTo(x, y);
@@ -671,39 +427,39 @@ console.log('Deez niggaz playing')
       ctx.shadowBlur = 0;
     }
 
-    // ========================================================================
-    // 🔥 PHASE 4: RENDER SPIRAL 2D - 100% AUDIO-REACTIVE
-    // ========================================================================
     function renderSpiral2D(
-        ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, centerX: number, centerY: number, fieldStrength: number, fieldFrequency: number, frequencyData: Uint8Array, audioBands: ReturnType<typeof getFrequencyBands>    ) {
+      ctx: CanvasRenderingContext2D,
+      canvas: HTMLCanvasElement,
+      centerX: number,
+      centerY: number,
+      time: number,
+      frequencyData: Uint8Array,
+      fieldStrength: number,
+      fieldCoherence: number
+    ) {
       const numBins = Math.min(frequencyData.length, 256);
+      const rotationSpeed = 0.5;
       const maxRadius = Math.min(canvas.width, canvas.height) * 0.4;
 
       ctx.save();
       ctx.translate(centerX, centerY);
 
       const numArms = 3;
-      const armHues = [15, 150, 260]; // Bass, Mid, Treble colors
-
       for (let arm = 0; arm < numArms; arm++) {
         const armOffset = (arm * Math.PI * 2) / numArms;
-        const hue = armHues[arm];
 
         ctx.beginPath();
-        ctx.strokeStyle = `hsla(${hue}, 95%, 70%, ${Math.min(1, audioBands.overall * 1.5)})`;
-        ctx.lineWidth = (audioBands.overall * 8) + 2; // THICC lines + minimum
+        ctx.strokeStyle = `hsla(${(arm * 120 + time * 30) % 360}, 80%, 60%, 0.8)`;
+        ctx.lineWidth = 2 + fieldStrength * 2;
         ctx.shadowColor = ctx.strokeStyle;
-        ctx.shadowBlur = (audioBands.overall * 25) + 8; // MASSIVE glow
+        ctx.shadowBlur = 8 + fieldStrength * 6;
 
         for (let i = 0; i < numBins; i++) {
           const freqValue = frequencyData[i] / 255;
           const t = i / numBins;
           
-          // 🔥 ROTATION SPEED DRIVEN BY TREBLE
-          const angle = t * Math.PI * 6 + (audioBands.treble * Math.PI * 2) + armOffset;
-          
-          // 🔥 RADIUS DRIVEN BY FREQUENCY DATA (NO CONSTANTS)
-          const radius = t * maxRadius * freqValue;
+          const angle = t * Math.PI * 6 + time * rotationSpeed + armOffset;
+          const radius = (t * maxRadius) * (0.5 + freqValue * 0.5) * (1 + fieldCoherence * 0.3);
 
           const x = Math.cos(angle) * radius;
           const y = Math.sin(angle) * radius;
@@ -714,12 +470,11 @@ console.log('Deez niggaz playing')
             ctx.lineTo(x, y);
           }
 
-          // 🔥 SPARKLES ONLY WHEN STRONG FREQUENCY (NO MINIMUM)
-          if (freqValue > 0.7 && i % 8 === 0) {
+          if (freqValue > 0.6 && i % 8 === 0) {
             ctx.save();
-            ctx.fillStyle = `hsla(${hue + 60}, 100%, 80%, ${freqValue})`;
+            ctx.fillStyle = `hsla(${(arm * 120 + 60) % 360}, 90%, 70%, ${freqValue})`;
             ctx.beginPath();
-            ctx.arc(x, y, freqValue * 5, 0, Math.PI * 2);
+            ctx.arc(x, y, 2 + freqValue * 3, 0, Math.PI * 2);
             ctx.fill();
             ctx.restore();
           }
@@ -732,12 +487,18 @@ console.log('Deez niggaz playing')
       ctx.restore();
     }
 
-    // ========================================================================
-    // 🔥 PHASE 5: RENDER SPIRAL 3D - 100% AUDIO-REACTIVE
-    // ========================================================================
     function renderSpiral3D(
-        ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, centerX: number, centerY: number, fieldStrength: number, fieldFrequency: number, frequencyData: Uint8Array, audioBands: ReturnType<typeof getFrequencyBands>    ) {
+      ctx: CanvasRenderingContext2D,
+      canvas: HTMLCanvasElement,
+      centerX: number,
+      centerY: number,
+      time: number,
+      frequencyData: Uint8Array,
+      fieldStrength: number,
+      fieldCoherence: number
+    ) {
       const numBins = Math.min(frequencyData.length, 255);
+      const rotationSpeed = 0.5;
       const maxRadius = Math.min(canvas.width, canvas.height) * 0.35;
       const zDepth = 200;
 
@@ -746,7 +507,7 @@ console.log('Deez niggaz playing')
 
       const numHelixes = 2;
       for (let helix = 0; helix < numHelixes; helix++) {
-        const helixOffset = helix * Math.PI;
+        const helixOffset = (helix * Math.PI);
 
         ctx.beginPath();
 
@@ -754,27 +515,19 @@ console.log('Deez niggaz playing')
           const freqValue = frequencyData[i] / 255;
           const t = i / numBins;
 
-          // 🔥 ROTATION DRIVEN BY MID FREQUENCIES
-          const angle = t * Math.PI * 8 + (audioBands.mid * Math.PI * 4) + helixOffset;
-          
-          // 🔥 RADIUS DRIVEN BY FREQUENCY VALUE
-          const radius = maxRadius * 0.6 * freqValue;
+          const angle = t * Math.PI * 8 + time * rotationSpeed + helixOffset;
+          const radius = maxRadius * 0.6 * (0.5 + freqValue * 0.5);
           const z = (t - 0.5) * zDepth;
 
           const perspective = 300 / (300 + z);
           const x = Math.cos(angle) * radius * perspective;
           const y = Math.sin(angle) * radius * perspective + z * 0.3;
 
-          // 🔥 COLOR MAPPED TO FREQUENCY BIN
-          const depthHue = mapFrequencyBinToColor(i, numBins);
-          
-          // 🔥 ALPHA PURE FREQUENCY VALUE
-          const depthAlpha = freqValue * perspective;
-          
-          // 🔥 LINE WIDTH PURE FREQUENCY
-          const lineWidth = freqValue * 4 * perspective;
+          const depthHue = (t * 240 + helix * 180 + time * 20) % 360;
+          const depthAlpha = 0.3 + (freqValue * 0.5) + (perspective - 0.5) * 0.4;
+          const lineWidth = 1 + freqValue * 3 * perspective;
 
-          ctx.strokeStyle = `hsla(${depthHue}, 90%, 65%, ${depthAlpha})`;
+          ctx.strokeStyle = `hsla(${depthHue}, 80%, 60%, ${depthAlpha})`;
           ctx.lineWidth = lineWidth;
 
           if (i === 0) {
@@ -790,41 +543,40 @@ console.log('Deez niggaz playing')
       ctx.restore();
     }
 
-    // ========================================================================
-    // 🔥 PHASE 6: RENDER RADIAL BARS - 100% AUDIO-REACTIVE BUTTERFLY
-    // ========================================================================
     function renderRadialBars(
-        ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, centerX: number, centerY: number, fieldStrength: number, fieldFrequency: number, frequencyData: Uint8Array, audioBands: ReturnType<typeof getFrequencyBands>    ) {
-      const numBars = Math.min(frequencyData.length / 2, 255);
-      const maxBarLength = Math.min(canvas.width, canvas.height) * 0.45;
+      ctx: CanvasRenderingContext2D,
+      canvas: HTMLCanvasElement,
+      centerX: number,
+      centerY: number,
+      time: number,
+      frequencyData: Uint8Array,
+      fieldStrength: number
+    ) {
+      //console.log('🦋 renderRadialBars called - Butterfly mode!'); // DEBUG
+      
+      // 🔥 MORE BARS for full butterfly effect!
+      const numBars = Math.min(frequencyData.length / 2, 255); // Was 64, now 128!
+      const maxBarLength = Math.min(canvas.width, canvas.height) * 0.45; // Slightly longer
 
       ctx.save();
       ctx.translate(centerX, centerY);
 
       for (let i = 0; i < numBars; i++) {
-        // 🔥 PURE FREQUENCY VALUE - CAN GO TO ZERO
-        const freqValue = frequencyData[i] / 255;
-        
-        // 🔥 SKIP IF SILENT (bars disappear when no audio)
-        if (freqValue < 0.01) continue;
-
+        const freqValue = Math.max(0.2, frequencyData[i] / 255); // 🔥 MINIMUM 0.2 so bars are ALWAYS visible!
         const angle = (i / numBars) * Math.PI * 2 - Math.PI / 2;
-        
-        // 🔥 BAR LENGTH 100% DRIVEN BY FREQUENCY (BOOSTED 2X FOR DRAMA!)
-        const barLength = (freqValue * maxBarLength * 2.0) + (maxBarLength * 0.1); // Min 10% length
-        const barWidth = (Math.PI * 2) / numBars * maxBarLength * 1.5; // Wider bars
-
-        // 🔥 COLOR MAPPED TO FREQUENCY BIN
-        const hue = mapFrequencyBinToColor(i, numBars);
+        const minBarLength = maxBarLength * 0.15; // 🔥 15% minimum bar length
+        const barLength = minBarLength + (freqValue * maxBarLength * 0.85) * (1 + fieldStrength * 0.3);
+        const barWidth = (Math.PI * 2) / numBars * maxBarLength * 1.2; // 🔥 THICKER bars!
 
         const gradient = ctx.createLinearGradient(0, 0, Math.cos(angle) * barLength, Math.sin(angle) * barLength);
-        gradient.addColorStop(0, `hsla(${hue}, 95%, 65%, ${freqValue * 0.5})`);
-        gradient.addColorStop(0.5, `hsla(${hue}, 100%, 70%, ${freqValue * 0.8})`);
-        gradient.addColorStop(1, `hsla(${hue}, 100%, 75%, ${freqValue})`);
+        const hue = (i / numBars) * 360 + time * 20;
+        gradient.addColorStop(0, `hsla(${hue}, 95%, 65%, 0.4)`); // 🔥 BRIGHTER at center
+        gradient.addColorStop(0.5, `hsla(${hue}, 100%, 70%, ${0.6 + freqValue * 0.4})`); // 🔥 MORE SATURATED
+        gradient.addColorStop(1, `hsla(${hue}, 100%, 75%, ${0.8 + freqValue * 0.2})`); // 🔥 SUPER bright at tips!
 
         ctx.fillStyle = gradient;
-        ctx.shadowColor = `hsla(${hue}, 100%, 75%, ${freqValue})`;
-        ctx.shadowBlur = freqValue * 50 + 10; // MASSIVE glow effect
+        ctx.shadowColor = `hsla(${hue}, 100%, 75%, ${0.7 + freqValue * 0.3})`; // 🔥 STRONGER glow!
+        ctx.shadowBlur = 12 + (18 * freqValue); // 🔥 BIGGER glow boost
 
         ctx.beginPath();
         ctx.moveTo(0, 0);
@@ -839,20 +591,19 @@ console.log('Deez niggaz playing')
         ctx.closePath();
         ctx.fill();
 
-        // 🔥 TIP GLOW ONLY WHEN STRONG (NO MINIMUM)
-        if (freqValue > 0.5) {
-          const tipX = Math.cos(angle) * barLength;
-          const tipY = Math.sin(angle) * barLength;
+        // 🔥 GLOWING tips on EVERY bar - BIGGER & BRIGHTER!
+        const tipX = Math.cos(angle) * barLength;
+        const tipY = Math.sin(angle) * barLength;
 
-          ctx.fillStyle = `hsla(${hue + 60}, 100%, 90%, ${freqValue})`;
-          ctx.beginPath();
-          ctx.arc(tipX, tipY, freqValue * 8, 0, Math.PI * 2);
-          ctx.fill();
-        }
+        ctx.fillStyle = `hsla(${hue + 60}, 100%, 90%, ${0.8 + freqValue * 0.2})`; // 🔥 SUPER BRIGHT!
+        ctx.beginPath();
+        ctx.arc(tipX, tipY, 4 + freqValue * 6, 0, Math.PI * 2); // 🔥 4-10px tips!
+        ctx.fill();
       }
 
       ctx.shadowBlur = 0;
       ctx.restore();
+      
     }
 
     animationId = requestAnimationFrame(draw);
@@ -1010,13 +761,12 @@ console.log('Deez niggaz playing')
       {showMetrics && (
         <Box sx={{ mt: 1, display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: 'center', flexShrink: 0 }}>
           <Chip
-            label={isPlaying ? '🎵 LIVE AUDIO' : 'PAUSED'}
+            label={isPlaying ? 'PLAYING' : 'PAUSED'}
             size="small"
             sx={{
-              backgroundColor: isPlaying ? 'rgba(0, 255, 136, 0.3)' : 'rgba(255, 152, 0, 0.2)',
-              color: isPlaying ? '#00ff88' : '#ff9800',
-              border: `1px solid ${isPlaying ? '#00ff88' : '#ff9800'}`,
-              fontWeight: 'bold'
+              backgroundColor: isPlaying ? 'rgba(76, 175, 80, 0.2)' : 'rgba(255, 152, 0, 0.2)',
+              color: isPlaying ? '#4caf50' : '#ff9800',
+              border: `1px solid ${isPlaying ? '#4caf50' : '#ff9800'}`
             }}
           />
           <Chip
@@ -1051,7 +801,7 @@ console.log('Deez niggaz playing')
         </Box>
       )}
 
-      {/* Pattern Info */}
+      {/* 🔥 Pattern Additional Info Section */}
       {activePattern && (
         <Box sx={{
           mt: 1,
