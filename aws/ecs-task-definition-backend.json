@@ -1,0 +1,81 @@
+{
+  "family": "ebl-backend",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::498251986918:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::498251986918:role/ecsTaskRole",
+  "containerDefinitions": [
+    {
+      "name": "ebl-backend",
+      "image": "498251986918.dkr.ecr.us-east-1.amazonaws.com/ebl-backend:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "PYTHON_ENV",
+          "value": "production"
+        },
+        {
+          "name": "SAMPLE_RATE",
+          "value": "48000"
+        },
+        {
+          "name": "BUFFER_SIZE",
+          "value": "800"
+        },
+        {
+          "name": "MAX_FREQUENCY",
+          "value": "199"
+        },
+        {
+          "name": "AUDIO_FRAME_RATE",
+          "value": "60"
+        },
+        {
+          "name": "WS_HEARTBEAT_INTERVAL",
+          "value": "30"
+        },
+        {
+          "name": "WS_CONNECTION_TIMEOUT",
+          "value": "60"
+        },
+        {
+          "name": "ALLOWED_ORIGINS",
+          "value": "https://ebl.yourdomain.com,http://localhost:5173"
+        },
+        {
+          "name": "SECRET_KEY",
+          "value": "ebl-secret-key-change-for-production"
+        },
+        {
+          "name": "JWT_SECRET",
+          "value": "ebl-jwt-secret-change-for-production"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/ebl-backend",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "mountPoints": [],
+      "healthCheck": {
+        "command": ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"],
+        "interval": 30,
+        "timeout": 10,
+        "retries": 3,
+        "startPeriod": 60
+      }
+    }
+  ],
+  "volumes": []
+}
