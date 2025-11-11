@@ -89,6 +89,7 @@ export const useBackendAudioEngine = () => {
   const [backendConnected, setBackendConnected] = useState(false);
   const [waitingForConnection, setWaitingForConnection] = useState(false);
   const [startingSession, setStartingSession] = useState(false);
+  const [firstFrameReceived, setFirstFrameReceived] = useState(false); // 🔥 Track if backend has actually sent audio data
   const connectionPromiseRef = useRef<((value: boolean) => void) | null>(null);
   // Queue settings made before WebSocket/session are ready
   const pendingSettingsRef = useRef<Record<string, unknown> | null>(null);
@@ -309,6 +310,12 @@ export const useBackendAudioEngine = () => {
     if (!audioContext.current || !audioWorkletNode.current) return;
 
     try {
+      // 🔥 Mark that we've received the first audio frame (prevents premature crossfade)
+      if (!firstFrameReceived) {
+        setFirstFrameReceived(true);
+        console.log('🎵 Backend: First audio frame received - ready for crossfade');
+      }
+
       // Handle binary frame (ArrayBuffer)
       if (frame instanceof ArrayBuffer) {
         audioWorkletNode.current.port.postMessage({
@@ -343,7 +350,7 @@ export const useBackendAudioEngine = () => {
     } catch (error) {
       console.error('❌ Error processing audio frame:', error);
     }
-  }, [audioState.config?.volume]);
+  }, [audioState.config?.volume, firstFrameReceived]);
 
   // Process backend field frame
   const processFieldFrame = useCallback((frame: BackendFieldFrame) => {
@@ -603,6 +610,7 @@ export const useBackendAudioEngine = () => {
       // 🔥 FIXED: Clear session state to prevent crossfade trigger
       setSessionId(null);
       setBackendConnected(false); // 🔥 FIXED: Actually disconnect to prevent crossfade!
+      setFirstFrameReceived(false); // 🔥 FIXED: Reset frame flag for next session
     }
 
     // STOP the AudioWorklet processor and clear buffer
@@ -1210,7 +1218,7 @@ export const useBackendAudioEngine = () => {
       moduleLoaded: workletLoaded.current,
       nodeExists: !!audioWorkletNode.current,
       nodeReference: audioWorkletNode.current, // Direct ref for advanced debugging
-      isProcessing: audioState.isPlaying && !!audioWorkletNode.current
+      isProcessing: audioState.isPlaying && !!audioWorkletNode.current && firstFrameReceived // 🔥 FIX: Only true when audio data is actually flowing
     }
   };
 };

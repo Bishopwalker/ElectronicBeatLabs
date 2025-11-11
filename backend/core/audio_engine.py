@@ -119,6 +119,22 @@ class AudioEngine:
         # DEBUG LOGGING: Track volume and wave generation (Phase 1)
         if not hasattr(session, 'frame_count'):
             session['frame_count'] = 0
+        if not hasattr(session, 'volume_history'):
+            session['volume_history'] = []
+
+        # Track volume over time to detect fade-out
+        session['volume_history'].append((session['frame_count'], volume))
+
+        if session['frame_count'] % 60 == 0:  # Every 1 second at 60 FPS
+            print(f"[VOLUME TRACE] Frame {session['frame_count']}: volume={volume:.3f}")
+
+            # Check for volume changes (compare with 60 frames ago)
+            if len(session['volume_history']) > 60:
+                vol_60_frames_ago = session['volume_history'][-60][1]
+                vol_change = volume - vol_60_frames_ago
+                if abs(vol_change) > 0.01:
+                    print(f"   ⚠️ VOLUME CHANGED: {vol_60_frames_ago:.3f} → {volume:.3f} (Δ {vol_change:+.3f})")
+
         if session['frame_count'] % 300 == 0:  # Every 5 seconds at 60 FPS
             print(f"[BACKEND DEBUG] Session {session_id[:8]}:")
             print(f"   amplitude={amplitude:.3f} (FIXED at 1.0 - clean wave generation)")
