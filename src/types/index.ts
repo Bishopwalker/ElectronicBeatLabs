@@ -392,7 +392,7 @@ export interface AppState {
 
     // 8D Pattern control
     patterns8DControl?: {
-        setActivePattern: (pattern: PatternConfig) => void;
+        setActivePattern: (pattern: Pattern8D) => void;
         clearActivePattern: () => void;
     };
     starFieldControl?: {
