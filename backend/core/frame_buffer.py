@@ -47,6 +47,16 @@ class FrameBuffer:
         """Start the frame generation task"""
         if not self.is_running:
             self.is_running = True
+
+            # 🔥 FIXED: Pre-fill buffer to minimum threshold before starting streaming
+            logger.info(f"🔄 Pre-filling buffer to {self.min_buffer_size} frames for session {self.session_id[:8]}...")
+            while len(self.buffer) < self.min_buffer_size:
+                frame = await self.audio_engine.generate_frame(self.session_id, binary_mode=True)
+                if frame and frame != b'':
+                    self.buffer.append(frame)
+                    self.frames_generated += 1
+
+            logger.info(f"✅ Buffer pre-filled with {len(self.buffer)} frames")
             self.generation_task = asyncio.create_task(self._generate_frames())
             logger.info(f"🎬 FrameBuffer started for session {self.session_id[:8]}...")
             
@@ -96,8 +106,8 @@ class FrameBuffer:
                 
                 # Adjust sleep based on buffer fullness
                 if current_buffer_size < self.min_buffer_size:
-                    # Buffer is critically low, generate MUCH faster (4x speed)
-                    sleep_time = max(0, frame_duration / 4 - generation_time)
+                    # 🔥 FIXED: Buffer is critically low, generate at MAX SPEED (no sleep!)
+                    sleep_time = 0
                 elif current_buffer_size > self.target_buffer_size:
                     # Buffer is full, slow down
                     sleep_time = frame_duration * 2

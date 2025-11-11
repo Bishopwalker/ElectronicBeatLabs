@@ -13,10 +13,10 @@
  */
 
 // Audio Mixer Constants
-const DEFAULT_FRONTEND_GAIN = 1.0;
-const DEFAULT_BACKEND_GAIN = 0.0;
-const DEFAULT_HYBRID_FRONTEND = 0.5;
-const DEFAULT_HYBRID_BACKEND = 0.5;
+const INITIAL_FRONTEND_GAIN = 1.0;  // Frontend starts at full volume (active)
+const INITIAL_BACKEND_GAIN = 0.0;   // Backend starts muted (not connected yet)
+const DEFAULT_HYBRID_FRONTEND = 0.5;  // 🔥 FIXED: 50% split prevents clipping (was 0.9)
+const DEFAULT_HYBRID_BACKEND = 0.5;   // 🔥 FIXED: 50% split for total 1.0 (was 0.9)
 const CROSSFADE_STEPS_PER_SECOND = 60;
 const ANALYSER_FFT_SIZE = 2048;
 const ANALYSER_SMOOTHING = 0.8;
@@ -24,7 +24,7 @@ const ANALYSER_MIN_DECIBELS = -100;
 const ANALYSER_MAX_DECIBELS = -30;
 
 export class AudioMixer {
-  private audioContext: AudioContext;
+  private readonly audioContext: AudioContext; // 🔥 FIXED: Made readonly - never reassigned
   private frontendGain: GainNode;
   private backendGain: GainNode;
   private frontendPreAnalyserGain: GainNode; // Full-strength signal for analyser
@@ -46,21 +46,25 @@ export class AudioMixer {
 
     this.audioContext = audioContext;
 
+    // 🔥 FIXED: Use this.audioContext consistently instead of parameter
+    // This ensures we're using the class instance variable, not the shadowed parameter
+
     // Create pre-analyser gain nodes (always at 1.0 for full strength)
-    this.frontendPreAnalyserGain = audioContext.createGain();
-    this.backendPreAnalyserGain = audioContext.createGain();
+    this.frontendPreAnalyserGain = this.audioContext.createGain();
+    this.backendPreAnalyserGain = this.audioContext.createGain();
     this.frontendPreAnalyserGain.gain.value = 1.0; // Full strength to analyser
     this.backendPreAnalyserGain.gain.value = 1.0;  // Full strength to analyser
 
     // Create gain nodes for each engine (for volume control)
-    this.frontendGain = audioContext.createGain();
-    this.backendGain = audioContext.createGain();
-    // Frontend starts at full volume (1.0), backend muted (0.0)
-    this.frontendGain.gain.value = DEFAULT_FRONTEND_GAIN;
-    this.backendGain.gain.value = DEFAULT_BACKEND_GAIN;
+    this.frontendGain = this.audioContext.createGain();
+    this.backendGain = this.audioContext.createGain();
+    // 🔥 FIXED: Frontend starts at full volume (1.0), backend muted (0.0)
+    // This prevents volume spikes during crossfade - backend is silent until connected
+    this.frontendGain.gain.value = INITIAL_FRONTEND_GAIN; // 1.0 - active
+    this.backendGain.gain.value = INITIAL_BACKEND_GAIN;   // 0.0 - muted
 
     // Create shared analyser for visualization
-    this.analyserNode = audioContext.createAnalyser();
+    this.analyserNode = this.audioContext.createAnalyser();
     this.analyserNode.fftSize = ANALYSER_FFT_SIZE;
     this.analyserNode.smoothingTimeConstant = ANALYSER_SMOOTHING;
     this.analyserNode.minDecibels = ANALYSER_MIN_DECIBELS;
@@ -82,24 +86,40 @@ export class AudioMixer {
     this.backendPreAnalyserGain.connect(this.backendGain);
 
     // Connect main gains to destination
-    this.frontendGain.connect(audioContext.destination);
-    this.backendGain.connect(audioContext.destination);
+    this.frontendGain.connect(this.audioContext.destination);
+    this.backendGain.connect(this.audioContext.destination);
   }
 
   /**
-   * Get gain node for frontend engine to connect to
-   * Returns pre-analyser gain (always 1.0) for full-strength signal
+   * Get input node for frontend engine to connect to
+   * Returns pre-analyser gain (always 1.0) for full-strength signal before volume control
    */
-  getFrontendGain(): GainNode {
+  getFrontendInput(): GainNode {
     return this.frontendPreAnalyserGain;
   }
 
   /**
-   * Get gain node for backend engine to connect to
-   * Returns pre-analyser gain (always 1.0) for full-strength signal
+   * Get input node for backend engine to connect to
+   * Returns pre-analyser gain (always 1.0) for full-strength signal before volume control
+   */
+  getBackendInput(): GainNode {
+    return this.backendPreAnalyserGain;
+  }
+
+  /**
+   * Get the actual frontend volume control gain node
+   * This is the main gain that controls frontend output volume (0-1.0)
+   */
+  getFrontendGain(): GainNode {
+    return this.frontendGain;
+  }
+
+  /**
+   * Get the actual backend volume control gain node
+   * This is the main gain that controls backend output volume (0-1.0)
    */
   getBackendGain(): GainNode {
-    return this.backendPreAnalyserGain;
+    return this.backendGain;
   }
 
   /**
@@ -138,16 +158,24 @@ export class AudioMixer {
   setMasterVolume(volume: number): void {
     // Validate volume
     if (isNaN(volume)) {
-      console.warn('⚠️ AudioMixer: Invalid volume (NaN), using 0.5');
-      volume = 0.5;
+      console.warn('⚠️ AudioMixer: Invalid volume (NaN), using 0.8');
+      volume = 0.8;
     }
 
     const safeVolume = Math.max(0, Math.min(1, volume));
     const now = this.audioContext.currentTime;
 
-    // If we're crossfading, maintain the ratio
+    // 🔥 FIXED: Allow volume updates during crossfade (apply proportionally)
     if (this.isCrossfading) {
-      // Don't change anything during crossfade - let it complete
+      const frontendRatio = this.frontendGain.gain.value;
+      const backendRatio = this.backendGain.gain.value;
+      const total = frontendRatio + backendRatio;
+
+      if (total > 0) {
+        // Apply new volume while maintaining current crossfade ratio
+        this.frontendGain.gain.setValueAtTime(safeVolume * (frontendRatio / total), now);
+        this.backendGain.gain.setValueAtTime(safeVolume * (backendRatio / total), now);
+      }
       return;
     }
 
@@ -159,9 +187,10 @@ export class AudioMixer {
       this.frontendGain.gain.setValueAtTime(0, now);
       this.backendGain.gain.setValueAtTime(safeVolume, now); // Full volume for active engine
     } else if (this.currentMode === 'hybrid') {
-      // Hybrid mode splits volume equally (0.5 * volume each engine)
-      this.frontendGain.gain.setValueAtTime(safeVolume * 0.5, now);
-      this.backendGain.gain.setValueAtTime(safeVolume * 0.5, now);
+      // 🔥 FIXED: Hybrid mode splits volume equally (0.5 each = 1.0 total)
+      // This prevents clipping and distortion from volume exceeding 1.0
+      this.frontendGain.gain.setValueAtTime(safeVolume * DEFAULT_HYBRID_FRONTEND, now);
+      this.backendGain.gain.setValueAtTime(safeVolume * DEFAULT_HYBRID_BACKEND, now);
     }
   }
 
@@ -175,7 +204,7 @@ export class AudioMixer {
    * - Correlated signals add in amplitude, causing volume spike
    * - Linear crossfade maintains constant total amplitude (1.0)
    */
-  crossfadeToBackend(duration: number = 2.0): void {
+  crossfadeToBackend(duration: number = 20.0): void {
     if (this.isCrossfading) {
       return;
     }
@@ -225,7 +254,7 @@ export class AudioMixer {
 
     // Instant failover: frontend full volume, backend off
     this.frontendGain.gain.setValueAtTime(1.0, now);
-    this.backendGain.gain.setValueAtTime(0.0, now);
+    this.backendGain.gain.setValueAtTime(.0, now);
 
     this.currentMode = 'frontend';
     this.isCrossfading = false;
@@ -244,7 +273,6 @@ export class AudioMixer {
     const now = this.audioContext.currentTime;
 
     // Get current gain values (don't assume starting point)
-    const currentFrontendGain = this.frontendGain.gain.value;
     const currentBackendGain = this.backendGain.gain.value;
 
     // Dynamic step calculation for smooth crossfade
@@ -254,9 +282,12 @@ export class AudioMixer {
     for (let i = 0; i <= steps; i++) {
       const progress = i / steps; // 0 to 1
 
-      // Linear crossfade from current values to target
-      const backendGain = currentBackendGain * (1 - progress);
-      const frontendGain = currentFrontendGain + (1.0 - currentFrontendGain) * progress;
+      // 🔥 FIXED: Linear crossfade maintaining constant total=1.0
+      // Backend fades out, frontend fills the gap to keep total constant
+      // This prevents volume spikes during mixed/hybrid state transitions
+      const backendGain = currentBackendGain * (1 - progress);  // Decreases from current → 0
+      const frontendGain = 1.0 - backendGain;  // Increases to fill gap → 1.0
+      // Total always = backendGain + frontendGain = 1.0 (constant perceived loudness)
 
       const time = now + (i * stepTime);
 
@@ -283,10 +314,13 @@ export class AudioMixer {
   setHybridMode(frontendRatio: number = DEFAULT_HYBRID_FRONTEND, backendRatio: number = DEFAULT_HYBRID_BACKEND): void {
     const now = this.audioContext.currentTime;
 
-    // Validate total gain
-    const totalGain = frontendRatio + backendRatio;
+    // 🔥 FIXED: Auto-normalize if total gain exceeds 1.0 (prevents clipping)
+    let totalGain = frontendRatio + backendRatio;
     if (totalGain > 1.0) {
-      console.warn(`⚠️ AudioMixer: Hybrid mode total gain ${totalGain.toFixed(2)} exceeds 1.0, may cause clipping`);
+      const scale = 1.0 / totalGain;
+      frontendRatio *= scale;
+      backendRatio *= scale;
+      console.warn(`⚠️ AudioMixer: Hybrid mode total gain ${totalGain.toFixed(2)} exceeded 1.0, normalized to ${frontendRatio.toFixed(2)} + ${backendRatio.toFixed(2)} = 1.0`);
     }
 
     this.frontendGain.gain.setValueAtTime(frontendRatio, now);

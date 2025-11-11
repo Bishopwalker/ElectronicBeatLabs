@@ -24,16 +24,12 @@
  * ```
  */
 
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { useAudioEngine } from './useAudioEngine';
-import { useBackendAudioEngine } from './useBackendAudioEngine';
-import { AudioMixer } from '../utils/AudioMixer';
-import type { BinauralBeatConfig, PatternConfig } from '../types';
-import {
-  DEFAULT_VOLUME,
-  DEFAULT_BEAT_FREQUENCY,
-  DEFAULT_BASE_FREQUENCY
-} from '../constants/audio.constants';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {useAudioEngine} from './useAudioEngine';
+import {useBackendAudioEngine} from './useBackendAudioEngine';
+import {AudioMixer} from '../utils/AudioMixer';
+import type {BinauralBeatConfig, PatternConfig} from '../types';
+import {DEFAULT_BASE_FREQUENCY, DEFAULT_BEAT_FREQUENCY, DEFAULT_VOLUME} from '../constants/audio.constants';
 
 export const useHybridAudioEngine = () => {
   // Initialize both engines (will be routed through mixer after mixer is created)
@@ -44,6 +40,10 @@ export const useHybridAudioEngine = () => {
   const mixerRef = useRef<AudioMixer | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [currentEngine, setCurrentEngine] = useState<'frontend' | 'backend' | 'hybrid'>('frontend');
+
+  // 🔥 CRITICAL FIX: Make analyserNode reactive by putting it in state
+  // This ensures components re-render when analyserNode becomes available
+  const [analyserNode, setAnalyserNode] = useState<AnalyserNode | null>(null);
 
   // Track backend connection state for auto-crossfade
   const previousBackendConnected = useRef(backendEngine.backendConnected);
@@ -67,6 +67,9 @@ export const useHybridAudioEngine = () => {
         // Create mixer
         mixerRef.current = new AudioMixer(frontendEngine.audioContext);
 
+        // 🔥 CRITICAL FIX: Set analyserNode state immediately so components re-render
+        setAnalyserNode(mixerRef.current.analyserNode);
+
         // 🔥 CRITICAL FIX: Save current playing state and config BEFORE setting external nodes
         const wasPlaying = frontendEngine.audioState.isPlaying;
         const currentConfig = wasPlaying ? {
@@ -86,17 +89,17 @@ export const useHybridAudioEngine = () => {
         // Connect BOTH engines to mixer
         // This ensures both frontend and backend audio route through mixer for synchronized volume control
 
-        // Connect frontend engine to mixer's frontend gain
+        // Connect frontend engine to mixer's frontend input (pre-analyser gain)
         frontendEngine.setExternalNodes(
-          mixerRef.current.getFrontendGain(),
+          mixerRef.current.getFrontendInput(),
           mixerRef.current.analyserNode,
           frontendEngine.audioContext // 🔥 FIXED: Pass audioContext
         );
 
-        // Connect backend engine to mixer's backend gain
+        // Connect backend engine to mixer's backend input (pre-analyser gain)
         // 🔥 CRITICAL FIX: Pass the SAME audioContext so backend doesn't create its own
         backendEngine.setExternalNodes(
-          mixerRef.current.getBackendGain(),
+          mixerRef.current.getBackendInput(),
           mixerRef.current.analyserNode,
           frontendEngine.audioContext // 🔥 FIXED: Use frontend's context!
         );
@@ -126,17 +129,19 @@ export const useHybridAudioEngine = () => {
 
   /**
    * Monitor backend connection and auto-crossfade
-   * 🔥 CRITICAL FIX: Crossfade if audio playing OR backend has active session
+   * 🔥 CRITICAL FIX: Wait for backend audio data before crossfading
    */
   useEffect(() => {
     const backendNowConnected = backendEngine.backendConnected && backendEngine.sessionId?true:false;
     const backendWasConnected = previousBackendConnected.current;
     const isAudioPlaying = frontendEngine.audioState.isPlaying || backendEngine.audioState.isPlaying;
-    const hasActiveSession = !!backendEngine.sessionId; // Backend has session = will play soon
 
-    // Backend just connected - crossfade if audio playing OR has active session
+    // 🔥 FIXED: Check if backend AudioWorklet is actually processing audio data
+    const backendHasAudioData = backendEngine.audioWorkletStatus?.isProcessing || false;
+
+    // Backend just connected - crossfade ONLY if audio playing AND backend has data
     if (backendNowConnected && !backendWasConnected && mixerRef.current) {
-      if (isAudioPlaying || hasActiveSession) {
+      if (isAudioPlaying && backendHasAudioData) {
         mixerRef.current.crossfadeToBackend(2.0);
         setCurrentEngine('backend');
       } else {
@@ -149,11 +154,12 @@ export const useHybridAudioEngine = () => {
         mixerRef.current.failoverToFrontend();
         setCurrentEngine('frontend');
       } else {
+        previousBackendConnected.current = backendNowConnected;
+
       }
     }
 
-    previousBackendConnected.current = backendNowConnected;
-  }, [backendEngine.backendConnected, backendEngine.sessionId, frontendEngine.audioState.isPlaying, backendEngine.audioState.isPlaying]);
+  }, [backendEngine.backendConnected, backendEngine.sessionId, backendEngine.audioWorkletStatus?.isProcessing, frontendEngine.audioState.isPlaying, backendEngine.audioState.isPlaying]);
 
   /**
    * Start binaural beat with hybrid approach
@@ -471,11 +477,14 @@ export const useHybridAudioEngine = () => {
     ? { ...defaultElectromagnetic, ...backendEngine.electromagnetic }
     : { ...defaultElectromagnetic, ...frontendEngine.electromagnetic };
 
-  // 🔥 CRITICAL FIX: ALWAYS use mixer analyser (gets signal from BOTH engines)
-  // Mixer analyser receives full-strength audio from both frontend AND backend (lines 76-78 in AudioMixer)
-  // This ensures FrequencyVisualizer ALWAYS has audio data regardless of which engine is active
-  // Fixes intermittent visualizer bug where analyser reference kept changing on multiple play presses
-  const activeAnalyserNode = mixerRef.current?.analyserNode || frontendEngine.analyserNode;
+  // 🔥 CRITICAL FIX: Update analyserNode state whenever mixer or frontend engine changes
+  // This ensures components re-render when analyser becomes available
+  useEffect(() => {
+    const newAnalyser = mixerRef.current?.analyserNode || frontendEngine.analyserNode;
+    if (newAnalyser && newAnalyser !== analyserNode) {
+      setAnalyserNode(newAnalyser);
+    }
+  }, [mixerRef.current?.analyserNode, frontendEngine.analyserNode, analyserNode]);
 
   // 🔥 PERFORMANCE FIX: Memoize audioState to prevent wasteful recalculation on every render
   // Only recalculates when dependencies actually change
@@ -547,9 +556,10 @@ export const useHybridAudioEngine = () => {
     setAudioState: frontendEngine.setAudioState, // Passthrough to frontend engine
     setEqualizerNodes: frontendEngine.setEqualizerNodes, // 🔥 NEW: Passthrough for equalizer
 
-    // 🔥 FIXED: Return correct analyserNode based on active engine
+    // 🔥 CRITICAL FIX: Return REACTIVE analyserNode from state (not ref)
+    // Components will now re-render when analyserNode becomes available
     audioContext: frontendEngine.audioContext,
-    analyserNode: activeAnalyserNode,
+    analyserNode, // 🔥 FIXED: Use state value instead of ref!
 
     // Engine status
     currentEngine,

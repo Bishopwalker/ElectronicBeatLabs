@@ -91,7 +91,7 @@ async def stream_audio_frames(websocket: WebSocket, session_id: str, use_binary:
         frame_buffer = FrameBuffer(
             audio_engine,
             session_id,
-            target_buffer_size=120  # 2 seconds of buffering at 60 FPS
+            target_buffer_size=180  # 🔥 FIXED: 3 seconds (was 120) - matches frontend expectations
         )
         session_frame_buffers[session_id] = frame_buffer
         await frame_buffer.start()

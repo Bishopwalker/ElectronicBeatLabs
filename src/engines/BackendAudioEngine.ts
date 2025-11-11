@@ -13,7 +13,7 @@ interface AudioFrame {
 }
 
 // Audio engine constants
-const RING_BUFFER_SIZE = 4096;
+const RING_BUFFER_SIZE = 8192;  // 🔥 DOUBLED: Increased from 4096 to prevent buffer starvation
 const CONNECTION_TIMEOUT_MS = 10000;
 const CONNECTION_CHECK_INTERVAL_MS = 100;
 const MAX_RECONNECT_DELAY_MS = 30000;
