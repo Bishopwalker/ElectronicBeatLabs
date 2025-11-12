@@ -517,6 +517,9 @@ console.log(audioWorkletStatus)
         const centerY = canvas.height / 2;
         const centerX = canvas.width / 2;
 
+        // 🔥 TIME IN SECONDS - for smooth animation
+        const time = timestamp / 1000;
+
         // 🔥 GET REAL-TIME FREQUENCY DATA
         if (analyserNode) {
           analyserNode.getByteFrequencyData(frequencyData);
@@ -525,37 +528,6 @@ console.log(audioWorkletStatus)
         // 🔥 CALCULATE AUDIO BANDS FOR ALL RENDERS
         const audioBands = getFrequencyBands(frequencyData);
 
-        // 🎨 DEBUG: Show audio levels on canvas for troubleshooting (every 10 seconds)
-        if (frameCount % 600 === 0) {
-          const freqSum = frequencyData.reduce((a, b) => a + b, 0);
-          console.log('🎵 FrequencyVisualizer Audio Levels:', {
-            bass: (audioBands.bass * 100).toFixed(1) + '%',
-            mid: (audioBands.mid * 100).toFixed(1) + '%',
-            treble: (audioBands.treble * 100).toFixed(1) + '%',
-            overall: (audioBands.overall * 100).toFixed(1) + '%',
-            dominant: audioBands.dominant,
-            analyserNode: !!analyserNode,
-            frequencyDataSum: freqSum
-          });
-
-          // 🔥 CRITICAL DEBUG: If no audio detected, diagnose why
-          if (freqSum === 0 && analyserNode) {
-console.log('🎵 FrequencyVisualizer Audio Worklet Status:', {
-  audioWorkletStatus
-});
-            // 🔥 Check if AudioWorklet is actually playing
-            if (audioWorkletStatus?.nodeReference) {
-console.log('Deez niggaz playing')
-              // Ask the worklet for metrics
-              try {
-                audioWorkletStatus.nodeReference.port.postMessage({ type: 'get_metrics' });
-              } catch (error) {
-              }
-            }
-
-          }
-        }
-
         // Electromagnetic field modulation
         const fieldStrength = electromagnetic?.strength * 50  || 50;
         const fieldFrequency = electromagnetic?.frequency * 50 || beatFreq * 10;
@@ -563,20 +535,20 @@ console.log('Deez niggaz playing')
         // Render based on mode
         switch (visualizationMode) {
           case 'waveform':
-            renderWaveform(ctx, canvas, centerX, centerY, fieldStrength, fieldFrequency, frequencyData, audioBands )
+            renderWaveform(ctx, canvas, centerX, centerY, time, fieldStrength, fieldFrequency, frequencyData, audioBands )
             break;
           case 'spiral2d':
-            renderSpiral2D(ctx, canvas, centerX, centerY, fieldStrength, fieldFrequency, frequencyData, audioBands);
+            renderSpiral2D(ctx, canvas, centerX, centerY, time, fieldStrength, fieldFrequency, frequencyData, audioBands);
             break;
           case 'spiral3d':
-            renderSpiral3D(ctx, canvas, centerX, centerY, fieldStrength, fieldFrequency,frequencyData, audioBands);
+            renderSpiral3D(ctx, canvas, centerX, centerY, time, fieldStrength, fieldFrequency,frequencyData, audioBands);
             break;
           case 'radial':
-            renderRadialBars(ctx, canvas, centerX, centerY, fieldStrength, fieldFrequency,frequencyData, audioBands);
+            renderRadialBars(ctx, canvas, centerX, centerY, time, fieldStrength, fieldFrequency,frequencyData, audioBands);
             break;
           case 'combined':
-            renderRadialBars(ctx, canvas, centerX, centerY, fieldStrength, fieldFrequency,frequencyData, audioBands);
-            renderSpiral2D(ctx, canvas, centerX, centerY, fieldStrength, fieldFrequency,frequencyData, audioBands);
+            renderRadialBars(ctx, canvas, centerX, centerY, time, fieldStrength, fieldFrequency,frequencyData, audioBands);
+            renderSpiral2D(ctx, canvas, centerX, centerY, time, fieldStrength, fieldFrequency,frequencyData, audioBands);
             break;
         }
 
@@ -591,9 +563,9 @@ console.log('Deez niggaz playing')
               frequencyData.length - 1,
               Math.floor((i / barCount) * frequencyData.length)
             );
-            // 🔥 Apply visual boost (clamped to 1.0 max)
-            const freqValue = Math.min(1, (frequencyData[dataIndex] / 128) * VISUAL_BOOST);
-            const barHeight = (freqValue * maxBarHeight) * 50;
+            // 🔥 FIXED: Divide by 255 for full range, apply visual boost
+            const freqValue = Math.min(1, (frequencyData[dataIndex] / 255) * VISUAL_BOOST);
+            const barHeight = freqValue * maxBarHeight; // 🔥 FIXED: Removed 50x multiplier
             const x = i * barWidth;
             const y = 10;
 
@@ -646,6 +618,7 @@ console.log('Deez niggaz playing')
       canvas: HTMLCanvasElement,
       centerX: number,
       centerY: number,
+      time: number,
       strength: number,
       frequency: number,
       frequencyData: Uint8Array,
@@ -659,7 +632,7 @@ console.log('Deez niggaz playing')
       ctx.shadowColor = ctx.strokeStyle;
       ctx.shadowBlur = audioBands.overall * 50; // Audio-reactive glow
       strength = parseFloat(frequency.toExponential(4));
-      const samples = 40000;
+      const samples = 2500; // 🔥 FIXED: Reduced from 40000 to 2500 for 60 FPS
       const cycles = 40;
 
       for (let i = 0; i < samples; i++) {
@@ -696,7 +669,7 @@ console.log('Deez niggaz playing')
     // 🔥 PHASE 4: RENDER SPIRAL 2D - 100% AUDIO-REACTIVE
     // ========================================================================
     function renderSpiral2D(
-        ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, centerX: number, centerY: number, fieldStrength: number, fieldFrequency: number, frequencyData: Uint8Array, audioBands: ReturnType<typeof getFrequencyBands>    ) {
+        ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, centerX: number, centerY: number, time: number, fieldStrength: number, fieldFrequency: number, frequencyData: Uint8Array, audioBands: ReturnType<typeof getFrequencyBands>    ) {
       const numBins = Math.min(frequencyData.length, 256);
       const maxRadius = Math.min(canvas.width, canvas.height) * 0.4;
 
@@ -704,25 +677,25 @@ console.log('Deez niggaz playing')
       ctx.translate(centerX, centerY);
 
       const numArms = 3;
-      const armHues = [15, 150, 260]; // Bass, Mid, Treble colors
 
       for (let arm = 0; arm < numArms; arm++) {
         const armOffset = (arm * Math.PI * 2) / numArms;
-        const hue = armHues[arm];
+        // 🔥 ROTATING RAINBOW HUE - smooth time-based animation
+        const hue = (arm * 120 + time * 30) % 360;
 
         ctx.beginPath();
-        ctx.strokeStyle = `hsla(${hue}, 95%, 70%, ${Math.min(1, audioBands.overall * 1.5)})`;
-        ctx.lineWidth = (audioBands.overall * 8) + 2; // THICC lines + minimum
+        ctx.strokeStyle = `hsla(${hue}, 80%, 60%, 0.8)`;
+        ctx.lineWidth = 2 + fieldStrength * 0.04; // Field-based thickness
         ctx.shadowColor = ctx.strokeStyle;
-        ctx.shadowBlur = (audioBands.overall * 250) + 8; // MASSIVE glow
+        ctx.shadowBlur = 8 + fieldStrength * 0.12; // 🔥 FIXED: Reasonable glow (not 250+)
 
         for (let i = 10; i < numBins; i++) {
           // 🔥 Apply visual boost (clamped to 1.0 max)
           const freqValue = Math.min(1, (frequencyData[i] / 255) * VISUAL_BOOST);
           const t = i / numBins;
 
-          // 🔥 ROTATION SPEED DRIVEN BY TREBLE
-          const angle = t * Math.PI * 60 + (audioBands.treble * Math.PI * 2) + armOffset;
+          // 🔥 SMOOTH TIME-BASED ROTATION + audio modulation
+          const angle = t * Math.PI * 6 + time * 0.5 + armOffset;
 
           // 🔥 RADIUS DRIVEN BY FREQUENCY DATA (NO CONSTANTS)
           const radius = t * maxRadius * freqValue;
@@ -736,12 +709,12 @@ console.log('Deez niggaz playing')
             ctx.lineTo(x, y);
           }
 
-          // 🔥 SPARKLES ONLY WHEN STRONG FREQUENCY (NO MINIMUM)
-          if (freqValue > 0.3 && i % 8 === 0) {
+          // 🔥 SPARKLES ONLY WHEN STRONG FREQUENCY
+          if (freqValue > 0.6 && i % 8 === 0) {
             ctx.save();
-            ctx.fillStyle = `hsla(${hue + 60}, 100%, 80%, ${freqValue})`;
+            ctx.fillStyle = `hsla(${(hue + 60) % 360}, 90%, 70%, ${freqValue})`;
             ctx.beginPath();
-            ctx.arc(x, y, freqValue * 50, 0, Math.PI * 2);
+            ctx.arc(x, y, 2 + freqValue * 3, 0, Math.PI * 2); // 🔥 FIXED: 2-5px sparkles
             ctx.fill();
             ctx.restore();
           }
@@ -758,9 +731,9 @@ console.log('Deez niggaz playing')
     // 🔥 PHASE 5: RENDER SPIRAL 3D - 100% AUDIO-REACTIVE
     // ========================================================================
     function renderSpiral3D(
-        ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, centerX: number, centerY: number, fieldStrength: number, fieldFrequency: number, frequencyData: Uint8Array, audioBands: ReturnType<typeof getFrequencyBands>    ) {
-      const numBins = Math.max(frequencyData.length, 2550);
-      const maxRadius = Math.max(canvas.width, canvas.height) * 50.35;
+        ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, centerX: number, centerY: number, time: number, fieldStrength: number, fieldFrequency: number, frequencyData: Uint8Array, audioBands: ReturnType<typeof getFrequencyBands>    ) {
+      const numBins = Math.min(frequencyData.length, 256); // 🔥 FIXED: Math.min not Math.max
+      const maxRadius = Math.min(canvas.width, canvas.height) * 0.35; // 🔥 FIXED: Proper radius scaling
       const zDepth = 200;
 
       ctx.save();
@@ -777,15 +750,15 @@ console.log('Deez niggaz playing')
           const freqValue = Math.min(1, (frequencyData[i] / 255) * VISUAL_BOOST);
           const t = i / numBins;
 
-          // 🔥 ROTATION DRIVEN BY MID FREQUENCIES
-          const angle = t * Math.PI * 8 + (audioBands.mid * Math.PI * 4) + helixOffset;
+          // 🔥 SMOOTH TIME-BASED ROTATION + audio modulation
+          const angle = t * Math.PI * 8 + time * 0.3 + (audioBands.mid * Math.PI) + helixOffset;
 
-          // 🔥 RADIUS DRIVEN BY FREQUENCY VALUE
-          const radius = maxRadius * Math.PI * 3 * freqValue;
+          // 🔥 FIXED: Simpler radius formula
+          const radius = maxRadius * freqValue * (0.5 + t * 0.5);
           const z = (t - 0.5) * zDepth;
 
-          const perspective = 333 / (33 + z);
-          const x = Math.cos(angle) * radius * perspective / 3;
+          const perspective = 300 / (300 + z);
+          const x = Math.cos(angle) * radius * perspective;
           const y = Math.sin(angle) * radius * perspective + z * 0.3;
 
           // 🔥 COLOR MAPPED TO FREQUENCY BIN
@@ -817,37 +790,34 @@ console.log('Deez niggaz playing')
     // 🔥 PHASE 6: RENDER RADIAL BARS - 100% AUDIO-REACTIVE BUTTERFLY
     // ========================================================================
     function renderRadialBars(
-        ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, centerX: number, centerY: number, fieldStrength: number, fieldFrequency: number, frequencyData: Uint8Array, audioBands: ReturnType<typeof getFrequencyBands>    ) {
-      const numBars = Math.max(frequencyData.length / 2, 255);
-      const maxBarLength = Math.max(canvas.width, canvas.height) * 0.45;
+        ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, centerX: number, centerY: number, time: number, fieldStrength: number, fieldFrequency: number, frequencyData: Uint8Array, audioBands: ReturnType<typeof getFrequencyBands>    ) {
+      const numBars = Math.min(frequencyData.length, 255);
+      const maxBarLength = Math.min(canvas.width, canvas.height) * 0.45;
 
       ctx.save();
       ctx.translate(centerX, centerY);
 
       for (let i = 0; i < numBars; i++) {
-        // 🔥 PURE FREQUENCY VALUE - CAN GO TO ZERO
-        const freqValue = frequencyData[i] / 128;
-        
-        // 🔥 SKIP IF SILENT (bars disappear when no audio)
-        if (freqValue < 0.01) continue;
+        // 🔥 FIXED: Divide by 255 for full range
+        const freqValue = frequencyData[i] / 255;
 
         const angle = (i / numBars) * Math.PI * 2 - Math.PI / 2;
-        
-        // 🔥 BAR LENGTH 100% DRIVEN BY FREQUENCY (BOOSTED 2X FOR DRAMA!)
-        const barLength = (freqValue * maxBarLength * Math.PI) + (maxBarLength * 0.6); // Min 10% length
-        const barWidth = (Math.PI * 2) / numBars * maxBarLength * 1.5; // Wider bars
 
-        // 🔥 COLOR MAPPED TO FREQUENCY BIN
-        const hue = mapFrequencyBinToColor(i, numBars);
+        // 🔥 FIXED: Simple bar length formula
+        const barLength = freqValue * maxBarLength * (1 + fieldStrength * 0.006);
+        const barWidth = (Math.PI * 2) / numBars * maxBarLength * 1.2;
+
+        // 🔥 ROTATING RAINBOW HUE - THE BUTTERFLY EFFECT!
+        const hue = ((i / numBars) * 360 + time * 20) % 360;
 
         const gradient = ctx.createLinearGradient(0, 0, Math.cos(angle) * barLength, Math.sin(angle) * barLength);
-        gradient.addColorStop(0, `hsla(${hue}, 95%, 65%, ${freqValue * 0.5})`);
-        gradient.addColorStop(0.5, `hsla(${hue}, 100%, 70%, ${freqValue * 0.8})`);
-        gradient.addColorStop(1, `hsla(${hue}, 100%, 75%, ${freqValue})`);
+        gradient.addColorStop(0, `hsla(${hue}, 80%, 60%, 0.1)`);
+        gradient.addColorStop(0.5, `hsla(${hue}, 85%, 65%, ${freqValue * 0.6})`);
+        gradient.addColorStop(1, `hsla(${hue}, 90%, 70%, ${freqValue})`);
 
         ctx.fillStyle = gradient;
-        ctx.shadowColor = `hsla(${hue}, 100%, 75%, ${freqValue})`;
-        ctx.shadowBlur = freqValue * 50 + 10; // MASSIVE glow effect
+        ctx.shadowColor = `hsla(${hue}, 90%, 70%, ${freqValue * 0.8})`;
+        ctx.shadowBlur = 15 * freqValue; // 🔥 BRIGHT multiplicative glow
 
         ctx.beginPath();
         ctx.moveTo(0, 0);
@@ -862,14 +832,14 @@ console.log('Deez niggaz playing')
         ctx.closePath();
         ctx.fill();
 
-        // 🔥 TIP GLOW ONLY WHEN STRONG (NO MINIMUM)
+        // 🔥 SPARKLE TIPS - THE BUTTERFLY GLOW!
         if (freqValue > 0.5) {
           const tipX = Math.cos(angle) * barLength;
           const tipY = Math.sin(angle) * barLength;
 
-          ctx.fillStyle = `hsla(${hue + 60}, 100%, 90%, ${freqValue})`;
+          ctx.fillStyle = `hsla(${(hue + 60) % 360}, 100%, 85%, ${freqValue})`;
           ctx.beginPath();
-          ctx.arc(tipX, tipY, freqValue * 8, 0, Math.PI * 2);
+          ctx.arc(tipX, tipY, 4 + freqValue * 6, 0, Math.PI * 2); // 🔥 FIXED: 4-10px glowing tips
           ctx.fill();
         }
       }
