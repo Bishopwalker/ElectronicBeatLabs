@@ -38,7 +38,7 @@ __pycache__/
 *.so
 .venv/
 .venv.old/
-backend/venv/
+backend/.venv/
 backend/.venv/
 venv/
 env/
@@ -57,3 +57,21 @@ nul__pycache__/
 .elasticbeanstalk/*
 !.elasticbeanstalk/*.cfg.yml
 !.elasticbeanstalk/*.global.yml
+
+# Temporary deployment and test scripts
+*-fix.bat
+*-fix.ps1
+deploy-ecs-*.ps1
+redeploy-*.ps1
+just-deploy-*.bat
+just-deploy-*.sh
+push-to-*.bat
+check-*.bat
+start-backend-dev.*
+test-backend-startup.*
+*-FIX-README.md
+*-SOUND-FIX.md
+task-def-*.json
+!aws/ecs-task-definition-*.json
+ecs-task-definition.json.DO_NOT_USE
+route53-change.json

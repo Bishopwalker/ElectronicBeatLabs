@@ -1,18 +1,18 @@
 // Electromagnetic Beat Lab - Main Controls Component (Material UI)
 // Primary playback and volume controls
 
-import React from 'react';
+import React, {useCallback} from 'react';
 import {
-  Box,
-  Card,
-  CardContent,
-  Typography,
-  Button,
-  Slider,
-  Stack,
-  Chip,
-  Switch,
-  FormControlLabel,
+    Box,
+    Button,
+    Card,
+    CardContent,
+    Chip,
+    FormControlLabel,
+    Slider,
+    Stack,
+    Switch,
+    Typography,
 } from '@mui/material';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import StopIcon from '@mui/icons-material/Stop';
@@ -20,7 +20,7 @@ import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import BoltIcon from '@mui/icons-material/Bolt';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
 
-import type { MainControlsProps } from '../types';
+import type {MainControlsProps} from '../types';
 
 interface ExtendedMainControlsProps extends MainControlsProps {
   compact?: boolean;
@@ -39,17 +39,27 @@ const MainControlsMUI: React.FC<ExtendedMainControlsProps> = ({
   compact = false
 }) => {
   const maxVolume = boostMode ? 2.0 : 1.0;  // 200% in boost mode, 100% normal
+console.log(volume,"volume")
 
-  const handleVolumeChange = (_: Event, value: number | number[]) => {
-    const numValue = value as number;
-    const safeValue = isNaN(numValue) ? 0.5 : Math.max(0, Math.min(maxVolume, numValue));
-    onVolumeChange(safeValue);
-  };
+        const handleVolumeChange = useCallback(() => (
+            _event: Event | React.SyntheticEvent,
+            value: number | number[]
+        ) => {
+            const safeValue = Array.isArray(value) ? value[0] : value;
+            onVolumeChange(safeValue);
+        }, [onVolumeChange]);
+
+        // Helper function to get slider color
+        const getSliderColor = useCallback((gain: number) => {
+            if (volume > .5) return '#00ff88';
+            if (volume < .5) return '#ff6b6b';
+            return '#888';
+        }, []);
 
   const handleBoostToggle = (checked: boolean) => {
     if (onBoostModeToggle) {
       onBoostModeToggle(checked);
-
+    onVolumeChange(maxVolume);
       // If turning OFF boost mode and volume > 1.0, clamp it to 1.0
       if (!checked && volume > 1.0) {
         onVolumeChange(1.0);
@@ -141,6 +151,9 @@ const MainControlsMUI: React.FC<ExtendedMainControlsProps> = ({
             sx={{
               minWidth: '120px',
               '& .MuiSlider-track': {
+                  color: getSliderColor(volume),
+                  border: 'none',
+                  pointerEvents: 'auto',
                 background: boostMode
                   ? 'linear-gradient(90deg, #ff6b00, #ff0066)'  // Red gradient for boost
                   : 'linear-gradient(90deg, #8a2be2, #ff6b00)',  // Normal gradient
@@ -150,6 +163,7 @@ const MainControlsMUI: React.FC<ExtendedMainControlsProps> = ({
                   ? 'linear-gradient(45deg, #ff6b00, #ff0066)'
                   : 'linear-gradient(45deg, #8a2be2, #ff6b00)',
                 border: '2px solid #fff',
+                  cursor: 'pointer',
                 '&:hover': {
                   boxShadow: boostMode
                     ? '0 0 15px rgba(255, 107, 0, 0.7)'

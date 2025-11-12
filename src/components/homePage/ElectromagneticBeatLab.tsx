@@ -2,24 +2,24 @@
 // Advanced binaural beats generator with electromagnetic field visualization
 // Now properly separated into modular components under 500 lines
 
-import React, { useCallback, useEffect, useState, useRef, useMemo } from 'react';
-import { Box, Chip, Grid, IconButton, Paper, Typography } from '@mui/material';
-import type { ElectromagneticBeatLabProps, PatternConfig } from '../../types';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {Box, Chip, Grid, IconButton, Paper, Typography} from '@mui/material';
+import type {ElectromagneticBeatLabProps, PatternConfig} from '../../types';
 
 // Constants
-import { DEFAULT_BASE_FREQUENCY, DEFAULT_BEAT_FREQUENCY, DEFAULT_VOLUME } from '../../constants/audio.constants';
+import {DEFAULT_BASE_FREQUENCY, DEFAULT_BEAT_FREQUENCY, DEFAULT_VOLUME} from '../../constants/audio.constants';
 
 // Centralized Audio Controls
-import { startBinauralAudio, stopBinauralAudio } from '../../utils/audioControls';
+import {startBinauralAudio, stopBinauralAudio} from '../../utils/audioControls';
 
 // Hooks and Data
-import { useHybridAudioEngine, useBinauralVisualization } from '../../hooks';
-import { useElectromagneticLabState } from '../../hooks/useElectromagneticLabState';
-import { useCurrentPresetTracker } from '../../hooks/useCurrentPresetTracker';
-import { WAVE_PATTERNS } from '../../data/patterns';
+import {useBinauralVisualization, useHybridAudioEngine} from '../../hooks';
+import {useElectromagneticLabState} from '../../hooks/useElectromagneticLabState';
+import {useCurrentPresetTracker} from '../../hooks/useCurrentPresetTracker';
+import {WAVE_PATTERNS} from '../../data/patterns';
 // Configuration and Styles
-import { TAB_CONFIG, SECTION_DATA } from '../config/ElectromagneticLabConfig';
-import { ElectromagneticLabStyles } from '../styles/ElectromagneticLabStyles';
+import {SECTION_DATA, TAB_CONFIG} from '../config/ElectromagneticLabConfig';
+import {ElectromagneticLabStyles} from '../styles/ElectromagneticLabStyles';
 
 // Components
 import StarField from '../StarField';
@@ -32,8 +32,8 @@ import BinauralGeneratorMUI from '../BinauralGeneratorMUI';
 import QuickStart from '../QuickStart';
 import TimerTab from '../tabs/TimerTab';
 
-import { formatTime } from '../../helpers/timer/timerUtils';
-import type {  TimerStatus} from '../../data/timer';
+import {formatTime} from '../../helpers/timer/timerUtils';
+import type {TimerStatus} from '../../data/timer';
 
 // Extracted Components
 import CollapsibleSection from '../shared/CollapsibleSection';
@@ -41,7 +41,7 @@ import TabContentRenderer from '../shared/TabContentRenderer';
 import SystemStatusChips from '../shared/SystemStatusChips';
 import TimerCountdownDisplay from '../TimerCountdownDisplay';
 import EqualizerMUI from '../EqualizerMUI';
-import { FrequencyVisualizer } from '../FrequencyVisualizer';
+import {FrequencyVisualizer} from '../FrequencyVisualizer';
 
 const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
   initialPattern,
@@ -84,8 +84,9 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
   // Timer status for preset tracking
   const [timerStatus, setTimerStatus] = useState<TimerStatus | undefined>(undefined);
 
-  // Timer navigation callbacks using state for proper React updates
-  const [timerNavigation, setTimerNavigation] = useState<{
+  // 🔥 CRITICAL FIX: Use refs for timer callbacks to prevent infinite re-render loops
+  // State objects with functions cause new references on every render → infinite loop!
+  const timerNavigationRef = useRef<{
     jumpToTransition: (direction: 'next' | 'previous') => void;
     restartCurrentTransition: () => void;
   }>({
@@ -93,8 +94,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
     restartCurrentTransition: () => console.warn('Timer navigation not initialized')
   });
 
-  // Timer control callbacks using state for proper React updates
-  const [timerControl, setTimerControl] = useState<{
+  const timerControlRef = useRef<{
     stopTimer: () => void;
     pauseTimer: () => void;
     resumeTimer: () => void;
@@ -105,6 +105,15 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
     resumeTimer: () => console.warn('Timer control not initialized'),
     restartTimer: () => console.warn('Timer control not initialized')
   });
+
+  // Setter functions for child components to update refs
+  const setTimerNavigation = useCallback((nav: typeof timerNavigationRef.current) => {
+    timerNavigationRef.current = nav;
+  }, []);
+
+  const setTimerControl = useCallback((ctrl: typeof timerControlRef.current) => {
+    timerControlRef.current = ctrl;
+  }, []);
 
   // Current preset tracking
   const { currentPreset } = useCurrentPresetTracker({
@@ -367,7 +376,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
       // Use centralized audio control utility with timer control
       const success = await stopBinauralAudio(
         hybridEngine,
-        timerStatus?.session?.is_active ? timerControl : undefined
+        timerStatus?.session?.is_active ? timerControlRef.current : undefined
       );
 
       if (success) {
@@ -760,11 +769,11 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
               timerStatus={timerStatus}
               isVisible={true}
               appState={appState}
-              onJumpToTransition={timerNavigation.jumpToTransition}
-              onRestartTransition={timerNavigation.restartCurrentTransition}
-              onPauseTimer={timerControl.pauseTimer}
-              onResumeTimer={timerControl.resumeTimer}
-              onRepeatSession={timerControl.restartTimer}
+              onJumpToTransition={timerNavigationRef.current.jumpToTransition}
+              onRestartTransition={timerNavigationRef.current.restartCurrentTransition}
+              onPauseTimer={timerControlRef.current.pauseTimer}
+              onResumeTimer={timerControlRef.current.resumeTimer}
+              onRepeatSession={timerControlRef.current.restartTimer}
               audioContext={activeAudioEngine.audioContext}
               analyserNode={activeAudioEngine.analyserNode}
               hybridEngine={hybridEngine}
@@ -798,6 +807,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
         }}>
           {/* Timer Presets (Timer & Sessions) */}
           {!closedSections.includes('timerPanel') && (
+              <CollapsibleSection compact={true} id="timerPanel" title="TimerPanel" icon="⌚" defaultOpen={true} onClose={handleSectionClose}>
             <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4, xl: 4 }} sx={ElectromagneticLabStyles.panelFlex}>
                 <Box sx={{ overflow: 'visible' }}>
                   <TimerTab
@@ -810,13 +820,14 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                     }}
                     onStateChange={updateAppState}
                     onTimerStatusUpdate={setTimerStatus}
-                    onTransitionNavigation={timerNavigation}
-                    onTimerControl={timerControl}
+                    onTransitionNavigation={timerNavigationRef.current}
+                    onTimerControl={timerControlRef.current}
                     onSetTimerNavigation={setTimerNavigation}
                     onSetTimerControl={setTimerControl}
                   />
                 </Box>
             </Grid>
+              </CollapsibleSection>
           )}
 
           {!closedSections.includes('patternID') && (
@@ -956,7 +967,8 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
             <Grid size={{ xs: 12, sm: 6, md: 3, lg: 3, xl: 3 }} sx={ElectromagneticLabStyles.panelFlex}>
               <CollapsibleSection id="spatialVisualizer" title="3D Spatial Visualizer" icon="🌀" defaultOpen={true} onClose={handleSectionClose}>
                 <SpatialVisualizer
-                  pattern={appState.currentPattern}
+                  pattern={
+                    appState.currentPattern || WAVE_PATTERNS.find((pattern) => pattern.id === 'default')}
                   electromagnetic={appState.electromagnetic}
                   size={400}
                   audioContext={activeAudioEngine.audioContext}
@@ -1009,7 +1021,9 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
           </Paper>
         </Box>
       )}
+
     </Box>
+
   );
 };
 

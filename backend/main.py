@@ -53,16 +53,17 @@ async def startup_event():
     logger.info("Starting up Electromagnetic Beat Lab backend...")
 
 
-    # Initialize RAG system for code intelligence
-    logger.info("Initializing RAG (Retrieval-Augmented Generation) system...")
-    import os
-    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    rag_initialized = initialize_rag(project_root=project_root, use_enhanced=True)
-    if rag_initialized:
-        logger.info("RAG system initialized successfully")
-    else:
-        logger.warning("RAG system failed to initialize - code search will be unavailable")
-        logger.warning("Install dependencies: pip install sentence-transformers scikit-learn chromadb")
+    # Initialize RAG system for code intelligence (DISABLED - optional feature)
+    # Uncomment after installing: pip install sentence-transformers scikit-learn chromadb
+    # logger.info("Initializing RAG (Retrieval-Augmented Generation) system...")
+    # import os
+    # project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    # rag_initialized = initialize_rag(project_root=project_root, use_enhanced=True)
+    # if rag_initialized:
+    #     logger.info("RAG system initialized successfully")
+    # else:
+    #     logger.warning("RAG system failed to initialize - code search will be unavailable")
+    #     logger.warning("Install dependencies: pip install sentence-transformers scikit-learn chromadb")
 
     # Log startup completion
     logger.info("Backend startup completed successfully")

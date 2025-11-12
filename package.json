@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host",
-    "dev:backend": "cd backend && .\\.venv\\Scripts\\uvicorn.exe main:app --reload --host 0.0.0.0 --port 8000 --reload-exclude '*.pyc' --reload-exclude '__pycache__/*'",
+    "dev:backend": "cd backend && .venv\\Scripts\\python.exe -m uvicorn main:app --reload --reload-exclude '.venv/*' --host 0.0.0.0 --port 8000",
+    "dev:backend:py": "python start-backend-dev.py",
     "dev:all": "concurrently --kill-others-on-fail \"npm run dev\" \"npm run dev:backend\"",
     "dev:clean": "start-dev.bat",
     "dev:stop": "stop-dev.bat",

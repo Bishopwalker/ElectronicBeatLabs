@@ -108,17 +108,32 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
             setIsConnecting(true);
             setError(null);
 
-            // Construct WebSocket URL - BACKEND EXPECTS base_frequency and beat_frequency!
+            // Construct WebSocket URL
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
             const host = window.location.hostname;
-            const port = import.meta.env.DEV ? '8000' : window.location.port;
-            const baseUrl = `${protocol}//${host}:${port}`;
+            
+            // Smart port detection for development and production
+            let port: string;
+            if (import.meta.env.DEV) {
+                // In development, always use backend port 8000
+                port = '8000';
+            } else if (window.location.port) {
+                // In production with explicit port
+                port = window.location.port;
+            } else {
+                // In production without explicit port (80/443)
+                port = '';
+            }
+            
+            const baseUrl = port ? `${protocol}//${host}:${port}` : `${protocol}//${host}`;
 
             // Generate a unique session ID if not provided
             const currentSessionId = sessionId || `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-            // 🔥 FIX: NO URL PARAMS - frequencies come from WebSocket messages/audio context
+            // Use /ws/audio/ endpoint which is properly configured in audio_websocket.py
             const wsUrl = `${baseUrl}/ws/audio/${currentSessionId}`;
+            
+            console.log('🔌 Connecting to WebSocket:', wsUrl);
 
             const ws = new WebSocket(wsUrl);
             wsRef.current = ws;

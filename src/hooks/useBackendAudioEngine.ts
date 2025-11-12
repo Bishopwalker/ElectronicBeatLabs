@@ -1,19 +1,10 @@
 // Backend-Integrated Audio Engine Hook - FIXED VERSION
 // Combines local Web Audio API with backend-generated binaural beats and spatial effects
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { useWebSocketContext } from './useWebsocketContext';
-import type {
-  BackendAudioEngineState,
-  ElectromagneticField,
-  PatternConfig,
-  BinauralBeatConfig
-} from '../types';
-import {
-  DEFAULT_BASE_FREQUENCY,
-  DEFAULT_BEAT_FREQUENCY,
-  DEFAULT_VOLUME
-} from '../constants/audio.constants';
+import {useCallback, useEffect, useRef, useState} from 'react';
+import {useWebSocketContext} from './useWebsocketContext';
+import type {BackendAudioEngineState, BinauralBeatConfig, ElectromagneticField, PatternConfig} from '../types';
+import {DEFAULT_BASE_FREQUENCY, DEFAULT_BEAT_FREQUENCY, DEFAULT_VOLUME} from '../constants/audio.constants';
 
 interface BackendAudioFrame {
   left: number[];
@@ -57,6 +48,15 @@ interface BackendSessionConfig {
 
 export const useBackendAudioEngine = () => {
   const [audioState, setAudioState] = useState<BackendAudioEngineState>({
+    beat_frequency: 0,
+    context: undefined,
+    gainL: undefined,
+    gainR: undefined,
+    leftFreq: 0,
+    oscillatorL: undefined,
+    oscillatorR: undefined,
+    rightFreq: 0,
+    webSocket: false,
     error: '',
     sessionId: '',
     connected: false,

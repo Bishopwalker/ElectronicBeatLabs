@@ -2,7 +2,7 @@
   "mcpServers": {
     "enforcer-dual-agent-coding-assistant": {
       "command": "node",
-      "args": ["claude/server.js"],
+      "args": [".claude/mcp-servers/codex/server.js"],
       "env": {}
     }
   }

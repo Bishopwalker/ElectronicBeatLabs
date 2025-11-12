@@ -20,7 +20,7 @@
       "environment": [
         {
           "name": "BACKEND_URL",
-          "value": "http://ebl-backend.local:8000"
+          "value": "http://backend-alb-dns-here:8000"
         },
         {
           "name": "PYTHON_ENV",

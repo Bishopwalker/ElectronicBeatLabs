@@ -48,7 +48,7 @@
         },
         {
           "name": "ALLOWED_ORIGINS",
-          "value": "https://ebl.yourdomain.com,http://localhost:5173"
+          "value": "https://bishops-ebl.online,http://localhost:5173, http://localhost.*"
         },
         {
           "name": "SECRET_KEY",

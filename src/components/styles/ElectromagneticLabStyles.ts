@@ -1,7 +1,7 @@
 // Electromagnetic Beat Lab Styles - Theme and styling configuration
 // Extracted from main component for better organization
 
-import type { SxProps, Theme } from '@mui/material/styles';
+import type {SxProps, Theme} from '@mui/material/styles';
 
 export const ElectromagneticLabStyles = {
   // Main container styles - GRID: Header 15vh, Content 85vh
@@ -349,7 +349,24 @@ export const ElectromagneticLabStyles = {
     overflowX: 'hidden',
     overflowY: 'auto'
   } as SxProps<Theme>,
-
+//Timer Display
+  timerDisplay:{
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: 0,
+    height: '75vh',
+    gridColumn: 'span 4',
+    gridRow: 'span 2',
+    overflowX: 'hidden',
+    overflowY: 'auto',
+    '& > div': {
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      overflowX: 'hidden',
+      overflowY: 'auto'
+    }
+  } as SxProps<Theme>,
   // Equalizer horizontal
   equalizerPanelFlexHorizontal: {
     display: 'flex',
@@ -372,6 +389,10 @@ export const ElectromagneticLabStyles = {
   visualizationPaper: {
     width: '100%',
     height: '100%',
+    minHeight: 0,
+    p: 2,
+    bgcolor: 'rgba(0, 0, 0, 0.8)',
+    backdropFilter: 'blur(10px)',
     borderRadius: 3,
     overflow: 'hidden',
     background: 'radial-gradient(circle at center, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.95) 100%)'

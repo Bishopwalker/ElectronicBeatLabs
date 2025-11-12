@@ -2,7 +2,7 @@
 // Extracted from main component for better modularity
 
 import React from 'react';
-import { Box, Card, CardContent, IconButton, Typography } from '@mui/material';
+import {Box, Card, CardContent, IconButton, Typography} from '@mui/material';
 
 interface CollapsibleSectionProps {
   id: string;
@@ -49,7 +49,7 @@ const COMPONENT_COLORS: Record<string, { border: string; bg: string; glow: strin
   },
   visualizeID: {
     border: '#00ff88',
-    bg: 'rgba(0, 255, 136, 0.06)',
+    bg: 'rgba(27,101,195,0.06)',
     glow: 'rgba(0, 255, 136, 0.3)'
   },
   

@@ -1,8 +1,8 @@
 // Timer Countdown Display Component
 // Shows prominent countdown for active timer sessions
 
-import React, {useState,useEffect,useMemo} from 'react';
-import {Box, Typography, Paper, LinearProgress, Chip, IconButton, Tooltip, Collapse} from '@mui/material';
+import React, {useMemo} from 'react';
+import {Box, Chip, IconButton, LinearProgress, Tooltip, Typography} from '@mui/material';
 import TimerIcon from '@mui/icons-material/Timer';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import PauseIcon from '@mui/icons-material/Pause';
@@ -10,12 +10,10 @@ import SkipPreviousIcon from '@mui/icons-material/SkipPrevious';
 import SkipNextIcon from '@mui/icons-material/SkipNext';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import RepeatIcon from '@mui/icons-material/Repeat';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import type {TimerPreset, TimerStatus} from '../data/timer';
 import type {AppState} from "../types";
-import { FrequencyVisualizer } from './FrequencyVisualizer';
-import { DEFAULT_BASE_FREQUENCY, DEFAULT_BEAT_FREQUENCY } from '../constants/audio.constants';
+import {FrequencyVisualizer} from './FrequencyVisualizer';
+import {DEFAULT_BASE_FREQUENCY, DEFAULT_BEAT_FREQUENCY} from '../constants/audio.constants';
 import CollapsibleSection from './shared/CollapsibleSection';
 
 interface TimerCountdownDisplayProps {
@@ -148,12 +146,13 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
     ]);
 
     return (
-        <Box sx={{ 
+        <Box sx={{
+            minHeight:0,
             width: '100%', 
             mb: 1,
             maxHeight: '220px', // 🔥 CRITICAL: Fixed max height
             overflow: 'hidden',
-            position: 'sticky',
+            position: 'relative',
             top: 0,
             zIndex: 100,
             background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)',
@@ -161,12 +160,12 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
             boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)'
         }}>
             <CollapsibleSection
-                id="timerPanel"
+                id="timerDisplay"
                 title={preset?.name || 'Timer Session'}
                 icon="⏰"
                 onClose={onClose}
                 defaultOpen={true}
-                compact={true} // 🔥 CHANGED: Made compact
+                compact={true}
             >
                 {/* 🔥 FIXED: Ultra-Compact Horizontal Layout */}
                 <Box sx={{

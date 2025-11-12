@@ -40,7 +40,7 @@ services:
       - ./backend:/app/backend
       - ./logs:/app/logs
       - ./data:/app/data
-    command: python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app/backend --ws-ping-interval 20 --ws-ping-timeout 20
+    command: python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app/backend --ws-ping-interval 20 --ws-ping-timeout 20
     networks:
       - ebl-dev-network
     healthcheck:

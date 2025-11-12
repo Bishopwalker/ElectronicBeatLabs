@@ -155,7 +155,17 @@
       "Bash(cmd //c \"taskkill /F /IM python.exe\")",
       "Bash(.venv/Scripts/python.exe:*)",
       "Bash(.venv/Scripts/pip.exe install:*)",
-      "mcp__enforcer-dual-agent-coding-assistant__codex_refactor"
+      "mcp__enforcer-dual-agent-coding-assistant__codex_refactor",
+      "Bash(export FILTER_BRANCH_SQUELCH_WARNING=1)",
+      "Bash(aws:*)",
+      "Bash(xargs:*)",
+      "Bash(tee:*)",
+      "Bash(bash scripts/deploy-backend.sh:*)",
+      "Bash(jq:*)",
+      "Bash(backend/.venv/Scripts/pip.exe:*)",
+      "Bash(backend/.venv/Scripts/python.exe:*)",
+      "Bash(../.venv/Scripts/uvicorn.exe:*)",
+      "Bash(backend/.venv/Scripts/uvicorn.exe:*)"
     ],
     "deny": [],
     "ask": []

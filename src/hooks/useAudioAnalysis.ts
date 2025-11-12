@@ -2,7 +2,7 @@
 // Analyzes existing audio from the browser's audio output
 // Does NOT create or control audio playback
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
 // Visualization data interface
 export interface AudioAnalysisData {
@@ -39,12 +39,28 @@ interface AudioAnalysisConfig {
  * @param config.analyserNode - Optional external AnalyserNode (connects to existing audio graph)
  */
 export const useAudioAnalysis = (config: Partial<AudioAnalysisConfig> = {}) => {
-  // 🔥 FIXED: Memoize config to prevent infinite loop from object recreation
+  // 🔥 CRITICAL FIX: Store external nodes in refs to prevent infinite loop
+  // Don't memoize object references - they change every render!
+  const externalAnalyserRef = useRef<AnalyserNode | null>(null);
+  const externalContextRef = useRef<AudioContext | null>(null);
+
+  // Update refs when external nodes change
+  useEffect(() => {
+    if (config.analyserNode) {
+      externalAnalyserRef.current = config.analyserNode;
+    }
+    if (config.audioContext) {
+      externalContextRef.current = config.audioContext;
+    }
+  }, [config.analyserNode, config.audioContext]);
+
+  // 🔥 FIXED: Memoize ONLY primitive values, not object references
   const defaultConfig: AudioAnalysisConfig = useMemo(() => ({
-    updateRate: 20,
-    enabled: true,
-    ...config
-  }), [config.updateRate, config.enabled, config.audioContext, config.analyserNode]);
+    updateRate: config.updateRate ?? 60,
+    enabled: config.enabled ?? true,
+    audioContext: externalContextRef.current ?? undefined,
+    analyserNode: externalAnalyserRef.current ?? undefined
+  }), [config.updateRate, config.enabled]); // 🔥 ONLY primitives in deps!
 
   const [analysisData, setAnalysisData] = useState<AudioAnalysisData | null>(null);
   const [stats, setStats] = useState<AudioAnalysisStats>({
@@ -142,10 +158,11 @@ export const useAudioAnalysis = (config: Partial<AudioAnalysisConfig> = {}) => {
       return;
     }
 
+    // 🔥 CRITICAL FIX: Use refs instead of config props to prevent infinite loop
     // Use external analyser if provided
-    if (config.analyserNode) {
-      analyser.current = config.analyserNode;
-      audioContext.current = config.audioContext || null;
+    if (externalAnalyserRef.current) {
+      analyser.current = externalAnalyserRef.current;
+      audioContext.current = externalContextRef.current || null;
 
       const bufferLength = analyser.current.frequencyBinCount;
       dataArray.current = new Uint8Array(bufferLength);
@@ -180,7 +197,7 @@ export const useAudioAnalysis = (config: Partial<AudioAnalysisConfig> = {}) => {
         cancelAnimationFrame(animationFrameId.current);
       }
     };
-  }, [defaultConfig.enabled, defaultConfig.updateRate, config.analyserNode, config.audioContext, analyzeAudio]);
+  }, [defaultConfig.enabled, defaultConfig.updateRate, analyzeAudio]); // 🔥 FIXED: Removed config props!
 
   return {
     analysisData,

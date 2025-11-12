@@ -100,7 +100,6 @@ export const AudioContextProvider: React.FC<AudioContextProviderProps> = ({ chil
         analyserNode, 
         initializeAudio,
         isInitialized
-        ga
       }}
     >
       {children}
