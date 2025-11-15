@@ -165,7 +165,20 @@
       "Bash(backend/.venv/Scripts/pip.exe:*)",
       "Bash(backend/.venv/Scripts/python.exe:*)",
       "Bash(../.venv/Scripts/uvicorn.exe:*)",
-      "Bash(backend/.venv/Scripts/uvicorn.exe:*)"
+      "Bash(backend/.venv/Scripts/uvicorn.exe:*)",
+      "Bash(git stash drop:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(test:*)",
+      "Bash(git ls-tree:*)",
+      "Bash(/tmp/old_styles.ts)",
+      "Bash(/tmp/old_maincontrols.tsx)",
+      "Bash(/tmp/old_collapsible.tsx)",
+      "Bash(C:/Users/bisho/IdeaProjects/ebl/old_collapsible.tsx)",
+      "Bash(ElectromagneticBeatLab_OLD.tsx)",
+      "Bash(backend/venv/Scripts/python.exe -m uvicorn:*)",
+      "Bash(wmic process:*)",
+      "Bash(git stash push:*)",
+      "Bash(git stash show:*)"
     ],
     "deny": [],
     "ask": []

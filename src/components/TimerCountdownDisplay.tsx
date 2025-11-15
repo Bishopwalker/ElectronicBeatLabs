@@ -1,7 +1,7 @@
 // Timer Countdown Display Component
 // Shows prominent countdown for active timer sessions
 
-import React, {useMemo} from 'react';
+import React from 'react';
 import {Box, Chip, IconButton, LinearProgress, Tooltip, Typography} from '@mui/material';
 import TimerIcon from '@mui/icons-material/Timer';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
@@ -12,8 +12,6 @@ import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import RepeatIcon from '@mui/icons-material/Repeat';
 import type {TimerPreset, TimerStatus} from '../data/timer';
 import type {AppState} from "../types";
-import {FrequencyVisualizer} from './FrequencyVisualizer';
-import {DEFAULT_BASE_FREQUENCY, DEFAULT_BEAT_FREQUENCY} from '../constants/audio.constants';
 import CollapsibleSection from './shared/CollapsibleSection';
 
 interface TimerCountdownDisplayProps {
@@ -90,74 +88,33 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
     const transitionProgress = currentTransition ?
         ((currentTransition.duration_minutes - timeRemainingCurrent) / currentTransition.duration_minutes) * 100 : 0;
 
-    // 🔥 CRITICAL FIX: Use ACTUAL audio engine state instead of appState
-    // The hybrid engine knows the real isPlaying state from both frontend and backend
-    const isAudioActuallyPlaying = hybridEngine?.audioState?.isPlaying || false;
-
-    // Debug logging
-    React.useEffect(() => {
-        console.log('⏱️ Timer Display Audio State:', {
-            isAudioActuallyPlaying,
-            hybridEngineState: hybridEngine?.audioState?.isPlaying,
-            hasAudioContext: !!audioContext,
-            hasAnalyserNode: !!analyserNode,
-            currentFrequency: currentTransition?.frequency_hz
-        });
-    }, []);
-
-    // 🔥 OPTIMIZED: Build minimal visualizerState for FrequencyVisualizer
-    // Only include properties that FrequencyVisualizer actually uses
-    // Removed timer, patterns8D, electromagnetic, etc. to prevent unnecessary re-renders
-    const visualizerState = useMemo(() => {
-        // Calculate frequencies from timer transition or use defaults
-        const baseFreq = currentTransition?.frequency_hz || DEFAULT_BASE_FREQUENCY;
-        const beatFreq = Math.abs(
-            (currentTransition?.right_ear_hz || DEFAULT_BASE_FREQUENCY) -
-            (currentTransition?.left_ear_hz || DEFAULT_BEAT_FREQUENCY)
-        ) || DEFAULT_BEAT_FREQUENCY;
-
-        return {
-            // 🔥 Audio engine reference - FrequencyVisualizer accesses state.audio.audioState.isPlaying
-            audio: hybridEngine,
-
-            // 🔥 Direct audio properties for FrequencyVisualizer fallback paths
-            isPlaying: isAudioActuallyPlaying,
-            base_frequency: baseFreq,
-            beat_frequency: beatFreq,
-
-            // 🔥 Config object for compatibility
-            config: {
-                base_frequency: baseFreq,
-                beat_frequency: beatFreq,
-            },
-
-            // 🔥 Minimal AppState properties (only what's needed)
-            mode: appState?.mode || 'AUTO',
-            activeTab: appState?.activeTab || 'main'
-        };
-    }, [
-        hybridEngine,
-        isAudioActuallyPlaying,
-        currentTransition?.frequency_hz,
-        currentTransition?.right_ear_hz,
-        currentTransition?.left_ear_hz,
-        appState?.mode,
-        appState?.activeTab
-    ]);
-
     return (
         <Box sx={{
             minHeight:0,
-            width: '100%', 
+            width: '100%',
             mb: 1,
             maxHeight: '220px', // 🔥 CRITICAL: Fixed max height
             overflow: 'hidden',
             position: 'relative',
             top: 0,
             zIndex: 100,
-            background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)',
+            background: 'linear-gradient(45deg, rgba(255, 107, 0, 0.1), rgba(138, 43, 226, 0.1))',
+            border: '1px solid',
+            borderColor: '#ff6b00',
             borderRadius: 1,
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)'
+            boxShadow: '0 4px 20px rgba(255, 107, 0, 0.3)',
+            '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: 'linear-gradient(45deg, rgba(255, 107, 0, 0.05), rgba(138, 43, 226, 0.05))',
+                animation: 'pulse 3s ease-in-out infinite',
+                pointerEvents: 'none',
+                zIndex: 0
+            }
         }}>
             <CollapsibleSection
                 id="timerDisplay"
@@ -167,25 +124,19 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
                 defaultOpen={true}
                 compact={true}
             >
-                {/* 🔥 FIXED: Ultra-Compact Horizontal Layout */}
+                {/* Timer Section - Single Column Layout */}
                 <Box sx={{
                     display: 'flex',
-                    gap: 1.5,
-                    alignItems: 'stretch',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
                     width: '100%',
-                    height: '180px', // 🔥 FIXED: Exact height
-                    overflow: 'hidden'
+                    height: '180px',
+                    overflowY: 'auto',
+                    overflowX: 'hidden',
+                    position: 'relative',
+                    zIndex: 1, // Above animated background
+                    pr: 1 // Padding for scrollbar
                 }}>
-                    {/* LEFT SIDE: Timer Section - 50% Width */}
-                    <Box sx={{
-                        flex: '1 1 50%',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'space-between',
-                        overflowY: 'auto', // 🔥 Allow scroll if needed
-                        overflowX: 'hidden',
-                        pr: 1 // Padding for scrollbar
-                    }}>
                     {/* Header */}
                     <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5}}>
                         <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5}}>
@@ -380,44 +331,6 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
                         </Box>
                     </Box>
                 </Box>
-
-                {/* RIGHT SIDE: Frequency Visualizer - 50% Width */}
-                <Box sx={{
-                    flex: '1 1 50%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    height: '180px', // 🔥 FIXED: Match container height
-                    bgcolor: 'rgba(0, 255, 136, 0.03)',
-                    borderRadius: 1,
-                    border: '1px solid rgba(0, 255, 136, 0.2)',
-                    p: 0.5, // 🔥 REDUCED padding
-                    overflow: 'hidden'
-                }}>
-                    <Typography variant="caption" sx={{
-                        color: '#00ff88',
-                        fontWeight: 'bold',
-                        mb: 0.5, // 🔥 REDUCED
-                        fontSize: '0.7rem', // 🔥 REDUCED
-                        lineHeight: 1
-                    }}>
-                        🎵 Live Frequency Analysis
-                    </Typography>
-                    {audioContext && analyserNode ? (
-                        <FrequencyVisualizer
-                            state={visualizerState}
-                            audioContext={audioContext}
-                            analyserNode={analyserNode}
-                            audioWorkletStatus={hybridEngine?.audioWorkletStatus}
-                        />
-                    ) : (
-                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
-                            Audio visualization unavailable
-                        </Typography>
-                    )}
-                </Box>
-            </Box>
             </CollapsibleSection>
         </Box>
     );

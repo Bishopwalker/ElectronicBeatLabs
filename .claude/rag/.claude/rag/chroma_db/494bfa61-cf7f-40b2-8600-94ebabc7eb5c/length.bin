@@ -1,0 +1,10 @@
+def get_keycloak_public_key():
+    """Get Keycloak public key for token validation"""
+    try:
+        url = f"{KEYCLOAK_SERVER_URL}/realms/{KEYCLOAK_REALM}/protocol/openid_connect/certs"
+        response = requests.get(url)
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        logger.error(f"Failed to get Keycloak public key: {e}")
+        return No

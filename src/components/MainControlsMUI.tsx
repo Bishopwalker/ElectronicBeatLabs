@@ -41,7 +41,7 @@ const MainControlsMUI: React.FC<ExtendedMainControlsProps> = ({
   const maxVolume = boostMode ? 2.0 : 1.0;  // 200% in boost mode, 100% normal
 console.log(volume,"volume")
 
-        const handleVolumeChange = useCallback(() => (
+        const handleVolumeChange = useCallback((
             _event: Event | React.SyntheticEvent,
             value: number | number[]
         ) => {
@@ -150,6 +150,9 @@ console.log(volume,"volume")
             size="small"
             sx={{
               minWidth: '120px',
+              pointerEvents: 'auto',
+              userSelect: 'none',
+              touchAction: 'none',
               '& .MuiSlider-track': {
                   color: getSliderColor(volume),
                   border: 'none',
@@ -163,7 +166,8 @@ console.log(volume,"volume")
                   ? 'linear-gradient(45deg, #ff6b00, #ff0066)'
                   : 'linear-gradient(45deg, #8a2be2, #ff6b00)',
                 border: '2px solid #fff',
-                  cursor: 'pointer',
+                pointerEvents: 'auto',
+                cursor: 'pointer',
                 '&:hover': {
                   boxShadow: boostMode
                     ? '0 0 15px rgba(255, 107, 0, 0.7)'
@@ -329,6 +333,9 @@ console.log(volume,"volume")
               valueLabelDisplay="auto"
               valueLabelFormat={(value) => `${Math.round((value / maxVolume) * 100)}%`}
               sx={{
+                pointerEvents: 'auto',
+                userSelect: 'none',
+                touchAction: 'none',
                 '& .MuiSlider-track': {
                   background: boostMode
                     ? 'linear-gradient(90deg, #ff6b00, #ff0066)'
@@ -339,6 +346,8 @@ console.log(volume,"volume")
                     ? 'linear-gradient(45deg, #ff6b00, #ff0066)'
                     : 'linear-gradient(45deg, #8a2be2, #ff6b00)',
                   border: '2px solid #fff',
+                  pointerEvents: 'auto',
+                  cursor: 'pointer',
                   '&:hover': {
                     boxShadow: boostMode
                       ? '0 0 15px rgba(255, 107, 0, 0.7)'

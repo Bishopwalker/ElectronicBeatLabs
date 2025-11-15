@@ -46,15 +46,13 @@ const PatternSelectorMUI: React.FC<PatternSelectorPropsExtended> = ({
   return (
     <Card sx={{
       height: '100%',
-      margin: 'auto',
+      width: '100%',  // 🔥 FIXED: Fill parent grid cell
       display: 'flex',
       paddingBlockEnd: '6',
       flexDirection: 'column',
       overflowX: 'hidden',
-      overflowY: 'scroll',
+      overflowY: 'auto',  // 🔥 FIXED: auto instead of scroll to prevent scrollbar when not needed
       borderRadius: '8px',
-      minWidth: '20vw',
-      width: '25vw',
       boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
     }}>
       <CardContent sx={{ p: 1.5, pb: 0, flexShrink: 0 }}>

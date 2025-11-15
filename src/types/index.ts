@@ -1,6 +1,13 @@
 // Electromagnetic Beat Lab - Type Definitions
-import type {BackendAudioEngineState, BinauralBeatConfig, FrontendAudioEngineState,SpatialAudioConfig,ActiveAudioStatus} from './audio.types';
-import type {AudioConfig} from './clean.types';
+import type {
+    ActiveAudioStatus,
+    BackendAudioEngineState,
+    BinauralBeatConfig,
+    FrontendAudioEngineState,
+    SpatialAudioConfig
+} from './audio.types';
+import type {AudioConfig, ElectromagneticField} from './clean.types';
+
 export * from './audio.types'
 
 export type PatternMode = 'AUTO' | 'MANUAL' | 'OFF' | 'CUSTOM' | 'SYNC' | 'FLOW';
@@ -455,6 +462,7 @@ export interface SpatialVisualizerProps {
     audioContext?: AudioContext;
     analyserNode?: AnalyserNode;
     isPlaying?: boolean;
+    patternConfig: PatternConfig;
 }
 
 export interface FrequencyDisplayProps {

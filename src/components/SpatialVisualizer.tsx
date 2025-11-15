@@ -1,9 +1,9 @@
 // Electromagnetic Beat Lab - Audio-Reactive Spatial Visualizer Component
 // 🔥 100% LIVE AUDIO ANALYSIS - NO FAKE ANIMATIONS
 
-import React, { useEffect, useRef, useCallback, useMemo, useState } from 'react';
-import { Box, Typography, ToggleButtonGroup, ToggleButton, Chip } from '@mui/material';
-import type { SpatialVisualizerProps, ElectromagneticField, Pattern8D } from '../types/index';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {Box, Chip, ToggleButton, ToggleButtonGroup, Typography} from '@mui/material';
+import type {ElectromagneticField, SpatialVisualizerProps} from '../types/index';
 import BlurOnIcon from '@mui/icons-material/BlurOn';
 import TornadoIcon from '@mui/icons-material/Tornado';
 import WavesIcon from '@mui/icons-material/Waves';

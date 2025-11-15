@@ -79,6 +79,7 @@ export const ElectromagneticLabStyles = {
     borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
     display: 'flex',
     flexDirection: 'column',
+    overflowX: 'hidden',
     overflowY: 'auto'
   } as SxProps<Theme>,
 
@@ -161,7 +162,7 @@ export const ElectromagneticLabStyles = {
       md: '1.7rem',
       lg: '2rem'
     },
-    textAlign: 'center'
+     textAlign: 'center'
   } as SxProps<Theme>,
 
   // Compact status overview
@@ -394,7 +395,17 @@ export const ElectromagneticLabStyles = {
     bgcolor: 'rgba(0, 0, 0, 0.8)',
     backdropFilter: 'blur(10px)',
     borderRadius: 3,
-    overflow: 'hidden',
+    overflowX: 'hidden',
+    overflowY: 'auto',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 2,
+    position: 'relative',
+    '&:hover': {
+      bgcolor: 'rgba(0, 0, 0, 0.9)',
+    },
     background: 'radial-gradient(circle at center, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.95) 100%)'
   } as SxProps<Theme>,
 
@@ -410,7 +421,7 @@ export const ElectromagneticLabStyles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    backdropFilter: 'blur(5px)',
+    backdropFilter: 'blur(5px)'
   } as SxProps<Theme>,
 
   // Restore tabs container
@@ -446,5 +457,68 @@ export const ElectromagneticLabStyles = {
     display: 'flex',
     gap: '5px',
     flexWrap: 'wrap'
+  } as SxProps<Theme>,
+
+  // Component-specific color styles
+  timerCountdownStyle: {
+    background: 'linear-gradient(45deg, rgba(255, 107, 0, 0.1), rgba(138, 43, 226, 0.1))',
+    border: '1px solid #ff6b00',
+    boxShadow: '0 4px 20px rgba(255, 107, 0, 0.3)'
+  } as SxProps<Theme>,
+
+  timerPresetsStyle: {
+    background: 'linear-gradient(45deg, rgba(33, 150, 243, 0.1), rgba(0, 188, 212, 0.1))',
+    border: '1px solid #2196f3',
+    boxShadow: '0 4px 20px rgba(33, 150, 243, 0.3)'
+  } as SxProps<Theme>,
+
+  patternsStyle: {
+    background: 'linear-gradient(45deg, rgba(156, 39, 176, 0.1), rgba(233, 30, 99, 0.1))',
+    border: '1px solid #9c27b0',
+    boxShadow: '0 4px 20px rgba(156, 39, 176, 0.3)'
+  } as SxProps<Theme>,
+
+  frequencyVisualizerStyle: {
+    background: 'linear-gradient(45deg, rgba(0, 255, 136, 0.1), rgba(0, 188, 212, 0.1))',
+    border: '1px solid #00ff88',
+    boxShadow: '0 4px 20px rgba(0, 255, 136, 0.3)'
+  } as SxProps<Theme>,
+
+  binauralBeatsStyle: {
+    background: 'linear-gradient(45deg, rgba(255, 107, 0, 0.1), rgba(244, 67, 54, 0.1))',
+    border: '1px solid #ff6b00',
+    boxShadow: '0 4px 20px rgba(255, 107, 0, 0.3)'
+  } as SxProps<Theme>,
+
+  masterControlsStyle: {
+    background: 'linear-gradient(45deg, rgba(0, 150, 136, 0.1), rgba(0, 188, 212, 0.1))',
+    border: '1px solid #009688',
+    boxShadow: '0 4px 20px rgba(0, 150, 136, 0.3)'
+  } as SxProps<Theme>,
+
+  equalizerStyle: {
+    background: 'linear-gradient(45deg, rgba(103, 58, 183, 0.1), rgba(63, 81, 181, 0.1))',
+    border: '1px solid #673ab7',
+    boxShadow: '0 4px 20px rgba(103, 58, 183, 0.3)'
+  } as SxProps<Theme>,
+
+  spatialVisualizerStyle: {
+    background: 'linear-gradient(135deg, rgba(255, 107, 0, 0.1) 0%, rgba(138, 43, 226, 0.1) 50%, rgba(0, 255, 136, 0.1) 100%)',
+    border: '1px solid',
+    borderImage: 'linear-gradient(135deg, #ff6b00 0%, #8a2be2 50%, #00ff88 100%) 1',
+    boxShadow: '0 4px 20px rgba(138, 43, 226, 0.3)'
+  } as SxProps<Theme>,
+
+  // Auto-fit grid row for dynamic component layout
+  autoFitGridRow: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+    gap: { xs: 1, sm: 1.5, md: 2, lg: 2 },
+    width: '100%',
+    minHeight: 0,
+    '& > *': {
+      minWidth: 0,
+      minHeight: 0
+    }
   } as SxProps<Theme>
 };

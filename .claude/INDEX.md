@@ -86,6 +86,7 @@ AGENT_WORKFLOW.md → DUAL_AGENT_QUICK_REF.md → Create CURRENT_PLAN.md → Inv
 - `KEYCLOAK_SETUP.md` - Authentication system setup
 - `PIPELINE.md` - CI/CD pipeline documentation
 - `RAG_CONTEXT.md` - Retrieval patterns and code location guides
+- `RAG_SYSTEM.md` - RAG system documentation (migrated from backend)
 - `DOCKER_MCP_SETUP.md` - Docker MCP server configuration
 - `SETUP_COMPLETE.md` - Setup completion checklist
 

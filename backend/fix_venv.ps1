@@ -21,7 +21,8 @@ Write-Host "[2/6] Removing old venv..." -ForegroundColor Yellow
 if (Test-Path $VenvPath) {
     Remove-Item -Recurse -Force $VenvPath
     Write-Host "✓ Old venv deleted" -ForegroundColor Green
-} else {
+}
+else {
     Write-Host "✓ No old venv found (clean slate)" -ForegroundColor Green
 }
 Write-Host ""
@@ -31,7 +32,8 @@ Write-Host "[3/6] Creating fresh venv with Python 3.11..." -ForegroundColor Yell
 & $PythonPath -m venv .venv
 if ($LASTEXITCODE -eq 0) {
     Write-Host "✓ Venv created successfully" -ForegroundColor Green
-} else {
+}
+else {
     Write-Host "✗ Failed to create venv" -ForegroundColor Red
     exit 1
 }
@@ -57,10 +59,12 @@ if (Test-Path "requirements.txt") {
     & pip install -r requirements.txt --quiet
     if ($LASTEXITCODE -eq 0) {
         Write-Host "✓ All requirements.txt dependencies installed" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "⚠ Some dependencies may have failed - check output above" -ForegroundColor Yellow
     }
-} else {
+}
+else {
     Write-Host "⚠ No requirements.txt found - installing minimal deps" -ForegroundColor Yellow
     & pip install fastapi uvicorn[standard] websockets numpy pydantic --quiet
 }

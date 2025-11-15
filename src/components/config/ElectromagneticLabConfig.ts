@@ -128,11 +128,13 @@ export const SECTION_DATA = {
   'adhdID': { title: 'ADHD Protocol', icon: '⚡' },
   'patternID': { title: 'Patterns', icon: '🌀' },
   'timerDisplay': { title: 'Timer Display', icon: '⏱️' },
+  'timerCountdown': { title: 'Timer & Session Controls', icon: '⏱️' },
   'masterControls': { title: 'Master Controls', icon: '🎛️' },
   'equalizer': { title: 'Equalizer', icon: '🎚️' },
   'binauralBeats': { title: 'Binaural Beat Generator', icon: '🎧' },
   'timerPanel': { title: 'Timer & Sessions', icon: '⏰' },
-  'frequencyVisualizer': { title: 'Frequency Visualizer', icon: '📊' }
+  'frequencyVisualizer': { title: 'Frequency Visualizer', icon: '📊' },
+  'spatialVisualizer': { title: '3D Spatial Visualizer', icon: '🌀' }
 };
 
 // Default closed sections (Master Controls and FrequencyVisualizer closed initially)

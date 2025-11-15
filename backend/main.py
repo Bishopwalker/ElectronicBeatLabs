@@ -21,7 +21,6 @@ from protocols.adhd_protocols import ADHDProtocols
 from routes.audio_websocket import router as audio_router
 from routes.simple_routes import router as simple_router
 from routes.timer import router as timer_router
-from routes.rag_routes import router as rag_router, initialize_rag
 from utils.logger import setup_logger, RequestLogger, AudioLogger
 from utils.metrics import MetricsCollector, get_metrics, CONTENT_TYPE_LATEST
 
@@ -39,8 +38,6 @@ app = FastAPI(
 # Include simplified auth and subscription routes
 app.include_router(simple_router, prefix="/api")
 app.include_router(timer_router, prefix="/api")
-# RAG code intelligence router
-app.include_router(rag_router)
 # Audio router includes WebSocket endpoint, no /api prefix needed
 app.include_router(audio_router)
 

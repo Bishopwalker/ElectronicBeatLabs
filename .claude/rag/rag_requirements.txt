@@ -1,0 +1,13 @@
+# Core RAG dependencies
+chromadb==0.4.24
+sentence-transformers==2.5.1
+numpy==1.24.3
+torch>=2.0.0
+transformers>=4.36.0
+
+# Agent 3: Mem0 + Supabase Integration
+mem0ai>=0.1.0              # Persistent memory management
+supabase>=2.0.0            # Cloud vector storage (optional)
+python-dotenv>=1.0.0       # Environment configuration
+psycopg2-binary>=2.9.0     # PostgreSQL adapter for Supabase
+pgvector>=0.2.0            # Vector similarity in PostgreSQL

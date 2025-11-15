@@ -1,26 +1,24 @@
 // Electromagnetic Beat Lab - Main App Component
 // Entry point for the electromagnetic wave generator application
 
-import { ThemeProvider as StyledThemeProvider } from 'styled-components';
-import { ThemeProvider } from '@mui/material/styles';
+import {ThemeProvider as StyledThemeProvider} from 'styled-components';
+import {ThemeProvider} from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import GlobalStyles from './styles/GlobalStyles';
 import ElectromagneticBeatLab from './components/homePage/ElectromagneticBeatLab';
 import SimpleAuth from './components/SimpleAuth';
 import TimerTab from './components/tabs/TimerTab';
-import TimerCountdownDisplay from './components/TimerCountdownDisplay';
-import { AuthProvider } from './contexts/AuthContext';
-import { TimerProvider, useTimerContext } from './contexts/TimerContext';
-import { AudioEngineProvider, useAudioEngineContext } from './contexts/AudioEngineContext';
-import { useAuth } from './hooks/useAuth';
-import { muiTheme } from './theme/muiTheme';
-import { Box, Alert, Tabs, Tab, Typography } from '@mui/material';
+import {AuthProvider} from './contexts/AuthContext';
+import {TimerProvider, useTimerContext} from './contexts/TimerContext';
+import {AudioEngineProvider, useAudioEngineContext} from './contexts/AudioEngineContext';
+import {useAuth} from './hooks/useAuth';
+import {muiTheme} from './theme/muiTheme';
+import {Alert, Box, Typography} from '@mui/material';
 import React from 'react';
-import { WebSocketProvider } from './hooks/useWebsocketContext';
-import { DEFAULT_BASE_FREQUENCY, DEFAULT_BEAT_FREQUENCY, DEFAULT_VOLUME } from './constants/audio.constants';
-import { ErrorBoundary } from './components/ErrorBoundary';
-import { DEFAULT_APP_STATE } from './components/config/ElectromagneticLabConfig';
-import CollapsibleSection from './components/shared/CollapsibleSection'
+import {WebSocketProvider} from './hooks/useWebsocketContext';
+import {DEFAULT_BASE_FREQUENCY, DEFAULT_BEAT_FREQUENCY} from './constants/audio.constants';
+import {ErrorBoundary} from './components/ErrorBoundary';
+import {DEFAULT_APP_STATE} from './components/config/ElectromagneticLabConfig';
 // Styled Components theme configuration
 const styledTheme = {
   colors: {
@@ -146,7 +144,43 @@ const AppContent = () => {
           </Alert>
         </Box>
       )}
-      
+
+      {/* Timer Active Info Overlay - Shows at top when timer is active */}
+      {timerStatus?.session?.is_active && timerStatus?.current_transition && (
+        <Box sx={{
+          bgcolor: 'rgba(0,0,0,0.8)',
+          border: '2px solid #ff6b00',
+          borderRadius: 1,
+          p: 2,
+          mb: 2,
+          mx: 2,
+          mt: 2,
+          boxShadow: '0 0 20px rgba(255, 107, 0, 0.4)',
+          borderBottom: '3px solid rgba(255, 107, 0, 0.3)'
+        }}>
+          <Typography variant="h5" gutterBottom sx={{color: '#00ff88', fontSize: '1.2rem', fontWeight: 'bold', textAlign: 'center'}}>
+            🎧 TIMER ACTIVE: {timerStatus.current_transition.description}
+          </Typography>
+          <Typography variant="body1" color="textSecondary" gutterBottom sx={{ fontSize: '0.9rem', textAlign: 'center' }}>
+            <Box component="span" sx={{color: '#ff6b00', fontWeight: 'bold', fontSize: '1rem'}}>
+              {timerStatus.current_transition.frequency_hz}Hz
+            </Box> •
+            {timerStatus.current_transition.frequency_type} waves •
+            <Box component="span" sx={{color: '#00bfff', fontWeight: 'bold'}}>
+              {timerStatus.current_transition.left_ear_hz}Hz L / {timerStatus.current_transition.right_ear_hz}Hz R
+            </Box>
+          </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
+            <Typography variant="body2" sx={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#ffd700' }}>
+              Current: {(timerStatus.time_remaining_current / 60).toFixed(0)}:{(timerStatus.time_remaining_current % 60).toString().padStart(2, '0')}
+            </Typography>
+            <Typography variant="body2" sx={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#ffd700' }}>
+              Total: {(timerStatus.time_remaining_total / 60).toFixed(0)}:{(timerStatus.time_remaining_total % 60).toString().padStart(2, '0')}
+            </Typography>
+          </Box>
+        </Box>
+      )}
+
       {/* Main app with tabs */}
       <Box sx={{
         display: 'flex',
@@ -154,67 +188,9 @@ const AppContent = () => {
         minHeight: '100vh',
         height: 'auto',
         overflowY: 'auto',
-        bgcolor: 'background.default'
+        bgcolor: 'background.default',
+        pb: { xs: '3px', sm: '5px', md: '8px' }
       }}>
-        <Box sx={{
-          borderBottom: 1,
-          borderColor: 'divider',
-          bgcolor: 'rgba(0,0,0,0.8)',
-          flexShrink: 0
-        }}>
-          <Tabs
-            value={activeTab}
-            onChange={(_, newValue) => setActiveTab(newValue)}
-            variant="fullWidth"
-            sx={{
-              '& .MuiTab-root': {
-                color: 'white',
-                minWidth: 0,
-                flex: 1,
-                '&.Mui-selected': { color: '#ff6b00' }
-              },
-              '& .MuiTabs-indicator': {
-                backgroundColor: '#ff6b00'
-              },
-              '& .MuiTabs-flexContainer': {
-                justifyContent: 'stretch'
-              }
-            }}
-          >
-            <Tab label="Live Audio Generator" />
-            <Tab label="Timer Presets" />
-            <Tab label="New Visualizer Engine" />
-          </Tabs>
-        </Box>
-
-        {/* CRITICAL: Timer Countdown Display - Rendered ABOVE tabs so it shows everywhere */}
-        {timerStatus && (
-            <CollapsibleSection compact={true} id="timerPanel" title="Timer & Sessions" icon="⏰" defaultOpen={true} onClose={handleSectionClose}>
-
-            <Box sx={{
-            p: { xs: '3px', sm: '5px', md: '8px' },
-            bgcolor: 'rgba(0,0,0,0.5)',
-            borderBottom: '1px solid rgba(255, 107, 0, 0.2)',
-            overflowY: 'scroll'
-
-          }}>
-
-            <TimerCountdownDisplay
-              timerStatus={timerStatus}
-              isVisible={true}
-              appState={appState as any}
-              onJumpToTransition={timerNavigationRef.current.jumpToTransition}
-              onRestartTransition={timerNavigationRef.current.restartCurrentTransition}
-              onPauseTimer={timerControlRef.current.pauseTimer}
-              onResumeTimer={timerControlRef.current.resumeTimer}
-              onRepeatSession={timerControlRef.current.restartTimer}
-              audioContext={hybridEngine.audioContext}
-              analyserNode={hybridEngine.analyserNode}
-              hybridEngine={hybridEngine}
-            />
-          </Box>
-            </CollapsibleSection>
-        )}
 
         <Box sx={{
           flex: 1,

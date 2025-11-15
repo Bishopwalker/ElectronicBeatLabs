@@ -1,5 +1,17 @@
 {
   "mcpServers": {
+    "ebl-unified": {
+      "command": "python",
+      "args": [
+        ".claude/mcp-servers/ebl-unified/server.py"
+      ],
+      "cwd": "C:\\Users\\bisho\\IdeaProjects\\ebl",
+      "env": {
+        "PYTHONPATH": "C:\\Users\\bisho\\IdeaProjects\\ebl",
+        "PROJECT_ROOT": "C:\\Users\\bisho\\IdeaProjects\\ebl"
+      },
+      "description": "Unified development assistant with RAG, Memory, and multi-model support (Agent 4)"
+    },
     "filesystem": {
       "command": "npx",
       "args": [

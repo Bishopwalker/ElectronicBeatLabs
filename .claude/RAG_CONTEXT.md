@@ -47,7 +47,7 @@ backend/
 │   ├── audio_websocket.py      # WebSocket endpoints
 │   ├── simple_routes.py        # Basic REST endpoints
 │   ├── timer.py                # Timer routes
-│   └── rag_routes.py           # RAG search + error-context
+│   # RAG moved to .claude/rag/ (MCP tools integration)
 ├── services/               # Business Logic Layer
 │   ├── audio_service.py        # Audio generation logic
 │   ├── pattern_service.py      # Pattern processing
@@ -163,8 +163,8 @@ export type { AudioConfig, PatternMode, WebSocketMessage };
 backend/main.py                      # Main FastAPI app
 
 # Router includes should look like:
-from routes.rag_routes import router as rag_router
-app.include_router(rag_router)
+# RAG routes removed - now accessible via MCP tools
+# RAG now uses MCP server integration (Agent 4)
 
 # Check individual routes in:
 backend/routes/*.py                  # Individual route files
