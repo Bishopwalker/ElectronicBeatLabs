@@ -135,5 +135,5 @@ export const SECTION_DATA = {
   'frequencyVisualizer': { title: 'Frequency Visualizer', icon: '📊' }
 };
 
-// Default closed sections (Master Controls and FrequencyVisualizer closed initially)
-export const DEFAULT_CLOSED_SECTIONS: string[] = ['masterControls', 'equalizer'];
+// Default closed sections (empty - all sections visible by default)
+export const DEFAULT_CLOSED_SECTIONS: string[] = [];
