@@ -314,6 +314,52 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
               audioConfig.beatFreq <= 13 ? 'FOCUSED CALM' :
                   audioConfig.beatFreq <= 30 ? 'ACTIVE FOCUS' : 'HIGH ALERT') : 'INACTIVE';
 
+  // Update electromagnetic field in appState when beat frequency or playing state changes
+  useEffect(() => {
+    const beatFreq = audioConfig.beatFreq || 0;
+    const baseFreq = audioConfig.baseFreq || DEFAULT_BASE_FREQUENCY;
+    const isAudioPlaying = hybridEngine.audioState.isPlaying;
+
+    // Only update if audio is playing or we need to reset to inactive
+    const calculatedStrength = isAudioPlaying ? calculateElectromagneticStrength(beatFreq) : 0;
+    const calculatedCoherence = isAudioPlaying ? Math.min(1, 1 / (beatFreq * 0.1 + 1)) : 0;
+    const calculatedState = isAudioPlaying ?
+      (beatFreq <= 4 ? 'CHARGING' :
+        beatFreq <= 8 ? 'ACTIVE' :
+          beatFreq <= 13 ? 'RESONANT' :
+            beatFreq <= 30 ? 'CRITICAL' : 'RESONANT') : 'INACTIVE';
+
+    // Only update if values actually changed to prevent infinite loops
+    if (
+      appState.electromagnetic.strength !== calculatedStrength ||
+      appState.electromagnetic.coherence !== calculatedCoherence ||
+      appState.electromagnetic.state !== calculatedState
+    ) {
+      updateAppState({
+        electromagnetic: {
+          ...appState.electromagnetic,
+          strength: calculatedStrength,
+          coherence: calculatedCoherence,
+          resonance: calculatedStrength * calculatedCoherence,
+          state: calculatedState,
+          frequency: beatFreq,
+          stability: 1 - Math.abs(0.5 - calculatedStrength) * 2
+        },
+        frequency: {
+          ...appState.frequency,
+          current: beatFreq
+        }
+      });
+    }
+  }, [
+    audioConfig.beatFreq,
+    audioConfig.baseFreq,
+    hybridEngine.audioState.isPlaying,
+    appState.electromagnetic.strength,
+    appState.electromagnetic.coherence,
+    appState.electromagnetic.state
+  ]);
+
   // 🔥 FIXED: Smart backend connection with retry logic and duplicate prevention
   const connectionAttemptedRef = useRef(false);
   useEffect(() => {

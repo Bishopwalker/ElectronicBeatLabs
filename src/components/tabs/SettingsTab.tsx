@@ -1,11 +1,24 @@
 // Electromagnetic Beat Lab - Settings Tab Component
 
 import React, {useEffect, useState} from 'react';
-import {Box, Button, FormControlLabel, Paper, Slider, Switch, Typography} from '@mui/material';
+import {
+    Box,
+    Button,
+    Chip,
+    FormControlLabel,
+    Grid,
+    IconButton,
+    LinearProgress,
+    Paper,
+    Slider,
+    Stack,
+    Switch,
+    Typography
+} from '@mui/material';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import type {AppState, AudioEngine, Pattern8D} from '../../types';
 import type {TimerStatus} from "../../data/timer";
 
-v
 
 interface SettingsTabProps {
   timerStatus?: TimerStatus;
@@ -198,6 +211,34 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
       }
     } catch (error) {
     }
+  };
+
+  // Calculate electromagnetic field strength from frequency
+  const calculateElectromagneticStrength = (beatFreq: number): number => {
+    if (beatFreq <= 4) return 0.333; // Delta - Low field
+    if (beatFreq <= 8) return 0.444; // Theta - medium field
+    if (beatFreq <= 13) return 0.666; // Alpha - medium field
+    if (beatFreq <= 30) return 0.777; // Beta - moderate field
+    return 0.999; // Gamma - very strong field
+  };
+
+  const currentBeatFreq = appState.frequency?.current ?? 0;
+  const electromagneticStrength = calculateElectromagneticStrength(currentBeatFreq);
+  const electromagneticState = currentBeatFreq > 0 ?
+    (currentBeatFreq <= 4 ? 'DEEP RESONANCE' :
+      currentBeatFreq <= 8 ? 'CREATIVE FLOW' :
+        currentBeatFreq <= 13 ? 'FOCUSED CALM' :
+          currentBeatFreq <= 30 ? 'ACTIVE FOCUS' : 'HIGH ALERT') : 'INACTIVE';
+
+  // Visualization stats (simplified for settings view)
+  const stats = {
+    averageFps: audioContextState === 'running' ? 60 : 0
+  };
+  const isVisualizing = audioContextState === 'running';
+
+  // Reset handler
+  const handleReset = () => {
+    handleAudioContextReset();
   };
 
   return (
@@ -416,7 +457,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
               </Box>
 
               {/* Reverb Toggle */}
-              <Box sx={{ mb: 1 }}>
+              <Box sx={{ mb: 2 }}>
                 <FormControlLabel
                   control={
                     <Switch
@@ -445,6 +486,92 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
                   }
                 />
               </Box>
+
+              {/* Advanced Reverb Settings - only show when reverb is enabled */}
+              {appState.spatialAudio?.reverb_enabled && (
+                <>
+                  {/* Reverberance */}
+                  <Box sx={{ mb: 2 }}>
+                    <Typography sx={{ color: '#e0e0e0', fontSize: '0.85rem', mb: 0.5 }}>
+                      Reverberance: {((appState.spatialAudio?.reverberance || 0.5) * 100).toFixed(0)}%
+                    </Typography>
+                    <Slider
+                      value={appState.spatialAudio?.reverberance || 0.5}
+                      onChange={(_, value) => handleSpatialSettingsChange({
+                        ...appState.spatialAudio,
+                        enabled: true,
+                        movement_speed: appState.spatialAudio?.movement_speed || 1.0,
+                        spatial_intensity: appState.spatialAudio?.spatial_intensity || 0.5,
+                        reverb_enabled: true,
+                        reverberance: value as number
+                      })}
+                      min={0}
+                      max={1}
+                      step={0.01}
+                      sx={{
+                        color: '#ff9900',
+                        '& .MuiSlider-thumb': {
+                          bgcolor: '#ff9900'
+                        }
+                      }}
+                    />
+                  </Box>
+
+                  {/* Room Scale */}
+                  <Box sx={{ mb: 2 }}>
+                    <Typography sx={{ color: '#e0e0e0', fontSize: '0.85rem', mb: 0.5 }}>
+                      Room Scale: {(appState.spatialAudio?.room_scale || 1.0).toFixed(1)}x
+                    </Typography>
+                    <Slider
+                      value={appState.spatialAudio?.room_scale || 1.0}
+                      onChange={(_, value) => handleSpatialSettingsChange({
+                        ...appState.spatialAudio,
+                        enabled: true,
+                        movement_speed: appState.spatialAudio?.movement_speed || 1.0,
+                        spatial_intensity: appState.spatialAudio?.spatial_intensity || 0.5,
+                        reverb_enabled: true,
+                        room_scale: value as number
+                      })}
+                      min={0.2}
+                      max={10.0}
+                      step={0.1}
+                      sx={{
+                        color: '#ff9900',
+                        '& .MuiSlider-thumb': {
+                          bgcolor: '#ff9900'
+                        }
+                      }}
+                    />
+                  </Box>
+
+                  {/* High Frequency Damping */}
+                  <Box sx={{ mb: 1 }}>
+                    <Typography sx={{ color: '#e0e0e0', fontSize: '0.85rem', mb: 0.5 }}>
+                      HF Damping: {((appState.spatialAudio?.hf_damping || 0.5) * 100).toFixed(0)}%
+                    </Typography>
+                    <Slider
+                      value={appState.spatialAudio?.hf_damping || 0.5}
+                      onChange={(_, value) => handleSpatialSettingsChange({
+                        ...appState.spatialAudio,
+                        enabled: true,
+                        movement_speed: appState.spatialAudio?.movement_speed || 1.0,
+                        spatial_intensity: appState.spatialAudio?.spatial_intensity || 0.5,
+                        reverb_enabled: true,
+                        hf_damping: value as number
+                      })}
+                      min={0}
+                      max={1}
+                      step={0.01}
+                      sx={{
+                        color: '#ff9900',
+                        '& .MuiSlider-thumb': {
+                          bgcolor: '#ff9900'
+                        }
+                      }}
+                    />
+                  </Box>
+                </>
+              )}
             </>
           )}
         </Paper>

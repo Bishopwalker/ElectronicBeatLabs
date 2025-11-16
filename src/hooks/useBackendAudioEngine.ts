@@ -975,12 +975,23 @@ export const useBackendAudioEngine = () => {
     }));
   }, [updateSettings]);
 
-  // Update spatial settings
+  // Update spatial settings - sends enable_spatial message to backend
   const updateSpatialSettings = useCallback((spatialSettings: Record<string, unknown>) => {
-    updateSettings({
-      spatial_settings: spatialSettings
-    });
-  }, [updateSettings]);
+    const isOpen = (typeof (websocket as any).isOpenSync === 'function'
+      ? (websocket as any).isOpenSync()
+      : websocket.isConnected);
+
+    if (isOpen && sessionId) {
+      console.log('🎧 Sending spatial settings to backend:', spatialSettings);
+      // Send enable_spatial message which the backend actually processes
+      websocket.sendMessage({
+        type: 'enable_spatial',
+        spatial_settings: spatialSettings
+      } as any);
+    } else {
+      console.warn('🎧 Cannot send spatial settings - not connected');
+    }
+  }, [websocket, sessionId]);
 
   // Disconnect from backend
   const disconnectBackend = useCallback(async () => {

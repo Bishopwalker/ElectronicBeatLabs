@@ -1,7 +1,7 @@
 // Electromagnetic Beat Lab - Main Controls Component (Material UI)
 // Primary playback and volume controls
 
-import React, {useCallback} from 'react';
+import React, {useCallback, useState, useEffect} from 'react';
 import {
     Box,
     Button,
@@ -40,15 +40,31 @@ const MainControlsMUI: React.FC<ExtendedMainControlsProps> = ({
 }) => {
   const maxVolume = boostMode ? 2.0 : 1.0;  // 200% in boost mode, 100% normal
 
-        const handleVolumeChange = useCallback((
+  // Local state for volume input to allow typing
+  const [volumeInput, setVolumeInput] = useState(Math.round((volume / maxVolume) * 100).toString());
+
+  // Sync local state when volume prop changes (from external sources)
+  useEffect(() => {
+    setVolumeInput(Math.round((volume / maxVolume) * 100).toString());
+  }, [volume, maxVolume]);
+
+        const handleVolumeInputChange = useCallback((
             event: React.ChangeEvent<HTMLInputElement>
         ) => {
-            const value = parseFloat(event.target.value);
+            setVolumeInput(event.target.value);
+        }, []);
+
+        const handleVolumeCommit = useCallback(() => {
+            const value = parseFloat(volumeInput);
             if (!isNaN(value)) {
                 const clampedValue = Math.max(0, Math.min(value / 100 * maxVolume, maxVolume));
                 onVolumeChange(clampedValue);
+                setVolumeInput(Math.round((clampedValue / maxVolume) * 100).toString());
+            } else {
+                // Reset to current volume if invalid
+                setVolumeInput(Math.round((volume / maxVolume) * 100).toString());
             }
-        }, [onVolumeChange, maxVolume]);
+        }, [volumeInput, maxVolume, onVolumeChange, volume]);
 
   const handleBoostToggle = (checked: boolean) => {
     if (onBoostModeToggle) {
@@ -137,8 +153,10 @@ const MainControlsMUI: React.FC<ExtendedMainControlsProps> = ({
           <VolumeUpIcon color="secondary" fontSize="small" />
           <TextField
             type="number"
-            value={Math.round((volume / maxVolume) * 100)}
-            onChange={handleVolumeChange}
+            value={volumeInput}
+            onChange={handleVolumeInputChange}
+            onBlur={handleVolumeCommit}
+            onKeyDown={(e) => e.key === 'Enter' && handleVolumeCommit()}
             size="small"
             inputProps={{
               min: 0,
@@ -317,8 +335,10 @@ const MainControlsMUI: React.FC<ExtendedMainControlsProps> = ({
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, mt: 1 }}>
               <TextField
                 type="number"
-                value={Math.round((volume / maxVolume) * 100)}
-                onChange={handleVolumeChange}
+                value={volumeInput}
+                onChange={handleVolumeInputChange}
+                onBlur={handleVolumeCommit}
+                onKeyDown={(e) => e.key === 'Enter' && handleVolumeCommit()}
                 size="medium"
                 inputProps={{
                   min: 0,
