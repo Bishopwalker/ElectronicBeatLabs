@@ -15,6 +15,14 @@ import BubbleChartIcon from '@mui/icons-material/BubbleChart';
 // ============================================================================
 
 /**
+ * 🎨 VISUAL BOOST MULTIPLIER
+ * Boosts visual signal strength without affecting audio gain
+ * Applied to all frequency data readings for visualization only
+ */
+const VISUAL_BOOST = 10; // 10x boost for better visibility (matching FrequencyVisualizer)
+const MIN_ANIMATION = 0.1; // Minimum animation even when silent
+
+/**
  * Maps FFT bin index to HSL hue value based on frequency range
  * Bass (0-20% bins) → 0-30° (Red/Orange)
  * Mid (20-60% bins) → 120-180° (Green/Cyan)
@@ -214,12 +222,17 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
   }, [pattern]);
 
   // ============================================================================
-  // 🔥 PHASE 2: REMOVE MINIMUM VALUES - CAN GO TO ZERO!
+  // 🔥 UPDATE AUDIO DATA WITH VISUAL BOOST FOR VISIBILITY
   // ============================================================================
   const updateAudioData = useCallback(() => {
-    if (!analyserNode || !isPlaying) {
-      // 🔥 PURE SILENCE when not playing (no minimums!)
-      audioEnergyRef.current = { bass: 0, mid: 0, treble: 0, overall: 0 };
+    if (!analyserNode) {
+      // 🔥 MINIMUM ANIMATION when no analyser
+      audioEnergyRef.current = { 
+        bass: MIN_ANIMATION, 
+        mid: MIN_ANIMATION, 
+        treble: MIN_ANIMATION, 
+        overall: MIN_ANIMATION 
+      };
       return;
     }
 
@@ -241,24 +254,25 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
       trebleSum += data[i];
     }
 
-    const bassAvg = bassSum / bassEnd / 255;
-    const midAvg = midSum / (midEnd - bassEnd) / 255;
-    const trebleAvg = trebleSum / (data.length - midEnd) / 255;
+    // 🔥 APPLY VISUAL BOOST FOR VISIBILITY (matching FrequencyVisualizer)
+    const bassAvg = Math.min(1, (bassSum / bassEnd / 255) * VISUAL_BOOST + MIN_ANIMATION);
+    const midAvg = Math.min(1, (midSum / (midEnd - bassEnd) / 255) * VISUAL_BOOST + MIN_ANIMATION);
+    const trebleAvg = Math.min(1, (trebleSum / (data.length - midEnd) / 255) * VISUAL_BOOST + MIN_ANIMATION);
     const overallAvg = (bassAvg + midAvg + trebleAvg) / 3;
 
-    // 🔥 NO MINIMUM VALUES - CAN GO TO ZERO (SILENCE)
+    // 🔥 ALWAYS HAVE SOME ANIMATION
     audioEnergyRef.current = {
-      bass: bassAvg,
-      mid: midAvg,
-      treble: trebleAvg,
-      overall: overallAvg
+      bass: isPlaying ? bassAvg : MIN_ANIMATION,
+      mid: isPlaying ? midAvg : MIN_ANIMATION,
+      treble: isPlaying ? trebleAvg : MIN_ANIMATION,
+      overall: isPlaying ? overallAvg : MIN_ANIMATION
     };
   }, [analyserNode, isPlaying]);
 
   // ============================================================================
   // RENDER PATTERN DISPATCHER
   // ============================================================================
-  const renderPattern = useCallback((ctx: CanvasRenderingContext2D, width: number, height: number) => {
+  const renderPattern = useCallback((ctx: CanvasRenderingContext2D, width: number, height: number, timestamp: number) => {
     const centerX = width / 2;
     const centerY = height / 2;
 
@@ -274,26 +288,29 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
     ctx.save();
     ctx.translate(centerX, centerY);
 
+    // 🔥 TIME FOR CONTINUOUS ANIMATION
+    const time = timestamp / 1000;
+
     // Draw based on mode
     switch (visualizationMode) {
       case 'toroidal':
-        renderToroidalField(ctx, safeElectromagnetic, patternProperties, frequencyData, audio);
+        renderToroidalField(ctx, safeElectromagnetic, patternProperties, frequencyData, audio, time);
         break;
       case 'vortex':
-        renderVortexField(ctx, safeElectromagnetic, patternProperties, frequencyData, audio);
+        renderVortexField(ctx, safeElectromagnetic, patternProperties, frequencyData, audio, time);
         break;
       case 'spiral':
-        renderSpiralField(ctx, safeElectromagnetic, patternProperties, frequencyData, audio);
+        renderSpiralField(ctx, safeElectromagnetic, patternProperties, frequencyData, audio, time);
         break;
       case 'wave':
-        renderWaveField(ctx, safeElectromagnetic, patternProperties, frequencyData, audio);
+        renderWaveField(ctx, safeElectromagnetic, patternProperties, frequencyData, audio, time);
         break;
       case 'pattern8d':
-        renderPattern8D(ctx, safeElectromagnetic, patternProperties, frequencyData, audio);
+        renderPattern8D(ctx, safeElectromagnetic, patternProperties, frequencyData, audio, time);
         break;
       case 'combined':
-        renderToroidalField(ctx, safeElectromagnetic, patternProperties, frequencyData, audio);
-        renderPattern8D(ctx, safeElectromagnetic, patternProperties, frequencyData, audio);
+        renderToroidalField(ctx, safeElectromagnetic, patternProperties, frequencyData, audio, time);
+        renderPattern8D(ctx, safeElectromagnetic, patternProperties, frequencyData, audio, time);
         break;
     }
 
@@ -308,17 +325,17 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
     field: ElectromagneticField,
     props: typeof patternProperties,
     frequencyData: Uint8Array,
-    audio: typeof audioEnergyRef.current
+    audio: typeof audioEnergyRef.current,
+    time: number
   ) => {
-    // 🔥 SKIP IF SILENT
-    if (audio.overall < 0.01) return;
+    // 🔥 ALWAYS RENDER - NO SKIP
 
     const radius = 120;
     const numRings = 16;
 
     for (let i = 0; i < numRings; i++) {
-      // 🔥 ROTATION DRIVEN BY TREBLE (NO TIME VARIABLE)
-      const angle = (i / numRings) * Math.PI * 2 + (audio.treble * Math.PI * 8);
+      // 🔥 ROTATION WITH TIME + AUDIO BOOST
+      const angle = (i / numRings) * Math.PI * 2 + time * 0.5 + (audio.treble * Math.PI * 8);
       
       const x = Math.cos(angle) * radius;
       const y = Math.sin(angle) * radius * 0.5;
@@ -326,8 +343,8 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
       // 🔥 RING SIZE PURE BASS (NO SINE WAVES)
       const ringSize = audio.bass * 50;
       
-      // 🔥 SKIP IF TOO SMALL
-      if (ringSize < 5) continue;
+      // 🔥 ALWAYS SHOW SOMETHING
+      if (ringSize < 2) continue; // Lower threshold
 
       // 🔥 ALPHA PURE OVERALL
       const alpha = audio.overall;
@@ -365,17 +382,17 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
     field: ElectromagneticField,
     props: typeof patternProperties,
     frequencyData: Uint8Array,
-    audio: typeof audioEnergyRef.current
+    audio: typeof audioEnergyRef.current,
+    time: number
   ) => {
-    // 🔥 SKIP IF SILENT
-    if (audio.overall < 0.01) return;
+    // 🔥 ALWAYS RENDER - NO SKIP
 
     for (let r = 20; r < 160; r += 12) {
       const points = Math.floor(r / 6) + 8;
 
       for (let i = 0; i < points; i++) {
-        // 🔥 ROTATION PURE TREBLE (NO TIME)
-        const angle = (i / points) * Math.PI * 2 + (audio.treble * Math.PI * 4) + r * 0.03;
+        // 🔥 ROTATION WITH TIME + AUDIO BOOST
+        const angle = (i / points) * Math.PI * 2 + time * 0.3 + (audio.treble * Math.PI * 4) + r * 0.03;
         
         const x = Math.cos(angle) * r;
         const y = Math.sin(angle) * r;
@@ -388,10 +405,9 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
         const hue = mapFrequencyBinToColor(normalizedR * 100, 100);
 
         // 🔥 PARTICLE SIZE PURE MID
-        const particleSize = audio.mid * 12 * props.intensity;
+        const particleSize = Math.max(2, audio.mid * 12 * props.intensity);
         
-        // 🔥 SKIP IF TOO SMALL
-        if (particleSize < 1) continue;
+        // 🔥 ALWAYS RENDER SOMETHING
 
         const gradient = ctx.createRadialGradient(x, y, 0, x, y, 12);
         gradient.addColorStop(0, `hsla(${hue}, 95%, 80%, ${alpha})`);
@@ -414,10 +430,10 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
     field: ElectromagneticField,
     props: typeof patternProperties,
     frequencyData: Uint8Array,
-    audio: typeof audioEnergyRef.current
+    audio: typeof audioEnergyRef.current,
+    time: number
   ) => {
-    // 🔥 SKIP IF SILENT
-    if (audio.overall < 0.01) return;
+    // 🔥 ALWAYS RENDER - NO SKIP
 
     const spiralCount = 3;
     const spiralHues = [15, 150, 260]; // Bass, Mid, Treble
@@ -427,10 +443,9 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
       const hue = spiralHues[spiral];
 
       // 🔥 LINE WIDTH PURE OVERALL
-      const lineWidth = audio.overall * 10 * props.intensity;
+      const lineWidth = Math.max(1, audio.overall * 10 * props.intensity);
       
-      // 🔥 SKIP IF TOO THIN
-      if (lineWidth < 0.5) continue;
+      // 🔥 ALWAYS RENDER SOMETHING
 
       // 🔥 ALPHA PURE OVERALL
       const alpha = audio.overall;
@@ -444,8 +459,8 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
 
       for (let t = 0; t < Math.PI * 8; t += 0.06) {
         const r = t * 10;
-        // 🔥 ANGLE PURE MID (NO TIME)
-        const angle = t + (audio.mid * Math.PI * 2) + spiralOffset;
+        // 🔥 ANGLE WITH TIME + AUDIO BOOST
+        const angle = t + time * 0.2 + (audio.mid * Math.PI * 2) + spiralOffset;
         const x = Math.cos(angle) * r;
         const y = Math.sin(angle) * r;
 
@@ -468,10 +483,10 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
     field: ElectromagneticField,
     props: typeof patternProperties,
     frequencyData: Uint8Array,
-    audio: typeof audioEnergyRef.current
+    audio: typeof audioEnergyRef.current,
+    time: number
   ) => {
-    // 🔥 SKIP IF SILENT
-    if (audio.overall < 0.01) return;
+    // 🔥 ALWAYS RENDER - NO SKIP
 
     const wavelength = props.emWavelength || 100;
     const numWaves = 8;
@@ -482,8 +497,8 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
       const waveOriginY = Math.sin(angle) * 40;
 
       for (let r = 10; r < 150; r += wavelength / 12) {
-        // 🔥 PHASE DRIVEN BY OVERALL AUDIO (NO TIME)
-        const phase = (audio.overall * 10 - r * 0.015) * Math.PI * 2;
+        // 🔥 PHASE WITH TIME + AUDIO BOOST
+        const phase = (time * 2 + audio.overall * 10 - r * 0.015) * Math.PI * 2;
         
         // 🔥 AMPLITUDE PURE BASS
         const amplitude = audio.bass * 40 * props.intensity;
@@ -493,10 +508,9 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
         if (actualRadius < 5) continue;
 
         // 🔥 ALPHA PURE OVERALL SCALED BY DISTANCE
-        const alpha = (1 - actualRadius / 160) * audio.overall;
+        const alpha = Math.max(0.1, (1 - actualRadius / 160) * audio.overall);
         
-        // 🔥 SKIP IF TOO FAINT
-        if (alpha < 0.05) continue;
+        // 🔥 ALWAYS RENDER SOMETHING
 
         // 🔥 COLOR MAPPED TO RADIUS
         const hue = mapFrequencyBinToColor(r / 150 * 100, 100);
@@ -519,15 +533,15 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
     field: ElectromagneticField,
     props: typeof patternProperties,
     frequencyData: Uint8Array,
-    audio: typeof audioEnergyRef.current
+    audio: typeof audioEnergyRef.current,
+    time: number
   ) => {
     if (!props.path || props.path.length === 0) return;
     
-    // 🔥 SKIP IF SILENT
-    if (audio.overall < 0.05) return;
+    // 🔥 ALWAYS RENDER - NO SKIP
 
-    // 🔥 PATH POSITION DRIVEN BY OVERALL AUDIO (NO TIME)
-    const pathProgress = (audio.overall * 2) % 1;
+    // 🔥 PATH POSITION WITH TIME + AUDIO BOOST
+    const pathProgress = ((time * 0.1 + audio.overall * 2)) % 1;
     const currentIndex = Math.floor(pathProgress * props.path.length);
 
     // 🔥 COLOR FROM DOMINANT FREQUENCY
@@ -600,7 +614,7 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
-      renderPatternRef.current(ctx, canvas.width, canvas.height);
+      renderPatternRef.current(ctx, canvas.width, canvas.height, timestamp);
 
       animationRef.current = window.setTimeout(() => {
         animate(performance.now());

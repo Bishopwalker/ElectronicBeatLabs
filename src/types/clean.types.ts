@@ -156,6 +156,8 @@ export interface VisualizationData {
  * Electromagnetic field state (for UI effects)
  */
 export interface ElectromagneticField {
+  coherence: number;
+  phase: number;
   strength: number;     // 0-1
   frequency: number;    // Hz
   state: 'INACTIVE' | 'CHARGING' | 'ACTIVE' | 'RESONANT' | 'CRITICAL';

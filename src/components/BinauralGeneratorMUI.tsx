@@ -1,30 +1,26 @@
 // Electromagnetic Beat Lab - Binaural Generator with Visualization
 // Unified binaural beat generator with frequency and electromagnetic analysis
 
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {
+  Box,
   Card,
   CardContent,
-  Typography,
-  TextField,
-  Box,
-  Stack,
-  Paper,
   Chip,
-  IconButton,
-  LinearProgress,
-  Grid,
+  Paper,
+  Stack,
+  TextField,
   ToggleButton,
   ToggleButtonGroup,
+  Typography,
 } from '@mui/material';
 import HeadphonesIcon from '@mui/icons-material/Headphones';
-import RefreshIcon from '@mui/icons-material/Refresh';
 import GraphicEqIcon from '@mui/icons-material/GraphicEq';
 import {calculateRightFreq} from "../types/clean.types.ts";
-import { useBinauralVisualization } from '../hooks/useBinauralVisualization';
-import  {DEFAULT_BASE_FREQUENCY,DEFAULT_BEAT_FREQUENCY} from '../constants/audio.constants.ts';
+import {useBinauralVisualization} from '../hooks/useBinauralVisualization';
+import {DEFAULT_BASE_FREQUENCY, DEFAULT_BEAT_FREQUENCY} from '../constants/audio.constants.ts';
 import MainControlsMUI from "./MainControlsMUI.tsx";
-import type { WaveForm, MainControlsProps, AppState } from '../types';
+import type {AppState, MainControlsProps, WaveForm} from '../types';
 
 interface BinauralGeneratorProps extends MainControlsProps{
    base_frequency: number;
@@ -233,11 +229,15 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
 
   // @ts-ignore
   return (
-    <Card sx={{ 
-      minHeight: 'fit-content',
-      height: '250px',
-      maxHeight: '250px',
-      overflowY: 'auto',
+    <Card sx={{
+      height: '100%',
+      width: '100%',  // 🔥 FIXED: Fill parent grid cell
+      display: 'flex',
+      paddingBlockEnd: '6',
+      flexDirection: 'column',
+      overflowX: 'hidden',
+      overflowY: 'auto',  // 🔥 FIXED: auto instead of scroll to prevent scrollbar when not needed
+      borderRadius: '8px',
       background: 'rgba(0, 191, 255, 0.05)',
       borderColor: 'rgba(0, 191, 255, 0.3)',
       '&::-webkit-scrollbar': {

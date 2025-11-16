@@ -3,7 +3,7 @@
 // Now properly separated into modular components under 500 lines
 
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {Box, Button, ButtonGroup, Chip, Grid, IconButton, Paper, Typography} from '@mui/material';
+import {Box, Button, ButtonGroup, Chip, IconButton, Paper, Typography} from '@mui/material';
 import GridViewIcon from '@mui/icons-material/GridView';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import type {ElectromagneticBeatLabProps, PatternConfig} from '../../types';
@@ -35,8 +35,6 @@ import ControlTabs from '../shared/ControlTabs';
 import BinauralGeneratorMUI from '../BinauralGeneratorMUI';
 import QuickStart from '../QuickStart';
 import TimerTab from '../tabs/TimerTab';
-
-import {formatTime} from '../../helpers/timer/timerUtils';
 import type {TimerStatus} from '../../data/timer';
 
 // Extracted Components
@@ -734,22 +732,28 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
       }}>
         {/* Layout Container: Switches between 2x3 (three-row) and 3x2 (three-column) */}
         {gridMode === '2x3' ? (
-        /* Three-Row Layout (2x3): Row 1 + Row 2 + Row 3 (full-width Spatial) - CLASSIC LAYOUT */
+        /* 2x3 Layout: 2 COLUMNS per row, auto-wrap, 2 rows fit in 85vh */
         <Box sx={{
           display: 'grid',
-          gridTemplateRows: 'auto auto 1fr',
+          gridTemplateColumns: {
+            xs: '1fr',  // 1 column on mobile
+            sm: 'repeat(2, 1fr)',  // 2 columns per row
+            md: 'repeat(2, 1fr)',
+            lg: 'repeat(2, 1fr)',
+            xl: 'repeat(2, 1fr)'
+          },
+          gridAutoRows: 'minmax(35vh, auto)',  // 🔥 Each row ~35vh, so 2 rows ≈ 70vh (fits in 85vh)
           gap: { xs: 2, sm: 2, md: 2.5, lg: 3 },
           p: { xs: 1.5, sm: 2, md: 2, lg: 2.5 },
           width: '100%',
           maxWidth: '100vw',
-          height: '100%',
+          height: 'auto',  // Let content determine height
+          minHeight: '100%',
           overflowY: 'auto'
         }}>
-        {/* ROW 1: Timer Countdown (full width) + Auto-fit grid for other components */}
-        <Box>
-          {/* Timer Countdown Display - Full width */}
+          {/* Timer Countdown - spans full width (2 columns) */}
           {timerStatus && !closedSections.includes('timerCountdown') && (
-            <Box sx={{ width: '100%', mb: { xs: 1, sm: 1.5, md: 2, lg: 2 } }}>
+            <Box sx={{ gridColumn: 'span 2', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
               <CollapsibleSection id="timerCountdown" title="Timer & Session Controls" icon="⏱️" defaultOpen={true} onClose={handleSectionClose}>
                 <TimerCountdownDisplay
                   timerStatus={timerStatus}
@@ -768,61 +772,52 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
             </Box>
           )}
 
-          {/* Auto-fit grid for Timer Presets + Patterns + Frequency Visualizer */}
-          <Box sx={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-            gap: { xs: 1, sm: 1.5, md: 2, lg: 2 },
-            width: '100%',
-            minHeight: 0,
-            '& > *': {
-              minWidth: 0,
-              minHeight: 0
-            }
-          }}>
-            {/* Timer Presets (Timer & Sessions) */}
-            {!closedSections.includes('timerPanel') && (
-              <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-                <CollapsibleSection compact={true} id="timerPanel" title="Timer Presets" icon="⌚" defaultOpen={true} onClose={handleSectionClose}>
-                  <Box sx={{ overflow: 'visible' }}>
-                    <TimerTab
-                      appState={appState}
-                      audioEngine={hybridEngine as any}
-                      patterns8D={appState.patterns8D}
-                      patterns8DEngine={{
-                        setActivePattern: (pattern) => updateAppState({ currentPattern: pattern }),
-                        clearActivePattern: () => updateAppState({ currentPattern: null })
-                      }}
-                      onStateChange={updateAppState}
-                      onTimerStatusUpdate={setTimerStatus}
-                      onTransitionNavigation={timerNavigationRef.current}
-                      onTimerControl={timerControlRef.current}
-                      onSetTimerNavigation={setTimerNavigation}
-                      onSetTimerControl={setTimerControl}
-                    />
-                  </Box>
-                </CollapsibleSection>
-              </Box>
-            )}
-
-            {!closedSections.includes('patternID') && (
-              <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-                <CollapsibleSection compact={true} id="patternID" title="Patterns" icon="🌀" defaultOpen={true} onClose={handleSectionClose}>
-                  <PatternSelectorMUI
-                    patterns={WAVE_PATTERNS}
-                    selected={appState.currentPattern?.id || null}
-                    mode={appState.mode}
-                    onSelect={handlePatternSelectBound}
-                    onModeChange={handleModeChangeBound}
-                    activePattern={appState.currentPattern?.id || null}
+          {/* Timer Presets */}
+          {!closedSections.includes('timerPanel') && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: 0, maxHeight: '100%', overflowY: 'auto' }}>
+              <CollapsibleSection compact={true} id="timerPanel" title="Timer Presets" icon="⌚" defaultOpen={true} onClose={handleSectionClose}>
+                <Box sx={{ overflow: 'auto', maxHeight: 'calc(35vh - 60px)' }}>
+                  <TimerTab
+                    appState={appState}
+                    audioEngine={hybridEngine as any}
+                    patterns8D={appState.patterns8D}
+                    patterns8DEngine={{
+                      setActivePattern: (pattern) => updateAppState({ currentPattern: pattern }),
+                      clearActivePattern: () => updateAppState({ currentPattern: null })
+                    }}
+                    onStateChange={updateAppState}
+                    onTimerStatusUpdate={setTimerStatus}
+                    onTransitionNavigation={timerNavigationRef.current}
+                    onTimerControl={timerControlRef.current}
+                    onSetTimerNavigation={setTimerNavigation}
+                    onSetTimerControl={setTimerControl}
                   />
-                </CollapsibleSection>
-              </Box>
-            )}
+                </Box>
+              </CollapsibleSection>
+            </Box>
+          )}
 
-            {!closedSections.includes('frequencyVisualizer') && (
-              <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-                <CollapsibleSection compact={true} id="frequencyVisualizer" title="Frequency Visualizer" icon="📊" defaultOpen={true} onClose={handleSectionClose}>
+          {/* Patterns */}
+          {!closedSections.includes('patternID') && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: 0, maxHeight: '100%', overflowY: 'auto' }}>
+              <CollapsibleSection compact={true} id="patternID" title="Patterns" icon="🌀" defaultOpen={true} onClose={handleSectionClose}>
+                <PatternSelectorMUI
+                  patterns={WAVE_PATTERNS}
+                  selected={appState.currentPattern?.id || null}
+                  mode={appState.mode}
+                  onSelect={handlePatternSelectBound}
+                  onModeChange={handleModeChangeBound}
+                  activePattern={appState.currentPattern?.id || null}
+                />
+              </CollapsibleSection>
+            </Box>
+          )}
+
+          {/* Frequency Visualizer */}
+          {!closedSections.includes('frequencyVisualizer') && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: 0, maxHeight: '100%', overflowY: 'hidden' }}>
+              <CollapsibleSection compact={true} id="frequencyVisualizer" title="Frequency Visualizer" icon="📊" defaultOpen={true} onClose={handleSectionClose}>
+                <Box sx={{ height: 'calc(35vh - 60px)', maxHeight: 'calc(35vh - 60px)', overflow: 'hidden' }}>
                   <FrequencyVisualizer
                     state={frequencyVisualizerState}
                     audioContext={activeAudioEngine.audioContext}
@@ -832,30 +827,16 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                     showFrequencies={true}
                     showMetrics={true}
                   />
-                </CollapsibleSection>
-              </Box>
-            )}
-          </Box>
-        </Box>
+                </Box>
+              </CollapsibleSection>
+            </Box>
+          )}
 
-        {/* ROW 2: Auto-fit grid for Binaural + Master Controls + Equalizer */}
-        <Box sx={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-          gap: { xs: 1, sm: 1.5, md: 2, lg: 2 },
-          width: '100%',
-          minHeight: 0,
-          mt: { xs: 1, sm: 1.5, md: 2, lg: 2 },
-          '& > *': {
-            minWidth: 0,
-            minHeight: 0
-          }
-        }}>
           {/* Binaural Beat Generator */}
           {!closedSections.includes('binauralBeats') && (
-            <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: 0, maxHeight: '100%', overflowY: 'auto' }}>
               <CollapsibleSection id="binauralBeats" title="Binaural Beat Generator" icon="🎧" defaultOpen={true} onClose={handleSectionClose}>
-                <Box sx={{ overflow: 'visible' }}>
+                <Box sx={{ overflow: 'auto', maxHeight: 'calc(35vh - 60px)' }}>
                   <BinauralGeneratorMUI
                     base_frequency={audioConfig.baseFreq}
                     beat_frequency={audioConfig.beatFreq}
@@ -902,7 +883,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
 
           {/* Master Controls */}
           {!closedSections.includes('masterControls') && (
-            <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: 0, maxHeight: '100%', overflowY: 'auto' }}>
               <CollapsibleSection id="masterControls" title="Master Controls" icon="🎛️" defaultOpen={true} onClose={handleSectionClose}>
                 <QuickStart
                   activeStatus={{
@@ -928,7 +909,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
 
           {/* Equalizer */}
           {!closedSections.includes('equalizer') && (
-            <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: 0, maxHeight: '100%', overflowY: 'auto' }}>
               <CollapsibleSection id="equalizer" title="Equalizer" icon="🎚️" defaultOpen={true} onClose={handleSectionClose}>
                 <EqualizerMUI
                   audioContext={activeAudioEngine.audioContext || null}
@@ -941,40 +922,48 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
               </CollapsibleSection>
             </Box>
           )}
-        </Box>
 
-        {/* ROW 3: Spatial Visualizer - FULL WIDTH for maximum visibility */}
-        {!closedSections.includes('spatialVisualizer') && (
-          <Box sx={{ width: '100%', mt: { xs: 1, sm: 1.5, md: 2, lg: 2 } }}>
-            <CollapsibleSection id="spatialVisualizer" title="3D Spatial Visualizer" icon="🌀" defaultOpen={true} onClose={handleSectionClose}>
-              <SpatialVisualizer
-                pattern={
-                  appState.currentPattern || WAVE_PATTERNS.find((pattern) => pattern.id === 'default')}
-                electromagnetic={appState.electromagnetic}
-                size={800}
-                audioContext={activeAudioEngine.audioContext}
-                analyserNode={activeAudioEngine.analyserNode}
-                isPlaying={hybridEngine.audioState.isPlaying}
-              />
-            </CollapsibleSection>
-          </Box>
-        )}
+          {/* Spatial Visualizer - spans full width (2 columns) */}
+          {!closedSections.includes('spatialVisualizer') && (
+            <Box sx={{ gridColumn: 'span 2', display: 'flex', flexDirection: 'column', minHeight: 0, maxHeight: '100%', overflowY: 'hidden' }}>
+              <CollapsibleSection id="spatialVisualizer" title="3D Spatial Visualizer" icon="🌀" defaultOpen={true} onClose={handleSectionClose}>
+                <Box sx={{ height: 'calc(35vh - 60px)', maxHeight: 'calc(35vh - 60px)', overflow: 'hidden' }}>
+                  <SpatialVisualizer
+                    pattern={
+                      appState.currentPattern || WAVE_PATTERNS.find((pattern) => pattern.id === 'default')}
+                    electromagnetic={appState.electromagnetic}
+
+                    audioContext={activeAudioEngine.audioContext}
+                    analyserNode={activeAudioEngine.analyserNode}
+                    isPlaying={hybridEngine.audioState.isPlaying}
+                  />
+                </Box>
+              </CollapsibleSection>
+            </Box>
+          )}
         </Box>
         ) : (
-        /* Three-Column Layout (3x2): Auto-fit grid - ALTERNATIVE LAYOUT */
+        /* 3x2 Layout: 3 COLUMNS per row, auto-wrap, 2 rows fit in 85vh */
         <Box sx={{
-          display: 'flex',
-          flexDirection: 'column',
+          display: 'grid',
+          gridTemplateColumns: {
+            xs: '1fr',  // 1 column on mobile
+            sm: 'repeat(2, 1fr)',  // 2 columns on small tablets
+            md: 'repeat(3, 1fr)',  // 3 columns per row
+            lg: 'repeat(3, 1fr)',
+            xl: 'repeat(3, 1fr)'
+          },
+          gridAutoRows: 'minmax(35vh, auto)',  // 🔥 Each row ~35vh, so 2 rows ≈ 70vh (fits in 85vh)
           gap: { xs: 2, sm: 2, md: 2.5, lg: 3 },
           p: { xs: 1.5, sm: 2, md: 2, lg: 2.5 },
           width: '100%',
-          height: '100%',
-          overflowX: 'hidden',
+          height: 'auto',
+          minHeight: '100%',
           overflowY: 'auto'
         }}>
-          {/* Row 1 (full width): Timer Countdown Display */}
+          {/* Timer Countdown - spans full width (3 columns) */}
           {timerStatus && !closedSections.includes('timerCountdown') && (
-            <Box sx={{ width: '100%', minHeight: 0 }}>
+            <Box sx={{ gridColumn: { xs: 'span 1', sm: 'span 2', md: 'span 3' }, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
               <CollapsibleSection id="timerCountdown" title="Timer & Session Controls" icon="⏱️" defaultOpen={true} onClose={handleSectionClose}>
                 <TimerCountdownDisplay
                   timerStatus={timerStatus}
@@ -993,63 +982,52 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
             </Box>
           )}
 
-          {/* Row 2: Auto-fit grid for all components */}
-          <Box sx={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-            gap: { xs: 1, sm: 1.5, md: 2, lg: 2 },
-            width: '100%',
-            minHeight: 0,
-            '& > *': {
-              minWidth: 0,
-              minHeight: 0
-            }
-          }}>
-            {/* Timer Presets */}
-            {!closedSections.includes('timerPanel') && (
-              <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-                <CollapsibleSection compact={true} id="timerPanel" title="Timer Presets" icon="⌚" defaultOpen={true} onClose={handleSectionClose}>
-                  <Box sx={{ overflow: 'visible' }}>
-                    <TimerTab
-                      appState={appState}
-                      audioEngine={hybridEngine as any}
-                      patterns8D={appState.patterns8D}
-                      patterns8DEngine={{
-                        setActivePattern: (pattern) => updateAppState({ currentPattern: pattern }),
-                        clearActivePattern: () => updateAppState({ currentPattern: null })
-                      }}
-                      onStateChange={updateAppState}
-                      onTimerStatusUpdate={setTimerStatus}
-                      onTransitionNavigation={timerNavigationRef.current}
-                      onTimerControl={timerControlRef.current}
-                      onSetTimerNavigation={setTimerNavigation}
-                      onSetTimerControl={setTimerControl}
-                    />
-                  </Box>
-                </CollapsibleSection>
-              </Box>
-            )}
-
-            {/* Patterns */}
-            {!closedSections.includes('patternID') && (
-              <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-                <CollapsibleSection compact={true} id="patternID" title="Patterns" icon="🌀" defaultOpen={true} onClose={handleSectionClose}>
-                  <PatternSelectorMUI
-                    patterns={WAVE_PATTERNS}
-                    selected={appState.currentPattern?.id || null}
-                    mode={appState.mode}
-                    onSelect={handlePatternSelectBound}
-                    onModeChange={handleModeChangeBound}
-                    activePattern={appState.currentPattern?.id || null}
+          {/* Timer Presets */}
+          {!closedSections.includes('timerPanel') && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: 0, maxHeight: '100%', overflowY: 'auto' }}>
+              <CollapsibleSection compact={true} id="timerPanel" title="Timer Presets" icon="⌚" defaultOpen={true} onClose={handleSectionClose}>
+                <Box sx={{ overflow: 'auto', maxHeight: 'calc(35vh - 60px)' }}>
+                  <TimerTab
+                    appState={appState}
+                    audioEngine={hybridEngine as any}
+                    patterns8D={appState.patterns8D}
+                    patterns8DEngine={{
+                      setActivePattern: (pattern) => updateAppState({ currentPattern: pattern }),
+                      clearActivePattern: () => updateAppState({ currentPattern: null })
+                    }}
+                    onStateChange={updateAppState}
+                    onTimerStatusUpdate={setTimerStatus}
+                    onTransitionNavigation={timerNavigationRef.current}
+                    onTimerControl={timerControlRef.current}
+                    onSetTimerNavigation={setTimerNavigation}
+                    onSetTimerControl={setTimerControl}
                   />
-                </CollapsibleSection>
-              </Box>
-            )}
+                </Box>
+              </CollapsibleSection>
+            </Box>
+          )}
 
-            {/* Frequency Visualizer */}
-            {!closedSections.includes('frequencyVisualizer') && (
-              <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-                <CollapsibleSection compact={true} id="frequencyVisualizer" title="Frequency Visualizer" icon="📊" defaultOpen={true} onClose={handleSectionClose}>
+          {/* Patterns */}
+          {!closedSections.includes('patternID') && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: 0, maxHeight: '100%', overflowY: 'auto' }}>
+              <CollapsibleSection compact={true} id="patternID" title="Patterns" icon="🌀" defaultOpen={true} onClose={handleSectionClose}>
+                <PatternSelectorMUI
+                  patterns={WAVE_PATTERNS}
+                  selected={appState.currentPattern?.id || null}
+                  mode={appState.mode}
+                  onSelect={handlePatternSelectBound}
+                  onModeChange={handleModeChangeBound}
+                  activePattern={appState.currentPattern?.id || null}
+                />
+              </CollapsibleSection>
+            </Box>
+          )}
+
+          {/* Frequency Visualizer */}
+          {!closedSections.includes('frequencyVisualizer') && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: 0, maxHeight: '100%', overflowY: 'hidden' }}>
+              <CollapsibleSection compact={true} id="frequencyVisualizer" title="Frequency Visualizer" icon="📊" defaultOpen={true} onClose={handleSectionClose}>
+                <Box sx={{ height: 'calc(35vh - 60px)', maxHeight: 'calc(35vh - 60px)', overflow: 'hidden' }}>
                   <FrequencyVisualizer
                     state={frequencyVisualizerState}
                     audioContext={activeAudioEngine.audioContext}
@@ -1059,16 +1037,17 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                     showFrequencies={true}
                     showMetrics={true}
                   />
-                </CollapsibleSection>
-              </Box>
-            )}
+                </Box>
+              </CollapsibleSection>
+            </Box>
+          )}
 
-            {/* Binaural Beat Generator */}
-            {!closedSections.includes('binauralBeats') && (
-              <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-                <CollapsibleSection compact={true} id="binauralBeats" title="Binaural Beat Generator" icon="🎧" defaultOpen={true} onClose={handleSectionClose}>
-                  <Box sx={{ overflow: 'visible' }}>
-                    <BinauralGeneratorMUI
+          {/* Binaural Beat Generator */}
+          {!closedSections.includes('binauralBeats') && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+              <CollapsibleSection compact={true} id="binauralBeats" title="Binaural Beat Generator" icon="🎧" defaultOpen={true} onClose={handleSectionClose}>
+                <Box sx={{ overflow: 'visible' }}>
+                  <BinauralGeneratorMUI
                       base_frequency={audioConfig.baseFreq}
                       beat_frequency={audioConfig.beatFreq}
                       waveform={activeAudioEngine?.audioState?.waveform || 'sine'}
@@ -1153,20 +1132,21 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                 </CollapsibleSection>
               </Box>
             )}
-          </Box>
 
-          {/* Row 3 (full width): Spatial Visualizer - MAXIMUM SIZE in 3x2 mode */}
+          {/* Spatial Visualizer - spans full width (3 columns) */}
           {!closedSections.includes('spatialVisualizer') && (
-            <Box sx={{ width: '100%', minHeight: '400px' }}>
+            <Box sx={{ gridColumn: { xs: 'span 1', sm: 'span 2', md: 'span 3' }, display: 'flex', flexDirection: 'column', minHeight: 0, maxHeight: '100%', overflowY: 'hidden' }}>
               <CollapsibleSection id="spatialVisualizer" title="3D Spatial Visualizer" icon="🌀" defaultOpen={true} onClose={handleSectionClose}>
-                <SpatialVisualizer
-                  pattern={appState.currentPattern || WAVE_PATTERNS.find((pattern) => pattern.id === 'default')}
-                  electromagnetic={appState.electromagnetic}
-                  size={800}
-                  audioContext={activeAudioEngine.audioContext}
-                  analyserNode={activeAudioEngine.analyserNode}
-                  isPlaying={hybridEngine.audioState.isPlaying}
-                />
+                <Box sx={{ height: 'calc(35vh - 60px)', maxHeight: 'calc(35vh - 60px)', overflow: 'hidden' }}>
+                  <SpatialVisualizer
+                    pattern={appState.currentPattern || WAVE_PATTERNS.find((pattern) => pattern.id === 'default')}
+                    electromagnetic={appState.electromagnetic}
+                    size={800}
+                    audioContext={activeAudioEngine.audioContext}
+                    analyserNode={activeAudioEngine.analyserNode}
+                    isPlaying={hybridEngine.audioState.isPlaying}
+                  />
+                </Box>
               </CollapsibleSection>
             </Box>
           )}

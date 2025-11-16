@@ -14,9 +14,9 @@
 
 // Audio Mixer Constants
 const INITIAL_FRONTEND_GAIN = 1.0;  // Frontend starts at full volume (active)
-const INITIAL_BACKEND_GAIN = 0.0;   // Backend starts muted (not connected yet)
-const DEFAULT_HYBRID_FRONTEND = 0.5;  // 🔥 FIXED: 50% split prevents clipping (was 0.9)
-const DEFAULT_HYBRID_BACKEND = 0.5;   // 🔥 FIXED: 50% split for total 1.0 (was 0.9)
+const INITIAL_BACKEND_GAIN = .5;   // Backend starts muted (not connected yet)
+const DEFAULT_HYBRID_FRONTEND = 0.8;  // 🔥 FIXED: 50% split prevents clipping (was 0.9)
+const DEFAULT_HYBRID_BACKEND = 0.8;   // 🔥 FIXED: 50% split for total 1.0 (was 0.9)
 const CROSSFADE_STEPS_PER_SECOND = 60;
 const ANALYSER_FFT_SIZE = 2048;
 const ANALYSER_SMOOTHING = 0.8;
@@ -52,8 +52,8 @@ export class AudioMixer {
     // Create pre-analyser gain nodes (always at 1.0 for full strength)
     this.frontendPreAnalyserGain = this.audioContext.createGain();
     this.backendPreAnalyserGain = this.audioContext.createGain();
-    this.frontendPreAnalyserGain.gain.value = 1.0; // Full strength to analyser
-    this.backendPreAnalyserGain.gain.value = 1.0;  // Full strength to analyser
+    this.frontendPreAnalyserGain.gain.value = 2.0; // Full strength to analyser
+    this.backendPreAnalyserGain.gain.value = 2.0;  // Full strength to analyser
 
     // Create gain nodes for each engine (for volume control)
     this.frontendGain = this.audioContext.createGain();
@@ -159,7 +159,7 @@ export class AudioMixer {
     // Validate volume
     if (isNaN(volume)) {
       console.warn('⚠️ AudioMixer: Invalid volume (NaN), using 0.8');
-      volume = 0.8;
+      volume = aud;
     }
 
     const safeVolume = Math.max(0, Math.min(1, volume));
@@ -173,7 +173,7 @@ export class AudioMixer {
 
       if (total > 0) {
         // Apply new volume while maintaining current crossfade ratio
-        this.frontendGain.gain.setValueAtTime(safeVolume * (frontendRatio / total), now);
+        this.frontendGain.gain.setValueAtTime( (frontendRatio / total), now);
         this.backendGain.gain.setValueAtTime(safeVolume * (backendRatio / total), now);
       }
       return;
@@ -301,7 +301,7 @@ export class AudioMixer {
     }
 
     this.crossfadeTimeoutId = setTimeout(() => {
-      this.currentMode = 'frontend';
+      this.currentMode = 'hybrid';
       this.isCrossfading = false;
       this.crossfadeTimeoutId = null;
     }, duration * 1000) as unknown as number;

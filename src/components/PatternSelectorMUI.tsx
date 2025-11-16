@@ -43,6 +43,24 @@ const PatternSelectorMUI: React.FC<PatternSelectorPropsExtended> = ({
     }
   };
 
+  // 🔥 NEW: Distinct colors for each pattern type - matching app theme
+  const getPatternColors = (patternType: string, index: number) => {
+    // Color palette matching the app's vibrant theme
+    const colorPalette = [
+      { bg: 'rgba(255, 107, 0, 0.15)', border: '#ff6b00', gradient: 'linear-gradient(135deg, #ff6b00, #ff8533)' }, // Orange
+      { bg: 'rgba(138, 43, 226, 0.15)', border: '#8a2be2', gradient: 'linear-gradient(135deg, #8a2be2, #9944d9)' }, // Purple
+      { bg: 'rgba(0, 255, 136, 0.15)', border: '#00ff88', gradient: 'linear-gradient(135deg, #00ff88, #00cc6a)' }, // Green
+      { bg: 'rgba(0, 191, 255, 0.15)', border: '#00bfff', gradient: 'linear-gradient(135deg, #00bfff, #0099cc)' }, // Cyan
+      { bg: 'rgba(255, 64, 129, 0.15)', border: '#ff4081', gradient: 'linear-gradient(135deg, #ff4081, #f50057)' }, // Pink
+      { bg: 'rgba(255, 193, 7, 0.15)', border: '#ffc107', gradient: 'linear-gradient(135deg, #ffc107, #ff9800)' }, // Amber
+      { bg: 'rgba(76, 175, 80, 0.15)', border: '#4caf50', gradient: 'linear-gradient(135deg, #4caf50, #388e3c)' }, // Green Alt
+      { bg: 'rgba(156, 39, 176, 0.15)', border: '#9c27b0', gradient: 'linear-gradient(135deg, #9c27b0, #7b1fa2)' }, // Deep Purple
+    ];
+
+    // Return color based on index (cycles through palette)
+    return colorPalette[index % colorPalette.length];
+  };
+
   return (
     <Card sx={{
       height: '100%',
@@ -109,10 +127,11 @@ const PatternSelectorMUI: React.FC<PatternSelectorPropsExtended> = ({
         },
       }}>
         <List dense sx={{ p: 0 }}>
-          {patterns.map((pattern) => {
+          {patterns.map((pattern, index) => {
             const isSelected = selected === pattern.id;
             const isActive = activePattern === pattern.id;
-            
+            const patternColors = getPatternColors(pattern.type, index);
+
             return (
               <ListItem key={pattern.id} disablePadding sx={{ mb: 0.5 }}>
                 <Paper
@@ -122,22 +141,24 @@ const PatternSelectorMUI: React.FC<PatternSelectorPropsExtended> = ({
                     background: isActive
                       ? 'rgba(0, 191, 255, 0.25)' // Blue for active (timer/visualizer)
                       : isSelected
-                      ? 'rgba(255, 107, 0, 0.2)' // Orange for selected
+                      ? patternColors.bg // 🔥 DISTINCT COLOR when selected
                       : 'rgba(255, 255, 255, 0.03)',
                     border: '2px solid',
                     borderColor: isActive
                       ? '#00bfff' // Blue border for active
                       : isSelected
-                      ? '#ff6b00' // Orange border for selected
-                      : 'rgba(255, 255, 255, 0.05)',
-                    borderStyle: isActive ? 'solid' : 'solid',
+                      ? patternColors.border // 🔥 DISTINCT BORDER when selected
+                      : 'rgba(255, 255, 255, 0.1)',
+                    borderLeft: `4px solid ${patternColors.border}`, // 🔥 ALWAYS show distinct color on left edge
+                    borderStyle: 'solid',
                     transition: 'all 0.3s ease',
                     position: 'relative',
                     '&:hover': {
                       background: isActive
                         ? 'rgba(0, 191, 255, 0.3)'
-                        : 'rgba(255, 107, 0, 0.1)',
-                      borderColor: isActive ? '#00bfff' : '#ff6b00',
+                        : patternColors.bg, // 🔥 DISTINCT HOVER COLOR
+                      borderColor: isActive ? '#00bfff' : patternColors.border,
+                      boxShadow: `0 0 12px ${patternColors.border}40`, // 🔥 GLOW on hover
                     },
                     // Glow effect for active patterns
                     ...(isActive && {

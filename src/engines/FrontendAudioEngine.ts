@@ -4,6 +4,10 @@
  * CRITICAL: This engine generates STEREO audio (left + right frequencies)
  * Creates two oscillators for true binaural beats
  * Both frequencies are output to create the beat frequency
+ * 
+ * 🔥 RAW WAVEFORM POWER - NO COMPENSATION!
+ * Outputs authentic waveform energy for maximum visualizer impact
+ * Users can adjust master volume to control loudness
  */
 
 export class FrontendAudioEngine {
@@ -22,6 +26,8 @@ export class FrontendAudioEngine {
   private merger: ChannelMergerNode | null = null;
   
   private isPlaying: boolean = false;
+  private currentWaveform: OscillatorType = 'sine';
+  private baseVolume: number = 0.5;
 
   constructor(audioContext: AudioContext, outputNode: AudioNode) {
     this.audioContext = audioContext;
@@ -47,6 +53,10 @@ export class FrontendAudioEngine {
     }
 
     try {
+      // Store waveform and base volume
+      this.currentWaveform = waveform;
+      this.baseVolume = volume;
+      
       // Create STEREO oscillators
       this.oscillatorL = this.audioContext.createOscillator();
       this.oscillatorR = this.audioContext.createOscillator();
@@ -59,7 +69,7 @@ export class FrontendAudioEngine {
       this.oscillatorL.type = waveform;
       this.oscillatorR.type = waveform;
       
-      // Create gain nodes
+      // Create gain nodes at USER VOLUME
       this.gainL = this.audioContext.createGain();
       this.gainR = this.audioContext.createGain();
       this.gainL.gain.setValueAtTime(volume, this.audioContext.currentTime);
@@ -68,16 +78,19 @@ export class FrontendAudioEngine {
       // Create channel merger for STEREO output
       this.merger = this.audioContext.createChannelMerger(2);
       
-      // Connect STEREO audio chain
-      // LEFT oscillator → gain → merger (left channel)
+      // 🔥 DIRECT AUDIO CHAIN - NO COMPENSATION:
+      // Oscillator → Gain → Merger → Output
+      // RAW WAVEFORM POWER FOR MAXIMUM VISUALIZER IMPACT!
+      
+      // LEFT channel: oscillator → gain → merger
       this.oscillatorL.connect(this.gainL);
       this.gainL.connect(this.merger, 0, 0); // to left channel
       
-      // RIGHT oscillator → gain → merger (right channel)
+      // RIGHT channel: oscillator → gain → merger  
       this.oscillatorR.connect(this.gainR);
       this.gainR.connect(this.merger, 0, 1); // to right channel
       
-      // Merger outputs STEREO signal to output node
+      // Merger outputs RAW STEREO signal to output node
       this.merger.connect(this.outputNode);
       
       // Start oscillators
@@ -160,26 +173,31 @@ export class FrontendAudioEngine {
       return;
     }
 
+    // Store base volume
+    this.baseVolume = volume;
+    
+    // Update volume directly - no compensation
     const safeVolume = Math.max(0, Math.min(2, volume));
     const now = this.audioContext.currentTime;
     
     this.gainL.gain.setValueAtTime(safeVolume, now);
     this.gainR.gain.setValueAtTime(safeVolume, now);
-    
   }
 
   /**
-   * Update waveform (requires restart)
+   * Update waveform (can be changed on the fly)
    */
   updateWaveform(waveform: OscillatorType): void {
     if (!this.oscillatorL || !this.oscillatorR) {
       return;
     }
 
-    // Waveform can be changed on the fly
+    // Update waveform type
+    this.currentWaveform = waveform;
     this.oscillatorL.type = waveform;
     this.oscillatorR.type = waveform;
     
+    // No compensation needed - raw waveform power!
   }
 
   /**

@@ -350,12 +350,20 @@ export const ElectromagneticLabStyles = {
     overflowX: 'hidden',
     overflowY: 'auto'
   } as SxProps<Theme>,
+
+  // Flex column container for vertical layouts
+  flexColumnContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: 0
+  } as SxProps<Theme>,
+
 //Timer Display
   timerDisplay:{
     display: 'flex',
     flexDirection: 'column',
     minHeight: 0,
-    height: '75vh',
+    height: '45vh',
     gridColumn: 'span 4',
     gridRow: 'span 2',
     overflowX: 'hidden',

@@ -139,7 +139,7 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
 
   // Render vertical slider for each band
   const renderBandSlider = useCallback((band: EqualizerBand) => {
-    const sliderHeight = eqFullscreen ? 400 : 150; // 🔥 REDUCED: from 220 to 150 for compact layout
+    const sliderHeight = eqFullscreen ? 400 : 120; // 🔥 REDUCED: from 150 to 120 for ultra-compact layout
     const thumbSize = eqFullscreen ? 16 : 10;
     
     return (
@@ -365,15 +365,28 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
         </Box>
       </Box>
 
-      {/* Main content - Sliders and Visualizer */}
-      <Box sx={{ 
-        display: 'flex', 
-        gap: eqFullscreen ? 3 : 0.5,
+      {/* Main content - VERTICAL LAYOUT: Presets on top, Sliders below */}
+      <Box sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: eqFullscreen ? 2 : 0.5,
         flex: 1,
-        minHeight: 0
+        minHeight: 0,
+        overflowY: 'auto'
       }}>
-        
-        {/* Frequency sliders */}
+
+        {/* TOP: Presets grid - SINGLE ROW for compact X-axis fit */}
+        <Box sx={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: eqFullscreen ? 0.75 : 0.3,
+          justifyContent: 'center',
+          width: '100%'
+        }}>
+          {presetButtons}
+        </Box>
+
+        {/* MIDDLE: Frequency sliders - FULL WIDTH */}
         <Box
           sx={{
             display: 'flex',
@@ -384,9 +397,7 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
             bgcolor: 'rgba(0, 0, 0, 0.3)',
             borderRadius: 1,
             flex: '0 0 auto',
-            overflowX: 'auto',
-            overflowY: 'hidden',
-            maxWidth: '100%',
+            width: '100%',
             '&::-webkit-scrollbar': {
               height: '6px'
             },
@@ -406,25 +417,14 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
           {equalizerState.bands.map(band => renderBandSlider(band))}
         </Box>
 
-        {/* Right side - Presets and Visualizer */}
-        <Box sx={{ 
-          display: 'flex', 
-          flexDirection: 'column', 
-          gap: eqFullscreen ? 2 : 1, 
+        {/* BOTTOM: Advanced controls and Visualizer */}
+        <Box sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: eqFullscreen ? 2 : 0.5,
           flex: 1,
-          minWidth: eqFullscreen ? '400px' : '250px',
           minHeight: 0
         }}>
-          
-          {/* Presets grid - ✅ COMPACT 2-COLUMN LAYOUT */}
-          <Box sx={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(2, 1fr)',
-            gap: eqFullscreen ? 0.75 : 0.4,
-            maxWidth: eqFullscreen ? '250px' : '180px'
-          }}>
-            {presetButtons}
-          </Box>
 
           {/* ============================================ */}
           {/* ENHANCED FEATURES - New Controls */}
@@ -571,7 +571,7 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
           {audioContext && analyserNode && (
             <Box sx={{
               flex: 1,
-              minHeight: visualizerFullscreen ? (eqFullscreen ? '500px' : '300px') : (eqFullscreen ? '200px' : '60px'), // 🔥 REDUCED: from 80px to 60px for compact layout
+              minHeight: visualizerFullscreen ? (eqFullscreen ? '500px' : '300px') : (eqFullscreen ? '200px' : '40px'), // 🔥 REDUCED: from 60px to 40px for ultra-compact layout
               maxHeight: visualizerFullscreen ? '90vh' : 'auto',
               bgcolor: 'rgba(0, 0, 0, 0.5)',
               borderRadius: 1,

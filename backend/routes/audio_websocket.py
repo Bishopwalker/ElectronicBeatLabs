@@ -191,9 +191,17 @@ async def websocket_audio_endpoint(websocket: WebSocket, session_id: str):
                 # Frontend sent malformed JSON (e.g., ping) - skip it and continue
                 logger.warning(f"Received malformed JSON (possibly ping): {e}")
                 continue
+            except RuntimeError as e:
+                # 🔥 FIX: Catch disconnect RuntimeError to prevent infinite loop
+                if "disconnect message has been received" in str(e):
+                    logger.info(f"WebSocket disconnect detected for {session_id}, exiting receive loop")
+                    break  # Exit loop cleanly when client disconnects
+                else:
+                    logger.error(f"Runtime error processing message: {e}", exc_info=True)
+                    continue
             except Exception as e:
                 logger.error(f"Error processing message: {e}", exc_info=True)
-                continue  # 🔥 FIXED: Continue instead of break to keep receiving messages
+                continue  # Continue for other errors to maintain connection
 
     except WebSocketDisconnect:
         logger.info(f"Client {session_id} disconnected")

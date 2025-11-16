@@ -39,7 +39,6 @@ const MainControlsMUI: React.FC<ExtendedMainControlsProps> = ({
   compact = false
 }) => {
   const maxVolume = boostMode ? 2.0 : 1.0;  // 200% in boost mode, 100% normal
-console.log(volume,"volume")
 
         const handleVolumeChange = useCallback((
             _event: Event | React.SyntheticEvent,

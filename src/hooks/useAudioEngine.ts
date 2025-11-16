@@ -1,20 +1,22 @@
 // Electromagnetic Beat Lab - Audio Engine Hook
 // Advanced binaural beats generator with electromagnetic field simulation
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import type {
+  ADHDProtocol,
   BinauralBeatConfig,
   ElectromagneticField,
   ElectromagneticFieldState,
+  FrontendAudioEngineState,
   PatternConfig,
-  ADHDProtocol, WaveForm, FrontendAudioEngineState
+  WaveForm
 } from '../types';
 import {
   DEFAULT_BASE_FREQUENCY,
   DEFAULT_BEAT_FREQUENCY,
-  DEFAULT_VOLUME,
   DEFAULT_LEFT_FREQUENCY,
-  DEFAULT_RIGHT_FREQUENCY
+  DEFAULT_RIGHT_FREQUENCY,
+  DEFAULT_VOLUME
 } from '../constants/audio.constants';
 
 // 🔥 GLOBAL SINGLETON TO PREVENT MULTIPLE AUDIO CONTEXTS
