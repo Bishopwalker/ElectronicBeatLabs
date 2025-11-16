@@ -9,9 +9,9 @@ import {
     CardContent,
     Chip,
     FormControlLabel,
-    Slider,
     Stack,
     Switch,
+    TextField,
     Typography,
 } from '@mui/material';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
@@ -41,19 +41,14 @@ const MainControlsMUI: React.FC<ExtendedMainControlsProps> = ({
   const maxVolume = boostMode ? 2.0 : 1.0;  // 200% in boost mode, 100% normal
 
         const handleVolumeChange = useCallback((
-            _event: Event | React.SyntheticEvent,
-            value: number | number[]
+            event: React.ChangeEvent<HTMLInputElement>
         ) => {
-            const safeValue = Array.isArray(value) ? value[0] : value;
-            onVolumeChange(safeValue);
-        }, [onVolumeChange]);
-
-        // Helper function to get slider color
-        const getSliderColor = useCallback((gain: number) => {
-            if (volume > .5) return '#00ff88';
-            if (volume < .5) return '#ff6b6b';
-            return '#888';
-        }, []);
+            const value = parseFloat(event.target.value);
+            if (!isNaN(value)) {
+                const clampedValue = Math.max(0, Math.min(value / 100 * maxVolume, maxVolume));
+                onVolumeChange(clampedValue);
+            }
+        }, [onVolumeChange, maxVolume]);
 
   const handleBoostToggle = (checked: boolean) => {
     if (onBoostModeToggle) {
@@ -138,39 +133,35 @@ const MainControlsMUI: React.FC<ExtendedMainControlsProps> = ({
         </Stack>
         
         {/* Volume control */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: '200px' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <VolumeUpIcon color="secondary" fontSize="small" />
-          <Slider
-            value={isNaN(volume) ? 0.5 : volume}
+          <TextField
+            type="number"
+            value={Math.round((volume / maxVolume) * 100)}
             onChange={handleVolumeChange}
-            min={0}
-            max={maxVolume}
-            step={0.01}
             size="small"
+            inputProps={{
+              min: 0,
+              max: 100,
+              step: 1,
+            }}
             sx={{
-              minWidth: '120px',
-              pointerEvents: 'auto',
-              userSelect: 'none',
-              touchAction: 'none',
-              '& .MuiSlider-track': {
-                  color: getSliderColor(volume),
-                  border: 'none',
-                  pointerEvents: 'auto',
-                background: boostMode
-                  ? 'linear-gradient(90deg, #ff6b00, #ff0066)'  // Red gradient for boost
-                  : 'linear-gradient(90deg, #8a2be2, #ff6b00)',  // Normal gradient
+              width: '80px',
+              '& .MuiInputBase-input': {
+                color: boostMode ? '#ff6b00' : '#8a2be2',
+                fontFamily: 'monospace',
+                fontWeight: 'bold',
+                textAlign: 'center',
               },
-              '& .MuiSlider-thumb': {
-                background: boostMode
-                  ? 'linear-gradient(45deg, #ff6b00, #ff0066)'
-                  : 'linear-gradient(45deg, #8a2be2, #ff6b00)',
-                border: '2px solid #fff',
-                pointerEvents: 'auto',
-                cursor: 'pointer',
-                '&:hover': {
-                  boxShadow: boostMode
-                    ? '0 0 15px rgba(255, 107, 0, 0.7)'
-                    : '0 0 15px rgba(138, 43, 226, 0.7)',
+              '& .MuiOutlinedInput-root': {
+                '& fieldset': {
+                  borderColor: boostMode ? 'rgba(255, 107, 0, 0.5)' : 'rgba(138, 43, 226, 0.5)',
+                },
+                '&:hover fieldset': {
+                  borderColor: boostMode ? '#ff6b00' : '#8a2be2',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: boostMode ? '#ff6b00' : '#8a2be2',
                 },
               },
             }}
@@ -178,9 +169,9 @@ const MainControlsMUI: React.FC<ExtendedMainControlsProps> = ({
           <Typography
             variant="caption"
             color={boostMode ? "error" : "secondary"}
-            sx={{ fontFamily: 'monospace', minWidth: '35px' }}
+            sx={{ fontFamily: 'monospace' }}
           >
-            {Math.round((volume / maxVolume) * 100)}%
+            %
           </Typography>
         </Box>
         
@@ -323,51 +314,53 @@ const MainControlsMUI: React.FC<ExtendedMainControlsProps> = ({
                 />
               )}
             </Stack>
-            <Slider
-              value={isNaN(volume) ? 0.5 : volume}
-              onChange={handleVolumeChange}
-              min={0}
-              max={maxVolume}
-              step={0.01}
-              valueLabelDisplay="auto"
-              valueLabelFormat={(value) => `${Math.round((value / maxVolume) * 100)}%`}
-              sx={{
-                pointerEvents: 'auto',
-                userSelect: 'none',
-                touchAction: 'none',
-                '& .MuiSlider-track': {
-                  background: boostMode
-                    ? 'linear-gradient(90deg, #ff6b00, #ff0066)'
-                    : 'linear-gradient(90deg, #8a2be2, #ff6b00)',
-                },
-                '& .MuiSlider-thumb': {
-                  background: boostMode
-                    ? 'linear-gradient(45deg, #ff6b00, #ff0066)'
-                    : 'linear-gradient(45deg, #8a2be2, #ff6b00)',
-                  border: '2px solid #fff',
-                  pointerEvents: 'auto',
-                  cursor: 'pointer',
-                  '&:hover': {
-                    boxShadow: boostMode
-                      ? '0 0 15px rgba(255, 107, 0, 0.7)'
-                      : '0 0 15px rgba(138, 43, 226, 0.7)',
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, mt: 1 }}>
+              <TextField
+                type="number"
+                value={Math.round((volume / maxVolume) * 100)}
+                onChange={handleVolumeChange}
+                size="medium"
+                inputProps={{
+                  min: 0,
+                  max: 100,
+                  step: 1,
+                }}
+                sx={{
+                  width: '120px',
+                  '& .MuiInputBase-input': {
+                    color: boostMode ? '#ff6b00' : '#8a2be2',
+                    fontFamily: 'monospace',
+                    fontWeight: 'bold',
+                    fontSize: '1.5rem',
+                    textAlign: 'center',
                   },
-                },
-              }}
-            />
-            <Typography
-              variant="h6"
-              align="center"
-              color={boostMode ? "error" : "secondary"}
-              sx={{ fontFamily: 'monospace', mt: 0.5 }}
-            >
-              {Math.round((volume / maxVolume) * 100)}%
-              {boostMode && volume > 1.0 && (
-                <Typography component="span" variant="caption" color="error" sx={{ ml: 1 }}>
-                  BOOST
-                </Typography>
-              )}
-            </Typography>
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': {
+                      borderColor: boostMode ? 'rgba(255, 107, 0, 0.5)' : 'rgba(138, 43, 226, 0.5)',
+                      borderWidth: '2px',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: boostMode ? '#ff6b00' : '#8a2be2',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: boostMode ? '#ff6b00' : '#8a2be2',
+                    },
+                  },
+                }}
+              />
+              <Typography
+                variant="h6"
+                color={boostMode ? "error" : "secondary"}
+                sx={{ fontFamily: 'monospace' }}
+              >
+                %
+                {boostMode && volume > 1.0 && (
+                  <Typography component="span" variant="caption" color="error" sx={{ ml: 1 }}>
+                    BOOST
+                  </Typography>
+                )}
+              </Typography>
+            </Box>
           </Box>
           
           <Chip

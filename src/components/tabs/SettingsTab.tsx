@@ -1,11 +1,11 @@
 // Electromagnetic Beat Lab - Settings Tab Component
 
-import React, { useEffect, useState } from 'react';
-import { Box, Paper, Typography, Button, Slider, Switch, FormControlLabel } from '@mui/material';
-// import SpatialAudioControls from '../SpatialAudioControls'; // REMOVED - component deleted
-import type { AppState, AudioEngine, Pattern8D } from '../../types';
-import TimerCountdownDisplay from "../TimerCountdownDisplay.tsx";
+import React, {useEffect, useState} from 'react';
+import {Box, Button, FormControlLabel, Paper, Slider, Switch, Typography} from '@mui/material';
+import type {AppState, AudioEngine, Pattern8D} from '../../types';
 import type {TimerStatus} from "../../data/timer";
+
+v
 
 interface SettingsTabProps {
   timerStatus?: TimerStatus;

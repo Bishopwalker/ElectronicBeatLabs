@@ -1025,9 +1025,9 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
 
           {/* Frequency Visualizer */}
           {!closedSections.includes('frequencyVisualizer') && (
-            <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: 0, maxHeight: '100%', overflowY: 'hidden' }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: 0,  maxHeight: 'calc(35vh - 60px)'  }}>
               <CollapsibleSection compact={true} id="frequencyVisualizer" title="Frequency Visualizer" icon="📊" defaultOpen={true} onClose={handleSectionClose}>
-                <Box sx={{ height: 'calc(35vh - 60px)', maxHeight: 'calc(35vh - 60px)', overflow: 'hidden' }}>
+                <Box sx={{ overflow: 'auto', maxHeight: 'calc(35vh - 60px)' }}>
                   <FrequencyVisualizer
                     state={frequencyVisualizerState}
                     audioContext={activeAudioEngine.audioContext}
@@ -1137,7 +1137,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
           {!closedSections.includes('spatialVisualizer') && (
             <Box sx={{ gridColumn: { xs: 'span 1', sm: 'span 2', md: 'span 3' }, display: 'flex', flexDirection: 'column', minHeight: 0, maxHeight: '100%', overflowY: 'hidden' }}>
               <CollapsibleSection id="spatialVisualizer" title="3D Spatial Visualizer" icon="🌀" defaultOpen={true} onClose={handleSectionClose}>
-                <Box sx={{ height: 'calc(35vh - 60px)', maxHeight: 'calc(35vh - 60px)', overflow: 'hidden' }}>
+                <Box sx={{ height: 'calc(35vh - 60px)', maxHeight: 'calc(35vh - 60px)', overflow: 'visible' }}>
                   <SpatialVisualizer
                     pattern={appState.currentPattern || WAVE_PATTERNS.find((pattern) => pattern.id === 'default')}
                     electromagnetic={appState.electromagnetic}

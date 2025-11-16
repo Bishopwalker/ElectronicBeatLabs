@@ -2,13 +2,15 @@
 // 🔥 100% LIVE AUDIO ANALYSIS - NO FAKE ANIMATIONS
 
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {Box, Chip, ToggleButton, ToggleButtonGroup, Typography} from '@mui/material';
+import {Box, Chip, IconButton, ToggleButton, ToggleButtonGroup, Typography} from '@mui/material';
 import type {ElectromagneticField, SpatialVisualizerProps} from '../types/index';
 import BlurOnIcon from '@mui/icons-material/BlurOn';
 import TornadoIcon from '@mui/icons-material/Tornado';
 import WavesIcon from '@mui/icons-material/Waves';
 import GridOnIcon from '@mui/icons-material/GridOn';
 import BubbleChartIcon from '@mui/icons-material/BubbleChart';
+import FullscreenIcon from '@mui/icons-material/Fullscreen';
+import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
 
 // ============================================================================
 // 🔥 AUDIO-REACTIVE HELPER FUNCTIONS - 100% LIVE FREQUENCY ANALYSIS
@@ -152,8 +154,10 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number | undefined>(undefined);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [visualizationMode, setVisualizationMode] = useState<VisualizationMode>('toroidal');
   const [isManualOverride, setIsManualOverride] = useState<boolean>(false); // Track if user manually changed mode
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // 🔥 AUDIO DATA BUFFER
   const frequencyDataRef = useRef<Uint8Array>(new Uint8Array(256));
@@ -163,6 +167,23 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
     treble: number;
     overall: number;
   }>({ bass: 0, mid: 0, treble: 0, overall: 0 });
+
+  // Fullscreen handler
+  const toggleFullscreen = async () => {
+    if (!containerRef.current) return;
+
+    try {
+      if (!document.fullscreenElement) {
+        await containerRef.current.requestFullscreen();
+        setIsFullscreen(true);
+      } else {
+        await document.exitFullscreen();
+        setIsFullscreen(false);
+      }
+    } catch (error) {
+      console.error('Fullscreen toggle failed:', error);
+    }
+  };
 
   // 🔥 CRITICAL FIX: Auto-sync visualization mode when pattern changes
   useEffect(() => {
@@ -651,7 +672,21 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
   }, [safeElectromagnetic, patternProperties, isPlaying]);
 
   return (
-    <Box sx={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
+    <Box
+      ref={containerRef}
+      sx={{
+        width: '100%',
+        height: '100%',
+        position: isFullscreen ? 'fixed' : 'relative',
+        top: isFullscreen ? 0 : 'auto',
+        left: isFullscreen ? 0 : 'auto',
+        right: isFullscreen ? 0 : 'auto',
+        bottom: isFullscreen ? 0 : 'auto',
+        zIndex: isFullscreen ? 9999 : 'auto',
+        overflow: 'hidden',
+        background: isFullscreen ? '#000' : 'transparent'
+      }}
+    >
       {/* Mode Selector */}
       <Box sx={{
         position: 'absolute',
@@ -690,48 +725,68 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
             </span>
           )}
         </Typography>
-        <ToggleButtonGroup
-          value={visualizationMode}
-          exclusive
-          onChange={(_, newMode) => {
-            if (newMode) {
-              // 🔥 CRITICAL FIX: Enable manual override when user changes mode
-              setIsManualOverride(true);
-              setVisualizationMode(newMode);
-            }
-          }}
-          size="small"
-          sx={{
-            '& .MuiToggleButton-root': {
-              color: 'rgba(255, 255, 255, 0.6)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              '&.Mui-selected': {
-                color: '#00ff88',
-                backgroundColor: 'rgba(0, 255, 136, 0.2)',
-                border: '1px solid #00ff88',
+        <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+          <ToggleButtonGroup
+            value={visualizationMode}
+            exclusive
+            onChange={(_, newMode) => {
+              if (newMode) {
+                // 🔥 CRITICAL FIX: Enable manual override when user changes mode
+                setIsManualOverride(true);
+                setVisualizationMode(newMode);
+              }
+            }}
+            size="small"
+            sx={{
+              '& .MuiToggleButton-root': {
+                color: 'rgba(255, 255, 255, 0.6)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                '&.Mui-selected': {
+                  color: '#00ff88',
+                  backgroundColor: 'rgba(0, 255, 136, 0.2)',
+                  border: '1px solid #00ff88',
+                },
               },
-            },
-          }}
-        >
-          <ToggleButton value="toroidal" title="Toroidal Field (Bass Reactive)">
-            <BlurOnIcon fontSize="small" />
-          </ToggleButton>
-          <ToggleButton value="vortex" title="Vortex Field (Treble Reactive)">
-            <TornadoIcon fontSize="small" />
-          </ToggleButton>
-          <ToggleButton value="spiral" title="Spiral Field (Volume Reactive)">
-            <WavesIcon fontSize="small" />
-          </ToggleButton>
-          <ToggleButton value="wave" title="Wave Interference (Bass/Treble)">
-            <GridOnIcon fontSize="small" />
-          </ToggleButton>
-          <ToggleButton value="pattern8d" title="8D Pattern Path (Energy Reactive)">
-            <BubbleChartIcon fontSize="small" />
-          </ToggleButton>
-          <ToggleButton value="combined" title="Combined">
-            <GridOnIcon fontSize="small" style={{ transform: 'rotate(45deg)' }} />
-          </ToggleButton>
-        </ToggleButtonGroup>
+            }}
+          >
+            <ToggleButton value="toroidal" title="Toroidal Field (Bass Reactive)">
+              <BlurOnIcon fontSize="small" />
+            </ToggleButton>
+            <ToggleButton value="vortex" title="Vortex Field (Treble Reactive)">
+              <TornadoIcon fontSize="small" />
+            </ToggleButton>
+            <ToggleButton value="spiral" title="Spiral Field (Volume Reactive)">
+              <WavesIcon fontSize="small" />
+            </ToggleButton>
+            <ToggleButton value="wave" title="Wave Interference (Bass/Treble)">
+              <GridOnIcon fontSize="small" />
+            </ToggleButton>
+            <ToggleButton value="pattern8d" title="8D Pattern Path (Energy Reactive)">
+              <BubbleChartIcon fontSize="small" />
+            </ToggleButton>
+            <ToggleButton value="combined" title="Combined">
+              <GridOnIcon fontSize="small" style={{ transform: 'rotate(45deg)' }} />
+            </ToggleButton>
+          </ToggleButtonGroup>
+
+          {/* Fullscreen Button */}
+          <IconButton
+            onClick={toggleFullscreen}
+            size="small"
+            sx={{
+              color: isFullscreen ? '#00ff88' : 'rgba(255, 255, 255, 0.6)',
+              bgcolor: isFullscreen ? 'rgba(0, 255, 136, 0.2)' : 'transparent',
+              border: '1px solid',
+              borderColor: isFullscreen ? '#00ff88' : 'rgba(255, 255, 255, 0.2)',
+              '&:hover': {
+                bgcolor: isFullscreen ? 'rgba(0, 255, 136, 0.3)' : 'rgba(255, 255, 255, 0.1)'
+              }
+            }}
+            title={isFullscreen ? 'Exit Fullscreen (ESC)' : 'Enter Fullscreen'}
+          >
+            {isFullscreen ? <FullscreenExitIcon fontSize="small" /> : <FullscreenIcon fontSize="small" />}
+          </IconButton>
+        </Box>
       </Box>
 
       {/* State Indicator */}
