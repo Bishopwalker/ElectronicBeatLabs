@@ -138,6 +138,36 @@ client.onFieldUpdate((fieldData) => {
 - **Field Resolution**: 64x64 grid
 - **Reconnection**: Up to 5 attempts with exponential backoff
 
+## 🐍 Python Audio Analysis References
+
+### Python Audio Analysis Reference (`python-audio-analysis-reference.md`)
+- Sound wave mathematics with full derivations (Y(t) = A sin(2πft + φ))
+- Gain and amplitude formulas (dB conversions, RMS calculations, bit depth normalization)
+- FFT theory and frequency analysis fundamentals
+- Spectral feature extraction (centroid, rolloff, bandwidth) with practical code
+- EBL-specific application examples for binaural beat validation
+
+### Real-time Spectrum Visualization (`realtime-spectrum-visualization.md`)
+- FFT-based stereo spectrum analysis for binaural processing
+- 60 FPS real-time processing with frame buffering strategies
+- PyAudio stream management and performance optimization
+- Matplotlib animation techniques for live spectrum updates
+- Integration patterns with frontend FrequencyVisualizer and WebSocket streaming
+
+### Librosa Audio Features (`librosa-audio-features.md`)
+- Comprehensive librosa library reference for 48kHz audio processing
+- Time-frequency representations (STFT, spectrograms, chromagrams)
+- Spectral feature extraction methods with EBL applications
+- Audio file I/O, resampling, and preprocessing pipelines
+- Binaural beat validation and harmonic quality analysis
+
+### Matplotlib Audio Plotting (`matplotlib-audio-plotting.md`)
+- Professional waveform and spectrogram visualization patterns
+- Custom colormaps for EM field and thermal visualization
+- Advanced layout control with GridSpec and aligned colorbars
+- Publication-quality figure export at 300 DPI
+- Phase difference visualization for binaural beat analysis
+
 ## 🔧 Integration Guide
 
 ### Frontend Integration

@@ -178,7 +178,15 @@
       "Bash(backend/venv/Scripts/python.exe -m uvicorn:*)",
       "Bash(wmic process:*)",
       "Bash(git stash push:*)",
-      "Bash(git stash show:*)"
+      "Bash(git stash show:*)",
+      "Bash(bash:*)",
+      "WebFetch(domain:gist.github.com)",
+      "WebFetch(domain:www.topcoder.com)",
+      "WebFetch(domain:www.audiolabs-erlangen.de)",
+      "WebFetch(domain:www.comet.com)",
+      "Bash(git -C \"C:\\Users\\bisho\\IdeaProjects\\ebl\" diff src/components/FrequencyVisualizer.tsx)",
+      "Bash(git stash:*)",
+      "Bash(git restore:*)"
     ],
     "deny": [],
     "ask": []

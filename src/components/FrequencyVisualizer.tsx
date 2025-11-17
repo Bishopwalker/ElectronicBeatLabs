@@ -1,15 +1,27 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { Box, Typography, Paper, Chip, ToggleButtonGroup, ToggleButton, IconButton } from '@mui/material';
-import { styled } from '@mui/material/styles';
-import { useAudioAnalysis } from '../hooks/useAudioAnalysis';
-import type { Pattern8D, PatternConfig, ElectromagneticField, PatternMode, WaveForm } from '../types';
-import { DEFAULT_BASE_FREQUENCY, DEFAULT_BEAT_FREQUENCY } from '../constants/audio.constants';
+import React, {useEffect, useRef, useState} from 'react';
+import {Box, Chip, IconButton, LinearProgress, Paper, Slider, ToggleButton, ToggleButtonGroup, Typography} from '@mui/material';
+import {styled} from '@mui/material/styles';
+import {useAudioAnalysis} from '../hooks/useAudioAnalysis';
+import type {ElectromagneticField, Pattern8D, PatternConfig, PatternMode, WaveForm} from '../types';
+import {DEFAULT_BASE_FREQUENCY, DEFAULT_BEAT_FREQUENCY} from '../constants/audio.constants';
 import WavesIcon from '@mui/icons-material/Waves';
 import BubbleChartIcon from '@mui/icons-material/BubbleChart';
 import RadarIcon from '@mui/icons-material/Radar';
 import GridOnIcon from '@mui/icons-material/GridOn';
 import FullscreenIcon from '@mui/icons-material/Fullscreen';
 import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
+import PsychologyIcon from '@mui/icons-material/Psychology';
+import {
+  analyzeConsciousness,
+  BRAINWAVE_RANGES,
+  type ConsciousnessMetrics,
+  drawBrainwaveIndicator,
+  drawCoherenceMandala,
+  drawEntrainmentMeter,
+  drawGoldenSpiral,
+  drawSchumannRing,
+  generateCoherenceGradient
+} from '../utils/consciousnessDetection';
 
 // ============================================================================
 // 🔥 AUDIO-REACTIVE HELPER FUNCTIONS - 100% LIVE FREQUENCY ANALYSIS
@@ -20,7 +32,9 @@ import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
  * Boosts visual signal strength without affecting audio gain
  * Applied to all frequency data readings for visualization only
  */
-const VISUAL_BOOST = 10; // 50% boost for better visibility
+// VISUAL_BOOST is now controlled by visualSensitivity slider in the component
+// Default value for reference only - actual boost comes from state
+const DEFAULT_VISUAL_BOOST = 10;
 
 /**
  * Maps FFT bin index to HSL hue value based on frequency range
@@ -69,7 +83,7 @@ function calculateFrequencyColor(frequencyData: Uint8Array): number {
 /**
  * Gets frequency band energies and identifies dominant band
  */
-function getFrequencyBands(frequencyData: Uint8Array): {
+function getFrequencyBands(frequencyData: Uint8Array, visualBoost: number = DEFAULT_VISUAL_BOOST): {
   bass: number;
   mid: number;
   treble: number;
@@ -85,10 +99,10 @@ function getFrequencyBands(frequencyData: Uint8Array): {
   for (let i = bassEnd; i < midEnd; i++) midSum += frequencyData[i];
   for (let i = midEnd; i < frequencyData.length; i++) trebleSum += frequencyData[i];
 
-  // 🔥 Apply visual boost to normalize values (no audio gain change!)
-  const bass = Math.min(1, (bassSum / bassEnd / 255) * VISUAL_BOOST);
-  const mid = Math.min(1, (midSum / (midEnd - bassEnd) / 255) * VISUAL_BOOST);
-  const treble = Math.min(1, (trebleSum / (frequencyData.length - midEnd) / 255) * VISUAL_BOOST);
+  // 🔥 Apply visual boost from slider to normalize values (no audio gain change!)
+  const bass = Math.min(1, (bassSum / bassEnd / 255) * visualBoost);
+  const mid = Math.min(1, (midSum / (midEnd - bassEnd) / 255) * visualBoost);
+  const treble = Math.min(1, (trebleSum / (frequencyData.length - midEnd) / 255) * visualBoost);
   const overall = (bass + mid + treble) / 3;
 
   let dominant: 'bass' | 'mid' | 'treble' = 'mid';
@@ -212,7 +226,7 @@ interface FrequencyVisualizerProps {
   };
 }
 
-type VisualizationMode = 'waveform' | 'spiral2d' | 'spiral3d' | 'radial' | 'combined';
+type VisualizationMode = 'waveform' | 'spiral2d' | 'spiral3d' | 'radial' | 'combined' | 'consciousness';
 
 const VisualizerContainer = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(1),
@@ -254,7 +268,7 @@ const FrequencyDisplay = styled(Box)(({ theme }) => ({
 export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
   state,
   title = 'Binaural Beat Frequency Visualizer',
-  showSpectrum = true,
+  showSpectrum = false, // Turned off those annoying bars at the top
   showFrequencies = true,
   showMetrics = true,
   audioContext,
@@ -309,6 +323,10 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
   const dimensionsRef = useRef(canvasDimensions);
   const [visualizationMode, setVisualizationMode] = useState<VisualizationMode>('combined');
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [visualSensitivity, setVisualSensitivity] = useState(10.0);
+  const [consciousnessMetrics, setConsciousnessMetrics] = useState<ConsciousnessMetrics | null>(null);
+  const [showConsciousnessPanel, setShowConsciousnessPanel] = useState(false);
+  const consciousnessMetricsRef = useRef<ConsciousnessMetrics | null>(null);
    // Extract frequency values
   const base_frequency =
     state?.config?.base_frequency ??
@@ -384,10 +402,11 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
 
     // 🔥 NEW: Display AudioWorklet status if available
     if (audioWorkletStatus) {
-console.log(audioWorkletStatus)
       if (audioWorkletStatus.nodeReference) {
+        // AudioWorklet node is ready
       }
     } else {
+      // No AudioWorklet status available
     }
 
     // 🔥 NEW: Listen for AudioWorklet metrics responses
@@ -525,8 +544,17 @@ console.log(audioWorkletStatus)
           analyserNode.getByteFrequencyData(frequencyData);
         }
 
-        // 🔥 CALCULATE AUDIO BANDS FOR ALL RENDERS
-        const audioBands = getFrequencyBands(frequencyData);
+        // 🔥 CALCULATE AUDIO BANDS FOR ALL RENDERS (controlled by Signal slider)
+        const audioBands = getFrequencyBands(frequencyData, visualSensitivity);
+
+        // 🧠 CONSCIOUSNESS PATTERN ANALYSIS - Real-time detection
+        const currentMetrics = analyzeConsciousness(frequencyData, beatFreq, leftFreq);
+        consciousnessMetricsRef.current = currentMetrics;
+
+        // Update state every 100ms to avoid excessive re-renders
+        if (frameCount % 6 === 0) {
+          setConsciousnessMetrics(currentMetrics);
+        }
 
         // Electromagnetic field modulation
         const fieldStrength = electromagnetic?.strength * 50  || 50;
@@ -550,12 +578,53 @@ console.log(audioWorkletStatus)
             renderRadialBars(ctx, canvas, centerX, centerY, time, fieldStrength, fieldFrequency,frequencyData, audioBands);
             renderSpiral2D(ctx, canvas, centerX, centerY, time, fieldStrength, fieldFrequency,frequencyData, audioBands);
             break;
+          case 'consciousness':
+            // 🧠 CONSCIOUSNESS VISUALIZATION MODE
+            renderConsciousnessOverlay(ctx, canvas, centerX, centerY, time, currentMetrics, audioBands);
+            break;
+        }
+
+        // 🌀 SACRED GEOMETRY OVERLAYS - Always render when detected (except in consciousness mode)
+        if (visualizationMode !== 'consciousness' && showConsciousnessPanel) {
+          // Golden Spiral when golden ratio detected
+          if (currentMetrics.goldenRatio.detected) {
+            drawGoldenSpiral(ctx, centerX, centerY, {
+              color: '#FFD700',
+              opacity: 0.3,
+              rotations: 3,
+              scale: Math.min(canvas.width, canvas.height) * 0.002,
+              animated: true,
+              time
+            });
+          }
+
+          // Schumann resonance ring when locked
+          if (currentMetrics.schumannLock.locked) {
+            drawSchumannRing(ctx, centerX, centerY, currentMetrics.schumannLock.frequency, time);
+          }
+
+          // Coherence mandala when coherence is high
+          if (currentMetrics.coherence > 0.7) {
+            drawCoherenceMandala(ctx, centerX, centerY, {
+              complexity: currentMetrics.coherence * 12,
+              rotationSpeed: currentMetrics.coherence * 0.5,
+              colors: generateCoherenceGradient(currentMetrics.coherence),
+              radius: Math.min(canvas.width, canvas.height) * 0.15,
+              time
+            });
+          }
+
+          // Brainwave state indicator in top-left corner
+          drawBrainwaveIndicator(ctx, 50, 50, currentMetrics.dominantState, audioBands.overall);
+
+          // Entrainment meter at bottom
+          drawEntrainmentMeter(ctx, canvas.width - 120, canvas.height - 30, currentMetrics.entrainment, 100);
         }
 
         // 🔥 FREQUENCY SPECTRUM - NOW 100% AUDIO-REACTIVE
         if (analyserNode && frequencyData.length * 50 > 0 && showSpectrum) {
-          const barCount = 252;
-          const barWidth = (canvas.width / barCount) * 5
+          const barCount = 128;
+          const barWidth = (canvas.width / barCount)
           const maxBarHeight = canvas.height * 0.35;
 
           for (let i = 0; i < barCount; i++) {
@@ -563,9 +632,9 @@ console.log(audioWorkletStatus)
               frequencyData.length - 1,
               Math.floor((i / barCount) * frequencyData.length)
             );
-            // 🔥 FIXED: Divide by 255 for full range, apply visual boost
-            const freqValue = Math.min(1, (frequencyData[dataIndex] / 255) * VISUAL_BOOST);
-            const barHeight = freqValue * maxBarHeight; // 🔥 FIXED: Removed 50x multiplier
+            // 🔥 FIXED: Divide by 255 for full range, NO VISUAL BOOST for bars
+            const freqValue = Math.min(1, frequencyData[dataIndex] / 255);
+            const barHeight = freqValue * maxBarHeight; // Bars stay within 35% of canvas height
             const x = i * barWidth;
             const y = 10;
 
@@ -632,8 +701,8 @@ console.log(audioWorkletStatus)
       ctx.shadowColor = ctx.strokeStyle;
       ctx.shadowBlur = audioBands.overall * 50; // Audio-reactive glow
       strength = parseFloat(frequency.toExponential(4));
-      const samples = 2500; // 🔥 FIXED: Reduced from 40000 to 2500 for 60 FPS
-      const cycles = 40;
+      const samples = 300; // 🔥 FIXED: Reduced from 40000 to 2500 for 60 FPS
+      const cycles = 8;
 
       for (let i = 0; i < samples; i++) {
         const centerX= (i / samples) * canvas.width;
@@ -690,12 +759,14 @@ console.log(audioWorkletStatus)
         ctx.shadowBlur = 8 + fieldStrength * 0.12; // 🔥 FIXED: Reasonable glow (not 250+)
 
         for (let i = 10; i < numBins; i++) {
-          // 🔥 Apply visual boost (clamped to 1.0 max)
-          const freqValue = Math.min(1, (frequencyData[i] / 255) * VISUAL_BOOST);
+          // 🔥 Apply visual boost from slider (clamped to 1.0 max)
+          const freqValue = Math.min(1, (frequencyData[i] / 255) * visualSensitivity);
           const t = i / numBins;
 
-          // 🔥 SMOOTH TIME-BASED ROTATION + audio modulation
-          const angle = t * Math.PI * 6 + time * 0.5 + armOffset;
+          // 🔥 ROTATION SPEED LINKED TO BEAT FREQUENCY - syncs with binaural beats!
+          // Higher beat freq = faster rotation. Scale: 10Hz beat = ~0.5 rad/s base speed
+          const beatSpeed = beatFreq * 0.05; // Direct Hz to speed multiplier
+          const angle = t * Math.PI * 6 + time * beatSpeed + armOffset;
 
           // 🔥 RADIUS DRIVEN BY FREQUENCY DATA (NO CONSTANTS)
           const radius = t * maxRadius * freqValue;
@@ -746,12 +817,14 @@ console.log(audioWorkletStatus)
         ctx.beginPath();
 
         for (let i = 0; i < numBins; i++) {
-          // 🔥 Apply visual boost (clamped to 1.0 max)
-          const freqValue = Math.min(1, (frequencyData[i] / 255) * VISUAL_BOOST);
+          // 🔥 Apply visual boost from slider (clamped to 1.0 max)
+          const freqValue = Math.min(1, (frequencyData[i] / 255) * visualSensitivity);
           const t = i / numBins;
 
           // 🔥 SMOOTH TIME-BASED ROTATION + audio modulation
-          const angle = t * Math.PI * 8 + time * 0.3 + (audioBands.mid * Math.PI) + helixOffset;
+          // 🔥 3D HELIX SPEED LINKED TO BEAT FREQUENCY
+          const beatSpeed3D = beatFreq * 0.03; // Direct Hz to speed multiplier
+          const angle = t * Math.PI * 8 + time * beatSpeed3D + (audioBands.mid * Math.PI) + helixOffset;
 
           // 🔥 FIXED: Simpler radius formula
           const radius = maxRadius * freqValue * (0.5 + t * 0.5);
@@ -848,12 +921,140 @@ console.log(audioWorkletStatus)
       ctx.restore();
     }
 
+    // ========================================================================
+    // 🧠 CONSCIOUSNESS OVERLAY - SACRED GEOMETRY & METRICS VISUALIZATION
+    // ========================================================================
+    function renderConsciousnessOverlay(
+      ctx: CanvasRenderingContext2D,
+      canvas: HTMLCanvasElement,
+      centerX: number,
+      centerY: number,
+      time: number,
+      metrics: ConsciousnessMetrics,
+      audioBands: ReturnType<typeof getFrequencyBands>
+    ) {
+      // Background gradient based on brainwave state
+      const stateColor = BRAINWAVE_RANGES[metrics.dominantState].color;
+      const bgGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, Math.max(canvas.width, canvas.height) * 0.7);
+      bgGradient.addColorStop(0, `${stateColor}33`);
+      bgGradient.addColorStop(1, 'transparent');
+      ctx.fillStyle = bgGradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Central coherence mandala - always present, size based on coherence
+      const mandalaRadius = Math.min(canvas.width, canvas.height) * 0.25 * (0.5 + metrics.coherence * 0.5);
+      drawCoherenceMandala(ctx, centerX, centerY, {
+        complexity: metrics.coherence * 12,
+        rotationSpeed: metrics.coherence * 0.3,
+        colors: generateCoherenceGradient(metrics.coherence),
+        radius: mandalaRadius,
+        time
+      });
+
+      // Golden spiral when detected
+      if (metrics.goldenRatio.detected) {
+        drawGoldenSpiral(ctx, centerX, centerY, {
+          color: '#FFD700',
+          opacity: 0.6,
+          rotations: 4,
+          scale: Math.min(canvas.width, canvas.height) * 0.003,
+          animated: true,
+          time
+        });
+
+        // Golden ratio label
+        ctx.font = 'bold 14px monospace';
+        ctx.fillStyle = '#FFD700';
+        ctx.textAlign = 'center';
+        ctx.fillText(`Golden Ratio: ${metrics.goldenRatio.ratio.toFixed(4)}`, centerX, canvas.height - 80);
+      }
+
+      // Schumann resonance rings
+      if (metrics.schumannLock.locked) {
+        drawSchumannRing(ctx, centerX, centerY, metrics.schumannLock.frequency, time);
+      }
+
+      // Brainwave state indicator (larger, centered top)
+      drawBrainwaveIndicator(ctx, centerX, 60, metrics.dominantState, audioBands.overall);
+
+      // State label
+      ctx.font = 'bold 16px sans-serif';
+      ctx.fillStyle = stateColor;
+      ctx.textAlign = 'center';
+      ctx.fillText(BRAINWAVE_RANGES[metrics.dominantState].label, centerX, 110);
+      ctx.fillText(`${metrics.dominantFreq.toFixed(2)} Hz`, centerX, 130);
+
+      // Entrainment meter (bottom center)
+      drawEntrainmentMeter(ctx, centerX - 75, canvas.height - 40, metrics.entrainment, 150);
+      ctx.font = '12px sans-serif';
+      ctx.fillStyle = '#ffffff';
+      ctx.textAlign = 'center';
+      ctx.fillText('Entrainment', centerX, canvas.height - 50);
+
+      // Coherence percentage (left side)
+      ctx.save();
+      ctx.font = 'bold 24px monospace';
+      ctx.fillStyle = metrics.coherence > 0.7 ? '#00FF00' : metrics.coherence > 0.4 ? '#FFFF00' : '#FF6666';
+      ctx.textAlign = 'left';
+      ctx.fillText(`${(metrics.coherence * 100).toFixed(0)}%`, 20, canvas.height / 2);
+      ctx.font = '12px sans-serif';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+      ctx.fillText('Coherence', 20, canvas.height / 2 + 20);
+      ctx.restore();
+
+      // Heart-Brain coherence (right side)
+      ctx.save();
+      ctx.font = 'bold 24px monospace';
+      ctx.fillStyle = metrics.heartBrain > 0.5 ? '#FF69B4' : '#FF9999';
+      ctx.textAlign = 'right';
+      ctx.fillText(`${(metrics.heartBrain * 100).toFixed(0)}%`, canvas.width - 20, canvas.height / 2);
+      ctx.font = '12px sans-serif';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+      ctx.fillText('Heart-Brain', canvas.width - 20, canvas.height / 2 + 20);
+      ctx.restore();
+
+      // Sacred geometry name
+      ctx.font = 'italic 14px serif';
+      ctx.fillStyle = '#9400D3';
+      ctx.textAlign = 'center';
+      ctx.fillText(metrics.sacredGeometry, centerX, canvas.height - 10);
+
+      // Chakra activation indicator (if detected)
+      if (metrics.activeChakra) {
+        ctx.font = 'bold 12px sans-serif';
+        ctx.fillStyle = metrics.activeChakra.color;
+        ctx.textAlign = 'right';
+        ctx.fillText(`${metrics.activeChakra.name} Chakra`, canvas.width - 20, 30);
+        ctx.fillText(`${metrics.activeChakra.freq} Hz`, canvas.width - 20, 45);
+      }
+
+      // Pulsing energy particles based on coherence
+      const numParticles = Math.floor(metrics.coherence * 20);
+      for (let i = 0; i < numParticles; i++) {
+        // 🔥 PARTICLE SPEED LINKED TO BEAT FREQUENCY
+        const beatSpeedParticle = beatFreq * 0.02; // Direct Hz to speed multiplier
+        const angle = (i / numParticles) * Math.PI * 2 + time * beatSpeedParticle;
+        // 🔥 PULSING SYNCED TO BEAT FREQUENCY
+        const beatPulse = beatFreq * 0.01; // Pulse at beat frequency rate
+        const distance = mandalaRadius + 20 + Math.sin(time * beatPulse + i) * 10;
+        const px = centerX + Math.cos(angle) * distance;
+        const py = centerY + Math.sin(angle) * distance;
+
+        ctx.beginPath();
+        ctx.arc(px, py, 3 + audioBands.overall * 5, 0, Math.PI * 2);
+        ctx.fillStyle = generateCoherenceGradient(metrics.coherence)[i % 3];
+        ctx.globalAlpha = 0.6;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+    }
+
     animationId = requestAnimationFrame(draw);
 
     return () => {
       cancelAnimationFrame(animationId);
     };
-  }, [isPlaying, leftFreq, rightFreq, beatFreq, activePattern, analyserNode, electromagnetic, showSpectrum, visualizationMode]);
+  }, [isPlaying, leftFreq, rightFreq, beatFreq, activePattern, analyserNode, electromagnetic, showSpectrum, visualizationMode, showConsciousnessPanel, visualSensitivity]);
 
   return (
     <VisualizerContainer 
@@ -934,6 +1135,9 @@ console.log(audioWorkletStatus)
             <ToggleButton value="combined" title="Combined">
               <GridOnIcon fontSize="small" />
             </ToggleButton>
+            <ToggleButton value="consciousness" title="Consciousness Patterns">
+              <PsychologyIcon fontSize="small" />
+            </ToggleButton>
           </ToggleButtonGroup>
 
           <IconButton
@@ -952,6 +1156,40 @@ console.log(audioWorkletStatus)
           >
             {isFullscreen ? <FullscreenExitIcon fontSize="small" /> : <FullscreenIcon fontSize="small" />}
           </IconButton>
+
+          {/* Signal Strength Slider */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 2, minWidth: 150 }}>
+            <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.65rem', whiteSpace: 'nowrap' }}>
+              Signal
+            </Typography>
+            <Slider
+              value={visualSensitivity}
+              onChange={(_, value) => setVisualSensitivity(value as number)}
+              min={1}
+              max={20}
+              step={0.5}
+              size="small"
+              sx={{
+                width: 100,
+                color: '#00ff88',
+                '& .MuiSlider-thumb': {
+                  width: 12,
+                  height: 12,
+                },
+                '& .MuiSlider-track': {
+                  height: 3,
+                },
+                '& .MuiSlider-rail': {
+                  height: 3,
+                  opacity: 0.3,
+                }
+              }}
+              title={`Visual Signal Strength: ${visualSensitivity.toFixed(1)}x`}
+            />
+            <Typography variant="caption" sx={{ color: '#00ff88', fontSize: '0.65rem', minWidth: 30 }}>
+              {visualSensitivity.toFixed(1)}x
+            </Typography>
+          </Box>
         </Box>
       </Box>
 
@@ -1041,6 +1279,187 @@ console.log(audioWorkletStatus)
               }}
             />
           )}
+        </Box>
+      )}
+
+      {/* 🧠 CONSCIOUSNESS METRICS PANEL */}
+      {showMetrics && consciousnessMetrics && showConsciousnessPanel && (
+        <Box sx={{
+          mt: 1,
+          p: 1.5,
+          background: 'rgba(148, 0, 211, 0.1)',
+          border: '1px solid rgba(148, 0, 211, 0.3)',
+          borderRadius: 1,
+          flexShrink: 0
+        }}>
+          <Typography variant="subtitle2" sx={{
+            color: '#9400D3',
+            fontWeight: 'bold',
+            mb: 1,
+            fontSize: '0.85rem',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px'
+          }}>
+            🧠 Consciousness Metrics
+          </Typography>
+
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, fontSize: '0.75rem' }}>
+            {/* Dominant State */}
+            <Box>
+              <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)', display: 'block' }}>
+                Brainwave State
+              </Typography>
+              <Typography variant="body2" sx={{
+                color: BRAINWAVE_RANGES[consciousnessMetrics.dominantState].color,
+                fontWeight: 'bold',
+                fontSize: '0.8rem'
+              }}>
+                {consciousnessMetrics.dominantState.toUpperCase()} ({consciousnessMetrics.dominantFreq.toFixed(2)} Hz)
+              </Typography>
+              <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.65rem' }}>
+                {BRAINWAVE_RANGES[consciousnessMetrics.dominantState].label}
+              </Typography>
+            </Box>
+
+            {/* Coherence */}
+            <Box>
+              <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)', display: 'block' }}>
+                Coherence
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <LinearProgress
+                  variant="determinate"
+                  value={consciousnessMetrics.coherence * 100}
+                  sx={{
+                    flex: 1,
+                    height: 8,
+                    borderRadius: 4,
+                    bgcolor: 'rgba(255, 255, 255, 0.1)',
+                    '& .MuiLinearProgress-bar': {
+                      bgcolor: consciousnessMetrics.coherence > 0.7 ? '#00FF00' : consciousnessMetrics.coherence > 0.4 ? '#FFFF00' : '#FF6666',
+                      borderRadius: 4
+                    }
+                  }}
+                />
+                <Typography variant="body2" sx={{
+                  color: consciousnessMetrics.coherence > 0.7 ? '#00FF00' : '#FFFF00',
+                  fontWeight: 'bold',
+                  fontSize: '0.8rem',
+                  minWidth: '40px'
+                }}>
+                  {(consciousnessMetrics.coherence * 100).toFixed(0)}%
+                </Typography>
+              </Box>
+            </Box>
+
+            {/* Schumann Lock */}
+            <Box>
+              <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)', display: 'block' }}>
+                Schumann Resonance
+              </Typography>
+              <Typography variant="body2" sx={{
+                color: consciousnessMetrics.schumannLock.locked ? '#9400D3' : 'rgba(255, 255, 255, 0.4)',
+                fontWeight: 'bold',
+                fontSize: '0.8rem'
+              }}>
+                {consciousnessMetrics.schumannLock.locked
+                  ? `LOCKED ${consciousnessMetrics.schumannLock.frequency} Hz`
+                  : 'Not Locked'}
+              </Typography>
+            </Box>
+
+            {/* Golden Ratio */}
+            <Box>
+              <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)', display: 'block' }}>
+                Golden Ratio
+              </Typography>
+              <Typography variant="body2" sx={{
+                color: consciousnessMetrics.goldenRatio.detected ? '#FFD700' : 'rgba(255, 255, 255, 0.4)',
+                fontWeight: 'bold',
+                fontSize: '0.8rem'
+              }}>
+                {consciousnessMetrics.goldenRatio.detected
+                  ? `DETECTED (${consciousnessMetrics.goldenRatio.ratio.toFixed(4)})`
+                  : `Ratio: ${consciousnessMetrics.goldenRatio.ratio.toFixed(4)}`}
+              </Typography>
+            </Box>
+
+            {/* Entrainment */}
+            <Box>
+              <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)', display: 'block' }}>
+                Entrainment
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <LinearProgress
+                  variant="determinate"
+                  value={consciousnessMetrics.entrainment * 100}
+                  sx={{
+                    flex: 1,
+                    height: 8,
+                    borderRadius: 4,
+                    bgcolor: 'rgba(255, 255, 255, 0.1)',
+                    '& .MuiLinearProgress-bar': {
+                      bgcolor: consciousnessMetrics.entrainment > 0.7 ? '#00FF00' : consciousnessMetrics.entrainment > 0.4 ? '#FFFF00' : '#FF0000',
+                      borderRadius: 4
+                    }
+                  }}
+                />
+                <Typography variant="body2" sx={{
+                  color: consciousnessMetrics.entrainment > 0.7 ? '#00FF00' : '#FFFF00',
+                  fontWeight: 'bold',
+                  fontSize: '0.8rem',
+                  minWidth: '40px'
+                }}>
+                  {(consciousnessMetrics.entrainment * 100).toFixed(0)}%
+                </Typography>
+              </Box>
+            </Box>
+
+            {/* Heart-Brain Coherence */}
+            <Box>
+              <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)', display: 'block' }}>
+                Heart-Brain Sync
+              </Typography>
+              <Typography variant="body2" sx={{
+                color: consciousnessMetrics.heartBrain > 0.5 ? '#FF69B4' : 'rgba(255, 255, 255, 0.4)',
+                fontWeight: 'bold',
+                fontSize: '0.8rem'
+              }}>
+                {(consciousnessMetrics.heartBrain * 100).toFixed(0)}%
+              </Typography>
+            </Box>
+
+            {/* Sacred Geometry */}
+            <Box>
+              <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)', display: 'block' }}>
+                Sacred Geometry
+              </Typography>
+              <Typography variant="body2" sx={{
+                color: '#9400D3',
+                fontWeight: 'bold',
+                fontSize: '0.8rem',
+                fontStyle: 'italic'
+              }}>
+                {consciousnessMetrics.sacredGeometry}
+              </Typography>
+            </Box>
+
+            {/* Chakra Activation */}
+            <Box>
+              <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)', display: 'block' }}>
+                Chakra Activation
+              </Typography>
+              <Typography variant="body2" sx={{
+                color: consciousnessMetrics.activeChakra?.color || 'rgba(255, 255, 255, 0.4)',
+                fontWeight: 'bold',
+                fontSize: '0.8rem'
+              }}>
+                {consciousnessMetrics.activeChakra
+                  ? `${consciousnessMetrics.activeChakra.name} (${consciousnessMetrics.activeChakra.freq} Hz)`
+                  : 'None'}
+              </Typography>
+            </Box>
+          </Box>
         </Box>
       )}
 

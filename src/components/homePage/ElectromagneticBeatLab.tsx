@@ -18,8 +18,7 @@ import {startBinauralAudio, stopBinauralAudio} from '../../utils/audioControls';
 import {
   useBinauralVisualization,
   useCurrentPresetTracker,
-  useElectromagneticLabState,
-  useHybridAudioEngine
+  useElectromagneticLabState
 } from '../../hooks';
 import {WAVE_PATTERNS} from '../../data/patterns';
 // Configuration and Styles
@@ -36,6 +35,9 @@ import BinauralGeneratorMUI from '../BinauralGeneratorMUI';
 import QuickStart from '../QuickStart';
 import TimerTab from '../tabs/TimerTab';
 import type {TimerStatus} from '../../data/timer';
+
+// 🔥 CRITICAL FIX: Import context hook
+import { useAudioEngineContext } from '../../contexts/AudioEngineContext';
 
 // Extracted Components
 import CollapsibleSection from '../shared/CollapsibleSection';
@@ -70,9 +72,9 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
     updateElectromagneticState
   } = useElectromagneticLabState(initialPattern?.id , autoStart);
 
-  // SINGLE AUDIO ENGINE: Hybrid engine manages both frontend + backend internally
-  // This ensures ONE audio context, ONE WebSocket connection, seamless failover
-  const hybridEngine = useHybridAudioEngine();
+  // 🔥 CRITICAL FIX: Use context instead of creating new instance!
+  // SINGLE AUDIO ENGINE: Get from context (created ONCE in App.tsx)
+  const hybridEngine = useAudioEngineContext();
 
   // LEGACY COMPONENT REFERENCES: Extract internal engines for components that need them
   // These are NOT new instances - they're the SAME engines hybrid uses internally

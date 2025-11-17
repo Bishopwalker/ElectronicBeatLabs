@@ -70,7 +70,7 @@ echo ""
 
 # Step 4: Create ECS Cluster (if not exists)
 echo -e "${YELLOW}[4/6] Checking ECS cluster...${NC}"
-CLUSTER_EXISTS=$(aws ecs describe-clusters --clusters ${ECS_CLUSTER} --region ${AWS_REGION} | jq -r '.clusters[0].status')
+CLUSTER_EXISTS=$(aws ecs describe-clusters --clusters ${ECS_CLUSTER} --region ${AWS_REGION} --query 'clusters[0].status' --output text 2>/dev/null)
 
 if [ "$CLUSTER_EXISTS" != "ACTIVE" ]; then
   echo "Creating ECS cluster..."
@@ -97,7 +97,7 @@ echo ""
 echo -e "${YELLOW}[6/6] Deploying services to ECS...${NC}"
 
 # Check if backend service exists
-BACKEND_SERVICE_EXISTS=$(aws ecs describe-services --cluster ${ECS_CLUSTER} --services ${ECS_SERVICE_BACKEND} --region ${AWS_REGION} | jq -r '.services[0].status')
+BACKEND_SERVICE_EXISTS=$(aws ecs describe-services --cluster ${ECS_CLUSTER} --services ${ECS_SERVICE_BACKEND} --region ${AWS_REGION} --query 'services[0].status' --output text 2>/dev/null)
 
 if [ "$BACKEND_SERVICE_EXISTS" == "ACTIVE" ]; then
   echo "Updating backend service..."
@@ -114,7 +114,7 @@ else
 fi
 
 # Check if frontend service exists
-FRONTEND_SERVICE_EXISTS=$(aws ecs describe-services --cluster ${ECS_CLUSTER} --services ${ECS_SERVICE_FRONTEND} --region ${AWS_REGION} | jq -r '.services[0].status')
+FRONTEND_SERVICE_EXISTS=$(aws ecs describe-services --cluster ${ECS_CLUSTER} --services ${ECS_SERVICE_FRONTEND} --region ${AWS_REGION} --query 'services[0].status' --output text 2>/dev/null)
 
 if [ "$FRONTEND_SERVICE_EXISTS" == "ACTIVE" ]; then
   echo "Updating frontend service..."

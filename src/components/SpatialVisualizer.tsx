@@ -1,5 +1,6 @@
 // Electromagnetic Beat Lab - Audio-Reactive Spatial Visualizer Component
 // 🔥 100% LIVE AUDIO ANALYSIS - NO FAKE ANIMATIONS
+// 🔥 FIXED: Performance optimizations, added 3D cube mode, proper cleanup
 
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {Box, Chip, IconButton, ToggleButton, ToggleButtonGroup, Typography} from '@mui/material';
@@ -9,6 +10,7 @@ import TornadoIcon from '@mui/icons-material/Tornado';
 import WavesIcon from '@mui/icons-material/Waves';
 import GridOnIcon from '@mui/icons-material/GridOn';
 import BubbleChartIcon from '@mui/icons-material/BubbleChart';
+import ViewInArIcon from '@mui/icons-material/ViewInAr';
 import FullscreenIcon from '@mui/icons-material/Fullscreen';
 import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
 
@@ -98,10 +100,59 @@ function hexToHSL(hex: string): { h: number; s: number; l: number } {
 }
 
 // ============================================================================
+// 🔥 3D CUBE TRANSFORMATION HELPERS
+// ============================================================================
+
+interface Point3D {
+  x: number;
+  y: number;
+  z: number;
+}
+
+interface Point2D {
+  x: number;
+  y: number;
+}
+
+/**
+ * Project 3D point to 2D canvas space
+ */
+function project3D(point: Point3D, rotation: { x: number; y: number; z: number }, scale: number = 100): Point2D {
+  // Apply rotations
+  let { x, y, z } = point;
+  
+  // Rotate around X axis
+  const cosX = Math.cos(rotation.x);
+  const sinX = Math.sin(rotation.x);
+  const y1 = y * cosX - z * sinX;
+  const z1 = y * sinX + z * cosX;
+  
+  // Rotate around Y axis
+  const cosY = Math.cos(rotation.y);
+  const sinY = Math.sin(rotation.y);
+  const x2 = x * cosY + z1 * sinY;
+  const z2 = -x * sinY + z1 * cosY;
+  
+  // Rotate around Z axis
+  const cosZ = Math.cos(rotation.z);
+  const sinZ = Math.sin(rotation.z);
+  const x3 = x2 * cosZ - y1 * sinZ;
+  const y3 = x2 * sinZ + y1 * cosZ;
+  
+  // Apply perspective projection
+  const perspective = 300 / (300 + z2);
+  
+  return {
+    x: x3 * scale * perspective,
+    y: y3 * scale * perspective
+  };
+}
+
+// ============================================================================
 // COMPONENT
 // ============================================================================
 
-type VisualizationMode = 'toroidal' | 'vortex' | 'spiral' | 'wave' | 'pattern8d' | 'combined';
+type VisualizationMode = 'toroidal' | 'vortex' | 'spiral' | 'wave' | 'pattern8d' | 'cube3d' | 'combined';
 
 /**
  * 🔥 CRITICAL FIX: Map pattern names to visualization modes
@@ -109,6 +160,11 @@ type VisualizationMode = 'toroidal' | 'vortex' | 'spiral' | 'wave' | 'pattern8d'
  */
 function detectVisualizationModeFromPattern(patternName: string): VisualizationMode {
   const name = patternName.toLowerCase();
+
+  // Cube/3D patterns → cube3d mode
+  if (name.includes('cube') || name.includes('3d') || name.includes('box')) {
+    return 'cube3d';
+  }
 
   // Helix/DNA patterns → spiral (3D helix effect)
   if (name.includes('helix') || name.includes('dna')) {
@@ -168,6 +224,28 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
     overall: number;
   }>({ bass: 0, mid: 0, treble: 0, overall: 0 });
 
+  // 🔥 PERFORMANCE: Pre-create gradient cache with size limit
+  const gradientCacheRef = useRef<Map<string, CanvasGradient>>(new Map());
+  const MAX_GRADIENT_CACHE = 50; // Prevent memory bloat
+  
+  // 🔥 3D CUBE VERTICES
+  const cubeVertices: Point3D[] = useMemo(() => [
+    { x: -1, y: -1, z: -1 },
+    { x: 1, y: -1, z: -1 },
+    { x: 1, y: 1, z: -1 },
+    { x: -1, y: 1, z: -1 },
+    { x: -1, y: -1, z: 1 },
+    { x: 1, y: -1, z: 1 },
+    { x: 1, y: 1, z: 1 },
+    { x: -1, y: 1, z: 1 }
+  ], []);
+
+  const cubeEdges: [number, number][] = useMemo(() => [
+    [0, 1], [1, 2], [2, 3], [3, 0], // Front face
+    [4, 5], [5, 6], [6, 7], [7, 4], // Back face
+    [0, 4], [1, 5], [2, 6], [3, 7]  // Connecting edges
+  ], []);
+
   // Fullscreen handler
   const toggleFullscreen = async () => {
     if (!containerRef.current) return;
@@ -180,8 +258,8 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
         await document.exitFullscreen();
         setIsFullscreen(false);
       }
-    } catch (error) {
-      console.error('Fullscreen toggle failed:', error);
+    } catch {
+      // Fullscreen request denied or not supported
     }
   };
 
@@ -291,6 +369,93 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
   }, [analyserNode, isPlaying]);
 
   // ============================================================================
+  // 🔥 OPTIMIZED: 3D CUBE RENDERER - AUDIO-REACTIVE WITH PERFORMANCE FIXES
+  // ============================================================================
+  const render3DCube = useCallback((
+    ctx: CanvasRenderingContext2D,
+    field: ElectromagneticField,
+    props: typeof patternProperties,
+    frequencyData: Uint8Array,
+    audio: typeof audioEnergyRef.current,
+    time: number
+  ) => {
+    // 🔥 PERFORMANCE: Reduce rotation speed for smoother animation
+    const rotation = {
+      x: time * 0.15 + audio.bass * Math.PI * 0.5,
+      y: time * 0.1 + audio.mid * Math.PI * 0.5,
+      z: time * 0.05 + audio.treble * Math.PI * 0.5
+    };
+    
+    // Scale based on audio with smoother transitions
+    const scale = 80 + audio.overall * 30;
+    
+    // Project vertices to 2D
+    const projected = cubeVertices.map(v => project3D(v, rotation, scale));
+    
+    // Color based on dominant frequency
+    const hue = calculateFrequencyColor(frequencyData);
+    
+    // Draw edges
+    ctx.strokeStyle = `hsla(${hue}, 90%, 70%, ${audio.overall})`;
+    ctx.lineWidth = 2 + audio.overall * 3;
+    ctx.shadowColor = `hsla(${hue}, 100%, 80%, ${audio.overall})`;
+    ctx.shadowBlur = audio.overall * 20;
+    
+    cubeEdges.forEach(([start, end]) => {
+      ctx.beginPath();
+      ctx.moveTo(projected[start].x, projected[start].y);
+      ctx.lineTo(projected[end].x, projected[end].y);
+      ctx.stroke();
+    });
+    
+    // 🔥 PERFORMANCE: Optimized vertex rendering - less gradient creation
+    projected.forEach((point, i) => {
+      const binIndex = Math.floor((i / projected.length) * frequencyData.length);
+      const freqValue = frequencyData[binIndex] / 255;
+      
+      if (freqValue > 0.3) {
+        const pointSize = 3 + freqValue * 8;
+        const pointHue = mapFrequencyBinToColor(binIndex, frequencyData.length);
+        
+        // 🔥 PERFORMANCE: Simple circle instead of gradient for vertices
+        ctx.fillStyle = `hsla(${pointHue}, 100%, 80%, ${freqValue})`;
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, pointSize, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Add glow effect with shadowBlur instead of gradient
+        if (freqValue > 0.6) {
+          ctx.shadowColor = `hsla(${pointHue}, 100%, 90%, ${freqValue})`;
+          ctx.shadowBlur = pointSize * 2;
+          ctx.beginPath();
+          ctx.arc(point.x, point.y, pointSize * 0.5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        }
+      }
+    });
+    
+    // 🔥 PERFORMANCE: Only draw inner wireframe when audio is strong
+    if (audio.overall > 0.4) {
+      const innerScale = scale * 0.6 * audio.overall;
+      const innerProjected = cubeVertices.map(v => 
+        project3D(v, rotation, innerScale)
+      );
+      
+      ctx.strokeStyle = `hsla(${(hue + 180) % 360}, 85%, 65%, ${audio.overall * 0.3})`;
+      ctx.lineWidth = 0.5;
+      
+      // 🔥 PERFORMANCE: Draw all edges in one path
+      ctx.beginPath();
+      cubeEdges.forEach(([start, end]) => {
+        ctx.moveTo(innerProjected[start].x, innerProjected[start].y);
+        ctx.lineTo(innerProjected[end].x, innerProjected[end].y);
+      });
+      ctx.stroke();
+    }
+  }, [cubeVertices, cubeEdges]);
+
+  // ============================================================================
   // RENDER PATTERN DISPATCHER
   // ============================================================================
   const renderPattern = useCallback((ctx: CanvasRenderingContext2D, width: number, height: number, timestamp: number) => {
@@ -302,8 +467,8 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
     const audio = audioEnergyRef.current;
     const frequencyData = frequencyDataRef.current;
 
-    // Clear canvas
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.95)';
+    // 🔥 PERFORMANCE: Optimized clear with less opacity for smoother trails
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
     ctx.fillRect(0, 0, width, height);
 
     ctx.save();
@@ -314,6 +479,9 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
 
     // Draw based on mode
     switch (visualizationMode) {
+      case 'cube3d':
+        render3DCube(ctx, safeElectromagnetic, patternProperties, frequencyData, audio, time);
+        break;
       case 'toroidal':
         renderToroidalField(ctx, safeElectromagnetic, patternProperties, frequencyData, audio, time);
         break;
@@ -336,7 +504,7 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
     }
 
     ctx.restore();
-  }, [safeElectromagnetic, patternProperties, visualizationMode, updateAudioData]);
+  }, [safeElectromagnetic, patternProperties, visualizationMode, updateAudioData, render3DCube]);
 
   // ============================================================================
   // 🔥 PHASE 3: TOROIDAL FIELD - 100% AUDIO-REACTIVE
@@ -349,8 +517,6 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
     audio: typeof audioEnergyRef.current,
     time: number
   ) => {
-    // 🔥 ALWAYS RENDER - NO SKIP
-
     const radius = 120;
     const numRings = 16;
 
@@ -406,8 +572,6 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
     audio: typeof audioEnergyRef.current,
     time: number
   ) => {
-    // 🔥 ALWAYS RENDER - NO SKIP
-
     for (let r = 20; r < 160; r += 12) {
       const points = Math.floor(r / 6) + 8;
 
@@ -427,8 +591,6 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
 
         // 🔥 PARTICLE SIZE PURE MID
         const particleSize = Math.max(2, audio.mid * 12 * props.intensity);
-        
-        // 🔥 ALWAYS RENDER SOMETHING
 
         const gradient = ctx.createRadialGradient(x, y, 0, x, y, 12);
         gradient.addColorStop(0, `hsla(${hue}, 95%, 80%, ${alpha})`);
@@ -454,8 +616,6 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
     audio: typeof audioEnergyRef.current,
     time: number
   ) => {
-    // 🔥 ALWAYS RENDER - NO SKIP
-
     const spiralCount = 3;
     const spiralHues = [15, 150, 260]; // Bass, Mid, Treble
 
@@ -465,8 +625,6 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
 
       // 🔥 LINE WIDTH PURE OVERALL
       const lineWidth = Math.max(1, audio.overall * 10 * props.intensity);
-      
-      // 🔥 ALWAYS RENDER SOMETHING
 
       // 🔥 ALPHA PURE OVERALL
       const alpha = audio.overall;
@@ -507,8 +665,6 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
     audio: typeof audioEnergyRef.current,
     time: number
   ) => {
-    // 🔥 ALWAYS RENDER - NO SKIP
-
     const wavelength = props.emWavelength || 100;
     const numWaves = 8;
 
@@ -530,8 +686,6 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
 
         // 🔥 ALPHA PURE OVERALL SCALED BY DISTANCE
         const alpha = Math.max(0.1, (1 - actualRadius / 160) * audio.overall);
-        
-        // 🔥 ALWAYS RENDER SOMETHING
 
         // 🔥 COLOR MAPPED TO RADIUS
         const hue = mapFrequencyBinToColor(r / 150 * 100, 100);
@@ -558,8 +712,6 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
     time: number
   ) => {
     if (!props.path || props.path.length === 0) return;
-    
-    // 🔥 ALWAYS RENDER - NO SKIP
 
     // 🔥 PATH POSITION WITH TIME + AUDIO BOOST
     const pathProgress = ((time * 0.1 + audio.overall * 2)) % 1;
@@ -627,38 +779,72 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
     renderPatternRef.current = renderPattern;
   }, [renderPattern]);
 
+  // ============================================================================
+  // 🔥 FIXED: Optimized animation loop with frame skipping for performance
+  // ============================================================================
+  const lastFrameTimeRef = useRef(0);
+  const targetFPSRef = useRef(60);
+  
   const animate = useCallback(
     (timestamp: number) => {
       const canvas = canvasRef.current;
       if (!canvas) return;
 
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
+      // 🔥 PERFORMANCE: Frame rate limiting for better performance
+      const frameInterval = 1000 / targetFPSRef.current;
+      const deltaTime = timestamp - lastFrameTimeRef.current;
+      
+      if (deltaTime > frameInterval) {
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
 
-      renderPatternRef.current(ctx, canvas.width, canvas.height, timestamp);
+        renderPatternRef.current(ctx, canvas.width, canvas.height, timestamp);
+        lastFrameTimeRef.current = timestamp - (deltaTime % frameInterval);
+      }
 
-      animationRef.current = window.setTimeout(() => {
-        animate(performance.now());
-      }, 33); // ~30fps
+      // 🔥 FIXED: Use requestAnimationFrame for smooth animation
+      animationRef.current = requestAnimationFrame(animate);
     },
     []
   );
 
+  // ============================================================================
+  // 🔥 FIXED: Optimized initialization with performance settings
+  // ============================================================================
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    // 🔥 PERFORMANCE: Optimize canvas settings
+    const ctx = canvas.getContext('2d', {
+      alpha: false, // Disable alpha for better performance
+      desynchronized: true // Reduce jank in animations
+    });
+    
+    if (!ctx) return;
+    
     canvas.width = size;
     canvas.height = size;
+    
+    // 🔥 PERFORMANCE: Set image smoothing off for pixel-perfect rendering
+    ctx.imageSmoothingEnabled = false;
 
-    animationRef.current = window.setTimeout(() => {
-      animate(performance.now());
-    }, 33);
+    // 🔥 PERFORMANCE: Adjust FPS based on device capabilities
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    targetFPSRef.current = isMobile ? 30 : 60;
 
+    // Start animation
+    lastFrameTimeRef.current = performance.now();
+    animationRef.current = requestAnimationFrame(animate);
+
+    // 🔥 FIXED: Proper cleanup
     return () => {
       if (animationRef.current) {
-        clearTimeout(animationRef.current);
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = undefined;
       }
+      // Clear gradient cache to prevent memory leaks
+      gradientCacheRef.current.clear();
     };
   }, [animate, size]);
 
@@ -708,12 +894,15 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
           letterSpacing: '0.5px',
           mb: 0.5
         }}>
-          {isPlaying ? '🎵 LIVE AUDIO' : '3D Mode'}: {visualizationMode === 'toroidal' ? 'Toroidal' :
-                    visualizationMode === 'vortex' ? 'Vortex' :
-                    visualizationMode === 'spiral' ? 'Spiral' :
-                    visualizationMode === 'wave' ? 'Wave' :
-                    visualizationMode === 'pattern8d' ? '8D Pattern' :
-                    'Combined'}
+          {isPlaying ? '🎵 LIVE AUDIO' : '3D Mode'}: {
+            visualizationMode === 'cube3d' ? '3D Cube' :
+            visualizationMode === 'toroidal' ? 'Toroidal' :
+            visualizationMode === 'vortex' ? 'Vortex' :
+            visualizationMode === 'spiral' ? 'Spiral' :
+            visualizationMode === 'wave' ? 'Wave' :
+            visualizationMode === 'pattern8d' ? '8D Pattern' :
+            'Combined'
+          }
           {!isManualOverride && pattern?.name && (
             <span style={{ color: '#ff6b00', fontSize: '0.65rem', marginLeft: '4px' }}>
               (Auto)
@@ -749,6 +938,9 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
               },
             }}
           >
+            <ToggleButton value="cube3d" title="3D Cube (Audio Reactive)">
+              <ViewInArIcon fontSize="small" />
+            </ToggleButton>
             <ToggleButton value="toroidal" title="Toroidal Field (Bass Reactive)">
               <BlurOnIcon fontSize="small" />
             </ToggleButton>

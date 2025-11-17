@@ -13,11 +13,22 @@ import {
     Slider,
     Stack,
     Switch,
-    Typography
+    Typography,
+    Accordion,
+    AccordionSummary,
+    AccordionDetails,
+    Checkbox,
+    FormGroup,
+    Tooltip
 } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import DashboardIcon from '@mui/icons-material/Dashboard';
 import type {AppState, AudioEngine, Pattern8D} from '../../types';
 import type {TimerStatus} from "../../data/timer";
+import type { ParameterDashboardConfig } from '../ParameterDashboard';
+import { DEFAULT_DASHBOARD_CONFIG, PARAMETER_HELP } from '../ParameterDashboard';
 
 
 interface SettingsTabProps {
@@ -730,6 +741,199 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
             )}
           </Box>
         </Box>
+      </Paper>
+
+      {/* Parameter Dashboard Settings */}
+      <Paper
+        sx={{
+          background: 'rgba(255, 215, 0, 0.05)',
+          borderRadius: 3,
+          p: 2,
+          border: '1px solid rgba(255, 215, 0, 0.3)'
+        }}
+      >
+        <Typography
+          variant="h6"
+          component="h4"
+          sx={{
+            color: '#FFD700',
+            mb: 2,
+            fontSize: '1.1rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.5
+          }}
+        >
+          <DashboardIcon sx={{ fontSize: '1.2rem' }} />
+          Real-Time Parameter Dashboard
+        </Typography>
+
+        <Typography
+          variant="body2"
+          sx={{ color: 'rgba(255, 255, 255, 0.7)', mb: 2, fontSize: '0.85rem' }}
+        >
+          Configure the real-time parameter dashboard displayed during audio playback.
+          Access the dashboard by clicking the <DashboardIcon sx={{ fontSize: '14px', verticalAlign: 'middle' }} /> icon in the Frequency Visualizer toolbar.
+        </Typography>
+
+        <Accordion
+          sx={{
+            background: 'rgba(0, 0, 0, 0.2)',
+            '&:before': { display: 'none' },
+            border: '1px solid rgba(255, 215, 0, 0.2)'
+          }}
+        >
+          <AccordionSummary
+            expandIcon={<ExpandMoreIcon sx={{ color: '#FFD700' }} />}
+            sx={{ minHeight: '48px' }}
+          >
+            <Typography sx={{ color: '#FFD700', fontWeight: 600, fontSize: '0.95rem' }}>
+              Parameter Display Settings
+            </Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            <FormGroup>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    defaultChecked={DEFAULT_DASHBOARD_CONFIG.showFrequencyMetrics}
+                    sx={{
+                      color: 'rgba(255, 255, 255, 0.5)',
+                      '&.Mui-checked': { color: '#00BFFF' }
+                    }}
+                  />
+                }
+                label={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Typography sx={{ color: '#e0e0e0', fontSize: '0.85rem' }}>
+                      Frequency Metrics
+                    </Typography>
+                    <Tooltip title="Left/Right frequencies, beat frequency, carrier frequency" arrow>
+                      <InfoOutlinedIcon sx={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.5)' }} />
+                    </Tooltip>
+                  </Box>
+                }
+              />
+
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    defaultChecked={DEFAULT_DASHBOARD_CONFIG.showAmplitudeMetrics}
+                    sx={{
+                      color: 'rgba(255, 255, 255, 0.5)',
+                      '&.Mui-checked': { color: '#FF6B00' }
+                    }}
+                  />
+                }
+                label={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Typography sx={{ color: '#e0e0e0', fontSize: '0.85rem' }}>
+                      Amplitude Metrics
+                    </Typography>
+                    <Tooltip title="RMS amplitude, peak levels, power in dB, THD percentage" arrow>
+                      <InfoOutlinedIcon sx={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.5)' }} />
+                    </Tooltip>
+                  </Box>
+                }
+              />
+
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    defaultChecked={DEFAULT_DASHBOARD_CONFIG.showTimbreAnalysis}
+                    sx={{
+                      color: 'rgba(255, 255, 255, 0.5)',
+                      '&.Mui-checked': { color: '#8A2BE2' }
+                    }}
+                  />
+                }
+                label={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Typography sx={{ color: '#e0e0e0', fontSize: '0.85rem' }}>
+                      Timbre Analysis
+                    </Typography>
+                    <Tooltip title="Spectral centroid, bandwidth, flatness, rolloff - advanced audio metrics" arrow>
+                      <InfoOutlinedIcon sx={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.5)' }} />
+                    </Tooltip>
+                  </Box>
+                }
+              />
+
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    defaultChecked={DEFAULT_DASHBOARD_CONFIG.showEMFieldData}
+                    sx={{
+                      color: 'rgba(255, 255, 255, 0.5)',
+                      '&.Mui-checked': { color: '#FF00FF' }
+                    }}
+                  />
+                }
+                label={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Typography sx={{ color: '#e0e0e0', fontSize: '0.85rem' }}>
+                      EM Field Data
+                    </Typography>
+                    <Tooltip title="Simulated electromagnetic field patterns, intensity, toroidal spin rates" arrow>
+                      <InfoOutlinedIcon sx={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.5)' }} />
+                    </Tooltip>
+                  </Box>
+                }
+              />
+
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    defaultChecked={DEFAULT_DASHBOARD_CONFIG.showConsciousnessMetrics}
+                    sx={{
+                      color: 'rgba(255, 255, 255, 0.5)',
+                      '&.Mui-checked': { color: '#FFD700' }
+                    }}
+                  />
+                }
+                label={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Typography sx={{ color: '#e0e0e0', fontSize: '0.85rem' }}>
+                      Consciousness Metrics
+                    </Typography>
+                    <Tooltip title="Brainwave state, Schumann resonance alignment, golden ratio detection, coherence scores" arrow>
+                      <InfoOutlinedIcon sx={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.5)' }} />
+                    </Tooltip>
+                  </Box>
+                }
+              />
+
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    defaultChecked={DEFAULT_DASHBOARD_CONFIG.showSystemPerformance}
+                    sx={{
+                      color: 'rgba(255, 255, 255, 0.5)',
+                      '&.Mui-checked': { color: '#00FF88' }
+                    }}
+                  />
+                }
+                label={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Typography sx={{ color: '#e0e0e0', fontSize: '0.85rem' }}>
+                      System Performance
+                    </Typography>
+                    <Tooltip title="Session duration, frame counts, buffer health, latency, CPU/memory usage" arrow>
+                      <InfoOutlinedIcon sx={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.5)' }} />
+                    </Tooltip>
+                  </Box>
+                }
+              />
+            </FormGroup>
+
+            <Box sx={{ mt: 2, p: 1, background: 'rgba(0, 0, 0, 0.3)', borderRadius: 1 }}>
+              <Typography sx={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.75rem', fontStyle: 'italic' }}>
+                Tip: The parameter dashboard provides real-time insights into your binaural beat session,
+                including brainwave entrainment levels and Schumann resonance alignment for optimal consciousness enhancement.
+              </Typography>
+            </Box>
+          </AccordionDetails>
+        </Accordion>
       </Paper>
 
       <Paper
