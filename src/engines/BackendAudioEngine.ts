@@ -42,7 +42,7 @@ export class BackendAudioEngine {
   /**
    * Connect to backend WebSocket server
    */
-  async connect(url: string = 'ws://localhost:8000/ws/audio'): Promise<void> {
+  async connect(url: string = 'ws://localhost:8001/ws/audio'): Promise<void> {
     if (this.isConnected) {
       return;
     }

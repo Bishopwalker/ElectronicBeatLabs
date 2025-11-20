@@ -5,9 +5,9 @@ Authentication dependencies for FastAPI
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
-from backend.database.database import get_db
-from backend.database.models import User, UsageRecord
-from backend.auth.auth_utils import verify_token
+from database.database import get_db
+from database.models import User, UsageRecord
+from auth.auth_utils import verify_token
 from datetime import datetime
 import calendar
 

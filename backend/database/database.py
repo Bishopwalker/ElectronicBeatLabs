@@ -3,9 +3,10 @@ Database configuration and session management for Electromagnetic Beat Lab
 """
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.orm import sessionmaker
 import os
 from dotenv import load_dotenv
+from database.base import Base
 
 load_dotenv()
 
@@ -20,9 +21,6 @@ engine = create_engine(
 
 # Create SessionLocal class
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-# Create Base class
-Base = declarative_base()
 
 def get_db():
     """

@@ -3,8 +3,8 @@
 Simple script to create database tables
 """
 
-from backend.database.database import engine
-from backend.database.models import Base
+from database.database import engine
+from database.models import Base
 
 def create_tables():
     """Create all database tables"""

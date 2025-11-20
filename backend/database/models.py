@@ -5,7 +5,7 @@ Database models for Electromagnetic Beat Lab
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, Float, Text, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from database.database import Base
+from database.base import Base
 import uuid
 
 class User(Base):
