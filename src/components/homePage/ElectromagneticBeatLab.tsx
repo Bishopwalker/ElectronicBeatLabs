@@ -15,11 +15,7 @@ import {DEFAULT_BASE_FREQUENCY, DEFAULT_BEAT_FREQUENCY, DEFAULT_VOLUME} from '..
 import {startBinauralAudio, stopBinauralAudio} from '../../utils/audioControls';
 
 // Hooks and Data
-import {
-  useBinauralVisualization,
-  useCurrentPresetTracker,
-  useElectromagneticLabState
-} from '../../hooks';
+import {useBinauralVisualization, useCurrentPresetTracker, useElectromagneticLabState} from '../../hooks';
 import {WAVE_PATTERNS} from '../../data/patterns';
 // Configuration and Styles
 import {SECTION_DATA, TAB_CONFIG} from '../config/ElectromagneticLabConfig';
@@ -37,7 +33,7 @@ import TimerTab from '../tabs/TimerTab';
 import type {TimerStatus} from '../../data/timer';
 
 // 🔥 CRITICAL FIX: Import context hook
-import { useAudioEngineContext } from '../../contexts/AudioEngineContext';
+import {useAudioEngineContext} from '../../contexts/AudioEngineContext';
 
 // Extracted Components
 import CollapsibleSection from '../shared/CollapsibleSection';
@@ -685,7 +681,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
       )}
 
       {/* Header */}
-      <Paper elevation={0} sx={{ ...ElectromagneticLabStyles.headerPaper, mb: { xs: 2, sm: 2.5, md: 3 } }}>
+      <Paper elevation={0} sx={{ ...ElectromagneticLabStyles.headerPaper, mb: { xs: 3, sm: 3.5, md: 4 } }}>
         <Box sx={ElectromagneticLabStyles.titleStatusRow}>
           <Box sx={{ flex: 1 }}>
             <Typography variant="h4" sx={ElectromagneticLabStyles.mainTitle}>
@@ -771,12 +767,13 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
       {/* Content Area (85vh): Grid Layout */}
       <Box ref={contentAreaRef} sx={{
         p: { xs: '6px', sm: '10px', md: '12px' },
+        marginTop: '60px',
         gridRow: 2,
         display: 'grid',
         gridTemplateRows: '1fr',
-        overflowX: 'hidden',
+        overflowX: 'visible',
         overflowY: 'auto',
-        pt: 2
+        pt: { xs: 3, sm: 3.5, md: 4 }  // 🔥 Match header margin for consistent gap
       }}>
         {/* Layout Container: Switches between 2x3 (three-row) and 3x2 (three-column) */}
         {gridMode === '2x3' ? (
@@ -784,24 +781,31 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
         <Box sx={{
           display: 'grid',
           gridTemplateColumns: {
-            xs: '1fr',  // 1 column on mobile
+            xs: '1fr',  // 🔥 MOBILE: Single column
             sm: 'repeat(2, 1fr)',  // 2 columns per row
             md: 'repeat(2, 1fr)',
             lg: 'repeat(2, 1fr)',
-            xl: 'repeat(2, 1fr)'
+            xl: 'repeat(2, 1fr)',
           },
-          gridAutoRows: 'minmax(35vh, auto)',  // 🔥 Each row ~35vh, so 2 rows ≈ 70vh (fits in 85vh)
+          gridAutoRows: {
+            xs: 'auto',  // 🔥 MOBILE: Auto height rows
+            sm: 'auto',
+            md: 'minmax(fit-content, auto)'  // Desktop: Min 40vh per row
+          },
           gap: { xs: 2, sm: 2, md: 2.5, lg: 3 },
           p: { xs: 1.5, sm: 2, md: 2, lg: 2.5 },
           width: '100%',
-          maxWidth: '100vw',
-          height: 'auto',  // Let content determine height
-          minHeight: '100%',
-          overflowY: 'auto'
+          height: '100%', // Fill the parent scrolling container
+          overflowX: 'visible'
         }}>
-          {/* Timer Countdown - spans full width (2 columns) */}
+          {/* Timer Countdown - spans full width (2 columns on desktop, 1 on mobile) */}
           {timerStatus && !closedSections.includes('timerCountdown') && (
-            <Box sx={{ gridColumn: 'span 2', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+            <Box sx={{
+              gridColumn: { xs: 'span 1', sm: 'span 2' },  // 🔥 MOBILE: Single column
+              display: 'flex',
+              flexDirection: 'column',
+              minHeight: 0
+            }}>
               <CollapsibleSection id="timerCountdown" title="Timer & Session Controls" icon="⏱️" defaultOpen={true} onClose={handleSectionClose}>
                 <TimerCountdownDisplay
                   timerStatus={timerStatus}
@@ -971,9 +975,16 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
             </Box>
           )}
 
-          {/* Spatial Visualizer - spans full width (2 columns) */}
+          {/* Spatial Visualizer - spans full width (2 columns on desktop, 1 on mobile) */}
           {!closedSections.includes('spatialVisualizer') && (
-            <Box sx={{ gridColumn: 'span 2', display: 'flex', flexDirection: 'column', minHeight: 0, maxHeight: '100%', overflowY: 'hidden' }}>
+            <Box sx={{
+              gridColumn: { xs: 'span 1', sm: 'span 2' },  // 🔥 MOBILE: Single column
+              display: 'flex',
+              flexDirection: 'column',
+              minHeight: 0,
+              maxHeight: '100%',
+              overflowY: 'hidden'
+            }}>
               <CollapsibleSection id="spatialVisualizer" title="3D Spatial Visualizer" icon="🌀" defaultOpen={true} onClose={handleSectionClose}>
                 <Box sx={{ height: 'calc(35vh - 60px)', maxHeight: 'calc(35vh - 60px)', overflow: 'hidden' }}>
                   <SpatialVisualizer
@@ -995,19 +1006,22 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
         <Box sx={{
           display: 'grid',
           gridTemplateColumns: {
-            xs: '1fr',  // 1 column on mobile
+            xs: '1fr',  // 🔥 MOBILE: Single column
             sm: 'repeat(2, 1fr)',  // 2 columns on small tablets
             md: 'repeat(3, 1fr)',  // 3 columns per row
             lg: 'repeat(3, 1fr)',
             xl: 'repeat(3, 1fr)'
           },
-          gridAutoRows: 'minmax(35vh, auto)',  // 🔥 Each row ~35vh, so 2 rows ≈ 70vh (fits in 85vh)
+          gridAutoRows: {
+            xs: 'auto',  // 🔥 MOBILE: Auto height rows
+            sm: 'auto',
+            md: 'minmax(40vh, auto)'  // Desktop: Min 40vh per row
+          },
           gap: { xs: 2, sm: 2, md: 2.5, lg: 3 },
           p: { xs: 1.5, sm: 2, md: 2, lg: 2.5 },
           width: '100%',
-          height: 'auto',
-          minHeight: '100%',
-          overflowY: 'auto'
+          height: '100%', // Fill the parent scrolling container
+          overflowX: 'visible'
         }}>
           {/* Timer Countdown - spans full width (3 columns) */}
           {timerStatus && !closedSections.includes('timerCountdown') && (
