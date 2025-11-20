@@ -1,12 +1,12 @@
 // Electromagnetic Beat Lab - Pattern Definitions and Presets
 // Complete electromagnetic wave pattern guide with ADHD-specific protocols
+//
+// 🔥 IMPORTANT: Electromagnetic field values (fieldStrength, coherence, resonance, etc.)
+// are calculated DYNAMICALLY from real-time audio analysis using electromagneticCalculator.ts
+// The hardcoded values in this file are DEFAULTS ONLY for when audio is not playing
+// They should NOT be used directly - always use calculateElectromagneticField() instead
 
-import type { 
-  PatternConfig, 
-  ADHDProtocol, 
-  PatternPreset,
-  WaveGuideConfig 
-} from '../types/index';
+import type {ADHDProtocol, PatternConfig, PatternPreset, WaveGuideConfig} from '../types/index';
 
 // Core Electromagnetic Wave Patterns
 export const WAVE_PATTERNS: PatternConfig[] = [
@@ -25,11 +25,11 @@ export const WAVE_PATTERNS: PatternConfig[] = [
       'Deep meditative states'
     ],
     frequencies: {
-      carrier: 144,
-      beat: 30,
+      carrier: 110,
+      beat: 40,
       range: 'gamma'
     },
-    duration: 20,
+    duration: 40,
     electromagnetic: {
       fieldStrength: 0.95,
       resonanceFreq: 30,

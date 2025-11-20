@@ -10,6 +10,7 @@ export { useEqualizer, EQ_PRESETS } from './useEqualizer';
 // Analysis & Visualization Hooks
 export { useAudioAnalysis } from './useAudioAnalysis';
 export { useBinauralVisualization } from './useBinauralVisualization';
+export { useDynamicElectromagneticField } from './useDynamicElectromagneticField';
 
 // State Management Hooks
 export { useElectromagneticLabState } from './useElectromagneticLabState';
