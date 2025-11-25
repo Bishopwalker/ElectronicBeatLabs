@@ -186,7 +186,17 @@
       "WebFetch(domain:www.comet.com)",
       "Bash(git -C \"C:\\Users\\bisho\\IdeaProjects\\ebl\" diff src/components/FrequencyVisualizer.tsx)",
       "Bash(git stash:*)",
-      "Bash(git restore:*)"
+      "Bash(git restore:*)",
+      "Bash(cmd //c \"taskkill //F //IM python.exe 2>nul\")",
+      "Bash(venv/Scripts/python.exe -m uvicorn:*)",
+      "WebFetch(domain:rvtournament.com)",
+      "WebFetch(domain:medium.com)",
+      "Bash(npx:*)",
+      "Bash(npm search:*)",
+      "Bash(uv --version:*)",
+      "Bash(uvx:*)",
+      "Bash(pip show:*)",
+      "Bash(ls -la \"C:\\Users\\bisho\\IdeaProjects\\ebl\\backend\\core\"\" | findstr \"STUB|BACKUP|FIXED|old \")"
     ],
     "deny": [],
     "ask": []

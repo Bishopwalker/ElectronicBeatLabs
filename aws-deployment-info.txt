@@ -1,6 +1,6 @@
 EBL AWS Deployment Info
 ========================
-Deployed: 10/23/2025 09:25:02
+Deployed: 11/23/2025 22:21:56
 Region: us-east-1
 Account: 498251986918
 

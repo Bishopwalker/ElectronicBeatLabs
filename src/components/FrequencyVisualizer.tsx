@@ -1,5 +1,15 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {Box, Chip, IconButton, LinearProgress, Paper, Slider, ToggleButton, ToggleButtonGroup, Typography} from '@mui/material';
+import {
+  Box,
+  Chip,
+  IconButton,
+  LinearProgress,
+  Paper,
+  Slider,
+  ToggleButton,
+  ToggleButtonGroup,
+  Typography
+} from '@mui/material';
 import {styled} from '@mui/material/styles';
 import {useAudioAnalysis} from '../hooks/useAudioAnalysis';
 import type {ElectromagneticField, Pattern8D, PatternConfig, PatternMode, WaveForm} from '../types';
@@ -1068,6 +1078,7 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
         bottom: isFullscreen ? 0 : 'auto',
         width: isFullscreen ? '100vw' : '100%',
         height: isFullscreen ? '100vh' : '100%',
+        minHeight: '100%',
         zIndex: isFullscreen ? 9999 : 'auto',
         margin: 0
       }}
@@ -1209,7 +1220,7 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
 
       {/* Frequency Display */}
       {showFrequencies && (
-        <FrequencyDisplay sx={{ mt: 1 }}>
+        <FrequencyDisplay sx={{ mt: 1}}>
           <Box>
             <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.7rem' }}>
               Left Ear

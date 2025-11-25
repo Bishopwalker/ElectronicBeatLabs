@@ -22,21 +22,21 @@
       "description": "File system access for EBL project"
     },
     "docker": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-docker"],
+      "command": "uvx",
+      "args": ["docker-mcp"],
       "env": {
         "DOCKER_HOST": "npipe:////./pipe/docker_engine"
       },
       "description": "Docker container management for EBL services"
     },
-    "aws": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-aws"],
+    "aws-api": {
+      "command": "uvx",
+      "args": ["awslabs.aws-api-mcp-server@latest"],
       "env": {
         "AWS_PROFILE": "default",
         "AWS_REGION": "us-east-1"
       },
-      "description": "AWS services for EBL deployment"
+      "description": "AWS API services for EBL deployment"
     },
     "gitlab": {
       "command": "npx",

@@ -6,22 +6,13 @@ import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {Box, Button, ButtonGroup, Chip, IconButton, Paper, Typography} from '@mui/material';
 import GridViewIcon from '@mui/icons-material/GridView';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
-import type {ElectromagneticBeatLabProps, PatternConfig} from '../../types';
-
-// Constants
-import {DEFAULT_BASE_FREQUENCY, DEFAULT_BEAT_FREQUENCY, DEFAULT_VOLUME} from '../../constants/audio.constants';
-
-// Centralized Audio Controls
-import {startBinauralAudio, stopBinauralAudio} from '../../utils/audioControls';
-
-// Hooks and Data
+import type {ElectromagneticBeatLabProps, PatternConfig} from '../../types'; // Constants
+import {DEFAULT_BASE_FREQUENCY, DEFAULT_BEAT_FREQUENCY, DEFAULT_VOLUME} from '../../constants/audio.constants'; // Centralized Audio Controls
+import {startBinauralAudio, stopBinauralAudio} from '../../utils/audioControls'; // Hooks and Data
 import {useBinauralVisualization, useCurrentPresetTracker, useElectromagneticLabState} from '../../hooks';
-import {WAVE_PATTERNS} from '../../data/patterns';
-// Configuration and Styles
+import {WAVE_PATTERNS} from '../../data/patterns'; // Configuration and Styles
 import {SECTION_DATA, TAB_CONFIG} from '../config/ElectromagneticLabConfig';
-import {ElectromagneticLabStyles} from '../styles/ElectromagneticLabStyles';
-
-// Components
+import {ElectromagneticLabStyles} from '../styles/ElectromagneticLabStyles'; // Components
 import StarField from '../StarField';
 import SpatialVisualizer from '../SpatialVisualizer';
 import PatternSelectorMUI from '../PatternSelectorMUI';
@@ -30,12 +21,8 @@ import ControlTabs from '../shared/ControlTabs';
 import BinauralGeneratorMUI from '../BinauralGeneratorMUI';
 import QuickStart from '../QuickStart';
 import TimerTab from '../tabs/TimerTab';
-import type {TimerStatus} from '../../data/timer';
-
-// 🔥 CRITICAL FIX: Import context hook
-import {useAudioEngineContext} from '../../contexts/AudioEngineContext';
-
-// Extracted Components
+import type {TimerStatus} from '../../data/timer'; // 🔥 CRITICAL FIX: Import context hook
+import {useAudioEngineContext} from '../../contexts/AudioEngineContext'; // Extracted Components
 import CollapsibleSection from '../shared/CollapsibleSection';
 import TabContentRenderer from '../shared/TabContentRenderer';
 import SystemStatusChips from '../shared/SystemStatusChips';

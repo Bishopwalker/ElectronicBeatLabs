@@ -4,6 +4,44 @@
       "command": "node",
       "args": [".claude/mcp-servers/codex/server.js"],
       "env": {}
+    },
+    "docker": {
+      "command": "uvx",
+      "args": ["docker-mcp"],
+      "env": {
+        "DOCKER_HOST": "npipe:////./pipe/docker_engine"
+      }
+    },
+    "aws-api": {
+      "command": "uvx",
+      "args": ["awslabs.aws-api-mcp-server@latest"],
+      "env": {
+        "AWS_PROFILE": "default",
+        "AWS_REGION": "us-east-1"
+      }
+    },
+    "ebl-audio": {
+      "command": "node",
+      "args": [".claude/mcp-servers/ebl-audio/server.js"],
+      "env": {
+        "EBL_BACKEND_URL": "http://localhost:8000"
+      }
+    },
+    "ebl-deploy": {
+      "command": "node",
+      "args": [".claude/mcp-servers/ebl-deploy/server.js"],
+      "env": {
+        "EBL_PROJECT_ROOT": "C:\\Users\\bisho\\IdeaProjects\\ebl",
+        "AWS_REGION": "us-east-1",
+        "AWS_ACCOUNT": "498251986918"
+      }
+    },
+    "ebl-pipeline": {
+      "command": "node",
+      "args": [".claude/mcp-servers/ebl-pipeline/server.js"],
+      "env": {
+        "EBL_PROJECT_ROOT": "C:\\Users\\bisho\\IdeaProjects\\ebl"
+      }
     }
   }
 }

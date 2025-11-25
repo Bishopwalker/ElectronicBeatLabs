@@ -1,33 +1,42 @@
 /**
  * FrontendAudioEngine - Web Audio API Binaural Beat Generator
- * 
+ *
  * CRITICAL: This engine generates STEREO audio (left + right frequencies)
  * Creates two oscillators for true binaural beats
  * Both frequencies are output to create the beat frequency
- * 
- * 🔥 RAW WAVEFORM POWER - NO COMPENSATION!
- * Outputs authentic waveform energy for maximum visualizer impact
- * Users can adjust master volume to control loudness
+ *
+ * 🔥 RAW WAVEFORM POWER for visualizer + SMOOTH CROSSFADE for audio!
+ * - Visualizer sees full waveform energy (no compensation)
+ * - Audio output uses micro-crossfade during waveform changes (no clicks)
  */
+
+// Waveform transition timing
+const WAVEFORM_CROSSFADE_TIME = 0.03; // 30ms crossfade - fast but smooth
+const MIN_GAIN_VALUE = 0.001; // Minimum gain for exponential ramp
 
 export class FrontendAudioEngine {
   private audioContext: AudioContext;
   private outputNode: AudioNode;
-  
+
   // STEREO oscillators - one for each ear
   private oscillatorL: OscillatorNode | null = null;
   private oscillatorR: OscillatorNode | null = null;
-  
+
   // Gain nodes for volume control
   private gainL: GainNode | null = null;
   private gainR: GainNode | null = null;
-  
+
   // Channel merger for proper STEREO output
   private merger: ChannelMergerNode | null = null;
-  
+
+  // Track current frequencies for waveform crossfade recreation
+  private currentLeftFreq: number = 140;
+  private currentRightFreq: number = 144;
+
   private isPlaying: boolean = false;
   private currentWaveform: OscillatorType = 'sine';
   private baseVolume: number = 0.5;
+  private isTransitioning: boolean = false;
 
   constructor(audioContext: AudioContext, outputNode: AudioNode) {
     this.audioContext = audioContext;
@@ -61,7 +70,9 @@ export class FrontendAudioEngine {
       this.oscillatorL = this.audioContext.createOscillator();
       this.oscillatorR = this.audioContext.createOscillator();
       
-      // Set frequencies
+      // Set frequencies and track them
+      this.currentLeftFreq = leftFreq;
+      this.currentRightFreq = rightFreq;
       this.oscillatorL.frequency.setValueAtTime(leftFreq, this.audioContext.currentTime);
       this.oscillatorR.frequency.setValueAtTime(rightFreq, this.audioContext.currentTime);
       
@@ -153,16 +164,19 @@ export class FrontendAudioEngine {
       return;
     }
 
+    // Track current frequencies
+    this.currentLeftFreq = leftFreq;
+    this.currentRightFreq = rightFreq;
+
     const now = this.audioContext.currentTime;
     const rampTime = 0.1; // 100ms smooth transition
-    
+
     // Update BOTH frequencies
     this.oscillatorL.frequency.setValueAtTime(this.oscillatorL.frequency.value, now);
     this.oscillatorL.frequency.exponentialRampToValueAtTime(leftFreq, now + rampTime);
-    
+
     this.oscillatorR.frequency.setValueAtTime(this.oscillatorR.frequency.value, now);
     this.oscillatorR.frequency.exponentialRampToValueAtTime(rightFreq, now + rampTime);
-    
   }
 
   /**
@@ -185,19 +199,61 @@ export class FrontendAudioEngine {
   }
 
   /**
-   * Update waveform (can be changed on the fly)
+   * Update waveform with micro-crossfade to prevent clicks/distortion
+   *
+   * Strategy: Fade out → Change waveform → Fade in
+   * This keeps visualizer seeing raw power while audio stays clean
    */
   updateWaveform(waveform: OscillatorType): void {
-    if (!this.oscillatorL || !this.oscillatorR) {
+    if (!this.oscillatorL || !this.oscillatorR || !this.gainL || !this.gainR) {
       return;
     }
 
-    // Update waveform type
-    this.currentWaveform = waveform;
-    this.oscillatorL.type = waveform;
-    this.oscillatorR.type = waveform;
-    
-    // No compensation needed - raw waveform power!
+    // Skip if same waveform or already transitioning
+    if (this.currentWaveform === waveform || this.isTransitioning) {
+      return;
+    }
+
+    this.isTransitioning = true;
+    const now = this.audioContext.currentTime;
+    const fadeTime = WAVEFORM_CROSSFADE_TIME;
+    const currentVolume = this.baseVolume;
+
+    // Store current gain values
+    const currentGainL = this.gainL.gain.value;
+    const currentGainR = this.gainR.gain.value;
+
+    // PHASE 1: Fade out current waveform (30ms)
+    this.gainL.gain.setValueAtTime(currentGainL, now);
+    this.gainR.gain.setValueAtTime(currentGainR, now);
+    this.gainL.gain.exponentialRampToValueAtTime(MIN_GAIN_VALUE, now + fadeTime);
+    this.gainR.gain.exponentialRampToValueAtTime(MIN_GAIN_VALUE, now + fadeTime);
+
+    // PHASE 2: Change waveform while silent, then fade back in
+    setTimeout(() => {
+      if (!this.oscillatorL || !this.oscillatorR || !this.gainL || !this.gainR) {
+        this.isTransitioning = false;
+        return;
+      }
+
+      // Change waveform while gain is at minimum (silent)
+      this.currentWaveform = waveform;
+      this.oscillatorL.type = waveform;
+      this.oscillatorR.type = waveform;
+
+      // PHASE 3: Fade back in with new waveform (30ms)
+      const fadeInTime = this.audioContext.currentTime;
+      this.gainL.gain.setValueAtTime(MIN_GAIN_VALUE, fadeInTime);
+      this.gainR.gain.setValueAtTime(MIN_GAIN_VALUE, fadeInTime);
+      this.gainL.gain.exponentialRampToValueAtTime(currentVolume, fadeInTime + fadeTime);
+      this.gainR.gain.exponentialRampToValueAtTime(currentVolume, fadeInTime + fadeTime);
+
+      // Mark transition complete after fade in
+      setTimeout(() => {
+        this.isTransitioning = false;
+      }, fadeTime * 1000 + 10);
+
+    }, fadeTime * 1000 + 5); // Wait for fade out to complete
   }
 
   /**
@@ -232,6 +288,20 @@ export class FrontendAudioEngine {
    */
   getIsPlaying(): boolean {
     return this.isPlaying;
+  }
+
+  /**
+   * Get current waveform
+   */
+  getCurrentWaveform(): OscillatorType {
+    return this.currentWaveform;
+  }
+
+  /**
+   * Check if currently transitioning waveforms
+   */
+  getIsTransitioning(): boolean {
+    return this.isTransitioning;
   }
 
   /**
