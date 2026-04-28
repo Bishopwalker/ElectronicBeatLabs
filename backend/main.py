@@ -21,6 +21,12 @@ from protocols.adhd_protocols import ADHDProtocols
 from routes.audio_websocket import router as audio_router
 from routes.simple_routes import router as simple_router
 from routes.timer import router as timer_router
+from routes.quantum_routes import router as quantum_router
+from routes.arv_routes import router as arv_router
+from routes.rv_routes import router as rv_router
+from routes.rv_tournament_routes import router as rv_tournament_router
+from routes.crv_routes import router as crv_router
+from routes.chat import chat_ws_router, chat_api_router
 from utils.logger import setup_logger, RequestLogger, AudioLogger
 from utils.metrics import MetricsCollector, get_metrics, CONTENT_TYPE_LATEST
 
@@ -38,6 +44,19 @@ app = FastAPI(
 # Include simplified auth and subscription routes
 app.include_router(simple_router, prefix="/api")
 app.include_router(timer_router, prefix="/api")
+# Quantum Oracle routes for daily/practice number generation
+app.include_router(quantum_router, prefix="/api")
+# ARV routes for Associative Remote Viewing predictions
+app.include_router(arv_router, prefix="/api")
+# Remote Viewing routes for session tracking and scoring
+app.include_router(rv_router, prefix="/api")
+# RV Tournament routes for 12-hour tournament cycles
+app.include_router(rv_tournament_router, prefix="/api")
+# CRV routes for Controlled Remote Viewing 6-stage protocol
+app.include_router(crv_router, prefix="/api")
+# Chat WebSocket and REST API routes
+app.include_router(chat_ws_router)  # WebSocket at /ws/chat/{session_id}
+app.include_router(chat_api_router, prefix="/api")  # REST at /api/chat/*
 # Audio router includes WebSocket endpoint, no /api prefix needed
 app.include_router(audio_router)
 
@@ -49,6 +68,19 @@ async def startup_event():
     """
     logger.info("Starting up Electromagnetic Beat Lab backend...")
 
+    # Initialize default chat rooms
+    try:
+        from database.chat.init_rooms import init_default_rooms
+        from database.connection import SessionLocal
+        db = SessionLocal()
+        rooms_created = init_default_rooms(db)
+        db.close()
+        if rooms_created > 0:
+            logger.info(f"Chat system: Created {rooms_created} default rooms")
+        else:
+            logger.info("Chat system: Default rooms already exist")
+    except Exception as e:
+        logger.warning(f"Chat room initialization skipped: {e}")
 
     # Initialize RAG system for code intelligence (DISABLED - optional feature)
     # Uncomment after installing: pip install sentence-transformers scikit-learn chromadb
@@ -184,7 +216,57 @@ async def root():
             "protocols": "/api/protocols",
             "presets": "/api/presets",
             "spatial": "/api/spatial",
-            "health": "/health"
+            "health": "/health",
+            "quantum_oracle": {
+                "info": "/api/quantum/info",
+                "daily": "/api/quantum/daily",
+                "practice": "/api/quantum/practice",
+                "history": "/api/quantum/history",
+                "countdown": "/api/quantum/countdown"
+            },
+            "arv_predictions": {
+                "info": "/api/arv/info",
+                "examples": "/api/arv/examples",
+                "create": "/api/arv/predictions/create",
+                "get_target": "/api/arv/predictions/{id}/target",
+                "submit": "/api/arv/predictions/{id}/submit",
+                "judge": "/api/arv/predictions/{id}/judge",
+                "resolve": "/api/arv/predictions/{id}/resolve",
+                "status": "/api/arv/predictions/{id}/status",
+                "stats": "/api/arv/stats",
+                "history": "/api/arv/history"
+            },
+            "remote_viewing": {
+                "info": "/api/rv/info",
+                "start_session": "/api/rv/sessions/start",
+                "get_session": "/api/rv/sessions/{session_id}",
+                "submit": "/api/rv/sessions/{session_id}/submit",
+                "score": "/api/rv/sessions/{session_id}/score",
+                "stats": "/api/rv/stats",
+                "history": "/api/rv/history",
+                "leaderboard": "/api/rv/leaderboard",
+                "tournament": "/api/rv/tournament/today",
+                "tournament_reveal": "/api/rv/tournament/reveal/{session_id}",
+                "protocols": "/api/rv/protocols"
+            },
+            "crv_protocol": {
+                "info": "/api/rv/crv/info",
+                "stages": "/api/rv/crv/stages",
+                "stage_details": "/api/rv/crv/stages/{stage_number}",
+                "frequencies": "/api/rv/crv/frequencies",
+                "stage_frequency": "/api/rv/crv/frequencies/stage/{stage_number}",
+                "start_session": "/api/rv/crv/sessions/start",
+                "submit_stage": "/api/rv/crv/sessions/{id}/stage/{stage_number}",
+                "session_progress": "/api/rv/crv/sessions/{id}/progress",
+                "session_details": "/api/rv/crv/sessions/{id}"
+            },
+            "chat": {
+                "websocket": "/ws/chat/{session_id}",
+                "rooms": "/api/chat/rooms",
+                "room_users": "/api/chat/rooms/{room_id}/users",
+                "room_messages": "/api/chat/rooms/{room_id}/messages",
+                "user_profile": "/api/chat/users/{user_id}"
+            }
         }
     }
 

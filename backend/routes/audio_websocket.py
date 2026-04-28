@@ -302,8 +302,29 @@ async def handle_websocket_message(message: dict, session_id: str, websocket: We
             # Stop audio session using correct audio engine session ID
             if session_id in websocket_to_audio_session:
                 audio_engine_session_id = websocket_to_audio_session[session_id]
+
+                # 🔥 FIX: Cancel audio streaming task BEFORE stopping the session
+                # This prevents "Session not found" errors from generate_frame
+                if audio_task and not audio_task.done():
+                    audio_task.cancel()
+                    logger.info(f"🛑 Cancelled audio streaming task for session {audio_engine_session_id[:8]}...")
+                    try:
+                        await audio_task
+                    except asyncio.CancelledError:
+                        pass  # Expected when cancelling
+                    audio_task = None
+
+                # 🔥 FIX: Stop and cleanup frame buffer BEFORE stopping engine session
+                if audio_engine_session_id in session_frame_buffers:
+                    buffer = session_frame_buffers[audio_engine_session_id]
+                    await buffer.stop()
+                    del session_frame_buffers[audio_engine_session_id]
+                    logger.info(f"🧹 Cleaned up frame buffer for session {audio_engine_session_id[:8]}...")
+
+                # Now safe to stop the audio engine session
                 audio_engine.stop_session(audio_engine_session_id)
                 del websocket_to_audio_session[session_id]
+                logger.info(f"✅ Session {audio_engine_session_id[:8]}... fully stopped and cleaned up")
             await manager.send_personal_message({
                 "type": "session_stopped",
                 "session_id": session_id

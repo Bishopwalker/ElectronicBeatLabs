@@ -95,7 +95,14 @@ class AudioEngine:
             dict: JSON-compatible frame data (if binary_mode=False)
         """
         if session_id not in self.sessions:
-            print(f"ERROR: Session {session_id} not found in sessions: {list(self.sessions.keys())}")
+            # This can happen normally during session shutdown - not necessarily an error
+            # Only log if there are other active sessions (indicates unexpected state)
+            if self.sessions:
+                import logging
+                logging.getLogger(__name__).debug(
+                    f"Session {session_id[:8]}... not found (may be stopping). "
+                    f"Active sessions: {[k[:8] for k in self.sessions.keys()]}"
+                )
             return {"error": "Session not found"} if not binary_mode else b''
 
         # PERFORMANCE: Removed debug logging in hot path
