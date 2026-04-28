@@ -75,3 +75,26 @@ task-def-*.json
 !aws/ecs-task-definition-*.json
 ecs-task-definition.json.DO_NOT_USE
 route53-change.json
+
+# SQLite databases
+*.db
+
+# Local Claude Code settings
+.claude/settings.local.json
+.claude/worktrees/
+
+# AWS deployment info and temp scripts
+aws-deployment-info.txt
+cloudfront-info.txt
+route53-api.json
+route53-update.json
+update-ecs.bat
+update-ecs.ps1
+setup-cloudfront.ps1
+cleanup-and-deploy-alb.ps1
+fix-alb-routing.ps1
+
+# Temp/generated files not for version control
+MODELS_TO_ADD.py
+TUTORIAL_TEST_EXECUTION_REPORT.md
+public/united-states-postal-service-seeklogo.*
