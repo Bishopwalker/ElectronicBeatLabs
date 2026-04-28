@@ -24,5 +24,14 @@ export { useWebSocketContext, WebSocketProvider } from './useWebsocketContext';
 export { useSettingsContext, useSettingsSection, SettingsProvider } from './useSettingsContext';
 export { useAuth } from './useAuth';
 
+// Chat Hooks (modular package)
+export {
+  ChatProvider,
+  useChatContext,
+  useChatConnection,
+  useChatSounds,
+  useTypingIndicator,
+} from './chat';
+
 // Re-export types from hooks if needed
 export type { EqualizerBand, EqualizerState } from '../types';

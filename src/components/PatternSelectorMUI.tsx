@@ -62,7 +62,7 @@ const PatternSelectorMUI: React.FC<PatternSelectorPropsExtended> = ({
   };
 
   return (
-    <Card sx={{
+    <Card id="pattern-selector" sx={{
       height: '100%',
       width: '100%',  // 🔥 FIXED: Fill parent grid cell
       display: 'flex',
@@ -79,6 +79,7 @@ const PatternSelectorMUI: React.FC<PatternSelectorPropsExtended> = ({
         </Typography>
 
         <ButtonGroup
+          id="pattern-mode-selector"
           fullWidth
           size="small"
           sx={{ mb: 1 }}

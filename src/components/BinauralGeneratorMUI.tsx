@@ -229,7 +229,7 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
 
   // @ts-ignore
   return (
-    <Card sx={{
+    <Card id="binauralBeats" sx={{
       height: '100%',
       width: '100%',  // 🔥 FIXED: Fill parent grid cell
       display: 'flex',
@@ -326,7 +326,7 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
 
         {/* Waveform Selector - Controls oscillator waveform type */}
         {onWaveformChange && (
-          <Box sx={{ mb: 0.75 }}>
+          <Box id="waveform-selector" sx={{ mb: 0.75 }}>
             <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.65rem', mb: 0.5, display: 'block', textAlign: 'center' }}>
               <GraphicEqIcon sx={{ fontSize: '0.8rem', mr: 0.5, verticalAlign: 'middle' }} />
               Oscillator Waveform
@@ -364,7 +364,7 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
 
         <Stack spacing={0.75}>
           <Stack direction="row" spacing={0.5}>
-            <Box flex={1}>
+            <Box id="base-frequency-slider" flex={1}>
               <Paper
                 elevation={0}
                 sx={{
@@ -403,7 +403,7 @@ const BinauralGeneratorMUI: React.FC<BinauralGeneratorProps> = ({
               </Paper>
             </Box>
             
-            <Box flex={1}>
+            <Box id="beat-frequency-slider" flex={1}>
               <Paper
                 elevation={0}
                 sx={{

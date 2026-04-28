@@ -1,21 +1,29 @@
 /**
  * True8DSpatialEngine.ts
- * 
+ *
  * Implements proper 8D spatial audio processing with HRTF panning
  * and serial effect chain for immersive audio experience.
- * 
- * Cash Money implementation for EBL project
+ *
+ * Supports multiple spatial effect modes:
+ * - toroidal: Horizontal circular rotation (torus/donut)
+ * - vortex: Spiral inward/outward motion
+ * - spiral: 3D helix path (rising/falling spiral)
+ * - wave: Wave-like left/right oscillation
+ * - pattern8D: Classic 8D movement with vertical bobbing
+ * - combined: Toroidal + vertical 8D elements
  */
+
+import type { SpatialEffectMode } from '../../types';
 
 export class True8DSpatialEngine {
   private context: AudioContext;
   private input: GainNode;
   private output: GainNode;
-  
+
   // Single panner that moves in 3D space (NOT multiple parallel panners!)
   private panner: PannerNode;
   private stereoPanner: StereoPannerNode;
-  
+
   // Effect chain for spatial depth
   private preDelay: DelayNode;
   private reverb: ConvolverNode;
@@ -23,12 +31,14 @@ export class True8DSpatialEngine {
   private highpass: BiquadFilterNode;
   private wetGain: GainNode;
   private dryGain: GainNode;
-  
+
   // Automation control
   private rotationSpeed: number = 1;
+  private intensity: number = 0.5;
   private isActive: boolean = false;
   private animationFrame: number | null = null;
   private startTime: number = 0;
+  private currentMode: SpatialEffectMode = 'none';
   
   constructor(context: AudioContext) {
     this.context = context;
@@ -201,31 +211,208 @@ export class True8DSpatialEngine {
   }
   
   /**
-   * Stop 8D movement and return to center position
+   * Stop any spatial movement and return to center position
    */
-  public stop8DMovement(): void {
+  public stopMovement(): void {
     this.isActive = false;
-    
+    this.currentMode = 'none';
+
     if (this.animationFrame) {
       cancelAnimationFrame(this.animationFrame);
       this.animationFrame = null;
     }
-    
+
     // Smoothly return to center position
     const rampTime = this.context.currentTime + 0.5;
-    
+
     this.panner.positionX.linearRampToValueAtTime(0, rampTime);
     this.panner.positionY.linearRampToValueAtTime(0, rampTime);
     this.panner.positionZ.linearRampToValueAtTime(1, rampTime);
-    
+
     // Reset filters
     this.lowpass.frequency.linearRampToValueAtTime(4000, rampTime);
     this.preDelay.delayTime.linearRampToValueAtTime(0.01, rampTime);
     this.stereoPanner.pan.linearRampToValueAtTime(0, rampTime);
-    
+
     // Reset reverb mix
     this.wetGain.gain.linearRampToValueAtTime(0.3, rampTime);
     this.dryGain.gain.linearRampToValueAtTime(0.7, rampTime);
+  }
+
+  /**
+   * Legacy method - calls stopMovement
+   */
+  public stop8DMovement(): void {
+    this.stopMovement();
+  }
+
+  /**
+   * Set the spatial effect mode with unified interface
+   * This is the main entry point for changing spatial effects
+   */
+  public setSpatialEffect(mode: SpatialEffectMode, intensity: number = 0.5, speed: number = 1): void {
+    // Stop any current movement first
+    if (this.isActive) {
+      this.stopMovement();
+    }
+
+    this.currentMode = mode;
+    this.intensity = Math.max(0, Math.min(1, intensity));
+    this.rotationSpeed = Math.max(0.1, Math.min(5, speed));
+
+    if (mode === 'none') {
+      return; // Stay stopped
+    }
+
+    // Start the appropriate effect
+    this.isActive = true;
+    this.startTime = this.context.currentTime;
+
+    const animate = (): void => {
+      if (!this.isActive) return;
+
+      const elapsed = this.context.currentTime - this.startTime;
+
+      // Calculate position based on effect mode
+      const position = this.calculatePosition(elapsed);
+
+      // Update panner position smoothly
+      const rampTime = this.context.currentTime + 0.05;
+      this.panner.positionX.linearRampToValueAtTime(position.x, rampTime);
+      this.panner.positionY.linearRampToValueAtTime(position.y, rampTime);
+      this.panner.positionZ.linearRampToValueAtTime(position.z, rampTime);
+
+      // Calculate distance for filter modulation
+      const distance = Math.sqrt(position.x * position.x + position.z * position.z);
+      const maxRadius = 2 * this.intensity;
+      const normalizedDistance = maxRadius > 0 ? distance / maxRadius : 0;
+
+      // Modulate lowpass filter based on distance
+      const filterFreq = 4000 - (normalizedDistance * 2000 * this.intensity);
+      this.lowpass.frequency.linearRampToValueAtTime(
+        Math.max(filterFreq, 1000),
+        rampTime
+      );
+
+      // Subtle delay modulation for doppler-like effect
+      const delayTime = 0.01 + (normalizedDistance * 0.015 * this.intensity);
+      this.preDelay.delayTime.linearRampToValueAtTime(delayTime, rampTime);
+
+      // Stereo width variation
+      const panValue = (position.x / (maxRadius || 1)) * 0.5 * this.intensity;
+      this.stereoPanner.pan.linearRampToValueAtTime(
+        Math.max(-1, Math.min(1, panValue)),
+        rampTime
+      );
+
+      // Modulate reverb mix based on position
+      const reverbMix = 0.2 + (normalizedDistance * 0.3 * this.intensity);
+      this.wetGain.gain.linearRampToValueAtTime(reverbMix, rampTime);
+      this.dryGain.gain.linearRampToValueAtTime(1 - reverbMix * 0.5, rampTime);
+
+      this.animationFrame = requestAnimationFrame(animate);
+    };
+
+    animate();
+    console.log(`🌀 Spatial Engine: Started ${mode} effect (intensity: ${this.intensity}, speed: ${this.rotationSpeed})`);
+  }
+
+  /**
+   * Calculate 3D position based on current effect mode
+   */
+  private calculatePosition(elapsed: number): { x: number; y: number; z: number } {
+    const radius = 2 * this.intensity;
+    const speed = this.rotationSpeed;
+
+    switch (this.currentMode) {
+      case 'toroidal': {
+        // Horizontal circular rotation (torus shape in XZ plane)
+        const angle = (elapsed * speed * 0.5) % (Math.PI * 2);
+        return {
+          x: Math.sin(angle) * radius,
+          y: 0, // No vertical movement
+          z: Math.cos(angle) * radius
+        };
+      }
+
+      case 'vortex': {
+        // Spiral inward/outward motion
+        const angle = (elapsed * speed * 0.8) % (Math.PI * 2);
+        const radiusOscillation = 0.5 + Math.sin(elapsed * speed * 0.3) * 0.5; // Oscillate between 0 and 1
+        const currentRadius = radius * radiusOscillation;
+        return {
+          x: Math.sin(angle) * currentRadius,
+          y: Math.sin(elapsed * speed * 0.2) * radius * 0.3, // Subtle vertical
+          z: Math.cos(angle) * currentRadius
+        };
+      }
+
+      case 'spiral': {
+        // 3D helix path - rising and falling spiral
+        const angle = (elapsed * speed * 0.6) % (Math.PI * 2);
+        const verticalCycle = Math.sin(elapsed * speed * 0.15) * radius * 0.8;
+        return {
+          x: Math.sin(angle) * radius * 0.8,
+          y: verticalCycle,
+          z: Math.cos(angle) * radius * 0.8
+        };
+      }
+
+      case 'wave': {
+        // Wave-like left/right oscillation with depth
+        const wavePhase = elapsed * speed * 0.4;
+        return {
+          x: Math.sin(wavePhase) * radius,
+          y: Math.sin(wavePhase * 2) * radius * 0.2, // Subtle vertical wave
+          z: 1 + Math.cos(wavePhase * 0.5) * radius * 0.5 // Depth oscillation
+        };
+      }
+
+      case 'pattern8D': {
+        // Classic 8D movement with vertical bobbing
+        const angle = (elapsed * speed * 0.5) % (Math.PI * 2);
+        return {
+          x: Math.sin(angle) * radius,
+          y: Math.cos(angle * 0.5) * radius * 0.5, // Vertical bobbing
+          z: Math.cos(angle) * radius
+        };
+      }
+
+      case 'combined': {
+        // Toroidal + 8D combined - complex motion
+        const angle1 = (elapsed * speed * 0.5) % (Math.PI * 2);
+        const angle2 = (elapsed * speed * 0.3) % (Math.PI * 2);
+        return {
+          x: Math.sin(angle1) * radius + Math.sin(angle2 * 2) * radius * 0.3,
+          y: Math.cos(angle2) * radius * 0.4,
+          z: Math.cos(angle1) * radius + Math.cos(angle2 * 2) * radius * 0.3
+        };
+      }
+
+      default:
+        return { x: 0, y: 0, z: 1 }; // Center position
+    }
+  }
+
+  /**
+   * Update intensity without restarting the effect
+   */
+  public setIntensity(intensity: number): void {
+    this.intensity = Math.max(0, Math.min(1, intensity));
+  }
+
+  /**
+   * Get current effect mode
+   */
+  public getCurrentMode(): SpatialEffectMode {
+    return this.currentMode;
+  }
+
+  /**
+   * Check if engine is currently active
+   */
+  public getIsActive(): boolean {
+    return this.isActive;
   }
   
   /**

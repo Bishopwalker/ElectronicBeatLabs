@@ -110,22 +110,17 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
 
             // Construct WebSocket URL
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const host = window.location.hostname;
             
-            // Smart port detection for development and production
-            let port: string;
+            // Smart host detection for development vs production
+            // In production, WebSocket goes directly to ALB (api subdomain) since CloudFront doesn't support WS
+            let baseUrl: string;
             if (import.meta.env.DEV) {
-                // In development, always use backend port 8000
-                port = '8000';
-            } else if (window.location.port) {
-                // In production with explicit port
-                port = window.location.port;
+                // In development, use localhost:8000
+                baseUrl = `${protocol}//localhost:8000`;
             } else {
-                // In production without explicit port (80/443)
-                port = '';
+                // In production, use api.bishops-ebl.online (direct to ALB, bypasses CloudFront)
+                baseUrl = `wss://api.bishops-ebl.online`;
             }
-            
-            const baseUrl = port ? `${protocol}//${host}:${port}` : `${protocol}//${host}`;
 
             // Generate a unique session ID if not provided
             const currentSessionId = sessionId || `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;

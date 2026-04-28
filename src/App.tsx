@@ -16,9 +16,12 @@ import {muiTheme} from './theme/muiTheme';
 import {Alert, Box, Typography} from '@mui/material';
 import React from 'react';
 import {WebSocketProvider} from './hooks/useWebsocketContext';
+import {SettingsProvider} from './hooks/useSettingsContext';
 import {DEFAULT_BASE_FREQUENCY, DEFAULT_BEAT_FREQUENCY} from './constants/audio.constants';
 import {ErrorBoundary} from './components/ErrorBoundary';
 import {DEFAULT_APP_STATE} from './components/config/ElectromagneticLabConfig';
+import {TutorialProvider, TutorialOverlay, TutorialStartupModal} from './components/tutorial';
+import {ChatProvider} from './hooks/chat';
 // Styled Components theme configuration
 const styledTheme = {
   colors: {
@@ -132,6 +135,12 @@ const AppContent = () => {
   // Show the main app (anonymous or logged in users with remaining time)
   return (
     <ErrorBoundary>
+      {/* Tutorial Startup Modal - Shows on first visit */}
+      <TutorialStartupModal />
+
+      {/* Tutorial Overlay - Creates spotlight effect during tutorial */}
+      <TutorialOverlay />
+
       {/* Optional usage indicator for anonymous users - moveable and closable */}
       {!user && usage && showUsageAlert && (
         <Box sx={{ position: 'fixed', top: 16, left: 16, zIndex: 1000 }}>
@@ -251,7 +260,16 @@ function App() {
             <AudioEngineProvider>
               {/* CRITICAL: TimerProvider must wrap everything that needs timer state */}
               <TimerProvider>
-                <AppContent />
+                {/* SettingsProvider - Persists user settings to localStorage */}
+                <SettingsProvider>
+                  {/* Tutorial Provider - Manages tutorial state and tooltips */}
+                  <TutorialProvider>
+                    {/* Chat Provider - AOL/AIM-style chat system */}
+                    <ChatProvider>
+                      <AppContent />
+                    </ChatProvider>
+                  </TutorialProvider>
+                </SettingsProvider>
               </TimerProvider>
             </AudioEngineProvider>
           </WebSocketProvider>

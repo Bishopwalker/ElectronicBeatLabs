@@ -10,7 +10,12 @@
  * - Instant fallback to frontend if backend drops
  * - Shared AnalyserNode for visualization
  * - Zero-dropout audio continuity
+ * - EQ integration with dynamic routing
+ * - Spatial audio effects (toroidal, vortex, spiral, wave, 8D, combined)
  */
+
+import { True8DSpatialEngine } from '../engines/spatial/True8DSpatialEngine';
+import type { SpatialEffectMode } from '../types';
 
 // Audio Mixer Constants
 const INITIAL_FRONTEND_GAIN = 1.0;
@@ -48,12 +53,22 @@ export class AudioMixer {
   private currentMode: 'hybrid' | 'frontend' | 'backend' = 'frontend';
   private isCrossfading = false;
   private crossfadeTimeoutId: number | null = null;
-  
+
   // Waveform compensation tracking
   private currentWaveform: 'sine' | 'square' | 'triangle' | 'sawtooth' = 'sine';
   private waveformCompensationNode: GainNode;
   private targetCompensation = 1.0;
   private currentMasterVolume = 1.0;
+
+  // EQ integration - nodes provided by useEqualizer hook
+  private eqInputNode: GainNode | null = null;
+  private eqOutputNode: GainNode | null = null;
+  private eqEnabled = false;
+
+  // Spatial audio engine
+  private spatialEngine: True8DSpatialEngine | null = null;
+  private spatialEnabled = false;
+  private currentSpatialMode: SpatialEffectMode = 'none';
 
   constructor(audioContext: AudioContext) {
     if (!audioContext) {
@@ -74,7 +89,7 @@ export class AudioMixer {
     this.backendGain = this.audioContext.createGain();
     this.frontendGain.gain.value = INITIAL_FRONTEND_GAIN;
     this.backendGain.gain.value = INITIAL_BACKEND_GAIN;
-    
+
     // Create waveform compensation node
     this.waveformCompensationNode = this.audioContext.createGain();
     this.waveformCompensationNode.gain.value = WAVEFORM_GAIN_COMPENSATION['sine'];
@@ -94,6 +109,8 @@ export class AudioMixer {
     this.backendPreAnalyserGain.connect(this.backendGain);
 
     // Route through compensation node before output
+    // Default routing: frontendGain/backendGain → waveformCompensation → destination
+    // When EQ enabled: frontendGain/backendGain → EQ input → [EQ filters] → EQ output → waveformCompensation → destination
     this.frontendGain.connect(this.waveformCompensationNode);
     this.backendGain.connect(this.waveformCompensationNode);
     this.waveformCompensationNode.connect(this.audioContext.destination);
@@ -266,7 +283,123 @@ export class AudioMixer {
       backend: this.backendGain.gain.value
     };
   }
-  
+
+  /**
+   * Rebuild the entire audio routing chain based on current EQ and Spatial state
+   * This ensures proper signal flow regardless of which effects are enabled:
+   *
+   * Full chain: gains → [EQ] → waveformCompensation → [Spatial] → destination
+   */
+  private rebuildSignalChain(): void {
+    // Disconnect everything first
+    try { this.frontendGain.disconnect(); } catch { /* May not be connected */ }
+    try { this.backendGain.disconnect(); } catch { /* May not be connected */ }
+    try { this.waveformCompensationNode.disconnect(); } catch { /* May not be connected */ }
+    if (this.eqOutputNode) {
+      try { this.eqOutputNode.disconnect(); } catch { /* May not be connected */ }
+    }
+    if (this.spatialEngine) {
+      try { this.spatialEngine.disconnect(); } catch { /* May not be connected */ }
+    }
+
+    // Step 1: Route gains to EQ or directly to waveformCompensation
+    if (this.eqEnabled && this.eqInputNode && this.eqOutputNode) {
+      this.frontendGain.connect(this.eqInputNode);
+      this.backendGain.connect(this.eqInputNode);
+      this.eqOutputNode.connect(this.waveformCompensationNode);
+      console.log('🎚️ AudioMixer: Gains → EQ → WaveformCompensation');
+    } else {
+      this.frontendGain.connect(this.waveformCompensationNode);
+      this.backendGain.connect(this.waveformCompensationNode);
+      console.log('🎚️ AudioMixer: Gains → WaveformCompensation (EQ bypassed)');
+    }
+
+    // Step 2: Route waveformCompensation to Spatial or directly to destination
+    if (this.spatialEnabled && this.spatialEngine) {
+      this.waveformCompensationNode.connect(this.spatialEngine.getInput() as GainNode);
+      this.spatialEngine.connect(this.audioContext.destination);
+      console.log('🌀 AudioMixer: WaveformCompensation → Spatial → Destination');
+    } else {
+      this.waveformCompensationNode.connect(this.audioContext.destination);
+      console.log('🌀 AudioMixer: WaveformCompensation → Destination (Spatial bypassed)');
+    }
+  }
+
+  /**
+   * Set equalizer nodes and rewire audio graph
+   * Called when EQ is enabled/disabled or initialized
+   */
+  setEqualizerNodes(inputNode: GainNode | null, outputNode: GainNode | null): void {
+    // Store new EQ nodes
+    this.eqInputNode = inputNode;
+    this.eqOutputNode = outputNode;
+    this.eqEnabled = !!(inputNode && outputNode);
+
+    // Rebuild the entire chain
+    this.rebuildSignalChain();
+  }
+
+  /**
+   * Check if EQ is currently in the signal chain
+   */
+  isEqualizerEnabled(): boolean {
+    return this.eqEnabled;
+  }
+
+  /**
+   * Set spatial effect mode and rewire audio graph if needed
+   * Uses rebuildSignalChain for consistent routing with EQ
+   */
+  setSpatialEffect(mode: SpatialEffectMode, intensity: number = 0.5, speed: number = 1): void {
+    const newEnabled = mode !== 'none';
+
+    // Create spatial engine lazily on first use
+    if (newEnabled && !this.spatialEngine) {
+      this.spatialEngine = new True8DSpatialEngine(this.audioContext);
+      console.log('🌀 AudioMixer: Created spatial engine');
+    }
+
+    // Stop current movement if disabling
+    if (!newEnabled && this.spatialEngine) {
+      this.spatialEngine.stopMovement();
+    }
+
+    // Update state
+    this.spatialEnabled = newEnabled;
+    this.currentSpatialMode = mode;
+
+    // Rebuild the entire signal chain
+    this.rebuildSignalChain();
+
+    // Start/update the spatial effect on the engine
+    if (this.spatialEngine && newEnabled) {
+      this.spatialEngine.setSpatialEffect(mode, intensity, speed);
+    }
+  }
+
+  /**
+   * Update spatial intensity without changing mode
+   */
+  setSpatialIntensity(intensity: number): void {
+    if (this.spatialEngine && this.spatialEnabled) {
+      this.spatialEngine.setIntensity(intensity);
+    }
+  }
+
+  /**
+   * Get current spatial effect mode
+   */
+  getSpatialMode(): SpatialEffectMode {
+    return this.currentSpatialMode;
+  }
+
+  /**
+   * Check if spatial effects are enabled
+   */
+  isSpatialEnabled(): boolean {
+    return this.spatialEnabled;
+  }
+
   /**
    * Update waveform compensation with smooth crossfade
    * This prevents distortion when switching between waveforms
@@ -319,11 +452,23 @@ export class AudioMixer {
       this.crossfadeTimeoutId = null;
     }
 
-    this.frontendPreAnalyserGain?.disconnect();
-    this.backendPreAnalyserGain?.disconnect();
-    this.frontendGain?.disconnect();
-    this.backendGain?.disconnect();
-    this.analyserNode?.disconnect();
-    this.waveformCompensationNode?.disconnect();
+    // Clean up spatial engine
+    if (this.spatialEngine) {
+      this.spatialEngine.dispose();
+      this.spatialEngine = null;
+    }
+
+    try {
+      this.frontendPreAnalyserGain?.disconnect();
+      this.backendPreAnalyserGain?.disconnect();
+      this.frontendGain?.disconnect();
+      this.backendGain?.disconnect();
+      this.analyserNode?.disconnect();
+      this.waveformCompensationNode?.disconnect();
+    } catch (error) {
+      // Reason: Audio nodes may already be disconnected or context may be closed
+      // Gracefully handle cleanup errors to prevent crashes
+      console.error('AudioMixer cleanup error:', error);
+    }
   }
 }

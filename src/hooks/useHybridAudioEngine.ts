@@ -363,6 +363,33 @@ export const useHybridAudioEngine = () => {
     backendEngine.audioState.config?.volume
   ]);
 
+  // Route EQ through mixer (not frontend engine) so it affects both engines
+  const setEqualizerNodes = useCallback((inputNode: GainNode | null, outputNode: GainNode | null) => {
+    if (mixerRef.current) {
+      mixerRef.current.setEqualizerNodes(inputNode, outputNode);
+    } else {
+      // Fallback to frontend engine if mixer not ready (rare case)
+      frontendEngine.setEqualizerNodes(inputNode, outputNode);
+    }
+  }, [frontendEngine]);
+
+  // Spatial effect control through mixer
+  const setSpatialEffect = useCallback((
+    mode: 'toroidal' | 'vortex' | 'spiral' | 'wave' | 'pattern8D' | 'combined' | 'none',
+    intensity: number = 0.5,
+    speed: number = 1
+  ) => {
+    if (mixerRef.current) {
+      mixerRef.current.setSpatialEffect(mode, intensity, speed);
+    }
+  }, []);
+
+  const setSpatialIntensity = useCallback((intensity: number) => {
+    if (mixerRef.current) {
+      mixerRef.current.setSpatialIntensity(intensity);
+    }
+  }, []);
+
   return {
     audioState,
     electromagnetic,
@@ -379,7 +406,9 @@ export const useHybridAudioEngine = () => {
     createGammaProtocol,
     initializeAudio,
     setAudioState: frontendEngine.setAudioState,
-    setEqualizerNodes: frontendEngine.setEqualizerNodes,
+    setEqualizerNodes,
+    setSpatialEffect,
+    setSpatialIntensity,
     audioContext: frontendEngine.audioContext,
     analyserNode,
     currentEngine,

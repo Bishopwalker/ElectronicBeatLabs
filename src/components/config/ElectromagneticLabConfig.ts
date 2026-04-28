@@ -107,14 +107,18 @@ export const DEFAULT_APP_STATE: AppState = {
 
 // Tab configuration
 export const TAB_CONFIG = [
-  { id: 'patterns', label: 'Patterns', icon: 'Patterns', enabled: true },
-  { id: 'frequency', label: 'Frequency', icon: 'Frequency', enabled: true },
-  { id: 'timer', label: 'Timer', icon: 'Timer', enabled: true },
-  { id: 'visualization', label: 'Visual', icon: 'Visual', enabled: true },
-  { id: 'adhd', label: 'ADHD', icon: 'ADHD', enabled: true },
-  { id: 'youtube', label: 'YouTube', icon: 'YouTube', enabled: true },
-  { id: 'guide', label: 'Guide', icon: 'Guide', enabled: true },
-  { id: 'settings', label: 'Settings', icon: 'Settings', enabled: true }
+  { id: 'patterns', label: 'Patterns', icon: '🌀', enabled: true },
+  { id: 'frequency', label: 'Frequency', icon: '📊', enabled: true },
+  { id: 'timer', label: 'Timer', icon: '⏱️', enabled: true },
+  { id: 'visualization', label: 'Visual', icon: '🎨', enabled: true },
+  { id: 'adhd', label: 'ADHD', icon: '⚡', enabled: true },
+  { id: 'quantum', label: 'Oracle', icon: '🔮', enabled: true },
+  { id: 'rv', label: 'RV', icon: '👁️', enabled: true },
+  { id: 'crv', label: 'CRV', icon: '📝', enabled: true },
+  { id: 'arv', label: 'ARV', icon: '🎯', enabled: true },
+  { id: 'youtube', label: 'YouTube', icon: '📺', enabled: true },
+  { id: 'guide', label: 'Guide', icon: '📖', enabled: true },
+  { id: 'settings', label: 'Settings', icon: '⚙️', enabled: true }
 ];
 
 // Section data for restore functionality
@@ -134,7 +138,8 @@ export const SECTION_DATA = {
   'binauralBeats': { title: 'Binaural Beat Generator', icon: '🎧' },
   'timerPanel': { title: 'Timer & Sessions', icon: '⏰' },
   'frequencyVisualizer': { title: 'Frequency Visualizer', icon: '📊' },
-  'spatialVisualizer': { title: '3D Spatial Visualizer', icon: '🌀' }
+  'spatialVisualizer': { title: '3D Spatial Visualizer', icon: '🌀' },
+  'remoteViewing': { title: 'Remote Viewing', icon: '👁️' }
 };
 
 // Default closed sections (Master Controls and FrequencyVisualizer closed initially)

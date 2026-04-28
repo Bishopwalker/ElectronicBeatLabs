@@ -462,7 +462,13 @@ export interface SpatialVisualizerProps {
     audioContext?: AudioContext;
     analyserNode?: AnalyserNode;
     isPlaying?: boolean;
-    patternConfig: PatternConfig;
+    patternConfig?: PatternConfig;
+    /**
+     * 🎵 BEAT-SYNC: Spatial audio effect mode from AudioMixer
+     * When provided, SpatialVisualizer will sync its visualization mode
+     * to match the actual 8D spatial audio effect being applied
+     */
+    spatialAudioMode?: SpatialEffectMode;
 }
 
 export interface FrequencyDisplayProps {

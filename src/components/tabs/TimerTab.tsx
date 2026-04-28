@@ -280,6 +280,7 @@ const TimerTab: React.FC<TimerTabProps> = ({
 
     return (
         <Box
+            id="timerPanel"
             sx={{
                 py: 1,
                 maxWidth: 1200,
@@ -335,7 +336,7 @@ const TimerTab: React.FC<TimerTabProps> = ({
             )}
 
             {/* Preset Selection Card */}
-            <Card sx={{ mb: 3, bgcolor: 'rgba(0,0,0,0.3)' }}>
+            <Card id="timer-preset-selector" sx={{ mb: 3, bgcolor: 'rgba(0,0,0,0.3)' }}>
                 <CardContent>
                     <Typography variant="h6" gutterBottom color="primary">
                         Select Timer Preset
@@ -425,6 +426,7 @@ const TimerTab: React.FC<TimerTabProps> = ({
 
                     {/* Loop Control */}
                     <FormControlLabel
+                        id="timer-loop-toggle"
                         control={
                             <Checkbox
                                 checked={loopEnabled || (timerState?.forceLoop || false)}
@@ -450,6 +452,7 @@ const TimerTab: React.FC<TimerTabProps> = ({
                     />
 
                     <Button
+                        id="timer-controls"
                         variant="contained"
                         fullWidth
                         onClick={() => {

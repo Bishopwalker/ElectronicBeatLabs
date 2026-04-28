@@ -4,7 +4,7 @@
 
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {Box, Chip, IconButton, ToggleButton, ToggleButtonGroup, Typography} from '@mui/material';
-import type {ElectromagneticField, SpatialVisualizerProps} from '../types/index';
+import type {ElectromagneticField, SpatialEffectMode, SpatialVisualizerProps} from '../types/index';
 import BlurOnIcon from '@mui/icons-material/BlurOn';
 import TornadoIcon from '@mui/icons-material/Tornado';
 import WavesIcon from '@mui/icons-material/Waves';
@@ -24,7 +24,39 @@ import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
  * Applied to all frequency data readings for visualization only
  */
 const VISUAL_BOOST = 10; // 10x boost for better visibility (matching FrequencyVisualizer)
-const MIN_ANIMATION = 0.1; // Minimum animation even when silent
+const MIN_ANIMATION = 0; // 🔥 FIX: No animation when audio is not playing - was 0.1, now 0
+
+/**
+ * 🎵 BEAT-SYNC HELPER
+ * Calculates a pulsation value based on the actual binaural beat frequency
+ * This syncs visual animations to the therapeutic beat rate
+ *
+ * @param time - Current time in seconds
+ * @param beatFrequency - The binaural beat frequency in Hz (e.g., 10Hz for Alpha)
+ * @param phase - Optional phase offset (0-1)
+ * @param isPlaying - Whether audio is currently playing (returns 0 if not)
+ * @returns Value oscillating between 0 and 1 at the beat frequency, or 0 if not playing
+ */
+function calculateBeatPulse(time: number, beatFrequency: number, phase: number = 0, isPlaying: boolean = true): number {
+  if (!isPlaying) return 0; // 🔥 FIX: No pulsation when audio is stopped
+  if (beatFrequency <= 0) return 0; // No beat = no pulse
+  // Creates a smooth sine wave pulsation at the beat frequency
+  const pulse = Math.sin((time * beatFrequency * 2 * Math.PI) + (phase * Math.PI * 2));
+  // Normalize from [-1, 1] to [0, 1]
+  return (pulse + 1) / 2;
+}
+
+/**
+ * 🎵 BEAT-SYNC INTENSITY
+ * Creates a more pronounced pulse that peaks at beat intervals
+ * Good for size/scale animations that should "breathe" with the beat
+ */
+function calculateBeatIntensity(time: number, beatFrequency: number, sharpness: number = 2, isPlaying: boolean = true): number {
+  if (!isPlaying) return 0; // 🔥 FIX: No intensity when audio is stopped
+  const pulse = calculateBeatPulse(time, beatFrequency, 0, isPlaying);
+  // Apply sharpness to create more pronounced peaks
+  return Math.pow(pulse, sharpness);
+}
 
 /**
  * Maps FFT bin index to HSL hue value based on frequency range
@@ -155,6 +187,24 @@ function project3D(point: Point3D, rotation: { x: number; y: number; z: number }
 type VisualizationMode = 'toroidal' | 'vortex' | 'spiral' | 'wave' | 'pattern8d' | 'cube3d' | 'combined';
 
 /**
+ * 🎵 BEAT-SYNC: Map SpatialEffectMode (from AudioMixer) to VisualizationMode
+ * This ensures the visual effect matches the actual 8D audio spatialization
+ */
+function mapSpatialAudioModeToVisualization(mode: SpatialEffectMode | undefined): VisualizationMode | null {
+  if (!mode || mode === 'none') return null;
+
+  switch (mode) {
+    case 'toroidal': return 'toroidal';
+    case 'vortex': return 'vortex';
+    case 'spiral': return 'spiral';
+    case 'wave': return 'wave';
+    case 'pattern8D': return 'pattern8d'; // Note: different casing
+    case 'combined': return 'combined';
+    default: return null;
+  }
+}
+
+/**
  * 🔥 CRITICAL FIX: Map pattern names to visualization modes
  * Auto-detects which visualization mode to use based on pattern name
  */
@@ -206,7 +256,8 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
   size = 400,
   audioContext,
   analyserNode,
-  isPlaying = false
+  isPlaying = false,
+  spatialAudioMode // 🎵 BEAT-SYNC: Optional spatial audio mode from AudioMixer
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number | undefined>(undefined);
@@ -263,13 +314,26 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
     }
   };
 
-  // 🔥 CRITICAL FIX: Auto-sync visualization mode when pattern changes
+  // 🎵 BEAT-SYNC: Sync visualization mode with spatial audio mode (highest priority)
+  // This ensures the visual effect matches the actual 8D audio spatialization
   useEffect(() => {
-    if (pattern && pattern.name && !isManualOverride) {
+    if (spatialAudioMode && !isManualOverride) {
+      const mappedMode = mapSpatialAudioModeToVisualization(spatialAudioMode);
+      if (mappedMode) {
+        setVisualizationMode(mappedMode);
+        return; // Spatial audio mode takes priority
+      }
+    }
+  }, [spatialAudioMode, isManualOverride]);
+
+  // 🔥 CRITICAL FIX: Auto-sync visualization mode when pattern changes (fallback)
+  useEffect(() => {
+    // Only use pattern detection if no spatial audio mode is active
+    if (pattern && pattern.name && !isManualOverride && !spatialAudioMode) {
       const detectedMode = detectVisualizationModeFromPattern(pattern.name);
       setVisualizationMode(detectedMode);
     }
-  }, [pattern?.name, isManualOverride]); // Re-run when pattern name changes or override toggled
+  }, [pattern?.name, isManualOverride, spatialAudioMode]); // Re-run when pattern name changes or override toggled
 
   const safeElectromagnetic: ElectromagneticField = useMemo(() => {
     return electromagnetic || {
@@ -369,7 +433,7 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
   }, [analyserNode, isPlaying]);
 
   // ============================================================================
-  // 🔥 OPTIMIZED: 3D CUBE RENDERER - AUDIO-REACTIVE WITH PERFORMANCE FIXES
+  // 🔥 OPTIMIZED: 3D CUBE RENDERER - AUDIO-REACTIVE + BEAT-SYNCED
   // ============================================================================
   const render3DCube = useCallback((
     ctx: CanvasRenderingContext2D,
@@ -379,54 +443,77 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
     audio: typeof audioEnergyRef.current,
     time: number
   ) => {
+    // 🎵 BEAT-SYNC: Get the actual beat frequency from electromagnetic field
+    const beatFreq = field.frequency || 4;
+    const beatPulse = calculateBeatPulse(time, beatFreq);
+    const beatIntensity = calculateBeatIntensity(time, beatFreq, 2);
+
     // 🔥 PERFORMANCE: Reduce rotation speed for smoother animation
+    // 🎵 BEAT-SYNC: Rotation speed varies with beat
+    const beatRotationMod = 0.8 + (beatPulse * 0.4); // Speed varies 0.8-1.2 with beat
     const rotation = {
-      x: time * 0.15 + audio.bass * Math.PI * 0.5,
-      y: time * 0.1 + audio.mid * Math.PI * 0.5,
-      z: time * 0.05 + audio.treble * Math.PI * 0.5
+      x: time * 0.15 * beatRotationMod + audio.bass * Math.PI * 0.5,
+      y: time * 0.1 * beatRotationMod + audio.mid * Math.PI * 0.5,
+      z: time * 0.05 * beatRotationMod + audio.treble * Math.PI * 0.5
     };
-    
-    // Scale based on audio with smoother transitions
-    const scale = 80 + audio.overall * 30;
-    
+
+    // 🎵 BEAT-SYNC: Scale pulses with beat - cube "breathes"
+    const baseScale = 75 + audio.overall * 25;
+    const beatScale = beatIntensity * 15; // +0-15 at beat peaks
+    const scale = baseScale + beatScale;
+
     // Project vertices to 2D
     const projected = cubeVertices.map(v => project3D(v, rotation, scale));
-    
+
     // Color based on dominant frequency
     const hue = calculateFrequencyColor(frequencyData);
-    
+
+    // 🎵 BEAT-SYNC: Edge alpha pulses with beat
+    const baseEdgeAlpha = audio.overall * 0.75;
+    const beatEdgeAlpha = beatPulse * 0.25;
+    const edgeAlpha = Math.min(1, baseEdgeAlpha + beatEdgeAlpha);
+
     // Draw edges
-    ctx.strokeStyle = `hsla(${hue}, 90%, 70%, ${audio.overall})`;
-    ctx.lineWidth = 2 + audio.overall * 3;
-    ctx.shadowColor = `hsla(${hue}, 100%, 80%, ${audio.overall})`;
-    ctx.shadowBlur = audio.overall * 20;
-    
+    ctx.strokeStyle = `hsla(${hue}, 90%, 70%, ${edgeAlpha})`;
+    const baseLineWidth = 2 + audio.overall * 2;
+    const beatLineWidth = beatIntensity * 2;
+    ctx.lineWidth = baseLineWidth + beatLineWidth;
+    ctx.shadowColor = `hsla(${hue}, 100%, 80%, ${edgeAlpha})`;
+    ctx.shadowBlur = (audio.overall * 15) + (beatIntensity * 10);
+
     cubeEdges.forEach(([start, end]) => {
       ctx.beginPath();
       ctx.moveTo(projected[start].x, projected[start].y);
       ctx.lineTo(projected[end].x, projected[end].y);
       ctx.stroke();
     });
-    
+
     // 🔥 PERFORMANCE: Optimized vertex rendering - less gradient creation
     projected.forEach((point, i) => {
       const binIndex = Math.floor((i / projected.length) * frequencyData.length);
       const freqValue = frequencyData[binIndex] / 255;
-      
-      if (freqValue > 0.3) {
-        const pointSize = 3 + freqValue * 8;
+
+      // 🎵 BEAT-SYNC: Vertex visibility threshold affected by beat
+      const visibilityThreshold = 0.25 - (beatIntensity * 0.1); // Lower threshold at beat peaks
+
+      if (freqValue > visibilityThreshold) {
+        // 🎵 BEAT-SYNC: Point size pulses with beat
+        const basePointSize = 3 + freqValue * 6;
+        const beatPointSize = beatIntensity * 4;
+        const pointSize = basePointSize + beatPointSize;
         const pointHue = mapFrequencyBinToColor(binIndex, frequencyData.length);
-        
+
         // 🔥 PERFORMANCE: Simple circle instead of gradient for vertices
-        ctx.fillStyle = `hsla(${pointHue}, 100%, 80%, ${freqValue})`;
+        const pointAlpha = freqValue + (beatPulse * 0.2);
+        ctx.fillStyle = `hsla(${pointHue}, 100%, 80%, ${Math.min(1, pointAlpha)})`;
         ctx.beginPath();
         ctx.arc(point.x, point.y, pointSize, 0, Math.PI * 2);
         ctx.fill();
-        
-        // Add glow effect with shadowBlur instead of gradient
-        if (freqValue > 0.6) {
-          ctx.shadowColor = `hsla(${pointHue}, 100%, 90%, ${freqValue})`;
-          ctx.shadowBlur = pointSize * 2;
+
+        // 🎵 BEAT-SYNC: Glow effect enhanced at beat peaks
+        if (freqValue > 0.5 || beatIntensity > 0.6) {
+          ctx.shadowColor = `hsla(${pointHue}, 100%, 90%, ${freqValue + beatIntensity * 0.3})`;
+          ctx.shadowBlur = pointSize * 2 + beatIntensity * 5;
           ctx.beginPath();
           ctx.arc(point.x, point.y, pointSize * 0.5, 0, Math.PI * 2);
           ctx.fill();
@@ -434,17 +521,20 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
         }
       }
     });
-    
-    // 🔥 PERFORMANCE: Only draw inner wireframe when audio is strong
-    if (audio.overall > 0.4) {
-      const innerScale = scale * 0.6 * audio.overall;
-      const innerProjected = cubeVertices.map(v => 
+
+    // 🔥 PERFORMANCE: Inner wireframe with beat-sync
+    // 🎵 BEAT-SYNC: Inner cube appears at beat peaks even with lower audio
+    if (audio.overall > 0.35 || beatIntensity > 0.5) {
+      const innerScaleMod = 0.5 + (beatIntensity * 0.15); // Inner cube grows at beat peaks
+      const innerScale = scale * innerScaleMod * audio.overall;
+      const innerProjected = cubeVertices.map(v =>
         project3D(v, rotation, innerScale)
       );
-      
-      ctx.strokeStyle = `hsla(${(hue + 180) % 360}, 85%, 65%, ${audio.overall * 0.3})`;
-      ctx.lineWidth = 0.5;
-      
+
+      const innerAlpha = (audio.overall * 0.25) + (beatPulse * 0.15);
+      ctx.strokeStyle = `hsla(${(hue + 180) % 360}, 85%, 65%, ${innerAlpha})`;
+      ctx.lineWidth = 0.5 + beatIntensity;
+
       // 🔥 PERFORMANCE: Draw all edges in one path
       ctx.beginPath();
       cubeEdges.forEach(([start, end]) => {
@@ -466,6 +556,27 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
     updateAudioData();
     const audio = audioEnergyRef.current;
     const frequencyData = frequencyDataRef.current;
+
+    // 🔥 FIX: When audio is NOT playing, just show a static dark screen
+    // No patterns, no movement, no animation - completely still
+    if (!isPlaying) {
+      ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+      ctx.fillRect(0, 0, width, height);
+
+      // Draw a subtle "waiting" indicator in the center
+      ctx.save();
+      ctx.translate(centerX, centerY);
+      ctx.fillStyle = 'rgba(100, 100, 100, 0.3)';
+      ctx.beginPath();
+      ctx.arc(0, 0, 30, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(150, 150, 150, 0.5)';
+      ctx.font = '12px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('▶ Play to visualize', 0, 60);
+      ctx.restore();
+      return; // 🔥 EXIT EARLY - no animation when stopped
+    }
 
     // 🔥 PERFORMANCE: Optimized clear with less opacity for smoother trails
     ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
@@ -504,10 +615,10 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
     }
 
     ctx.restore();
-  }, [safeElectromagnetic, patternProperties, visualizationMode, updateAudioData, render3DCube]);
+  }, [safeElectromagnetic, patternProperties, visualizationMode, updateAudioData, render3DCube, isPlaying]);
 
   // ============================================================================
-  // 🔥 PHASE 3: TOROIDAL FIELD - 100% AUDIO-REACTIVE
+  // 🔥 PHASE 3: TOROIDAL FIELD - 100% AUDIO-REACTIVE + BEAT-SYNCED
   // ============================================================================
   const renderToroidalField = (
     ctx: CanvasRenderingContext2D,
@@ -520,21 +631,34 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
     const radius = 120;
     const numRings = 16;
 
+    // 🎵 BEAT-SYNC: Get the actual beat frequency from electromagnetic field
+    const beatFreq = field.frequency || 4; // Default to 4Hz (Theta) if not set
+    const beatPulse = calculateBeatPulse(time, beatFreq);
+    const beatIntensity = calculateBeatIntensity(time, beatFreq, 1.5);
+
     for (let i = 0; i < numRings; i++) {
-      // 🔥 ROTATION WITH TIME + AUDIO BOOST
-      const angle = (i / numRings) * Math.PI * 2 + time * 0.5 + (audio.treble * Math.PI * 8);
-      
+      // 🔥 ROTATION WITH TIME + AUDIO BOOST + BEAT-SYNC MODULATION
+      // The beat pulse adds subtle speed variation at the beat frequency
+      const beatSpeedMod = 0.3 + (beatPulse * 0.4); // Speed varies 0.3-0.7 with beat
+      const angle = (i / numRings) * Math.PI * 2 + time * beatSpeedMod + (audio.treble * Math.PI * 8);
+
       const x = Math.cos(angle) * radius;
       const y = Math.sin(angle) * radius * 0.5;
 
-      // 🔥 RING SIZE PURE BASS (NO SINE WAVES)
-      const ringSize = audio.bass * 50;
-      
+      // 🔥 RING SIZE: BASS + BEAT-SYNC PULSATION
+      // Rings "breathe" in and out at the beat frequency
+      const bassSizeComponent = audio.bass * 40;
+      const beatSizeComponent = beatIntensity * 15; // +0-15 pixels at beat peaks
+      const ringSize = bassSizeComponent + beatSizeComponent;
+
       // 🔥 ALWAYS SHOW SOMETHING
       if (ringSize < 2) continue; // Lower threshold
 
-      // 🔥 ALPHA PURE OVERALL
-      const alpha = audio.overall;
+      // 🔥 ALPHA: OVERALL + BEAT-SYNC BRIGHTNESS
+      // Brightness pulses with the beat for a "breathing" glow effect
+      const baseAlpha = audio.overall * 0.7;
+      const beatAlpha = beatPulse * 0.3; // +0-0.3 alpha at beat peaks
+      const alpha = Math.min(1, baseAlpha + beatAlpha);
 
       // 🔥 COLOR MAPPED TO FREQUENCY BIN
       const binIndex = Math.floor((i / numRings) * frequencyData.length);
@@ -550,10 +674,12 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
       ctx.arc(x, y, ringSize, 0, Math.PI * 2);
       ctx.fill();
 
-      // 🔥 CENTER SPARKLE ONLY WHEN STRONG TREBLE
-      if (audio.treble > 0.5) {
-        const sparkleSize = audio.treble * 8;
-        ctx.fillStyle = `hsla(${hue + 60}, 100%, 90%, ${audio.treble})`;
+      // 🔥 CENTER SPARKLE: TREBLE + BEAT-SYNC FLASH
+      // Sparkles are more intense at beat peaks
+      if (audio.treble > 0.5 || beatIntensity > 0.7) {
+        const sparkleSize = (audio.treble * 6) + (beatIntensity * 4);
+        const sparkleAlpha = Math.min(1, audio.treble + (beatIntensity * 0.3));
+        ctx.fillStyle = `hsla(${hue + 60}, 100%, 90%, ${sparkleAlpha})`;
         ctx.beginPath();
         ctx.arc(x, y, sparkleSize, 0, Math.PI * 2);
         ctx.fill();
@@ -562,7 +688,7 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
   };
 
   // ============================================================================
-  // 🔥 PHASE 4: VORTEX FIELD - 100% AUDIO-REACTIVE
+  // 🔥 PHASE 4: VORTEX FIELD - 100% AUDIO-REACTIVE + BEAT-SYNCED
   // ============================================================================
   const renderVortexField = (
     ctx: CanvasRenderingContext2D,
@@ -572,25 +698,42 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
     audio: typeof audioEnergyRef.current,
     time: number
   ) => {
+    // 🎵 BEAT-SYNC: Get the actual beat frequency from electromagnetic field
+    const beatFreq = field.frequency || 4;
+    const beatPulse = calculateBeatPulse(time, beatFreq);
+    const beatIntensity = calculateBeatIntensity(time, beatFreq, 2);
+
     for (let r = 20; r < 160; r += 12) {
       const points = Math.floor(r / 6) + 8;
 
-      for (let i = 0; i < points; i++) {
-        // 🔥 ROTATION WITH TIME + AUDIO BOOST
-        const angle = (i / points) * Math.PI * 2 + time * 0.3 + (audio.treble * Math.PI * 4) + r * 0.03;
-        
-        const x = Math.cos(angle) * r;
-        const y = Math.sin(angle) * r;
+      // 🎵 BEAT-SYNC: Vortex "inhales" and "exhales" at beat frequency
+      // Inner rings move faster during beat peaks (pulling inward effect)
+      const radiusFactor = r / 160;
+      const beatRadiusMod = 1 + (beatIntensity * 0.15 * (1 - radiusFactor)); // Inner rings affected more
 
-        // 🔥 ALPHA PURE OVERALL
-        const alpha = audio.overall;
-        
+      for (let i = 0; i < points; i++) {
+        // 🔥 ROTATION WITH TIME + AUDIO BOOST + BEAT-SYNC SPIRAL
+        // Speed increases at beat peaks, creating a "sucking" vortex effect
+        const beatSpeedMod = 0.2 + (beatPulse * 0.2);
+        const angle = (i / points) * Math.PI * 2 + time * beatSpeedMod + (audio.treble * Math.PI * 4) + r * 0.03;
+
+        const effectiveRadius = r * beatRadiusMod;
+        const x = Math.cos(angle) * effectiveRadius;
+        const y = Math.sin(angle) * effectiveRadius;
+
+        // 🔥 ALPHA: OVERALL + BEAT-SYNC BRIGHTNESS
+        const baseAlpha = audio.overall * 0.75;
+        const beatAlpha = beatPulse * 0.25;
+        const alpha = Math.min(1, baseAlpha + beatAlpha);
+
         // 🔥 COLOR MAPPED TO RADIUS (frequency range simulation)
         const normalizedR = r / 160;
         const hue = mapFrequencyBinToColor(normalizedR * 100, 100);
 
-        // 🔥 PARTICLE SIZE PURE MID
-        const particleSize = Math.max(2, audio.mid * 12 * props.intensity);
+        // 🔥 PARTICLE SIZE: MID + BEAT-SYNC PULSATION
+        const midSizeComponent = audio.mid * 10 * props.intensity;
+        const beatSizeComponent = beatIntensity * 4;
+        const particleSize = Math.max(2, midSizeComponent + beatSizeComponent);
 
         const gradient = ctx.createRadialGradient(x, y, 0, x, y, 12);
         gradient.addColorStop(0, `hsla(${hue}, 95%, 80%, ${alpha})`);
@@ -606,7 +749,7 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
   };
 
   // ============================================================================
-  // 🔥 PHASE 5: SPIRAL FIELD - 100% AUDIO-REACTIVE
+  // 🔥 PHASE 5: SPIRAL FIELD - 100% AUDIO-REACTIVE + BEAT-SYNCED
   // ============================================================================
   const renderSpiralField = (
     ctx: CanvasRenderingContext2D,
@@ -616,30 +759,50 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
     audio: typeof audioEnergyRef.current,
     time: number
   ) => {
+    // 🎵 BEAT-SYNC: Get the actual beat frequency from electromagnetic field
+    const beatFreq = field.frequency || 4;
+    const beatPulse = calculateBeatPulse(time, beatFreq);
+    const beatIntensity = calculateBeatIntensity(time, beatFreq, 1.8);
+
     const spiralCount = 3;
     const spiralHues = [15, 150, 260]; // Bass, Mid, Treble
 
     for (let spiral = 0; spiral < spiralCount; spiral++) {
+      // 🎵 BEAT-SYNC: Each spiral has a phase offset so they pulse in sequence
+      const phaseOffset = spiral / spiralCount;
+      const spiralBeatPulse = calculateBeatPulse(time, beatFreq, phaseOffset);
+
       const spiralOffset = (spiral * Math.PI * 2) / spiralCount;
       const hue = spiralHues[spiral];
 
-      // 🔥 LINE WIDTH PURE OVERALL
-      const lineWidth = Math.max(1, audio.overall * 10 * props.intensity);
+      // 🔥 LINE WIDTH: OVERALL + BEAT-SYNC THICKNESS
+      // Spirals get thicker at beat peaks
+      const baseWidth = audio.overall * 8 * props.intensity;
+      const beatWidth = spiralBeatPulse * 4;
+      const lineWidth = Math.max(1, baseWidth + beatWidth);
 
-      // 🔥 ALPHA PURE OVERALL
-      const alpha = audio.overall;
+      // 🔥 ALPHA: OVERALL + BEAT-SYNC BRIGHTNESS
+      const baseAlpha = audio.overall * 0.75;
+      const beatAlpha = spiralBeatPulse * 0.25;
+      const alpha = Math.min(1, baseAlpha + beatAlpha);
 
       ctx.strokeStyle = `hsla(${hue}, 95%, 75%, ${alpha})`;
       ctx.lineWidth = lineWidth;
       ctx.shadowColor = `hsla(${hue}, 100%, 80%, ${alpha})`;
-      ctx.shadowBlur = audio.treble * 20; // Pure treble glow
+      // 🎵 BEAT-SYNC: Glow pulses with beat
+      ctx.shadowBlur = (audio.treble * 15) + (beatIntensity * 10);
 
       ctx.beginPath();
 
       for (let t = 0; t < Math.PI * 8; t += 0.06) {
-        const r = t * 10;
-        // 🔥 ANGLE WITH TIME + AUDIO BOOST
-        const angle = t + time * 0.2 + (audio.mid * Math.PI * 2) + spiralOffset;
+        // 🎵 BEAT-SYNC: Spiral radius "breathes" with beat
+        const baseRadius = t * 10;
+        const beatRadiusMod = 1 + (beatIntensity * 0.08); // Spiral expands slightly at beat peaks
+        const r = baseRadius * beatRadiusMod;
+
+        // 🔥 ANGLE WITH TIME + AUDIO BOOST + BEAT-SYNC ROTATION
+        const beatSpeedMod = 0.15 + (beatPulse * 0.1);
+        const angle = t + time * beatSpeedMod + (audio.mid * Math.PI * 2) + spiralOffset;
         const x = Math.cos(angle) * r;
         const y = Math.sin(angle) * r;
 
@@ -655,7 +818,7 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
   };
 
   // ============================================================================
-  // 🔥 PHASE 6: WAVE FIELD - 100% AUDIO-REACTIVE
+  // 🔥 PHASE 6: WAVE FIELD - 100% AUDIO-REACTIVE + BEAT-SYNCED
   // ============================================================================
   const renderWaveField = (
     ctx: CanvasRenderingContext2D,
@@ -665,33 +828,53 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
     audio: typeof audioEnergyRef.current,
     time: number
   ) => {
+    // 🎵 BEAT-SYNC: Get the actual beat frequency from electromagnetic field
+    const beatFreq = field.frequency || 4;
+    const beatPulse = calculateBeatPulse(time, beatFreq);
+    const beatIntensity = calculateBeatIntensity(time, beatFreq, 1.5);
+
     const wavelength = props.emWavelength || 100;
     const numWaves = 8;
 
     for (let i = 0; i < numWaves; i++) {
+      // 🎵 BEAT-SYNC: Each wave origin has a phase offset
+      const wavePhaseOffset = i / numWaves;
+      const waveBeatPulse = calculateBeatPulse(time, beatFreq, wavePhaseOffset);
+
       const angle = (i / numWaves) * Math.PI * 2;
       const waveOriginX = Math.cos(angle) * 40;
       const waveOriginY = Math.sin(angle) * 40;
 
       for (let r = 10; r < 150; r += wavelength / 12) {
-        // 🔥 PHASE WITH TIME + AUDIO BOOST
-        const phase = (time * 2 + audio.overall * 10 - r * 0.015) * Math.PI * 2;
-        
-        // 🔥 AMPLITUDE PURE BASS
-        const amplitude = audio.bass * 40 * props.intensity;
+        // 🔥 PHASE WITH TIME + AUDIO BOOST + BEAT-SYNC
+        // Waves propagate outward at beat-synchronized speed
+        const beatSpeedMod = 1.5 + (beatPulse * 1.0); // Speed varies 1.5-2.5 with beat
+        const phase = (time * beatSpeedMod + audio.overall * 8 - r * 0.015) * Math.PI * 2;
+
+        // 🔥 AMPLITUDE: BASS + BEAT-SYNC PULSATION
+        // Waves get larger amplitude at beat peaks
+        const bassAmplitude = audio.bass * 30 * props.intensity;
+        const beatAmplitude = beatIntensity * 15;
+        const amplitude = bassAmplitude + beatAmplitude;
         const offset = Math.sin(phase) * amplitude;
         const actualRadius = r + offset;
-        
+
         if (actualRadius < 5) continue;
 
-        // 🔥 ALPHA PURE OVERALL SCALED BY DISTANCE
-        const alpha = Math.max(0.1, (1 - actualRadius / 160) * audio.overall);
+        // 🔥 ALPHA: OVERALL + BEAT-SYNC + DISTANCE FADE
+        const distanceFade = 1 - actualRadius / 160;
+        const baseAlpha = distanceFade * audio.overall * 0.7;
+        const beatAlpha = waveBeatPulse * 0.3 * distanceFade;
+        const alpha = Math.max(0.1, baseAlpha + beatAlpha);
 
         // 🔥 COLOR MAPPED TO RADIUS
         const hue = mapFrequencyBinToColor(r / 150 * 100, 100);
 
         ctx.strokeStyle = `hsla(${hue}, 95%, 75%, ${alpha})`;
-        ctx.lineWidth = audio.overall * 5;
+        // 🎵 BEAT-SYNC: Line width pulses with beat
+        const baseWidth = audio.overall * 4;
+        const beatWidth = beatIntensity * 2;
+        ctx.lineWidth = Math.max(1, baseWidth + beatWidth);
 
         ctx.beginPath();
         ctx.arc(waveOriginX, waveOriginY, actualRadius, 0, Math.PI * 2);
@@ -701,8 +884,27 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
   };
 
   // ============================================================================
-  // 🔥 PHASE 7: PATTERN 8D - 100% AUDIO-REACTIVE
+  // 🔥 PHASE 7: PATTERN 8D - 100% AUDIO-REACTIVE + BEAT-SYNCED
   // ============================================================================
+
+  // Generate default 8D path - figure-8 infinity pattern (coordinates relative to center 0,0)
+  const generate8DPath = useCallback((radius: number): Array<{x: number, y: number, z: number}> => {
+    const path: Array<{x: number, y: number, z: number}> = [];
+    const points = 64; // Smooth path with 64 points
+
+    for (let i = 0; i < points; i++) {
+      const t = (i / points) * Math.PI * 2;
+      // Lemniscate of Bernoulli (figure-8 / infinity shape)
+      const scale = radius / (1 + Math.sin(t) * Math.sin(t));
+      const x = scale * Math.cos(t);
+      const y = scale * Math.sin(t) * Math.cos(t);
+      const z = Math.sin(t * 2) * 50; // Vertical bobbing for 3D effect
+      path.push({ x, y, z });
+    }
+
+    return path;
+  }, []);
+
   const renderPattern8D = (
     ctx: CanvasRenderingContext2D,
     field: ElectromagneticField,
@@ -711,25 +913,52 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
     audio: typeof audioEnergyRef.current,
     time: number
   ) => {
-    if (!props.path || props.path.length === 0) return;
+    // 🎵 BEAT-SYNC: Get the actual beat frequency from electromagnetic field
+    const beatFreq = field.frequency || 4;
+    const beatPulse = calculateBeatPulse(time, beatFreq);
+    const beatIntensity = calculateBeatIntensity(time, beatFreq, 1.5);
 
-    // 🔥 PATH POSITION WITH TIME + AUDIO BOOST
-    const pathProgress = ((time * 0.1 + audio.overall * 2)) % 1;
-    const currentIndex = Math.floor(pathProgress * props.path.length);
+    // NOTE: Canvas is already translated to center (0,0 = center) by renderPattern()
+    const width = ctx.canvas.width;
+    const height = ctx.canvas.height;
+    const radius = Math.min(width, height) * 0.35;
+
+    // Use provided path or generate default 8D figure-8 pattern
+    // All coordinates are relative to center (0,0)
+    const path = (props.path && props.path.length > 0)
+      ? props.path
+      : generate8DPath(radius);
+
+    // 🔥 PATH POSITION WITH TIME + AUDIO BOOST + BEAT-SYNC
+    // Particles move faster at beat peaks for rhythmic motion
+    const beatSpeedMod = 0.08 + (beatPulse * 0.04); // Speed varies with beat
+    const pathProgress = ((time * beatSpeedMod + audio.overall * 1.5)) % 1;
 
     // 🔥 COLOR FROM DOMINANT FREQUENCY
     const hue = calculateFrequencyColor(frequencyData);
 
-    // Draw path
-    ctx.strokeStyle = `hsla(${hue}, 90%, 70%, ${audio.overall * 0.8})`;
-    ctx.lineWidth = audio.overall * 4;
+    // 🎵 BEAT-SYNC: Path trail "breathes" with beat
+    const baseTrailAlpha = 0.25 + audio.overall * 0.4;
+    const beatTrailAlpha = beatPulse * 0.15;
+    const trailAlpha = Math.min(1, baseTrailAlpha + beatTrailAlpha);
+
+    // Draw path trail with gradient opacity
+    ctx.strokeStyle = `hsla(${hue}, 90%, 70%, ${trailAlpha})`;
+    const baseLineWidth = 2 + audio.overall * 2;
+    const beatLineWidth = beatIntensity * 2;
+    ctx.lineWidth = baseLineWidth + beatLineWidth;
     ctx.shadowColor = `hsla(${hue}, 100%, 80%, ${audio.overall})`;
-    ctx.shadowBlur = audio.overall * 15;
+    ctx.shadowBlur = (audio.overall * 15) + (beatIntensity * 10);
 
     ctx.beginPath();
-    props.path.forEach((point, index) => {
-      const x = point.x * 0.8;
-      const y = point.y * 0.8;
+    path.forEach((point, index) => {
+      // Scale factor for pattern-provided paths vs generated paths
+      // 🎵 BEAT-SYNC: Path slightly expands/contracts with beat
+      const baseScale = (props.path && props.path.length > 0) ? 0.8 : 1;
+      const beatScale = 1 + (beatIntensity * 0.05); // Subtle expansion at beat peaks
+      const scale = baseScale * beatScale;
+      const x = point.x * scale;
+      const y = point.y * scale;
 
       if (index === 0) {
         ctx.moveTo(x, y);
@@ -737,41 +966,80 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
         ctx.lineTo(x, y);
       }
     });
+    ctx.closePath();
     ctx.stroke();
     ctx.shadowBlur = 0;
 
-    // Current position marker
-    const currentPoint = props.path[currentIndex];
-    if (currentPoint) {
-      const x = currentPoint.x * 0.8;
-      const y = currentPoint.y * 0.8;
+    // Draw multiple orbiting particles along the path
+    const numParticles = 3;
+    for (let p = 0; p < numParticles; p++) {
+      // 🎵 BEAT-SYNC: Each particle has its own beat phase offset
+      const particlePhaseOffset = p / numParticles;
+      const particleBeatPulse = calculateBeatPulse(time, beatFreq, particlePhaseOffset);
+      const particleBeatIntensity = calculateBeatIntensity(time, beatFreq, 1.5);
 
-      // 🔥 GLOW SIZE PURE OVERALL
-      const glowSize = audio.overall * 30;
+      const particleProgress = (pathProgress + p / numParticles) % 1;
+      const particleIndex = Math.floor(particleProgress * path.length);
+      const currentPoint = path[particleIndex];
 
-      const gradient = ctx.createRadialGradient(x, y, 0, x, y, glowSize);
-      gradient.addColorStop(0, `hsla(${hue}, 100%, 85%, ${audio.overall})`);
-      gradient.addColorStop(0.4, `hsla(${hue + 30}, 95%, 75%, ${audio.treble})`);
-      gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      if (currentPoint) {
+        const baseScale = (props.path && props.path.length > 0) ? 0.8 : 1;
+        const beatScale = 1 + (beatIntensity * 0.05);
+        const scale = baseScale * beatScale;
+        const x = currentPoint.x * scale;
+        const y = currentPoint.y * scale;
 
-      ctx.fillStyle = gradient;
-      ctx.beginPath();
-      ctx.arc(x, y, glowSize, 0, Math.PI * 2);
-      ctx.fill();
+        // 🔥 GLOW SIZE: AUDIO + BEAT-SYNC PULSATION
+        // Particles pulse larger at beat peaks
+        const baseGlowSize = 12 + audio.overall * 20;
+        const beatGlowSize = particleBeatIntensity * 12;
+        const glowSize = baseGlowSize + beatGlowSize;
+        const particleHue = (hue + p * 60) % 360;
 
-      // Center dot
-      ctx.fillStyle = props.color;
-      ctx.beginPath();
-      ctx.arc(x, y, 6, 0, Math.PI * 2);
-      ctx.fill();
+        // 🎵 BEAT-SYNC: Particle alpha pulses with beat
+        const baseParticleAlpha = 0.7 + audio.overall * 0.2;
+        const beatParticleAlpha = particleBeatPulse * 0.1;
+        const particleAlpha = Math.min(1, baseParticleAlpha + beatParticleAlpha);
 
-      // Outer ring
-      ctx.strokeStyle = `hsla(${hue + 60}, 100%, 90%, ${audio.overall})`;
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(x, y, 14, 0, Math.PI * 2);
-      ctx.stroke();
+        const gradient = ctx.createRadialGradient(x, y, 0, x, y, glowSize);
+        gradient.addColorStop(0, `hsla(${particleHue}, 100%, 85%, ${particleAlpha})`);
+        gradient.addColorStop(0.3, `hsla(${particleHue + 30}, 95%, 75%, ${audio.treble * 0.7 + particleBeatPulse * 0.2})`);
+        gradient.addColorStop(0.6, `hsla(${particleHue + 60}, 90%, 60%, ${audio.mid * 0.4 + particleBeatPulse * 0.1})`);
+        gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(x, y, glowSize, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 🎵 BEAT-SYNC: Center dot pulses with beat
+        const baseDotSize = 3 + audio.bass * 3;
+        const beatDotSize = particleBeatIntensity * 3;
+        ctx.fillStyle = `hsla(${particleHue}, 100%, 90%, 1)`;
+        ctx.beginPath();
+        ctx.arc(x, y, baseDotSize + beatDotSize, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 🎵 BEAT-SYNC: Outer ring pulses with beat
+        const baseRingAlpha = 0.4 + audio.overall * 0.4;
+        const beatRingAlpha = particleBeatPulse * 0.2;
+        ctx.strokeStyle = `hsla(${particleHue + 60}, 100%, 90%, ${baseRingAlpha + beatRingAlpha})`;
+        ctx.lineWidth = 1 + particleBeatIntensity;
+        const baseRingSize = 8 + audio.treble * 6;
+        const beatRingSize = particleBeatIntensity * 6;
+        ctx.beginPath();
+        ctx.arc(x, y, baseRingSize + beatRingSize, 0, Math.PI * 2);
+        ctx.stroke();
+      }
     }
+
+    // 🎵 BEAT-SYNC: Center indicator pulses with beat
+    const baseCenterAlpha = 0.2 + beatIntensity * 0.2;
+    const baseCenterSize = 4 + beatIntensity * 3;
+    ctx.fillStyle = `hsla(${hue}, 80%, 50%, ${baseCenterAlpha})`;
+    ctx.beginPath();
+    ctx.arc(0, 0, baseCenterSize, 0, Math.PI * 2);
+    ctx.fill();
   };
 
   const renderPatternRef = useRef(renderPattern);
@@ -859,6 +1127,7 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
 
   return (
     <Box
+      id="spatialVisualizer"
       ref={containerRef}
       sx={{
         width: '100%',
@@ -903,7 +1172,12 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
             visualizationMode === 'pattern8d' ? '8D Pattern' :
             'Combined'
           }
-          {!isManualOverride && pattern?.name && (
+          {!isManualOverride && spatialAudioMode && spatialAudioMode !== 'none' && (
+            <span style={{ color: '#00bfff', fontSize: '0.65rem', marginLeft: '4px' }}>
+              (8D Sync)
+            </span>
+          )}
+          {!isManualOverride && !spatialAudioMode && pattern?.name && (
             <span style={{ color: '#ff6b00', fontSize: '0.65rem', marginLeft: '4px' }}>
               (Auto)
             </span>
@@ -916,6 +1190,7 @@ const SpatialVisualizer: React.FC<SpatialVisualizerProps> = ({
         </Typography>
         <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
           <ToggleButtonGroup
+            id="visualization-mode-selector"
             value={visualizationMode}
             exclusive
             onChange={(_, newMode) => {

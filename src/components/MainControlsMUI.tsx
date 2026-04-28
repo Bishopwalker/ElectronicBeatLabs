@@ -93,6 +93,7 @@ const MainControlsMUI: React.FC<ExtendedMainControlsProps> = ({
         {/* Play/Stop/Reset buttons */}
         <Stack direction="row" spacing={1}>
           <Button
+            id="play-button"
             variant="contained"
             color="primary"
             onClick={onPlay}
@@ -110,6 +111,7 @@ const MainControlsMUI: React.FC<ExtendedMainControlsProps> = ({
           </Button>
 
           <Button
+            id="stop-button"
             variant="contained"
             color="error"
             onClick={onStop}
@@ -149,7 +151,7 @@ const MainControlsMUI: React.FC<ExtendedMainControlsProps> = ({
         </Stack>
         
         {/* Volume control */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box id="volume-control" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <VolumeUpIcon color="secondary" fontSize="small" />
           <TextField
             type="number"
@@ -214,7 +216,7 @@ const MainControlsMUI: React.FC<ExtendedMainControlsProps> = ({
 
   // Full layout for expanded view
   return (
-    <Card sx={{ 
+    <Card id="masterControls" sx={{
       minHeight: 'fit-content',
       borderRadius: 4,
       background: 'rgba(138, 43, 226, 0.05)',
@@ -240,6 +242,7 @@ const MainControlsMUI: React.FC<ExtendedMainControlsProps> = ({
           {/* Play, Stop, and Reset Buttons */}
           <Stack direction="row" spacing={1} sx={{ width: '100%', maxWidth: 300 }}>
             <Button
+              id="play-button"
               variant="contained"
               color="primary"
               onClick={onPlay}
@@ -257,6 +260,7 @@ const MainControlsMUI: React.FC<ExtendedMainControlsProps> = ({
             </Button>
 
             <Button
+              id="stop-button-full"
               variant="contained"
               color="error"
               onClick={onStop}
@@ -295,7 +299,7 @@ const MainControlsMUI: React.FC<ExtendedMainControlsProps> = ({
             )}
           </Stack>
           
-          <Box sx={{ width: '100%' }}>
+          <Box id="volume-control" sx={{ width: '100%' }}>
             <Stack direction="row" spacing={1} alignItems="center" mb={1} justifyContent="space-between">
               <Stack direction="row" spacing={1} alignItems="center">
                 <VolumeUpIcon color="secondary" fontSize="small" />

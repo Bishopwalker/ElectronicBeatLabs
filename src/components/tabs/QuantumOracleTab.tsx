@@ -639,7 +639,7 @@ const QuantumOracleTab: React.FC = () => {
   // ============ RENDER ============
 
   return (
-    <Box sx={{ py: 1 }}>
+    <Box id="remoteViewing" sx={{ py: 1 }}>
       {/* Black Screen Overlay - Step 2 */}
       {practicePhase === 'viewing' && entanglement && (
         <QuantumBlackScreen

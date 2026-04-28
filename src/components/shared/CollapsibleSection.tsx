@@ -93,6 +93,13 @@ const COMPONENT_COLORS: Record<string, { border: string; bg: string; glow: strin
     glow: 'rgba(138, 43, 226, 0.3)'
   },
 
+  // 👁️ REMOTE VIEWING - Purple/Cyan mystical
+  remoteViewing: {
+    border: '#8a2be2',
+    bg: 'linear-gradient(135deg, rgba(138, 43, 226, 0.15) 0%, rgba(0, 255, 136, 0.1) 100%)',
+    glow: 'rgba(138, 43, 226, 0.4)'
+  },
+
   // 🔧 DEFAULT - White/Gray theme for unknown components
   default: {
     border: 'rgba(255, 255, 255, 0.3)',
@@ -129,24 +136,28 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
   };
   
   return (
-    <Card elevation={2} sx={{
-      background: colors.bg,  // 🎨 Component-specific background gradient
-      backdropFilter: 'blur(10px)',
-      height: '100%',  // Fill grid cell
-      maxHeight: compact ? '350px' : '450px',  // 🔥 Constrain height to fit on screen
-      width: '100%',   // Fill grid cell
-      display: 'flex',
-      flexDirection: 'column',
-      borderRadius: compact ? 1 : 2,
-      overflow: 'hidden',
-      border: `2px solid ${colors.border}`,  // 🎨 STRONGER border with color
-      boxShadow: `0 0 20px ${colors.glow}, 0 4px 12px rgba(0, 0, 0, 0.5)`,  // 🎨 Stronger glow effect
-      transition: 'all 0.3s ease',
-      '&:hover': {
-        boxShadow: `0 0 30px ${colors.glow}, 0 6px 16px rgba(0, 0, 0, 0.6)`,  // 🎨 Enhanced glow on hover
-        transform: 'translateY(-2px)'
-      }
-    }}>
+    <Card
+      id={id}  // 🔥 FIX: Add id attribute for tutorial targeting
+      elevation={2}
+      sx={{
+        background: colors.bg,  // 🎨 Component-specific background gradient
+        backdropFilter: 'blur(10px)',
+        height: '100%',  // Fill grid cell
+        maxHeight: compact ? '350px' : '450px',  // 🔥 Constrain height to fit on screen
+        width: '100%',   // Fill grid cell
+        display: 'flex',
+        flexDirection: 'column',
+        borderRadius: compact ? 1 : 2,
+        overflow: 'hidden',
+        border: `2px solid ${colors.border}`,  // 🎨 STRONGER border with color
+        boxShadow: `0 0 20px ${colors.glow}, 0 4px 12px rgba(0, 0, 0, 0.5)`,  // 🎨 Stronger glow effect
+        transition: 'all 0.3s ease',
+        '&:hover': {
+          boxShadow: `0 0 30px ${colors.glow}, 0 6px 16px rgba(0, 0, 0, 0.6)`,  // 🎨 Enhanced glow on hover
+          transform: 'translateY(-2px)'
+        }
+      }}
+    >
       <Box 
         sx={{ 
           display: 'flex', 

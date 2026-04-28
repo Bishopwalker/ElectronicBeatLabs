@@ -1067,8 +1067,9 @@ export const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({
   }, [isPlaying, leftFreq, rightFreq, beatFreq, activePattern, analyserNode, electromagnetic, showSpectrum, visualizationMode, showConsciousnessPanel, visualSensitivity]);
 
   return (
-    <VisualizerContainer 
-      elevation={10} 
+    <VisualizerContainer
+      id="frequencyVisualizer"
+      elevation={10}
       ref={visualizerContainerRef}
       sx={{
         position: isFullscreen ? 'fixed' : 'relative',

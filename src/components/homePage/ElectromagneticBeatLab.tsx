@@ -30,6 +30,7 @@ import TimerCountdownDisplay from '../TimerCountdownDisplay';
 import EqualizerMUI from '../EqualizerMUI';
 import {FrequencyVisualizer} from '../FrequencyVisualizer';
 import MainControlsMUI from "../MainControlsMUI.tsx";
+import RemoteViewingSection from '../RemoteViewingSection';
 
 const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
   initialPattern,
@@ -74,6 +75,9 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
 
   // 🔥 NEW: Grid layout mode state (2x3 or 3x2)
   const [gridMode, setGridMode] = useState<'2x3' | '3x2'>('2x3');
+
+  // 🔥 NEW: Fullscreen state for Remote Viewing
+  const [remoteViewingFullscreen, setRemoteViewingFullscreen] = useState(false);
 
   // 🔥 CRITICAL FIX: Use refs for timer callbacks to prevent infinite re-render loops
   // State objects with functions cause new references on every render → infinite loop!
@@ -546,6 +550,13 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
     return SECTION_DATA[id as keyof typeof SECTION_DATA] || { title: 'Unknown', icon: '❓' };
   };
 
+  // 🔥 Handle fullscreen toggle for Remote Viewing
+  const handleRemoteViewingFullscreen = useCallback((id: string) => {
+    if (id === 'remoteViewing') {
+      setRemoteViewingFullscreen(true);
+    }
+  }, []);
+
   // 🔥 FIXED: Create proper state for FrequencyVisualizer with audio engine reference
   // This ensures visualizer works with normal patterns and beats, not just timer presets
   const frequencyVisualizerState = useMemo(() => {
@@ -957,15 +968,28 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                   onEqualizerChange={(inputNode, outputNode) => {
                     activeAudioEngine?.setEqualizerNodes(inputNode, outputNode);
                   }}
+                  onSpatialEffectChange={(mode, intensity) => {
+                    hybridEngine.setSpatialEffect(mode, intensity);
+                  }}
                 />
               </CollapsibleSection>
             </Box>
           )}
 
-          {/* Spatial Visualizer - spans full width (2 columns on desktop, 1 on mobile) */}
+          {/* Remote Viewing */}
+          {!closedSections.includes('remoteViewing') && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: 0, maxHeight: '100%', overflowY: 'auto' }}>
+              <CollapsibleSection id="remoteViewing" title="Remote Viewing" icon="👁️" defaultOpen={true} onClose={handleSectionClose} onFullscreen={handleRemoteViewingFullscreen}>
+                <Box sx={{ overflow: 'auto', maxHeight: 'calc(35vh - 60px)' }}>
+                  <RemoteViewingSection />
+                </Box>
+              </CollapsibleSection>
+            </Box>
+          )}
+
+          {/* Spatial Visualizer */}
           {!closedSections.includes('spatialVisualizer') && (
             <Box sx={{
-              gridColumn: { xs: 'span 1', sm: 'span 2' },  // 🔥 MOBILE: Single column
               display: 'flex',
               flexDirection: 'column',
               minHeight: 0,
@@ -978,10 +1002,10 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                     pattern={
                       appState.currentPattern || WAVE_PATTERNS.find((pattern) => pattern.id === 'default')}
                     electromagnetic={appState.electromagnetic}
-
                     audioContext={activeAudioEngine.audioContext}
                     analyserNode={activeAudioEngine.analyserNode}
                     isPlaying={hybridEngine.audioState.isPlaying}
+                    spatialAudioMode={hybridEngine.mixer?.getSpatialMode()}
                   />
                 </Box>
               </CollapsibleSection>
@@ -1177,14 +1201,28 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                     onEqualizerChange={(inputNode, outputNode) => {
                       activeAudioEngine?.setEqualizerNodes(inputNode, outputNode);
                     }}
+                    onSpatialEffectChange={(mode, intensity) => {
+                      hybridEngine.setSpatialEffect(mode, intensity);
+                    }}
                   />
                 </CollapsibleSection>
               </Box>
             )}
 
-          {/* Spatial Visualizer - spans full width (3 columns) */}
+          {/* Remote Viewing */}
+          {!closedSections.includes('remoteViewing') && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: 0, maxHeight: '100%', overflowY: 'auto' }}>
+              <CollapsibleSection id="remoteViewing" title="Remote Viewing" icon="👁️" defaultOpen={true} onClose={handleSectionClose} onFullscreen={handleRemoteViewingFullscreen}>
+                <Box sx={{ overflow: 'auto', maxHeight: 'calc(35vh - 60px)' }}>
+                  <RemoteViewingSection />
+                </Box>
+              </CollapsibleSection>
+            </Box>
+          )}
+
+          {/* Spatial Visualizer - spans 2 columns in 3x2 layout */}
           {!closedSections.includes('spatialVisualizer') && (
-            <Box sx={{ gridColumn: { xs: 'span 1', sm: 'span 2', md: 'span 3' }, display: 'flex', flexDirection: 'column', minHeight: 0, maxHeight: '100%', overflowY: 'hidden' }}>
+            <Box sx={{ gridColumn: { xs: 'span 1', sm: 'span 2', md: 'span 2' }, display: 'flex', flexDirection: 'column', minHeight: 0, maxHeight: '100%', overflowY: 'hidden' }}>
               <CollapsibleSection id="spatialVisualizer" title="3D Spatial Visualizer" icon="🌀" defaultOpen={true} onClose={handleSectionClose}>
                 <Box sx={{ height: 'calc(35vh - 60px)', maxHeight: 'calc(35vh - 60px)', overflow: 'visible' }}>
                   <SpatialVisualizer
@@ -1194,6 +1232,7 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
                     audioContext={activeAudioEngine.audioContext}
                     analyserNode={activeAudioEngine.analyserNode}
                     isPlaying={hybridEngine.audioState.isPlaying}
+                    spatialAudioMode={hybridEngine.mixer?.getSpatialMode()}
                   />
                 </Box>
               </CollapsibleSection>
@@ -1203,6 +1242,14 @@ const ElectromagneticBeatLab: React.FC<ElectromagneticBeatLabProps> = ({
         )}
 
       </Box>
+
+      {/* Remote Viewing Fullscreen Overlay */}
+      {remoteViewingFullscreen && (
+        <RemoteViewingSection
+          isFullscreen={true}
+          onExitFullscreen={() => setRemoteViewingFullscreen(false)}
+        />
+      )}
 
       {/* Dark Screen Overlay */}
       {darkScreen && (

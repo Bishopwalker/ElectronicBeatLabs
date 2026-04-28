@@ -38,13 +38,15 @@ interface EqualizerMUIProps {
   analyserNode?: AnalyserNode | null;
   isPlaying?: boolean;
   onEqualizerChange?: (inputNode: GainNode | null, outputNode: GainNode | null) => void;
+  onSpatialEffectChange?: (mode: SpatialEffectMode, intensity: number) => void;
 }
 
 const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
   audioContext,
   analyserNode,
   isPlaying,
-  onEqualizerChange
+  onEqualizerChange,
+  onSpatialEffectChange
 }) => {
   // ALL HOOKS MUST BE AT THE TOP - NO CONDITIONALS BEFORE THIS
   const [isInitialized, setIsInitialized] = useState(false);
@@ -290,7 +292,7 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
 
       {/* Header with controls */}
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: eqFullscreen ? 1 : 0.5, flexShrink: 0 }}> {/* 🔥 REDUCED: mb from 1 to 0.5 */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box id="eq-enable-toggle" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <FormControlLabel
             control={
               <Switch
@@ -376,7 +378,7 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
       }}>
 
         {/* TOP: Presets grid - SINGLE ROW for compact X-axis fit */}
-        <Box sx={{
+        <Box id="eq-preset-selector" sx={{
           display: 'flex',
           flexWrap: 'wrap',
           gap: eqFullscreen ? 0.75 : 0.3,
@@ -388,6 +390,7 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
 
         {/* MIDDLE: Frequency sliders - FULL WIDTH */}
         <Box
+          id="eq-bands"
           sx={{
             display: 'flex',
             justifyContent: 'center',
@@ -439,7 +442,14 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
             <FormControl fullWidth size="small">
               <Select
                 value={equalizerState.spatialEffect}
-                onChange={(e) => updateSpatialEffect(e.target.value as SpatialEffectMode)}
+                onChange={(e) => {
+                  const newMode = e.target.value as SpatialEffectMode;
+                  updateSpatialEffect(newMode);
+                  // Notify parent to update audio graph
+                  if (onSpatialEffectChange) {
+                    onSpatialEffectChange(newMode, equalizerState.spatialIntensity);
+                  }
+                }}
                 sx={{
                   fontSize: '0.65rem',
                   color: 'white',
@@ -667,6 +677,7 @@ const EqualizerMUI: React.FC<EqualizerMUIProps> = ({
   // Normal view
   return (
     <Paper
+      id="equalizer"
       elevation={3}
       sx={{
         p: eqFullscreen ? 1 : 0.5,  // 🔥 REDUCED: padding from 1 to 0.5 in compact mode

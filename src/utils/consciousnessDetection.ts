@@ -59,7 +59,7 @@ export function analyzeConsciousness(
   );
 
   // Determine dominant brainwave state from beat frequency
-  let dominantState = 'alpha';
+  let dominantState = "";
   if (beatFreq <= 4) dominantState = 'delta';
   else if (beatFreq <= 8) dominantState = 'theta';
   else if (beatFreq <= 13) dominantState = 'alpha';

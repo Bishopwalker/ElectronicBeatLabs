@@ -11,6 +11,10 @@ import PatternTab from '../tabs/PatternTab';
 import TimerTab from '../tabs/TimerTab';
 import VisualizationTab from '../tabs/VisualizationTab';
 import ADHDTab from '../tabs/ADHDTab';
+import QuantumOracleTab from '../tabs/QuantumOracleTab';
+import RVSessionsTab from '../tabs/RVSessionsTab';
+import CRVProtocolTab from '../tabs/CRVProtocolTab';
+import ARVPredictionsTab from '../tabs/ARVPredictionsTab';
 import YouTubeTab from '../tabs/YouTubeTab';
 import SettingsTab from '../tabs/SettingsTab';
 import GuideTab from '../tabs/GuideTab';
@@ -87,6 +91,14 @@ const TabContentRenderer: React.FC<TabContentRendererProps> = ({
       return <VisualizationTab {...commonProps} />;
     case 'adhd':
       return <ADHDTab {...commonProps} />;
+    case 'quantum':
+      return <QuantumOracleTab />;
+    case 'rv':
+      return <RVSessionsTab />;
+    case 'crv':
+      return <CRVProtocolTab />;
+    case 'arv':
+      return <ARVPredictionsTab />;
     case 'youtube':
       return <YouTubeTab {...commonProps} />;
     case 'guide':

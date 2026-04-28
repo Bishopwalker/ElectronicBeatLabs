@@ -89,7 +89,7 @@ const TimerCountdownDisplay: React.FC<TimerCountdownDisplayProps> = ({
         ((currentTransition.duration_minutes - timeRemainingCurrent) / currentTransition.duration_minutes) * 100 : 0;
 
     return (
-        <Box sx={{
+        <Box id="timerCountdown" sx={{
             minHeight:0,
             width: '100%',
             mb: 1,

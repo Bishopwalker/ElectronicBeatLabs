@@ -65,6 +65,13 @@ export interface AppSettings {
     reconnectOnDrop: boolean;
     preferredEngine: 'hybrid' | 'frontend' | 'backend';
   };
+
+  // Tutorial/Onboarding Settings
+  tutorial: {
+    hasSeenTutorial: boolean;
+    dontShowAgain: boolean;
+    completedSections: string[];
+  };
 }
 
 // Default settings
@@ -104,6 +111,11 @@ const DEFAULT_SETTINGS: AppSettings = {
     autoConnect: true,
     reconnectOnDrop: true,
     preferredEngine: 'hybrid'
+  },
+  tutorial: {
+    hasSeenTutorial: false,
+    dontShowAgain: false,
+    completedSections: []
   }
 };
 

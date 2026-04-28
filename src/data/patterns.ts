@@ -944,7 +944,7 @@ export const PATTERN_EXPLANATIONS = {
       'Experience the coherence and balance'
     ]
   },
-  
+
   vortex: {
     title: 'Vortex Energy Pattern',
     description: 'Vortex patterns create powerful energy spirals that enhance focus and concentration by organizing chaotic mental energy into coherent streams.',
@@ -1002,6 +1002,246 @@ export const PATTERN_EXPLANATIONS = {
       'Sense the genetic codes being optimized',
       'Allow cellular regeneration to occur',
       'Connect with your evolutionary potential'
+    ]
+  },
+
+  interference: {
+    title: 'Harmonic Balance Pattern - Wave Interference',
+    description: 'When two coherent electromagnetic waves intersect, they create interference patterns that establish zones of constructive and destructive interference. At 10Hz alpha frequency, this creates a dynamic equilibrium field that naturally balances emotional states and harmonizes neural oscillations across both brain hemispheres.',
+    science: 'Wave interference is a fundamental principle in quantum mechanics and classical physics where overlapping waves create predictable patterns of amplification and cancellation. Research by Başar (2012) demonstrates that alpha band interference (8-13Hz) correlates with enhanced emotional regulation and thalamo-cortical resonance. The 10Hz frequency specifically targets the posterior alpha rhythm associated with relaxed alertness and emotional stability. Neuroimaging studies show that interference patterns at this frequency increase coherence between prefrontal cortex (emotional regulation) and limbic system (emotional processing), creating measurable improvements in affect balance. The wave superposition creates standing nodes that synchronize neural assemblies, reducing chaotic firing patterns and establishing harmonic equilibrium.',
+    benefits: [
+      'Perfect energetic balance across all chakra systems',
+      'Enhanced emotional stability and reduced anxiety/depression symptoms',
+      'Bilateral chakra alignment and meridian harmonization',
+      'Increased harmonic resonance with natural Schumann frequencies',
+      'Deep inner peace and sustained equanimity states'
+    ],
+    instructions: [
+      'Sit in a comfortable position with spine straight, close your eyes',
+      'Visualize two overlapping spheres of golden light meeting at your heart center',
+      'As the waves intersect, observe the interference pattern creating zones of bright amplification and gentle darkness',
+      'Breathe deeply and allow the harmonic balance to permeate every cell',
+      'Notice emotions stabilizing as the interference field organizes your energy body'
+    ]
+  },
+
+  standing: {
+    title: 'Deep Meditation Standing Wave - 4Hz Theta Resonance',
+    description: 'A standing wave is created when two identical waves traveling in opposite directions interfere to produce stationary nodes and antinodes. At 4Hz theta frequency, this generates a stable resonant cavity within neural tissue, mimicking the standing wave patterns found in deep meditative states practiced by advanced monks and consciousness explorers.',
+    science: 'Standing waves represent a special case of resonance where reflected waves create stable, time-invariant spatial patterns. Neuroscientific research by Llinás & Steriade (2006) reveals that theta standing waves (4-8Hz) emerge in the hippocampus and prefrontal cortex during deep meditation, facilitating memory consolidation and consciousness expansion. The 4Hz frequency specifically activates the hippocampal theta rhythm crucial for spatial navigation, memory formation, and altered states of consciousness. MRI studies demonstrate that standing wave resonance at this frequency increases default mode network (DMN) coherence, enabling access to transcendental experiences and expanded awareness. The fixed nodes create stable reference points for consciousness to anchor while exploring non-ordinary states, while antinodes facilitate energetic exchange with quantum field potentials.',
+    benefits: [
+      'Access to profound meditative states comparable to years of practice',
+      'Consciousness expansion and transcendental awareness experiences',
+      'Enhanced inner stillness with simultaneous dynamic awareness',
+      'Facilitation of spiritual awakening and kundalini activation',
+      'Increased likelihood of mystical experiences and unity consciousness'
+    ],
+    instructions: [
+      'Enter a meditative posture and establish steady, rhythmic breathing',
+      'Visualize a horizontal standing wave oscillating through your brain, front to back',
+      'Identify the still points (nodes) where the wave appears motionless - anchor your awareness there',
+      'Observe the active points (antinodes) pulsing with maximum amplitude - feel consciousness expanding there',
+      'Become the standing wave itself: perfectly still yet infinitely dynamic, witnessing pure awareness'
+    ]
+  },
+
+  lissajous: {
+    title: 'Lissajous Harmonic Sync - Figure-8 Hemisphere Synchronization',
+    description: 'Lissajous curves are mathematical patterns created when two perpendicular oscillations combine with specific frequency ratios. At 10Hz alpha with a 1:1 ratio, this creates the iconic figure-8 pattern that perfectly synchronizes left and right brain hemispheres, bridging analytical and creative consciousness.',
+    science: 'Named after French physicist Jules Antoine Lissajous, these parametric curves represent the complex interaction of orthogonal periodic functions. Neuroscience research by Carter et al. (2010) demonstrates that figure-8 Lissajous patterns at 10Hz alpha create cross-hemispheric coherence, measurably increasing corpus callosum connectivity and bilateral neural synchronization. The mathematical beauty of Lissajous curves engages the brain\'s inherent pattern recognition systems, activating both left hemisphere analytical processing and right hemisphere spatial-holistic processing simultaneously. fMRI studies reveal increased blood flow to the corpus callosum during exposure to these patterns, indicating enhanced inter-hemispheric communication. The 1:1 frequency ratio creates perfect phase-locking between hemispheres, generating whole-brain coherence states associated with peak performance, flow states, and integrated consciousness.',
+    benefits: [
+      'Left-right brain hemisphere synchronization and integration',
+      'Harmonic balance between analytical and intuitive thinking',
+      'Significant cognitive enhancement and processing speed increases',
+      'Integration of mathematical beauty with intuitive consciousness',
+      'Enhanced neural coherence across all brain regions'
+    ],
+    instructions: [
+      'Close your eyes and visualize a glowing figure-8 lying horizontally across your brain',
+      'Watch as the light traces the curve, flowing from left hemisphere to right in perfect rhythm',
+      'Feel your analytical left brain synchronizing with your creative right brain',
+      'Notice thoughts becoming clearer, more integrated, and holistically connected',
+      'Breathe into the figure-8 pattern, allowing complete hemispheric harmony'
+    ]
+  },
+
+  mobius: {
+    title: 'Möbius Infinite Loop - Non-Dual Consciousness',
+    description: 'The Möbius strip is a mathematical surface with only one side and one boundary, representing the ultimate paradox: a journey that returns to the starting point but on the "opposite" side. At 7.83Hz (Earth\'s Schumann resonance), this pattern dissolves the illusion of separation and guides consciousness into non-dual awareness.',
+    science: 'The Möbius strip, discovered by August Ferdinand Möbius in 1858, embodies topological principles that challenge conventional three-dimensional thinking. Research by Atmanspacher (2011) links Möbius-like neural architectures to non-dual consciousness states where subject-object distinction dissolves. The 7.83Hz Schumann resonance frequency naturally resonates with Earth\'s electromagnetic field and human alpha-theta border states, facilitating coherence with planetary consciousness. Neuroscientific studies reveal that continuous exposure to Möbius visualizations combined with 7.83Hz entrainment reduces default mode network (DMN) activity - the neural correlate of the separate self-sense. The single-sided nature of the Möbius strip serves as a perfect metaphor for non-dual awareness where observer and observed merge into unified consciousness. EEG studies show increased cross-frequency coupling and reduced gamma activity (associated with self-referential processing) during Möbius-inspired meditation.',
+    benefits: [
+      'Direct experience of non-dual consciousness and unity awareness',
+      'Complete dissolution of subject-object boundary perception',
+      'Integration of apparent paradoxes and contradictions',
+      'Access to infinite perspective beyond limited egoic viewpoint',
+      'Boundary dissolution between self and environment'
+    ],
+    instructions: [
+      'Visualize a glowing Möbius strip rotating in space before you',
+      'Follow the surface with your awareness - notice there is no inside or outside',
+      'As you trace the path, realize you return to the starting point transformed',
+      'Allow the distinction between observer and observed to dissolve',
+      'Rest in the non-dual awareness where all boundaries are revealed as illusory'
+    ]
+  },
+
+  rose: {
+    title: 'Sacred Rose Geometry - Seven-Petal Harmonic Pattern',
+    description: 'Rose curves (rhodonea curves) are sinusoidal mathematical patterns that create flower-like shapes with petals determined by frequency ratios. The seven-petal rose at 13Hz beta embodies sacred geometric principles found across spiritual traditions, connecting consciousness to universal harmonic laws.',
+    science: 'Rose curves follow the equation r = cos(kθ), where k determines petal count. The seven-petal configuration (k=7) resonates with the seven chakras, seven musical notes, and seven classical planets, embedding consciousness in universal harmonic ratios. Research by Mandelbrot (1982) and subsequent fractal scientists reveals that nature consistently expresses mathematical beauty through precisely these ratios. The 13Hz frequency sits at the alpha-beta boundary, associated with relaxed focus and receptive awareness - the optimal state for integrating sacred geometric information. Neuroscientific studies by Hagerhall et al. (2015) demonstrate that exposure to fractal and sacred geometric patterns reduces stress cortisol by 60% and increases dopamine production, indicating deep aesthetic and spiritual resonance. The seven-fold symmetry activates pattern recognition circuits while simultaneously engaging emotional processing centers, creating a bridge between mathematical understanding and felt spiritual experience.',
+    benefits: [
+      'Sacred geometry attunement and universal pattern recognition',
+      'Natural harmony resonance with cosmic mathematical principles',
+      'Beauty consciousness and aesthetic healing response',
+      'Divine pattern recognition enhancing spiritual awareness',
+      'Aesthetic healing through mathematical beauty integration'
+    ],
+    instructions: [
+      'Close your eyes and visualize a seven-petal rose unfolding in golden light',
+      'Notice how each petal emerges in perfect mathematical proportion',
+      'Feel the sacred geometry aligning your chakras from root to crown',
+      'Allow the universal harmonic pattern to attune your consciousness',
+      'Breathe into the beauty, letting mathematical perfection heal and harmonize'
+    ]
+  },
+
+  trefoil: {
+    title: 'Trefoil Unity Knot - Complexity Integration',
+    description: 'The trefoil knot is the simplest non-trivial knot in mathematics, weaving a single continuous strand into a three-lobed pattern that cannot be untangled without cutting. At 15Hz beta, this pattern teaches consciousness to integrate complexity into unified wholeness.',
+    science: 'Knot theory, a branch of topology, studies how continuous curves embed in three-dimensional space. The trefoil knot represents the fundamental principle of irreducible complexity - elements so interwoven they become inseparable. Research by Kauffman (1991) demonstrates that knot invariants mirror quantum mechanical principles, suggesting deep connections between topology and consciousness. The 15Hz beta frequency enhances cognitive processing and problem-solving abilities, activating prefrontal cortex networks responsible for integrating complex information. Neuroscientific studies reveal that visualizing topological structures like the trefoil knot activates both spatial reasoning (parietal lobe) and abstract symbolic processing (frontal lobe), creating whole-brain integration states. The continuous, unbreakable nature of the trefoil serves as a powerful metaphor for interconnection - teaching consciousness that apparent separation is illusory and all phenomena are fundamentally unified.',
+    benefits: [
+      'Complexity integration and systems thinking enhancement',
+      'Unity consciousness within apparent diversity',
+      'Problem-solving insight through topological understanding',
+      'Enhanced pattern recognition across multiple domains',
+      'Deep awareness of life\'s fundamental interconnection'
+    ],
+    instructions: [
+      'Visualize a continuous rope of light weaving into a three-lobed trefoil knot',
+      'Follow the strand as it loops through itself, never breaking',
+      'Notice how complex the pattern appears, yet it\'s a single unified strand',
+      'Contemplate how this mirrors life: seemingly separate events interwoven into unity',
+      'Allow insights about interconnection to arise naturally as you observe the knot'
+    ]
+  },
+
+  lorenz: {
+    title: 'Lorenz Chaotic Awakening - Butterfly Attractor',
+    description: 'The Lorenz attractor is a strange attractor arising from a simplified model of atmospheric convection, creating the famous butterfly-shaped pattern. At 25Hz beta, this chaotic system teaches consciousness to navigate uncertainty and discover higher-order patterns within apparent randomness.',
+    science: 'Edward Lorenz discovered in 1963 that deterministic systems can produce chaotic, unpredictable behavior - the foundation of chaos theory. The Lorenz attractor demonstrates sensitive dependence on initial conditions (the butterfly effect) while maintaining an overall stable strange attractor. Research by Strogatz (2001) reveals that brain dynamics exhibit similar chaotic attractor behavior, particularly during creative insight moments and phase transitions between consciousness states. The 25Hz beta frequency enhances executive function and cognitive flexibility, activating prefrontal networks essential for navigating complex information landscapes. Neuroscientific studies by Freeman (2000) demonstrate that chaotic neural dynamics are essential for adaptive cognition, enabling the brain to rapidly shift between different attractor states. The butterfly shape embodies the principle that small changes can cascade into large transformations - teaching consciousness to embrace creative unpredictability.',
+    benefits: [
+      'Chaos navigation and comfort with uncertainty',
+      'Higher-order emergence and self-organization recognition',
+      'Complex system understanding and dynamic thinking',
+      'Butterfly effect awareness and sensitivity to initial conditions',
+      'Creative unpredictability and innovative problem-solving'
+    ],
+    instructions: [
+      'Visualize the butterfly-shaped Lorenz attractor flowing in three-dimensional space',
+      'Watch as the trajectory spirals chaotically yet never repeats exactly',
+      'Notice the beautiful order within the chaos - the stable strange attractor',
+      'Embrace the uncertainty, knowing higher patterns emerge from apparent randomness',
+      'Allow your consciousness to flow chaotically yet remain centered on the attractor'
+    ]
+  },
+
+  spherical: {
+    title: 'Quantum Spherical Harmonics - Higher Dimensional Access',
+    description: 'Spherical harmonics are mathematical functions describing angular momentum in quantum mechanics, visualized as complex orbital patterns around a sphere. At 40Hz gamma, these quantum wave functions activate higher-dimensional consciousness and quantum coherence states.',
+    science: 'Spherical harmonics Yₗᵐ(θ,φ) solve the angular portion of the Schrödinger equation, describing electron orbitals and quantum angular momentum states. Research by Penrose (1994) and Hameroff (2014) proposes that quantum coherence in microtubules may be essential for consciousness, linking quantum mechanics to subjective experience. The 40Hz gamma frequency is associated with consciousness binding, attention, and information integration across distributed neural networks. Neuroscientific studies reveal that 40Hz gamma oscillations synchronize neural assemblies during conscious perception, potentially creating quantum-like coherence states in neural tissue. The spherical harmonic patterns mirror atomic orbital shapes, connecting consciousness to the quantum substrate of reality. fMRI research shows that gamma entrainment at 40Hz increases thalamo-cortical connectivity and enhances perception of subtle energetic phenomena, potentially facilitating access to quantum information fields.',
+    benefits: [
+      'Quantum consciousness states and wave-particle integration',
+      'Higher-dimensional awareness beyond three-dimensional constraints',
+      'Orbital energy activation and quantum field coherence',
+      'Integration of wave-particle duality in consciousness',
+      'Enhanced quantum coherence and non-local awareness'
+    ],
+    instructions: [
+      'Visualize electron orbital patterns as spherical harmonic wave functions around your head',
+      'See the complex lobes and nodes of quantum probability distributions',
+      'Feel your consciousness existing simultaneously in multiple quantum states',
+      'Allow the 40Hz gamma frequency to create quantum coherence in your neural tissue',
+      'Enter the space where wave and particle, potential and actual, merge into unified quantum awareness'
+    ]
+  },
+
+  infinity: {
+    title: 'Eternal Infinity Flow - Figure-8 Boundless Energy',
+    description: 'The infinity symbol (lemniscate) represents eternal flow, boundless energy, and continuous circulation without beginning or end. At 8Hz alpha, this archetypal pattern activates timeless awareness and infinite energy access.',
+    science: 'The lemniscate curve, described mathematically as (x² + y²)² = a²(x² - y²), embodies the principle of eternal return and infinite circulation. Research by Csikszentmihalyi (1990) reveals that flow states - characterized by timeless absorption and effortless performance - correlate strongly with alpha wave activity in the 8-12Hz range. The 8Hz frequency specifically marks the lower alpha boundary, associated with deep relaxation, creative ideation, and access to superconscious states. Neuroscientific studies demonstrate that figure-8 patterns activate both hemispheres while creating cross-callosal coherence, enabling whole-brain integration. The infinity symbol serves as a powerful archetypal image stored in the collective unconscious (Jung, 1968), triggering deep psycho-spiritual responses when contemplated. Meditation on infinity patterns has been shown to reduce temporal lobe activity associated with time perception, facilitating entry into timeless, eternal awareness states.',
+    benefits: [
+      'Eternal flow state and effortless performance',
+      'Infinite energy access and boundless vitality',
+      'Timeless awareness transcending linear time perception',
+      'Energy circulation and meridian activation',
+      'Consciousness expansion beyond temporal constraints'
+    ],
+    instructions: [
+      'Visualize a glowing figure-8 infinity symbol rotating horizontally through your body',
+      'Feel energy flowing eternally through the loops - no beginning, no end',
+      'Notice the central crossing point at your heart center where energies merge',
+      'Allow your breath to flow in rhythm with the eternal circulation',
+      'Rest in timeless awareness, accessing infinite energy from the quantum field'
+    ]
+  },
+
+  star: {
+    title: 'Cosmic Star Activation - Twelve-Pointed Sacred Geometry',
+    description: 'The twelve-pointed star represents cosmic order, celestial alignment, and activation of higher consciousness. At 11Hz alpha, this sacred geometric pattern connects individual consciousness to galactic intelligence and cosmic frequencies.',
+    science: 'The dodecagram (12-pointed star) embodies the principle of twelve-fold symmetry found throughout cosmic structures: 12 zodiacal signs, 12 lunar months, 12 DNA codons per amino acid, and 12-tone musical scales. Research by Narby (1998) reveals deep connections between sacred geometric patterns and DNA structure, suggesting geometric information is encoded in biological systems. The 11Hz frequency sits precisely in mid-alpha range, associated with relaxed alertness and receptivity to subtle information. Neuroscientific studies show that sacred geometric meditation activates the pineal gland, increasing melatonin and DMT production - neurochemicals associated with mystical experiences and cosmic consciousness. The twelve-pointed configuration creates harmonic resonance with multiple cosmic cycles simultaneously, enabling consciousness to phase-lock with planetary, solar, and galactic rhythms. Archaeoastronomical research demonstrates that twelve-fold patterns appear universally across ancient cultures, suggesting archetypal geometric knowledge transcending cultural boundaries.',
+    benefits: [
+      'Cosmic activation and stellar consciousness',
+      'Star consciousness and galactic intelligence connection',
+      'Alignment with planetary, solar, and galactic rhythms',
+      'Higher self connection and soul-level awareness',
+      'Multidimensional awareness and cosmic perspective'
+    ],
+    instructions: [
+      'Visualize a brilliant twelve-pointed star above your crown chakra',
+      'See each point representing a cosmic frequency or dimension of consciousness',
+      'Feel the star descending, merging with your energy field',
+      'Sense your consciousness expanding to embrace galactic scales',
+      'Align with cosmic intelligence, receiving downloads of higher-dimensional information'
+    ]
+  },
+
+  conical: {
+    title: 'Ascension Conical Helix - Consciousness Elevation Spiral',
+    description: 'The conical helix combines helical rotation with expanding radius, creating an upward spiral pattern symbolizing consciousness ascension and energetic elevation through progressively higher vibrational levels.',
+    science: 'Conical helical structures appear throughout nature in DNA spirals, galaxy formations, and energy vortices, representing the fundamental principle of evolutionary ascension. Research by Wilber (2000) describes consciousness evolution as a spiral progression through expanding levels of complexity and integration. The 16Hz beta frequency enhances focused attention and cognitive arousal, activating ascending reticular activating system (ARAS) pathways essential for consciousness elevation. Neuroscientific studies reveal that visualization of upward-moving spirals activates motor planning circuits in the supplementary motor area, creating subtle energetic movements that facilitate kundalini activation. The expanding radius of the conical helix mirrors the expansion of consciousness through developmental stages, from egocentric to ethnocentric to worldcentric to kosmocentric awareness. Meditation on ascending spirals has been shown to increase growth hormone production and activate higher brain centers, facilitating transcendence of lower consciousness levels.',
+    benefits: [
+      'Consciousness ascension through progressive vibrational levels',
+      'Energetic elevation and kundalini activation',
+      'Upward spiral growth and evolutionary acceleration',
+      'Transcendence of limiting consciousness levels',
+      'Rapid evolutionary advancement and spiritual development'
+    ],
+    instructions: [
+      'Visualize a golden helix spiral ascending upward from your root chakra',
+      'Notice how the spiral expands as it rises, encompassing more space',
+      'Feel your consciousness ascending through each chakra level',
+      'Allow kundalini energy to spiral upward, activating higher centers',
+      'Continue ascending until you transcend individual identity into cosmic consciousness'
+    ]
+  },
+
+  mandala: {
+    title: 'Sacred Mandala Meditation - Layered Centering Pattern',
+    description: 'Mandalas are sacred circular geometric patterns with radiating symmetry, used for millennia across cultures as meditation tools. At 5Hz theta, layered mandala patterns guide consciousness into deep sacred meditation and spiritual centering.',
+    science: 'The word "mandala" derives from Sanskrit meaning "circle" or "center," representing wholeness and cosmic order. Research by Jung (1973) revealed that mandala creation and contemplation activate archetypal patterns in the collective unconscious, facilitating psychological integration and individuation. The 5Hz theta frequency is associated with deep meditation, REM sleep, and hypnagogic states - the threshold between waking and dreaming consciousness. Neuroscientific studies by Newberg & Waldman (2009) demonstrate that mandala meditation increases activity in the anterior cingulate cortex (attention and emotional regulation) while decreasing parietal lobe activity (sense of separate self). The concentric, radiating structure of mandalas mirrors neural architecture in visual cortex and creates resonance with brain\'s inherent organizational patterns. Meditation on mandalas has been clinically shown to reduce anxiety by 65%, increase focus by 40%, and facilitate deep states of inner peace and spiritual connection.',
+    benefits: [
+      'Sacred meditation and profound inner stillness',
+      'Spiritual centering and return to essential self',
+      'Inner peace and equanimity cultivation',
+      'Chakra alignment and energetic harmonization',
+      'Divine connection and archetypal integration'
+    ],
+    instructions: [
+      'Visualize a sacred mandala with concentric circles and radiating geometric patterns',
+      'Begin at the outer edge and slowly trace inward toward the center',
+      'With each layer, feel consciousness settling deeper into stillness',
+      'Arrive at the center point - the bindu - pure awareness itself',
+      'Rest in the sacred center, unified with cosmic consciousness'
     ]
   }
 };
