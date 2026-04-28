@@ -10,26 +10,34 @@ for /f "tokens=5" %%a in ('netstat -ano ^| findstr :24678 ^| findstr LISTENING 2
 echo ✅ Starting servers in parallel (Python 3.11 venv)...
 echo.
 
-REM Ensure .venv311 (Python 3.11) exists
-if not exist ".venv311\Scripts\activate" (
-  echo Creating Python 3.11 virtual environment (.venv311)...
-  where py >nul 2>&1 && ( py -3.11 -m venv .venv311 ) || (
-    where python3.11 >nul 2>&1 && ( python3.11 -m venv .venv311 ) || ( python -m venv .venv311 )
-  )
-)
+REM Ensure backend\.venv (Python 3.11) exists
+if exist "backend\.venv\Scripts\activate" goto venv_ready
+echo Creating Python 3.11 virtual environment (backend\.venv)...
+where py >nul 2>&1
+if %errorlevel%==0 goto use_py
+where python3.11 >nul 2>&1
+if %errorlevel%==0 goto use_python311
+python -m venv backend\.venv
+goto venv_ready
+:use_py
+py -3.11 -m venv backend\.venv
+goto venv_ready
+:use_python311
+python3.11 -m venv backend\.venv
+:venv_ready
 
 REM Install backend requirements into venv if uvicorn not available
-call .\.venv311\Scripts\activate
+call .\backend\.venv\Scripts\activate
 where uvicorn >nul 2>&1
 if %errorlevel% neq 0 (
-  echo Installing backend dependencies into .venv311...
+  echo Installing backend dependencies into backend\.venv...
   pip install -r backend\requirements.txt
   if exist backend\rag\requirements.txt pip install -r backend\rag\requirements.txt
 )
 deactivate >nul 2>&1
 
 REM Start backend with optimized reload settings under venv
-start "EBL Backend" cmd /k "cd /d %~dp0 && call .\.venv311\Scripts\activate && cd backend && uvicorn main:app --reload --host 0.0.0.0 --port 8000 --reload-exclude '*.pyc' --reload-exclude '__pycache__/*' --reload-exclude '*.log'"
+start "EBL Backend" cmd /k "cd /d %~dp0 && call .\backend\.venv\Scripts\activate && cd backend && uvicorn main:app --reload --host 0.0.0.0 --port 8000 --reload-exclude '*.pyc' --reload-exclude '__pycache__/*' --reload-exclude '*.log'"
 
 REM Start frontend immediately (parallel start)
 start "EBL Frontend" cmd /k "cd /d %~dp0 && npm run dev"
