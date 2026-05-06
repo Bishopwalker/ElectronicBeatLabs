@@ -111,16 +111,9 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
             // Construct WebSocket URL
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
             
-            // Smart host detection for development vs production
-            // In production, WebSocket goes directly to ALB (api subdomain) since CloudFront doesn't support WS
-            let baseUrl: string;
-            if (import.meta.env.DEV) {
-                // In development, use localhost:8000
-                baseUrl = `${protocol}//localhost:8000`;
-            } else {
-                // In production, use api.bishops-ebl.online (direct to ALB, bypasses CloudFront)
-                baseUrl = `wss://api.bishops-ebl.online`;
-            }
+            // Use current host so nginx proxies WebSocket to backend.
+            // Works in Docker Compose, local dev (via Vite proxy), and production (via nginx/ALB).
+            const baseUrl = `${protocol}//${window.location.host}`;
 
             // Generate a unique session ID if not provided
             const currentSessionId = sessionId || `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;

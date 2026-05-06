@@ -1,0 +1,54 @@
+services:
+  backend:
+    image: bwalker33/ebl-backend:latest
+    container_name: ebl-backend
+    restart: unless-stopped
+    environment:
+      PYTHON_ENV: production
+      SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost,http://localhost:80}
+      WS_HEARTBEAT_INTERVAL: 30
+      WS_CONNECTION_TIMEOUT: 60
+      SAMPLE_RATE: 48000
+      BUFFER_SIZE: 800
+      MAX_FREQUENCY: 199
+      AUDIO_FRAME_RATE: 60
+    volumes:
+      - ebl-logs:/app/logs
+      - ebl-data:/app/data
+    networks:
+      - ebl-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  frontend:
+    image: bwalker33/ebl-frontend:latest
+    container_name: ebl-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    environment:
+      BACKEND_URL: http://backend:8000
+    networks:
+      - ebl-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+volumes:
+  ebl-logs:
+  ebl-data:
+
+networks:
+  ebl-network:
+    driver: bridge

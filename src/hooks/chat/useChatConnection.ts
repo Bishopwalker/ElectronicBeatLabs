@@ -47,13 +47,8 @@ export const useChatConnection = (options: UseChatConnectionOptions) => {
    * Build WebSocket URL based on environment.
    */
   const getWebSocketUrl = useCallback((sessionId: string): string => {
-    const isDev = import.meta.env.DEV;
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-
-    if (isDev) {
-      return `ws://localhost:8000/ws/chat/${sessionId}`;
-    }
-    return `${protocol}//api.bishops-ebl.online/ws/chat/${sessionId}`;
+    return `${protocol}//${window.location.host}/ws/chat/${sessionId}`;
   }, []);
 
   /**
