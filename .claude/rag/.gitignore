@@ -1,0 +1,9 @@
+# Local ChromaDB index — rebuild with `python rag_cli.py index`
+chroma_db/
+
+# Machine-local index metadata (timestamps differ per env)
+data/index_meta.json
+
+# Python bytecode cache
+__pycache__/
+*.pyc

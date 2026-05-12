@@ -12,7 +12,11 @@ from enum import Enum
 
 # Base imports
 from sentence_transformers import SentenceTransformer
-from .chunking_strategy import CodeChunk
+try:
+    from .chunking_strategy import CodeChunk
+except ImportError:
+    # Fallback for when this module is executed as a script (no package context)
+    from chunking_strategy import CodeChunk
 
 class VectorProvider(Enum):
     """Supported vector database providers"""
@@ -357,7 +361,10 @@ class CloudRAGPipeline:
             provider: Which vector database to use
             **vector_config: Provider-specific configuration
         """
-        from .chunking_strategy import EBLChunkingStrategy
+        try:
+            from .chunking_strategy import EBLChunkingStrategy
+        except ImportError:
+            from chunking_strategy import EBLChunkingStrategy
 
         self.project_root = project_root
         self.chunker = EBLChunkingStrategy(project_root)

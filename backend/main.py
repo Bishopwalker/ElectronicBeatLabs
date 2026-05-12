@@ -19,6 +19,7 @@ from modules.binaural import BinauralBeatGenerator
 from modules.spatial_audio import SpatialAudioProcessor
 from protocols.adhd_protocols import ADHDProtocols
 from routes.audio_websocket import router as audio_router
+from routes.rag_status import router as rag_status_router
 from routes.simple_routes import router as simple_router
 from routes.timer import router as timer_router
 from routes.quantum_routes import router as quantum_router
@@ -59,6 +60,8 @@ app.include_router(chat_ws_router)  # WebSocket at /ws/chat/{session_id}
 app.include_router(chat_api_router, prefix="/api")  # REST at /api/chat/*
 # Audio router includes WebSocket endpoint, no /api prefix needed
 app.include_router(audio_router)
+# RAG status route — live index introspection for console + pipeline diagram
+app.include_router(rag_status_router)
 
 # Initialize database on startup
 @app.on_event("startup")

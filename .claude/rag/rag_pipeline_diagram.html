@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EBL RAG Pipeline — Architecture Diagram</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface2: #21262d;
+      --border: #30363d;
+      --accent: #58a6ff;
+      --green: #3fb950;
+      --purple: #bc8cff;
+      --orange: #f0883e;
+      --yellow: #e3b341;
+      --red: #f85149;
+      --text: #c9d1d9;
+      --muted: #6e7681;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', -apple-system, sans-serif;
+      padding: 24px;
+      min-height: 100vh;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 32px;
+    }
+
+    /* ── PHASE LABELS ─────────────────────────────────────── */
+    .phases {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .phase-badge {
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.4px;
+      border: 1px solid;
+    }
+    .phase-badge.index  { background: #1c2a1c; border-color: var(--green);  color: var(--green);  }
+    .phase-badge.embed  { background: #1a1a2e; border-color: var(--purple); color: var(--purple); }
+    .phase-badge.query  { background: #1d2030; border-color: var(--accent); color: var(--accent); }
+    .phase-badge.output { background: #2a1c1c; border-color: var(--orange); color: var(--orange); }
+
+    /* ── MAIN PIPELINE ───────────────────────────────────── */
+    .pipeline {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .row {
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+    }
+
+    /* connector arrows between rows */
+    .arrow-down {
+      display: flex;
+      justify-content: center;
+      padding: 6px 0;
+      color: var(--muted);
+      font-size: 22px;
+      line-height: 1;
+    }
+
+    .arrow-right {
+      display: flex;
+      align-items: center;
+      padding: 0 8px;
+      color: var(--muted);
+      font-size: 20px;
+    }
+
+    /* ── NODE CARDS ─────────────────────────────────────── */
+    .node {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 18px;
+      flex: 1;
+      min-width: 0;
+      position: relative;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+
+    .node:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(0,0,0,0.4);
+    }
+
+    .node.green  { border-color: var(--green);  }
+    .node.purple { border-color: var(--purple); }
+    .node.blue   { border-color: var(--accent); }
+    .node.orange { border-color: var(--orange); }
+    .node.yellow { border-color: var(--yellow); }
+    .node.red    { border-color: var(--red);    }
+
+    .node-icon { font-size: 22px; margin-bottom: 6px; }
+    .node-title {
+      font-weight: 700;
+      font-size: 13px;
+      margin-bottom: 4px;
+      color: #e6edf3;
+    }
+    .node-sub {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .node-tag {
+      display: inline-block;
+      margin-top: 6px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+    }
+    .tag-green  { background: #1c2e1c; color: var(--green);  border: 1px solid var(--green);  }
+    .tag-purple { background: #1a1a2e; color: var(--purple); border: 1px solid var(--purple); }
+    .tag-blue   { background: #1a2233; color: var(--accent); border: 1px solid var(--accent); }
+    .tag-orange { background: #2a1e10; color: var(--orange); border: 1px solid var(--orange); }
+    .tag-yellow { background: #2a2010; color: var(--yellow); border: 1px solid var(--yellow); }
+
+    /* ── METRICS ROW ─────────────────────────────────────── */
+    .metrics-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .metric-card {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      text-align: center;
+    }
+
+    .metric-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .metric-label {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    /* ── LEGEND ──────────────────────────────────────────── */
+    .legend {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    /* ── FLOW ANIMATION ─────────────────────────────────── */
+    @keyframes pulse {
+      0%, 100% { opacity: 0.4; }
+      50%       { opacity: 1.0; }
+    }
+
+    .arrow-down.animated { animation: pulse 2s ease-in-out infinite; }
+
+    /* ── SECTION DIVIDER ─────────────────────────────────── */
+    .section-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-align: center;
+      margin: 4px 0 -2px;
+    }
+
+    /* ── DIVIDER LINE ───────────────────────────────────── */
+    .divider {
+      border: none;
+      border-top: 1px dashed var(--border);
+      margin: 20px auto;
+      max-width: 900px;
+    }
+
+    .note {
+      max-width: 900px;
+      margin: 16px auto 0;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .note strong { color: var(--text); }
+  </style>
+</head>
+<body>
+
+  <h1>EBL — RAG Pipeline Architecture</h1>
+  <p class="subtitle">Electromagnetic Beat Lab · Code Intelligence System · ChromaDB + Sentence Transformers</p>
+
+  <!-- Live status banner — populated by JS via /api/rag/status -->
+  <div id="live-status" style="
+    max-width:900px; margin:0 auto 20px; padding:10px 16px;
+    border-radius:8px; background:var(--surface2); border:1px solid var(--border);
+    font-size:12px; color:var(--muted); text-align:center;
+    display:flex; gap:18px; justify-content:center; align-items:center; flex-wrap:wrap;
+  ">
+    <span><span id="ls-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#6e7681;margin-right:6px"></span><span id="ls-state">Loading live status…</span></span>
+    <span>Last indexed: <strong id="ls-age" style="color:var(--text)">—</strong></span>
+    <span>Provider: <strong id="ls-provider" style="color:var(--text)">—</strong></span>
+    <span>Model: <strong id="ls-model" style="color:var(--text)">—</strong></span>
+    <span style="font-size:10px">auto-refresh every 10s</span>
+  </div>
+
+  <!-- Phase badges -->
+  <div class="phases">
+    <span class="phase-badge index">① Indexing Phase</span>
+    <span class="phase-badge embed">② Embedding Phase</span>
+    <span class="phase-badge query">③ Query Phase</span>
+    <span class="phase-badge output">④ Retrieval Output</span>
+  </div>
+
+  <!-- PIPELINE -->
+  <div class="pipeline">
+
+    <!-- ─── INDEXING PHASE ─── -->
+    <p class="section-label">① Indexing Phase — Runs once on startup (auto-skipped if already indexed)</p>
+    <div class="row">
+      <div class="node green">
+        <div class="node-icon">📁</div>
+        <div class="node-title">Source Codebase</div>
+        <div class="node-sub">
+          90+ files · Python + TypeScript<br>
+          backend/, src/hooks/, src/components/<br>
+          FastAPI · React · Audio Engine
+        </div>
+        <span class="node-tag tag-green">338 code units</span>
+      </div>
+      <div class="arrow-right">→</div>
+      <div class="node green">
+        <div class="node-icon">✂️</div>
+        <div class="node-title">EBL Chunking Strategy</div>
+        <div class="node-sub">
+          Python AST parsing for classes &amp; functions<br>
+          TypeScript interface extraction<br>
+          Audio-domain priority weighting<br>
+          <code style="font-size:10px">chunking_strategy.py</code>
+        </div>
+        <span class="node-tag tag-green">5 chunk types</span>
+      </div>
+      <div class="arrow-right">→</div>
+      <div class="node green">
+        <div class="node-icon">🧩</div>
+        <div class="node-title">Code Chunks</div>
+        <div class="node-sub">
+          function · class · import<br>
+          interface · module<br>
+          file_path + line numbers<br>
+          audio-term metadata flags
+        </div>
+        <span class="node-tag tag-green">ebl_chunks.json</span>
+      </div>
+    </div>
+
+    <div class="arrow-down animated">↓</div>
+
+    <!-- ─── EMBEDDING PHASE ─── -->
+    <p class="section-label">② Embedding Phase — Chunks → Vectors</p>
+    <div class="row">
+      <div class="node purple">
+        <div class="node-icon">🧠</div>
+        <div class="node-title">Sentence Transformer</div>
+        <div class="node-sub">
+          Model: <strong style="color:#bc8cff">all-MiniLM-L6-v2</strong><br>
+          384-dimensional dense vectors<br>
+          Semantic similarity optimized<br>
+          Local CPU inference, no API keys
+        </div>
+        <span class="node-tag tag-purple">384-dim vectors</span>
+      </div>
+      <div class="arrow-right">→</div>
+      <div class="node purple">
+        <div class="node-icon">🗄️</div>
+        <div class="node-title">ChromaDB (Local)</div>
+        <div class="node-sub">
+          Persistent vector store<br>
+          <code style="font-size:10px">.claude/rag/chroma_db/</code><br>
+          Collection: <em>ebl_code_chunks</em><br>
+          Cosine similarity · Batch upsert
+        </div>
+        <span class="node-tag tag-purple">persisted on disk</span>
+      </div>
+      <div class="arrow-right">→</div>
+      <div class="node purple">
+        <div class="node-icon">☁️</div>
+        <div class="node-title">Supabase (Cloud — Optional)</div>
+        <div class="node-sub">
+          PostgreSQL + pgvector extension<br>
+          <code style="font-size:10px">match_code_chunks()</code> RPC<br>
+          Swap via <code style="font-size:10px">VECTOR_PROVIDER=supabase</code>
+        </div>
+        <span class="node-tag tag-purple">cloud fallback</span>
+      </div>
+    </div>
+
+    <div class="arrow-down animated">↓</div>
+
+    <!-- ─── QUERY PHASE ─── -->
+    <p class="section-label">③ Query Phase — Natural language → Code context</p>
+    <div class="row">
+      <div class="node blue">
+        <div class="node-icon">💬</div>
+        <div class="node-title">User / LLM Query</div>
+        <div class="node-sub">
+          "binaural beat calculator left right channel"<br>
+          "WebSocket audio streaming route"<br>
+          "ADHD frequency protocol brainwave"
+        </div>
+        <span class="node-tag tag-blue">natural language</span>
+      </div>
+      <div class="arrow-right">→</div>
+      <div class="node blue">
+        <div class="node-icon">🔍</div>
+        <div class="node-title">Enhanced Hybrid Search</div>
+        <div class="node-sub">
+          <strong style="color:#58a6ff">Vector search</strong> — embedding similarity<br>
+          <strong style="color:#58a6ff">Keyword search</strong> — BM25-style scoring<br>
+          Audio domain query expansion<br>
+          Synonym injection (hz→frequency, etc.)<br>
+          <code style="font-size:10px">enhanced_retrieval.py</code>
+        </div>
+        <span class="node-tag tag-blue">hybrid scoring</span>
+      </div>
+      <div class="arrow-right">→</div>
+      <div class="node blue">
+        <div class="node-icon">🧠</div>
+        <div class="node-title">Mem0 Session Memory</div>
+        <div class="node-sub">
+          Tracks conversation context<br>
+          Enhances follow-up queries<br>
+          Local or cloud storage<br>
+          <code style="font-size:10px">memory_service.py</code>
+        </div>
+        <span class="node-tag tag-blue">optional</span>
+      </div>
+    </div>
+
+    <div class="arrow-down animated">↓</div>
+
+    <!-- ─── OUTPUT PHASE ─── -->
+    <p class="section-label">④ Retrieval Output — Ranked code context returned</p>
+    <div class="row">
+      <div class="node orange">
+        <div class="node-icon">📊</div>
+        <div class="node-title">Ranked Results</div>
+        <div class="node-sub">
+          Top-K chunks with similarity scores<br>
+          file_path + line numbers<br>
+          chunk content + metadata<br>
+          P@1 / P@3 / MRR metrics tracked
+        </div>
+        <span class="node-tag tag-orange">top-5 by default</span>
+      </div>
+      <div class="arrow-right">→</div>
+      <div class="node orange">
+        <div class="node-icon">🔧</div>
+        <div class="node-title">MCP Server Tools</div>
+        <div class="node-sub">
+          <code style="font-size:10px">search_code(query)</code><br>
+          <code style="font-size:10px">analyze_error(stack_trace)</code><br>
+          <code style="font-size:10px">get_code_stats()</code><br>
+          Available to Claude Code via MCP
+        </div>
+        <span class="node-tag tag-orange">ebl-unified MCP</span>
+      </div>
+      <div class="arrow-right">→</div>
+      <div class="node orange">
+        <div class="node-icon">✅</div>
+        <div class="node-title">Evaluation Framework</div>
+        <div class="node-sub">
+          25 domain-specific test queries<br>
+          Precision@1/3/5 · Recall · MRR<br>
+          Latency benchmarking<br>
+          Multi-model comparison<br>
+          <code style="font-size:10px">evaluation_framework.py</code>
+        </div>
+        <span class="node-tag tag-orange">CI/CD validated</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ─── METRICS ─── -->
+  <hr class="divider" />
+
+  <div class="metrics-row">
+    <div class="metric-card">
+      <div class="metric-value" id="m-chunks" style="color:var(--green)">—</div>
+      <div class="metric-label">Code Chunks Indexed</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value" style="color:var(--purple)">384</div>
+      <div class="metric-label">Vector Dimensions</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value" id="m-files" style="color:var(--accent)">—</div>
+      <div class="metric-label">Source Files Covered</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value" style="color:var(--orange)">25</div>
+      <div class="metric-label">Evaluation Queries</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value" id="m-audio" style="color:var(--yellow)">—</div>
+      <div class="metric-label">Audio-Term Chunks</div>
+    </div>
+  </div>
+
+  <!-- Live-fetch script — pulls /api/rag/status every 10s and updates the page -->
+  <script>
+    (function () {
+      const STATUS_URL = "/api/rag/status";
+      const POLL_MS = 10_000;
+
+      const $ = (id) => document.getElementById(id);
+
+      function fmtAge(seconds) {
+        if (seconds == null) return "never";
+        if (seconds < 60)    return Math.round(seconds) + "s ago";
+        if (seconds < 3600)  return Math.round(seconds / 60) + "m ago";
+        if (seconds < 86400) return Math.round(seconds / 3600) + "h ago";
+        return Math.round(seconds / 86400) + "d ago";
+      }
+
+      async function refresh() {
+        try {
+          const res = await fetch(STATUS_URL, { cache: "no-store" });
+          if (!res.ok) throw new Error("Status " + res.status);
+          const s = await res.json();
+
+          // Live status banner
+          $("ls-dot").style.background  = s.indexed ? "#3fb950" : "#f85149";
+          $("ls-state").textContent     = s.indexed ? "INDEXED · live" : "NOT INDEXED";
+          $("ls-state").style.color     = s.indexed ? "#3fb950" : "#f85149";
+          $("ls-state").style.fontWeight = "700";
+          $("ls-age").textContent       = fmtAge(s.age_seconds);
+          $("ls-provider").textContent  = s.provider || "ChromaDB (local)";
+          $("ls-model").textContent     = s.embedding_model || "all-MiniLM-L6-v2";
+
+          // Metric cards
+          $("m-chunks").textContent = s.chunk_count ?? 0;
+          $("m-files").textContent  = s.chunks_summary?.unique_files ?? 0;
+          $("m-audio").textContent  = s.chunks_summary?.audio_term_chunks ?? 0;
+        } catch (err) {
+          $("ls-dot").style.background  = "#f0883e";
+          $("ls-state").textContent     = "Backend unreachable — showing static counts";
+          $("ls-state").style.color     = "#f0883e";
+
+          // Fallback to the static defaults the diagram was built with
+          $("m-chunks").textContent = "338";
+          $("m-files").textContent  = "90+";
+          $("m-audio").textContent  = "—";
+        }
+      }
+
+      refresh();
+      setInterval(refresh, POLL_MS);
+    })();
+  </script>
+
+  <!-- ─── CLI COMMANDS ─── -->
+  <div class="note" style="margin-top:20px">
+    <strong>CLI Commands (rag_cli.py):</strong><br>
+    <code>python .claude/rag/rag_cli.py index</code> — Index on startup (auto-skips if already done)<br>
+    <code>python .claude/rag/rag_cli.py reindex</code> — Force full re-index after major code changes<br>
+    <code>python .claude/rag/rag_cli.py status</code> — Check index health &amp; dependency status<br>
+    <code>python .claude/rag/rag_cli.py search "binaural beat calculator"</code> — Semantic search<br>
+    <code>python .claude/rag/rag_cli.py evaluate</code> — Run full evaluation suite with P@K metrics
+  </div>
+
+  <!-- ─── LEGEND ─── -->
+  <div class="legend" style="margin-top:16px">
+    <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div> Indexing Phase</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--purple)"></div> Embedding / Storage</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div> Query &amp; Retrieval</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--orange)"></div> Output &amp; Evaluation</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--muted)"></div> Optional / Cloud</div>
+  </div>
+
+</body>
+</html>

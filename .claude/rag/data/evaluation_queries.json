@@ -1,48 +1,227 @@
 [
   {
     "query": "audio engine frequency generation",
-    "expected_files": [
-      "useAudioEngine",
-      "AudioEngine",
-      "frequency"
-    ],
-    "description": "Should find audio processing and frequency generation code"
+    "expected_keywords": ["audio", "engine", "frequency", "generator", "oscillator", "sine", "wave"],
+    "expected_file_patterns": ["audio_engine", "AudioEngine", "frequency"],
+    "expected_files": ["backend/core/audio_engine.py"],
+    "domain": "audio_processing",
+    "difficulty": "medium",
+    "description": "Should retrieve the core audio engine and frequency generation logic"
   },
   {
-    "query": "binaural beat calculator",
-    "expected_files": [
-      "binaural",
-      "beat",
-      "frequency"
-    ],
-    "description": "Should find binaural beat generation algorithms"
+    "query": "useAudioEngine React hook implementation",
+    "expected_keywords": ["useaudioengine", "hook", "react", "audio", "state", "ref", "effect"],
+    "expected_file_patterns": ["useAudioEngine", "hooks"],
+    "expected_files": ["src/hooks/useAudioEngine.ts"],
+    "domain": "react_hooks",
+    "difficulty": "easy",
+    "description": "Should find the primary React hook for audio engine control"
   },
   {
-    "query": "React hook for audio control",
-    "expected_files": [
-      "useAudioEngine",
-      "hook",
-      "audio"
-    ],
-    "description": "Should find React hooks for audio functionality"
+    "query": "binaural beat calculation algorithm left right frequency",
+    "expected_keywords": ["binaural", "beat", "frequency", "left", "right", "channel", "stereo", "hz"],
+    "expected_file_patterns": ["binaural", "BinauralGenerator"],
+    "expected_files": ["backend/modules/binaural.py", "src/components/BinauralGeneratorMUI.tsx"],
+    "domain": "audio_processing",
+    "difficulty": "hard",
+    "description": "Should find binaural beat generation math and UI component"
   },
   {
-    "query": "WebSocket real-time streaming",
-    "expected_files": [
-      "websocket",
-      "stream",
-      "real-time"
-    ],
-    "description": "Should find WebSocket and streaming implementations"
+    "query": "WebSocket real-time audio streaming route handler",
+    "expected_keywords": ["websocket", "streaming", "real-time", "audio", "buffer", "route", "connection"],
+    "expected_file_patterns": ["audio_websocket", "websocket"],
+    "expected_files": ["backend/routes/audio_websocket.py", "src/hooks/useWebsocketContext.ts"],
+    "domain": "networking",
+    "difficulty": "medium",
+    "description": "Should find WebSocket backend route and frontend context hook"
   },
   {
-    "query": "ADHD frequency protocols",
-    "expected_files": [
-      "adhd",
-      "protocol",
-      "frequency",
-      "pattern"
-    ],
-    "description": "Should find ADHD treatment frequency patterns"
+    "query": "ADHD treatment frequency protocols brainwave patterns",
+    "expected_keywords": ["adhd", "frequency", "protocol", "treatment", "brainwave", "pattern", "focus"],
+    "expected_file_patterns": ["adhd_protocols", "adhd", "ADHDTab"],
+    "expected_files": ["backend/protocols/adhd_protocols.py", "src/components/tabs/ADHDTab.tsx"],
+    "domain": "therapeutic",
+    "difficulty": "hard",
+    "description": "Should find ADHD protocol definitions and UI tab"
+  },
+  {
+    "query": "spatial audio 3D panning processor",
+    "expected_keywords": ["spatial", "audio", "panning", "3d", "azimuth", "elevation", "surround"],
+    "expected_file_patterns": ["spatial_audio", "SpatialAudio"],
+    "expected_files": ["backend/modules/spatial_audio.py", "src/components/SpatialAudioControls.tsx"],
+    "domain": "audio_processing",
+    "difficulty": "hard",
+    "description": "Should find spatial audio processing module and controls component"
+  },
+  {
+    "query": "FastAPI main application routes startup",
+    "expected_keywords": ["fastapi", "app", "router", "startup", "middleware", "cors", "include"],
+    "expected_file_patterns": ["main", "routes"],
+    "expected_files": ["backend/main.py"],
+    "domain": "backend_api",
+    "difficulty": "easy",
+    "description": "Should find the FastAPI app entry point and router configuration"
+  },
+  {
+    "query": "timer presets lucid dreaming session configuration",
+    "expected_keywords": ["timer", "preset", "session", "lucid", "dream", "duration", "phase"],
+    "expected_file_patterns": ["timerPresets", "lucidDreaming", "timer"],
+    "expected_files": ["src/data/timer/timerPresets.ts", "src/data/timer/lucidDreamingPreset.ts"],
+    "domain": "data_management",
+    "difficulty": "easy",
+    "description": "Should find timer preset data including lucid dreaming configuration"
+  },
+  {
+    "query": "electromagnetic field simulator visualization pattern",
+    "expected_keywords": ["electromagnetic", "field", "simulator", "pattern", "wave", "frequency", "visualization"],
+    "expected_file_patterns": ["field_simulator", "ElectromagneticBeatLab", "ElectromagneticStatus"],
+    "expected_files": ["backend/core/field_simulator.py", "src/components/ElectromagneticBeatLab.tsx"],
+    "domain": "visualization",
+    "difficulty": "medium",
+    "description": "Should find EM field simulation backend and lab component"
+  },
+  {
+    "query": "Stripe subscription payment service",
+    "expected_keywords": ["stripe", "subscription", "payment", "plan", "billing", "checkout", "customer"],
+    "expected_file_patterns": ["stripe_service", "subscription"],
+    "expected_files": ["backend/services/stripe_service.py", "backend/routes/subscription.py"],
+    "domain": "payments",
+    "difficulty": "medium",
+    "description": "Should find Stripe integration and subscription route handler"
+  },
+  {
+    "query": "user authentication JWT token OAuth login",
+    "expected_keywords": ["auth", "jwt", "token", "oauth", "login", "user", "password", "bearer"],
+    "expected_file_patterns": ["auth_utils", "oauth", "dependencies", "SimpleAuth"],
+    "expected_files": ["backend/auth/auth_utils.py", "backend/auth/oauth.py", "src/components/SimpleAuth.tsx"],
+    "domain": "authentication",
+    "difficulty": "medium",
+    "description": "Should find auth utilities, OAuth handler, and login component"
+  },
+  {
+    "query": "frequency visualizer canvas animation component",
+    "expected_keywords": ["visualizer", "canvas", "animation", "frequency", "render", "draw", "wave"],
+    "expected_file_patterns": ["FrequencyVisualizer", "useFrequencyVisualization"],
+    "expected_files": ["src/components/FrequencyVisualizer.tsx", "src/hooks/useFrequencyVisualization.ts"],
+    "domain": "visualization",
+    "difficulty": "medium",
+    "description": "Should find frequency visualizer component and visualization hook"
+  },
+  {
+    "query": "database models SQLAlchemy user session schema",
+    "expected_keywords": ["sqlalchemy", "model", "database", "table", "column", "session", "user"],
+    "expected_file_patterns": ["models", "database", "schemas"],
+    "expected_files": ["backend/database/models.py", "backend/database/database.py"],
+    "domain": "data_management",
+    "difficulty": "easy",
+    "description": "Should find SQLAlchemy ORM models and database connection"
+  },
+  {
+    "query": "8D audio pattern rotation hook",
+    "expected_keywords": ["8d", "audio", "pattern", "rotation", "pan", "channel", "effect"],
+    "expected_file_patterns": ["use8DPatterns", "8DPatterns"],
+    "expected_files": ["src/hooks/use8DPatterns.ts"],
+    "domain": "audio_processing",
+    "difficulty": "hard",
+    "description": "Should find the 8D audio rotation pattern implementation"
+  },
+  {
+    "query": "backend audio engine test demo numpy",
+    "expected_keywords": ["test", "audio", "engine", "numpy", "demo", "generate", "frequency", "sample"],
+    "expected_file_patterns": ["test_audio_engine", "demo_audio_engine"],
+    "expected_files": ["backend/test_audio_engine.py", "backend/demo_audio_engine.py"],
+    "domain": "testing",
+    "difficulty": "easy",
+    "description": "Should find audio engine test and demo scripts"
+  },
+  {
+    "query": "performance metrics logging structured monitoring",
+    "expected_keywords": ["metrics", "logging", "performance", "monitor", "logger", "track", "latency"],
+    "expected_file_patterns": ["metrics", "logger", "utils"],
+    "expected_files": ["backend/utils/metrics.py", "backend/utils/logger.py"],
+    "domain": "observability",
+    "difficulty": "medium",
+    "description": "Should find metrics collection and structured logging utilities"
+  },
+  {
+    "query": "timer logic countdown session hooks",
+    "expected_keywords": ["timer", "countdown", "hook", "interval", "session", "tick", "pause", "resume"],
+    "expected_file_patterns": ["useTimerLogic", "timerUtils", "TimerControls"],
+    "expected_files": ["src/hooks/useTimerLogic.ts", "src/helpers/timer/timerUtils.ts", "src/components/TimerControls.tsx"],
+    "domain": "ui_components",
+    "difficulty": "medium",
+    "description": "Should find timer state management and countdown display logic"
+  },
+  {
+    "query": "binaural beat visualizer engine hook",
+    "expected_keywords": ["binaural", "visualizer", "engine", "hook", "wave", "beat", "render"],
+    "expected_file_patterns": ["useBinauralVisualizerEngine", "binaural"],
+    "expected_files": ["src/hooks/useBinauralVisualizerEngine.ts"],
+    "domain": "visualization",
+    "difficulty": "hard",
+    "description": "Should find the binaural visualizer engine hook combining audio and rendering"
+  },
+  {
+    "query": "pattern selector frequency preset data",
+    "expected_keywords": ["pattern", "selector", "preset", "frequency", "data", "brainwave", "session"],
+    "expected_file_patterns": ["PatternSelector", "patterns", "data"],
+    "expected_files": ["src/components/PatternSelectorMUI.tsx", "src/data/patterns.ts"],
+    "domain": "data_management",
+    "difficulty": "easy",
+    "description": "Should find pattern data definitions and the selector UI component"
+  },
+  {
+    "query": "backend API route audio WebSocket connection manager",
+    "expected_keywords": ["api", "route", "audio", "websocket", "connection", "manager", "client", "broadcast"],
+    "expected_file_patterns": ["audio_websocket", "simple_routes"],
+    "expected_files": ["backend/routes/audio_websocket.py", "backend/routes/simple_routes.py"],
+    "domain": "backend_api",
+    "difficulty": "medium",
+    "description": "Should find WebSocket connection manager and audio route definitions"
+  },
+  {
+    "query": "React context auth provider token storage",
+    "expected_keywords": ["context", "auth", "provider", "token", "storage", "user", "react", "state"],
+    "expected_file_patterns": ["AuthContext", "auth"],
+    "expected_files": ["src/contexts/AuthContext.tsx", "src/contexts/auth.ts"],
+    "domain": "authentication",
+    "difficulty": "medium",
+    "description": "Should find React auth context and token management"
+  },
+  {
+    "query": "MUI theme Material UI styling global styles",
+    "expected_keywords": ["mui", "theme", "material", "ui", "styling", "palette", "typography", "global"],
+    "expected_file_patterns": ["muiTheme", "GlobalStyles"],
+    "expected_files": ["src/theme/muiTheme.ts", "src/styles/GlobalStyles.tsx"],
+    "domain": "ui_components",
+    "difficulty": "easy",
+    "description": "Should find MUI theme configuration and global style definitions"
+  },
+  {
+    "query": "toroidal low frequency electromagnetic examples",
+    "expected_keywords": ["toroidal", "low", "frequency", "electromagnetic", "example", "pattern"],
+    "expected_file_patterns": ["toroidalLowFrequency", "comprehensiveTimer"],
+    "expected_files": ["src/data/timer/toroidalLowFrequencyExamples.ts"],
+    "domain": "therapeutic",
+    "difficulty": "hard",
+    "description": "Should find toroidal low frequency therapeutic pattern data"
+  },
+  {
+    "query": "backend audio pipeline test integration websocket",
+    "expected_keywords": ["test", "pipeline", "backend", "integration", "websocket", "audio", "mock"],
+    "expected_file_patterns": ["PipelineTest", "websocket", "api"],
+    "expected_files": ["src/components/__tests__/PipelineTest.test.tsx", "src/__tests__/websocket.test.ts"],
+    "domain": "testing",
+    "difficulty": "medium",
+    "description": "Should find integration test files for audio pipeline and WebSocket"
+  },
+  {
+    "query": "AWS Lambda handler audio generation serverless",
+    "expected_keywords": ["lambda", "handler", "aws", "serverless", "audio", "event", "boto3"],
+    "expected_file_patterns": ["lambda_handlers"],
+    "expected_files": ["backend/lambda_handlers.py"],
+    "domain": "backend_api",
+    "difficulty": "hard",
+    "description": "Should find AWS Lambda handler for serverless audio generation"
   }
 ]

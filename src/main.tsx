@@ -4,6 +4,7 @@
 import { createRoot } from 'react-dom/client';
 import './index.css';
 import App from './App';
+import { attachRAGConsole } from './utils/ragConsole';
 
 // Global error handling
 window.addEventListener('error', (event) => {
@@ -41,3 +42,7 @@ const root = createRoot(rootElement);
 // 🔥 STRICT MODE DISABLED - Prevents double-mounting in dev
 // This avoids duplicate AudioContexts and WebSocket connections
 root.render(<App />);
+
+// Attach RAG console — prints live index status + exposes window.ragStatus()
+// and window.showRAGPipeline() helpers. Polls every 30s for re-index events.
+attachRAGConsole();
