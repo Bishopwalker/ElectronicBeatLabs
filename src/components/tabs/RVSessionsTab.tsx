@@ -44,7 +44,7 @@ const fadeIn = keyframes`
 `;
 
 // API Configuration
-const API_BASE = import.meta.env.DEV ? 'http://localhost:8000' : '';
+const API_BASE = import.meta.env.DEV ? 'http://localhost:8080' : '';
 
 interface RVTarget {
   target_id: string;

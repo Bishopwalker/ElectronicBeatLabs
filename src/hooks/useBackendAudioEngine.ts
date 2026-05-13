@@ -417,7 +417,7 @@ export const useBackendAudioEngine = () => {
 
     const httpProtocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
     const host = window.location.hostname;
-    const port = (import.meta as { env?: { DEV?: boolean } }).env?.DEV ? '8000' : (window.location.port || (httpProtocol === 'https:' ? '443' : '80'));
+    const port = (import.meta as { env?: { DEV?: boolean } }).env?.DEV ? '8080' : (window.location.port || (httpProtocol === 'https:' ? '443' : '80'));
     const healthUrl = `${httpProtocol}//${host}:${port}/health`;
     await fetch(healthUrl, { mode: 'no-cors' }).catch(() => undefined);
 

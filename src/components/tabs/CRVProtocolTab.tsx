@@ -47,7 +47,7 @@ const breathe = keyframes`
 `;
 
 // API Configuration
-const API_BASE = import.meta.env.DEV ? 'http://localhost:8000' : '';
+const API_BASE = import.meta.env.DEV ? 'http://localhost:8080' : '';
 
 interface CRVStage {
   stage_number: number;

@@ -30,13 +30,14 @@ export default defineConfig({
       overlay: false // Disable error overlay for faster HMR
     },
     proxy: {
+      // EBL backend runs on 8080 (ports 8000-8002 are taken by USPS ICDA / Docker on this machine)
       '/api': {
-        target: 'http://localhost:8000',
+        target: 'http://localhost:8080',
         changeOrigin: true,
         secure: false,
       },
       '/ws': {
-        target: 'ws://localhost:8000',
+        target: 'ws://localhost:8080',
         ws: true,
         changeOrigin: true,
       }

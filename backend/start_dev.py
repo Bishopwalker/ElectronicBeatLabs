@@ -23,7 +23,7 @@ def main():
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
-        port=8000,
+        port=8080,  # Reason: ports 8000-8002 taken by USPS ICDA / Docker on this machine
         reload=True,
         reload_dirs=[str(backend_dir)],
         log_level="debug",

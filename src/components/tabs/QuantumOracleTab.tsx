@@ -101,7 +101,7 @@ const wrongShake = keyframes`
 `;
 
 // API Configuration
-const API_BASE = import.meta.env.DEV ? 'http://localhost:8000' : '';
+const API_BASE = import.meta.env.DEV ? 'http://localhost:8080' : '';
 
 // ============ INTERFACES ============
 
